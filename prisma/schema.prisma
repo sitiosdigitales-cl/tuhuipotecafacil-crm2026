@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Usuario {
+  id                String   @id @default(cuid())
+  nombre            String
+  apellido          String
+  email             String   @unique
+  password          String
+  telefono          String?
+  rol               String   @default("AGENTE")
+  estado            String   @default("ACTIVO")
+  avatar            String?
+  doisFA            Boolean  @default(false)
+  intentosFallidos  Int      @default(0)
+  suspendidoHasta   DateTime?
+  ultimoAcceso      DateTime?
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+}
+
+model Lead {
+  id                String   @id @default(cuid())
+  nombre            String
+  apellido          String
+  rut               String   @unique
+  email             String?
+  telefono          String?
+  origen            String   @default("WEB")
+  etapa             String   @default("NUEVO_LEAD")
+  prioridad         String   @default("MEDIA")
+  asignadoA         String?
+  nombreEjecutivo   String?
+  banco             String?
+  tipoCredito       String?
+  montoSolicitado   Float?
+  valorPropiedad    Float?
+  pieDisponible     Float?
+  etiquetas         String?
+  notas             String?
+  situacionLaboral  String   @default("DEPENDIENTE")
+  enDicom           Boolean  @default(false)
+  dicomDetalle      String?
+  rentaMensual      String?
+  complementarRenta Boolean  @default(false)
+  cuentaPie         Boolean  @default(false)
+  diasEnEtapa       Int      @default(0)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+}
+
+model Documento {
+  id         String   @id @default(cuid())
+  leadId     String
+  nombre     String
+  tipo       String
+  estado     String   @default("PENDIENTE")
+  archivoUrl String?
+  creadoEn   DateTime @default(now())
+}
+
+model Tarea {
+  id                String   @id @default(cuid())
+  titulo            String
+  descripcion       String?
+  estado            String   @default("PENDIENTE")
+  tipo              String   @default("SEGUIMIENTO")
+  prioridad         String   @default("MEDIA")
+  asignadoA         String?
+  nombreEjecutivo   String?
+  leadId            String?
+  leadNombre        String?
+  fechaVencimiento  DateTime?
+  recordatorio      DateTime?
+  duracionEstimada  Int?
+  etiquetas         String?
+  creadoEn          DateTime @default(now())
+}
+
+model Actividad {
+  id        String   @id @default(cuid())
+  leadId    String
+  tipo      String
+  titulo    String
+  contenido String?
+  usuario   String?
+  creadoEn  DateTime @default(now())
+}
+
+// Modelo para Tasas de Interés CMF
+model CMFTasaInteres {
+  id              String   @id @default(cuid())
+  fecha           String   // Fecha de vigencia (YYYY-MM-DD)
+  hasta           String?  // Fecha de término
+  tipoOperacion   String   // Tipo de operación (hipotecario, consumo, etc.)
+  codigoTipo      String?  // Código del tipo
+  tasa            Float    // Tasa promedio
+  moneda          String   @default("CLP") // CLP o UF
+  fuente          String   @default("CMF")
+  jsonOriginal    String?  // JSON completo de la respuesta API
+  fechaConsulta   DateTime @default(now()) // Cuándo se consultó
+  creadoEn        DateTime @default(now())
+  actualizadoEn   DateTime @updatedAt
+
+  @@unique([fecha, tipoOperacion, moneda])
+  @@index([fecha])
+  @@index([tipoOperacion])
+}
+
+// Log de actualizaciones CMF
+model CMFLog {
+  id          String   @id @default(cuid())
+  tipo        String   // "SUCCESS", "ERROR", "WARNING"
+  mensaje     String
+  registros   Int?     // Cantidad de registros procesados
+  duracionMs  Int?     // Duración en milisegundos
+  error       String?  // Detalle del error si lo hay
+  creadoEn    DateTime @default(now())
+}
+
+// Configuración CMF
+model CMFConfig {
+  id                String   @id @default(cuid())
+  apiKey            String?  // API Key cifrada
+  urlBase           String   @default("https://api.cmfchile.cl/api-sbifv3")
+  intervaloHoras    Int      @default(24) // Frecuencia de actualización
+  ultimaActualizacion DateTime?
+  activo            Boolean  @default(true)
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+}
