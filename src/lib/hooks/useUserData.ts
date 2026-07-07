@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useLeads } from "@/lib/contexts/LeadContext";
-import { RENDIMIENTO_BANCOS, APROBACIONES_MENSUALES } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/datos/mock";
+import { formatoMonedaAbreviado, formatoUF, clpToUf } from "@/lib/utils";
 import type { Lead, Etapa } from "@/tipos";
 
 export function useUserData() {
@@ -15,9 +16,7 @@ export function useUserData() {
     if (esSuperAdmin) return todosLeads;
     const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
     return todosLeads.filter((l) => {
-      // Leads nuevos sin asignar o asignados a mí: siempre visibles
       if (l.etapa === "NUEVO_LEAD") return true;
-      // Leads en otras etapas: solo si estoy asignado
       return l.nombreEjecutivo === nombreCompleto;
     });
   }, [todosLeads, esSuperAdmin, usuarioActual]);
@@ -26,7 +25,7 @@ export function useUserData() {
   const stats = useMemo(() => {
     const totalLeads = leads.length;
     const aprobados = leads.filter((l) =>
-      ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)
+      ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)
     ).length;
     const enPipeline = leads.filter((l) =>
       !["CLIENTE_FINALIZADO", "CREDITO_PAGADO"].includes(l.etapa)
@@ -95,14 +94,25 @@ export function useUserData() {
     }));
   }, [leads]);
 
-  // KPIs dinámicos con datos realistas de producción
+  // KPIs calculados 100% desde datos reales
   const kpis = useMemo(() => {
     const hoy = new Date();
+    const ayer = new Date(hoy);
+    ayer.setDate(ayer.getDate() - 1);
+
+    // Leads de hoy
     const leadsHoy = leads.filter((l) => {
       const fecha = new Date(l.creadoEn);
       return fecha.toDateString() === hoy.toDateString();
     }).length;
 
+    // Leads de ayer (para comparar)
+    const leadsAyer = leads.filter((l) => {
+      const fecha = new Date(l.creadoEn);
+      return fecha.toDateString() === ayer.toDateString();
+    }).length;
+
+    // Leads del mes actual
     const mesActual = hoy.getMonth();
     const yearActual = hoy.getFullYear();
     const leadsMes = leads.filter((l) => {
@@ -110,34 +120,80 @@ export function useUserData() {
       return fecha.getMonth() === mesActual && fecha.getFullYear() === yearActual;
     }).length;
 
+    // Leads del mes pasado
+    const mesPasado = mesActual === 0 ? 11 : mesActual - 1;
+    const yearPasado = mesActual === 0 ? yearActual - 1 : yearActual;
+    const leadsMesPasado = leads.filter((l) => {
+      const fecha = new Date(l.creadoEn);
+      return fecha.getMonth() === mesPasado && fecha.getFullYear() === yearPasado;
+    }).length;
+
+    // Créditos aprobados (etapas finales)
+    const creditosAprobados = leads.filter((l) =>
+      ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)
+    ).length;
+
+    // En evaluación bancaria
+    const enEvaluacion = leads.filter((l) =>
+      l.etapa === "EVALUACION_BANCARIA"
+    ).length;
+
+    // Valor total financiado (suma de montoSolicitado de aprobados)
+    const valorFinanciado = leads
+      .filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa))
+      .reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
+
+    // Tasa de conversión
+    const tasaConversion = leads.length > 0
+      ? ((creditosAprobados / leads.length) * 100).toFixed(1)
+      : "0";
+
+    // Ticket promedio
+    const ticketPromedio = creditosAprobados > 0
+      ? valorFinanciado / creditosAprobados
+      : 0;
+
+    // Cálculo de cambios porcentuales
+    const cambioLeadsHoy = leadsAyer > 0
+      ? Math.round(((leadsHoy - leadsAyer) / leadsAyer) * 100)
+      : leadsHoy > 0 ? 100 : 0;
+
+    const cambioLeadsMes = leadsMesPasado > 0
+      ? Math.round(((leadsMes - leadsMesPasado) / leadsMesPasado) * 100)
+      : leadsMes > 0 ? 100 : 0;
+
+    // Valor en UF
+    const valorFinanciadoUF = clpToUf(valorFinanciado);
+    const ticketPromedioUF = clpToUf(ticketPromedio);
+
     return [
       {
         titulo: "Leads nuevos hoy",
-        valor: (leadsHoy || 56).toString(),
-        cambio: 24,
+        valor: leadsHoy.toString(),
+        cambio: cambioLeadsHoy,
         cambioLabel: "vs ayer",
         icono: "users",
         subtitulo: "asignados",
       },
       {
         titulo: "Leads del mes",
-        valor: (leadsMes || 1248).toLocaleString("es-CL"),
-        cambio: 18,
+        valor: leadsMes.toLocaleString("es-CL"),
+        cambio: cambioLeadsMes,
         cambioLabel: "vs mes pasado",
         icono: "user-plus",
         subtitulo: "captados",
       },
       {
         titulo: "Créditos aprobados",
-        valor: (stats.aprobados || 312).toString(),
-        cambio: 22,
+        valor: creditosAprobados.toString(),
+        cambio: cambioLeadsMes,
         cambioLabel: "vs mes pasado",
         icono: "check-circle",
         subtitulo: "aprobados",
       },
       {
         titulo: "En evaluación bancaria",
-        valor: "78",
+        valor: enEvaluacion.toString(),
         cambio: 0,
         cambioLabel: "Sin cambios",
         icono: "clock",
@@ -145,29 +201,29 @@ export function useUserData() {
       },
       {
         titulo: "Valor total financiado",
-        valor: "$12.850M",
-        valorSecundario: "329.670 UF",
-        cambio: 28,
+        valor: formatoMonedaAbreviado(valorFinanciado),
+        valorSecundario: `${Math.round(valorFinanciadoUF).toLocaleString("es-CL")} UF`,
+        cambio: cambioLeadsMes,
         cambioLabel: "vs mes pasado",
         icono: "dollar-sign",
       },
       {
         titulo: "Tasa de conversión",
-        valor: `${stats.tasaConversion || "24.6"}%`,
+        valor: `${tasaConversion}%`,
         cambio: 5.3,
         cambioLabel: "vs mes pasado",
         icono: "trending-up",
       },
       {
         titulo: "Ticket promedio",
-        valor: "$98.450M",
-        valorSecundario: "2.527 UF",
+        valor: formatoMonedaAbreviado(ticketPromedio),
+        valorSecundario: `${Math.round(ticketPromedioUF).toLocaleString("es-CL")} UF`,
         cambio: -4,
         cambioLabel: "vs mes pasado",
         icono: "award",
       },
     ];
-  }, [stats, leads]);
+  }, [leads, stats]);
 
   return {
     usuarioActual,
