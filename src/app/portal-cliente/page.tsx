@@ -140,6 +140,32 @@ export default function PortalClientePage() {
     ];
   }, [leads]);
 
+  // Lead de prueba hardcodeado que siempre funciona
+  const leadPrueba = useMemo(() => ({
+    id: "lead-prueba-001",
+    nombre: "Juan Carlos",
+    apellido: "Silva Muñoz",
+    rut: "16.567.890-1",
+    email: "juan.silva@gmail.com",
+    telefono: "+56987654321",
+    situacionLaboral: "INDEPENDIENTE" as const,
+    enDicom: false,
+    dicomDetalle: "Sin deudas registradas",
+    origen: "REFERIDO" as const,
+    etapa: "DOCS_COMPLETAS" as const,
+    prioridad: "ALTA" as const,
+    banco: "Banco de Chile",
+    tipoCredito: "Crédito Hipotecario",
+    montoSolicitado: 150000000,
+    valorPropiedad: 220000000,
+    pieDisponible: 70000000,
+    rentaMensual: "$3.500.000",
+    nombreEjecutivo: "Andrés Pérez",
+    notas: "Cliente interesado en crédito hipotecario para propiedad en Las Condes",
+    creadoEn: new Date(Date.now() - 20 * 86400000),
+    diasEnEtapa: 5,
+  }), []);
+
   const handleBuscar = () => {
     if (!rut.trim()) {
       setError("Por favor ingresa tu RUT para continuar");
@@ -154,22 +180,31 @@ export default function PortalClientePage() {
       const normalizarRut = (r: string) => r.replace(/\./g, "").replace("-", "").replace(/\s/g, "").toLowerCase();
       const rutIngresado = normalizarRut(rut);
 
-      // Buscar en los leads reales del sistema
-      let lead = leads.find((l) => {
-        const rutLead = normalizarRut(l.rut);
-        return rutLead === rutIngresado || (rutIngresado.length >= 6 && rutLead.includes(rutIngresado));
-      });
+      // Buscar lead de prueba primero
+      let lead: Lead | null = null;
+      if (rutIngresado === normalizarRut(leadPrueba.rut)) {
+        lead = leadPrueba;
+      }
 
-      // Si no se encuentra, crear un lead de demo con datos realistas
+      // Si no es el lead de prueba, buscar en los leads del sistema
+      if (!lead) {
+        const found = leads.find((l) => {
+          const rutLead = normalizarRut(l.rut);
+          return rutLead === rutIngresado || (rutIngresado.length >= 6 && rutLead.includes(rutIngresado));
+        });
+        if (found) lead = found;
+      }
+
+      // Si no se encuentra, crear un lead demo
       if (!lead) {
         const nombres = ["María", "Carlos", "Juan", "Ana", "Pedro", "Laura", "Roberto", "Fernanda", "Diego", "Valentina"];
-        const apellidos = ["González", "Rojas", "Pérez", "Torres", "Gómez", "Sánchez", "Silva", "Rojas", "Díaz", "Morales"];
+        const apellidos = ["González", "Rojas", "Pérez", "Torres", "Gómez", "Sánchez", "Silva", "Díaz", "Morales", "Torres"];
         const bancos = ["Banco de Chile", "Santander", "Bci", "Itaú", "Scotiabank"];
         const etapas: Etapa[] = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO"];
-        
+
         const idx = Math.floor(Math.random() * nombres.length);
         const monto = Math.floor(Math.random() * 200 + 80) * 1000000;
-        
+
         lead = {
           id: `demo-${Date.now()}`,
           nombre: nombres[idx],
