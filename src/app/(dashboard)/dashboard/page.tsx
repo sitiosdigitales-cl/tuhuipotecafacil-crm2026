@@ -70,7 +70,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <TarjetasKPI />
+      <TarjetasKPI kpis={kpis} />
 
       {/* Fila 1: Embudo + Conversión + Leads por origen */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
