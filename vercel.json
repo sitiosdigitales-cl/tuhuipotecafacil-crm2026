@@ -3,5 +3,8 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install --ignore-scripts",
-  "regions": ["gru1"]
+  "regions": ["gru1"],
+  "env": {
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  }
 }
