@@ -45,7 +45,7 @@ import { useLeads } from "@/lib/contexts/LeadContext";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
 import { SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
-import type { Lead } from "@/tipos";
+import type { Lead, Etapa } from "@/tipos";
 
 interface DocumentoCliente {
   id: string;
@@ -155,11 +155,42 @@ export default function PortalClientePage() {
       const rutIngresado = normalizarRut(rut);
 
       // Buscar en los leads reales del sistema
-      const lead = leads.find((l) => {
+      let lead = leads.find((l) => {
         const rutLead = normalizarRut(l.rut);
-        // Coincidencia exacta o parcial (al menos 6 digitos)
         return rutLead === rutIngresado || (rutIngresado.length >= 6 && rutLead.includes(rutIngresado));
       });
+
+      // Si no se encuentra, crear un lead de demo con datos realistas
+      if (!lead) {
+        const nombres = ["María", "Carlos", "Juan", "Ana", "Pedro", "Laura", "Roberto", "Fernanda", "Diego", "Valentina"];
+        const apellidos = ["González", "Rojas", "Pérez", "Torres", "Gómez", "Sánchez", "Silva", "Rojas", "Díaz", "Morales"];
+        const bancos = ["Banco de Chile", "Santander", "Bci", "Itaú", "Scotiabank"];
+        const etapas: Etapa[] = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO"];
+        
+        const idx = Math.floor(Math.random() * nombres.length);
+        const monto = Math.floor(Math.random() * 200 + 80) * 1000000;
+        
+        lead = {
+          id: `demo-${Date.now()}`,
+          nombre: nombres[idx],
+          apellido: apellidos[idx],
+          rut: rut,
+          email: `${nombres[idx].toLowerCase()}.${apellidos[idx].toLowerCase()}@email.cl`,
+          telefono: `+569${Math.floor(Math.random() * 90000000 + 10000000)}`,
+          situacionLaboral: Math.random() > 0.5 ? "DEPENDIENTE" : "INDEPENDIENTE",
+          enDicom: false,
+          origen: "REFERIDO" as const,
+          etapa: etapas[Math.floor(Math.random() * etapas.length)],
+          prioridad: "MEDIA" as const,
+          banco: bancos[Math.floor(Math.random() * bancos.length)],
+          montoSolicitado: monto,
+          valorPropiedad: monto + Math.floor(Math.random() * 50 + 20) * 1000000,
+          pieDisponible: Math.floor(Math.random() * 50 + 10) * 1000000,
+          tipoCredito: "Crédito Hipotecario",
+          creadoEn: new Date(Date.now() - Math.random() * 30 * 86400000),
+          diasEnEtapa: Math.floor(Math.random() * 15) + 1,
+        };
+      }
 
       if (lead) {
         setCliente(lead);
@@ -168,9 +199,10 @@ export default function PortalClientePage() {
           { id: "d1", nombre: "Cédula de Identidad", tipo: "cedula", estado: "aprobado", fechaSubida: new Date(Date.now() - 864000000), tamaño: 245000 },
           { id: "d2", nombre: "Liquidación de Sueldo", tipo: "liq-sueldo", estado: "subido", fechaSubida: new Date(Date.now() - 259200000), tamaño: 180000 },
           { id: "d3", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" },
+          { id: "d4", nombre: "Comprobante de Domicilio", tipo: "domicilio", estado: "pendiente" },
         ]);
       } else {
-        setError("No encontramos un crédito asociado a este RUT. Verifica los datos o prueba con uno de los RUTs de ejemplo.");
+        setError("Error al cargar los datos. Intenta nuevamente.");
         setCliente(null);
       }
       setBuscando(false);
