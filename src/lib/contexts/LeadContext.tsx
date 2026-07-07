@@ -93,6 +93,48 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     cargarLeads();
   }, [cargarLeads]);
 
+  // Lead de prueba fijo para el portal
+  useEffect(() => {
+    if (!initialized) return;
+    setLeads((prev) => {
+      // Verificar si ya existe el lead de prueba
+      const yaExiste = prev.some((l) => l.rut === "16.567.890-1");
+      if (yaExiste) return prev;
+
+      const leadPrueba = {
+        id: "lead-prueba-001",
+        nombre: "Juan Carlos",
+        apellido: "Silva Muñoz",
+        rut: "16.567.890-1",
+        email: "juan.silva@email.cl",
+        telefono: "+56998765432",
+        situacionLaboral: "INDEPENDIENTE" as const,
+        enDicom: false,
+        origen: "REFERIDO" as const,
+        etapa: "EVALUACION_BANCARIA" as const,
+        prioridad: "ALTA" as const,
+        banco: "Banco de Chile",
+        tipoCredito: "Crédito Hipotecario",
+        montoSolicitado: 150000000,
+        valorPropiedad: 220000000,
+        pieDisponible: 70000000,
+        nombreEjecutivo: "Andrés Pérez",
+        notas: "Lead de prueba para demostración del portal",
+        creadoEn: new Date(Date.now() - 15 * 86400000),
+        diasEnEtapa: 8,
+      };
+
+      // Guardar en API
+      fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leadPrueba),
+      }).catch(() => {});
+
+      return [leadPrueba, ...prev];
+    });
+  }, [initialized]);
+
   // Simular nuevos leads cada 60 segundos
   useEffect(() => {
     if (!initialized) return;
