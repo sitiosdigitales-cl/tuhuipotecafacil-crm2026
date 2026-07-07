@@ -1,26 +1,22 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+// Prisma client singleton - solo funciona con prisma generate ejecutado
+// En Vercel (sin generate), prisma será null y la app usa localStorage
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+let prismaInstance: any = null;
 
-function getPrisma(): PrismaClient | null {
-  if (typeof window !== "undefined") {
+function getPrisma(): any {
+  if (typeof window !== "undefined") return null;
+  if (prismaInstance) return prismaInstance;
+
+  try {
+    const { PrismaClient } = require("@prisma/client");
+    const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
+
+    const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
+    prismaInstance = new PrismaClient({ adapter });
+    return prismaInstance;
+  } catch {
     return null;
   }
-
-  if (!globalForPrisma.prisma) {
-    try {
-      const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
-      globalForPrisma.prisma = new PrismaClient({ adapter });
-    } catch (error) {
-      console.error("Error inicializando Prisma:", error);
-      return null;
-    }
-  }
-
-  return globalForPrisma.prisma;
 }
 
 export const prisma = getPrisma();
