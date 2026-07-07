@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { generarLeads, ETAPAS_CONFIG } from "@/datos/mock";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import type { Etapa } from "@/tipos";
@@ -22,6 +23,7 @@ const ETAPAS_VISIBLES: Etapa[] = [
 ];
 
 export function VistaPreviaPipeline() {
+  const router = useRouter();
   const leads = generarLeads();
 
   return (
@@ -34,7 +36,10 @@ export function VistaPreviaPipeline() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <button className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors">
+          <button
+            onClick={() => router.push("/pipeline")}
+            className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
+          >
             Ver pipeline completo <ChevronRight size={12} />
           </button>
           <div className="flex bg-slate-100 rounded-lg p-0.5">

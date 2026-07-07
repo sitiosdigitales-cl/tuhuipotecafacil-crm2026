@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   UserPlus,
   FileText,
@@ -124,6 +125,7 @@ const tipoConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function FeedActividad() {
+  const router = useRouter();
   const [filtroActivo, setFiltroActivo] = useState<string>("todos");
 
   const actividadesFiltradas = filtroActivo === "todos" 
@@ -152,7 +154,10 @@ export function FeedActividad() {
           <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
             <RefreshCw size={14} className="text-slate-400" />
           </button>
-          <button className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors">
+          <button
+            onClick={() => router.push("/reportes?tab=actividad")}
+            className="text-[10px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
+          >
             Ver toda <ChevronRight size={12} />
           </button>
         </div>
