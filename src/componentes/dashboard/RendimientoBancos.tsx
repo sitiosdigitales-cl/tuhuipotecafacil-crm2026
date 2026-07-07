@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight, Building2, TrendingUp, Award, Percent, BarChart3 } from "lucide-react";
 import { RENDIMIENTO_BANCOS } from "@/datos/mock";
@@ -169,10 +170,10 @@ export function RendimientoBancos() {
             <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Total financiado</span>
             <div className="text-[14px] font-bold text-slate-900 dark:text-slate-100">{formatoMonedaAbreviado(totalMontos)}</div>
           </div>
-          <button className="flex items-center gap-1 py-2 px-3 text-[11px] text-blue-600 font-semibold hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors">
+          <Link href="/bancos" className="flex items-center gap-1 py-2 px-3 text-[11px] text-blue-600 font-semibold hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors">
             Ver todos
             <ChevronRight size={14} />
-          </button>
+          </Link>
         </div>
       </div>
     </div>

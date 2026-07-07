@@ -33,6 +33,7 @@ import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";
+import { useActivities } from "@/lib/contexts/ActivityContext";
 import { toast } from "sonner";
 import type { Lead, Etapa, Prioridad } from "@/tipos";
 
@@ -64,6 +65,7 @@ export default function LeadsPage() {
   const router = useRouter();
   const { leads, agregarLead, actualizarLead, eliminarLead } = useLeads();
   const { usuarioActual, esSuperAdmin } = useUser();
+  const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
   const [filtroOrigen, setFiltroOrigen] = useState("todos");
   const [filtroEtapa, setFiltroEtapa] = useState("todos");
@@ -169,6 +171,14 @@ export default function LeadsPage() {
   const handleSubmitLead = (data: Partial<Lead>) => {
     if (leadSeleccionado) {
       actualizarLead(leadSeleccionado.id, data);
+      agregarActividad({
+        leadId: leadSeleccionado.id,
+        tipo: "nota",
+        titulo: "Lead actualizado",
+        descripcion: `${data.nombre} ${data.apellido} fue actualizado`,
+        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+        usuarioId: usuarioActual?.id || "system",
+      });
       toast.success("Lead actualizado", {
         description: `${data.nombre} ${data.apellido} fue actualizado`,
       });
@@ -200,6 +210,14 @@ export default function LeadsPage() {
         diasEnEtapa: 0,
       };
       agregarLead(newLead);
+      agregarActividad({
+        leadId: newLead.id,
+        tipo: "sistema",
+        titulo: "Lead creado",
+        descripcion: `${newLead.nombre} ${newLead.apellido} fue agregado al sistema`,
+        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+        usuarioId: usuarioActual?.id || "system",
+      });
       toast.success("Lead creado", {
         description: `${newLead.nombre} ${newLead.apellido} fue agregado`,
       });

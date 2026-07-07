@@ -38,6 +38,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useLeads } from "@/lib/contexts/LeadContext";
+import { useActivities } from "@/lib/contexts/ActivityContext";
 import { validarAvance, type ResultadoValidacion } from "@/lib/validaciones-pipeline";
 import { AsignarEjecutivo } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
@@ -244,6 +245,7 @@ export default function PipelinePage() {
   const router = useRouter();
   const { usuarioActual, esSuperAdmin } = useUser();
   const { leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa } = useLeads();
+  const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
   const [filtroEjecutivo, setFiltroEjecutivo] = useState("todos");
   const [eliminarDialogOpen, setEliminarDialogOpen] = useState(false);
@@ -315,7 +317,10 @@ export default function PipelinePage() {
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const leadMovido = leadsFiltrados[source.index];
+    // Buscar el lead en la etapa de origen usando el índice correcto
+    const etapaOrigen = source.droppableId;
+    const leadsEnEtapaOrigen = leadsFiltrados.filter((l) => l.etapa === etapaOrigen);
+    const leadMovido = leadsEnEtapaOrigen[source.index];
     if (!leadMovido) return;
 
     const etapaDestino = destination.droppableId;
@@ -337,8 +342,19 @@ export default function PipelinePage() {
     // Si pasa la validación, mover el lead usando el contexto
     moverEtapa(leadMovido.id, etapaDestino as Etapa);
 
-    const nombreEtapa = ETAPAS_CONFIG[etapaDestino as Etapa]?.label || etapaDestino;
-    toast.success(`Lead movido a ${nombreEtapa}`, {
+    // Registrar actividad
+    const nombreEtapaOrigen = ETAPAS_CONFIG[leadMovido.etapa]?.label || leadMovido.etapa;
+    const nombreEtapaDestino = ETAPAS_CONFIG[etapaDestino as Etapa]?.label || etapaDestino;
+    agregarActividad({
+      leadId: leadMovido.id,
+      tipo: "cambio_estado",
+      titulo: "Cambio de etapa",
+      descripcion: `${leadMovido.nombre} ${leadMovido.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino}`,
+      usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+      usuarioId: usuarioActual?.id || "system",
+    });
+
+    toast.success(`Lead movido a ${nombreEtapaDestino}`, {
       description: `${leadMovido.nombre} ${leadMovido.apellido} avanzó de etapa`,
     });
   };
@@ -348,8 +364,19 @@ export default function PipelinePage() {
 
     moverEtapa(validacionModal.lead.id, validacionModal.etapaDestino as Etapa);
 
-    const nombreEtapa = ETAPAS_CONFIG[validacionModal.etapaDestino as Etapa]?.label || validacionModal.etapaDestino;
-    toast.success(`Avance forzado a ${nombreEtapa}`, {
+    // Registrar actividad de avance forzado
+    const nombreEtapaOrigen = ETAPAS_CONFIG[validacionModal.lead.etapa]?.label || validacionModal.lead.etapa;
+    const nombreEtapaDestino = ETAPAS_CONFIG[validacionModal.etapaDestino as Etapa]?.label || validacionModal.etapaDestino;
+    agregarActividad({
+      leadId: validacionModal.lead.id,
+      tipo: "cambio_estado",
+      titulo: "Avance forzado",
+      descripcion: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino} (avance forzado)`,
+      usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+      usuarioId: usuarioActual?.id || "system",
+    });
+
+    toast.success(`Avance forzado a ${nombreEtapaDestino}`, {
       description: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido manualmente`,
     });
 

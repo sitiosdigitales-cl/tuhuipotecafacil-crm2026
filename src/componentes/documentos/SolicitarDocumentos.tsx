@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 import {
@@ -36,6 +36,7 @@ interface DocumentoSolicitado {
 interface SolicitarDocumentosProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  leadId?: string;
 }
 
 const DOCUMENTOS_POR_DEFECTO: { tipo: TipoDocumento; nombre: string }[] = [
@@ -48,7 +49,7 @@ const DOCUMENTOS_POR_DEFECTO: { tipo: TipoDocumento; nombre: string }[] = [
   { tipo: "CERTIFICADO_PIE", nombre: "Certificado de Pie" },
 ];
 
-export function SolicitarDocumentos({ open, onOpenChange }: SolicitarDocumentosProps) {
+export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDocumentosProps) {
   const { leads } = useLeads();
   const [leadSeleccionado, setLeadSeleccionado] = useState<Lead | null>(null);
   const [documentos, setDocumentos] = useState<DocumentoSolicitado[]>(
@@ -59,6 +60,21 @@ export function SolicitarDocumentos({ open, onOpenChange }: SolicitarDocumentosP
   const [linkGenerado, setLinkGenerado] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [busquedaLead, setBusquedaLead] = useState("");
+
+  // Pre-seleccionar lead cuando se abre con leadId
+  useEffect(() => {
+    if (open && leadId && leads.length > 0) {
+      const lead = leads.find((l) => l.id === leadId);
+      if (lead) {
+        setLeadSeleccionado(lead);
+      }
+    }
+    if (!open) {
+      setLeadSeleccionado(null);
+      setEnviado(false);
+      setLinkGenerado("");
+    }
+  }, [open, leadId, leads]);
 
   // Estado para documento personalizado
   const [mostrarFormulario, setMostrarFormulario] = useState(false);

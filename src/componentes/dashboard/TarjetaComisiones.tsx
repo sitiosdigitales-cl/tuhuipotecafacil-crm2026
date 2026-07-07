@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle, Wallet, Users, ArrowRight } from "lucide-react";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
 
@@ -115,7 +116,7 @@ export function TarjetaComisiones() {
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Top ejecutivos</span>
-          <button className="text-[11px] text-blue-600 font-semibold hover:text-blue-700">Ver todos</button>
+          <Link href="/comisiones" className="text-[11px] text-blue-600 font-semibold hover:text-blue-700">Ver todos</Link>
         </div>
         <div className="space-y-1.5">
           {topEjecutivos.map((ejecutivo, i) => (
@@ -140,10 +141,10 @@ export function TarjetaComisiones() {
       </div>
 
       {/* Botón de acción */}
-      <button className="w-full flex items-center justify-center gap-2 gradient-primary text-white text-[11px] font-semibold py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15">
+      <Link href="/comisiones" className="w-full flex items-center justify-center gap-2 gradient-primary text-white text-[11px] font-semibold py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15">
         Ver detalle de comisiones
         <ArrowRight size={14} />
-      </button>
+      </Link>
     </div>
   );
 }

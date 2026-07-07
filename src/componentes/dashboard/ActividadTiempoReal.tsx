@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/contexts/UserContext";
-import { generarLeads } from "@/datos/mock";
+import { useLeads } from "@/lib/contexts/LeadContext";
 import { ORIGEN_LABELS } from "@/datos/mock";
 import {
   Users,
@@ -138,21 +138,22 @@ function formatearTiempo(fecha: Date): string {
 export function ActividadTiempoReal() {
   const router = useRouter();
   const { usuarioActual, esSuperAdmin } = useUser();
+  const { leads } = useLeads();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
-  // Generar actividades basadas en los leads
+  // Generar actividades basadas en los leads reales del contexto
   useEffect(() => {
-    const leads = generarLeads();
+    if (leads.length === 0) return;
     const actividadesGeneradas = generarActividadesDesdeLeads(leads);
     setActividades(actividadesGeneradas);
-  }, []);
+  }, [leads]);
 
-  // Simular nuevas actividades cada 45 segundos
+  // Simular nuevas actividades cada 45 segundos usando leads reales
   useEffect(() => {
+    if (leads.length === 0) return;
     const interval = setInterval(() => {
-      const leads = generarLeads();
       const leadAleatorio = leads[Math.floor(Math.random() * leads.length)];
       const tipos = ["lead", "documento", "seguimiento", "llamada"] as const;
       const tipoAleatorio = tipos[Math.floor(Math.random() * tipos.length)];
@@ -179,7 +180,7 @@ export function ActividadTiempoReal() {
     }, 45000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [leads]);
 
   const actividadesFiltradas = useMemo(() => {
     if (filtroTipo === "todos") return actividades;

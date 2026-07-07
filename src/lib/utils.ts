@@ -53,18 +53,9 @@ export function formatoUF(valor: number): string {
 
 /**
  * Formatea un monto corto en millones CLP
- * Ejemplo: 50000000 → "$ 50 MM", 1500000000 → "$ 1.500 MM"
+ * Ejemplo: 50000000 → "$ 50.000.000", 1500000000 → "$ 1.500.000.000"
  */
 export function formatoMonedaAbreviado(valor: number): string {
-  if (valor >= 1000000000) {
-    const mm = valor / 1000000000
-    return `$ ${mm.toFixed(1).replace(".0", "")} MM`
-  }
-  if (valor >= 1000000) {
-    const m = valor / 1000000
-    if (m >= 100) return `$ ${Math.round(m)} MM`
-    return `$ ${m.toFixed(1).replace(".0", "")} M`
-  }
   return formatoMoneda(valor)
 }
 

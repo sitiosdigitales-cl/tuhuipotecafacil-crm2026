@@ -751,7 +751,7 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
       <SubirDocumento open={uploadOpen} onOpenChange={setUploadOpen} leadId={lead.id} onUpload={handleUpload} />
       <VistaPreviaDocumento open={previewOpen} onOpenChange={setPreviewOpen} documento={docSeleccionado} />
       <GestionarEstado open={gestionarOpen} onOpenChange={setGestionarOpen} documento={docSeleccionado} onCambiarEstado={handleCambiarEstado} />
-      <SolicitarDocumentos open={solicitarOpen} onOpenChange={setSolicitarOpen} />
+      <SolicitarDocumentos open={solicitarOpen} onOpenChange={setSolicitarOpen} leadId={id} />
       <ConfirmDialog
         open={eliminarOpen}
         onOpenChange={setEliminarOpen}

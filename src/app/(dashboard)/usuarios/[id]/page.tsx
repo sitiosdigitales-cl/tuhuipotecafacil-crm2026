@@ -44,10 +44,15 @@ import {
   Settings,
   Bell,
   Download,
+  X,
+  Save,
+  Lock,
+  Percent,
 } from "lucide-react";
 import { generarLeads, ETAPAS_CONFIG, ORIGEN_LABELS, USUARIOS_MOCK, RANKING_EJECUTIVOS } from "@/datos/mock";
 import { ROLES_CONFIG, ESTADOS_USUARIO_CONFIG } from "@/tipos";
-import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
+import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Usuario, Lead, Etapa } from "@/tipos";
 
 // Actividad mock del usuario
@@ -82,9 +87,54 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { id } = use(params);
   const leads = useMemo(() => generarLeads(), []);
+  const [esSuperAdmin, setEsSuperAdmin] = useState(true); // Simulado - en producción viene del contexto
+
+  // Estado para modales
+  const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
+  const [configuracionOpen, setConfiguracionOpen] = useState(false);
+  const [editarNombre, setEditarNombre] = useState("");
+  const [editarApellido, setEditarApellido] = useState("");
+  const [editarEmail, setEditarEmail] = useState("");
+  const [editarTelefono, setEditarTelefono] = useState("");
+  const [editarRol, setEditarRol] = useState("");
+
+  // Configuración de comisiones por rol (solo super admin)
+  const [comisionesPorRol, setComisionesPorRol] = useState({
+    SUPER_ADMIN: { cobroCliente: 0, comisionAgente: 0 },
+    ADMIN: { cobroCliente: 5, comisionAgente: 10 },
+    GERENTE: { cobroCliente: 6, comisionAgente: 12 },
+    EJECUTIVO: { cobroCliente: 7, comisionAgente: 15 },
+    VISOR: { cobroCliente: 0, comisionAgente: 0 },
+  });
 
   // Buscar usuario
   const usuario = USUARIOS_MOCK.find((u) => u.id === id) || USUARIOS_MOCK[0];
+
+  // Abrir modal de editar perfil
+  const abrirEditarPerfil = () => {
+    setEditarNombre(usuario.nombre);
+    setEditarApellido(usuario.apellido);
+    setEditarEmail(usuario.email);
+    setEditarTelefono(usuario.telefono || "");
+    setEditarRol(usuario.rol);
+    setEditarPerfilOpen(true);
+  };
+
+  // Guardar perfil
+  const guardarPerfil = () => {
+    toast.success("Perfil actualizado", {
+      description: `${editarNombre} ${editarApellido} fue actualizado`,
+    });
+    setEditarPerfilOpen(false);
+  };
+
+  // Guardar configuración de comisiones
+  const guardarComisiones = () => {
+    toast.success("Configuración de comisiones actualizada", {
+      description: "Los porcentajes por rol han sido guardados",
+    });
+    setConfiguracionOpen(false);
+  };
 
   // Leads asignados al usuario (simulado - usando nombre del ejecutivo)
   const leadsAsignados = useMemo(() => {
@@ -171,12 +221,20 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <div className="flex items-center gap-2 pb-1">
-              <button className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
+              <button
+                onClick={abrirEditarPerfil}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
+              >
                 <Edit size={14} /> Editar Perfil
               </button>
-              <button className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
-                <Settings size={14} /> Configuración
-              </button>
+              {esSuperAdmin && (
+                <button
+                  onClick={() => setConfiguracionOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
+                >
+                  <Settings size={14} /> Configuración
+                </button>
+              )}
             </div>
           </div>
 
@@ -432,6 +490,199 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </div>
+
+      {/* Modal Editar Perfil */}
+      {editarPerfilOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-800">Editar Perfil</h3>
+                <button onClick={() => setEditarPerfilOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+                  <X size={18} className="text-slate-400" />
+                </button>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre</label>
+                  <input
+                    type="text"
+                    value={editarNombre}
+                    onChange={(e) => setEditarNombre(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Apellido</label>
+                  <input
+                    type="text"
+                    value={editarApellido}
+                    onChange={(e) => setEditarApellido(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Email</label>
+                <input
+                  type="email"
+                  value={editarEmail}
+                  onChange={(e) => setEditarEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono</label>
+                <input
+                  type="tel"
+                  value={editarTelefono}
+                  onChange={(e) => setEditarTelefono(e.target.value)}
+                  placeholder="+56 9 XXXX XXXX"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+              </div>
+              {esSuperAdmin && (
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
+                  <select
+                    value={editarRol}
+                    onChange={(e) => setEditarRol(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  >
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="GERENTE">Gerente</option>
+                    <option value="EJECUTIVO">Ejecutivo</option>
+                    <option value="VISOR">Visor</option>
+                  </select>
+                </div>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setEditarPerfilOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-semibold hover:bg-slate-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarPerfil}
+                  className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Save size={14} /> Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Configuración (Solo Super Admin) */}
+      {configuracionOpen && esSuperAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-indigo-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield size={18} className="text-purple-600" />
+                  <h3 className="text-base font-bold text-slate-800">Configuración del Sistema</h3>
+                </div>
+                <button onClick={() => setConfiguracionOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+                  <X size={18} className="text-slate-400" />
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">Configuración general de comisiones por rol de usuario</p>
+            </div>
+            <div className="p-5">
+              <div className="mb-4 p-3 bg-purple-50 rounded-xl border border-purple-100">
+                <div className="flex items-center gap-2">
+                  <Lock size={12} className="text-purple-500" />
+                  <span className="text-[10px] font-semibold text-purple-700">Solo Super Admin puede modificar esta configuración</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
+                  <Percent size={14} className="text-emerald-500" />
+                  Comisiones por Rol
+                </h4>
+
+                {Object.entries(comisionesPorRol).map(([rol, config]) => {
+                  const rolInfo = ROLES_CONFIG[rol as keyof typeof ROLES_CONFIG];
+                  return (
+                    <div key={rol} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${rolInfo?.color || "bg-slate-100 text-slate-600"}`}>
+                          {rolInfo?.label || rol}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] text-slate-500 mb-1 block">% Cobro al Cliente</label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={config.cobroCliente}
+                              onChange={(e) => setComisionesPorRol((prev) => ({
+                                ...prev,
+                                [rol]: { ...prev[rol as keyof typeof prev], cobroCliente: Number(e.target.value) }
+                              }))}
+                              min="0"
+                              max="15"
+                              step="0.5"
+                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-slate-500 mb-1 block">% Comisión Agente</label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              value={config.comisionAgente}
+                              onChange={(e) => setComisionesPorRol((prev) => ({
+                                ...prev,
+                                [rol]: { ...prev[rol as keyof typeof prev], comisionAgente: Number(e.target.value) }
+                              }))}
+                              min="0"
+                              max="50"
+                              step="5"
+                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
+                          </div>
+                        </div>
+                      </div>
+                      {config.cobroCliente > 0 && config.comisionAgente > 0 && (
+                        <div className="mt-2 text-[9px] text-slate-500">
+                          Ejemplo con crédito de $100.000.000: Empresa cobra ${formatoMoneda(100000000 * config.cobroCliente / 100)} → Agente recibe ${formatoMoneda(100000000 * config.cobroCliente / 100 * config.comisionAgente / 100)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3 pt-5">
+                <button
+                  onClick={() => setConfiguracionOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-semibold hover:bg-slate-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarComisiones}
+                  className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl text-[11px] font-semibold hover:bg-purple-600 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Save size={14} /> Guardar Configuración
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

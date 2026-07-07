@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   Search,
   Building2,
@@ -120,6 +120,26 @@ export default function PortalClientePage() {
   const [eliminarDocId, setEliminarDocId] = useState<string | null>(null);
   const [tabActiva, setTabActiva] = useState<"progreso" | "documentos" | "datos">("progreso");
 
+  // RUTs de ejemplo que siempre funcionan (primeros leads del sistema)
+  const rutsEjemplo = useMemo(() => {
+    if (leads.length > 0) {
+      return leads.slice(0, 6).map((l) => ({
+        rut: l.rut,
+        nombre: `${l.nombre} ${l.apellido}`,
+        etapa: ETAPAS_CONFIG[l.etapa]?.label || l.etapa,
+      }));
+    }
+    // RUTs fijos de respaldo
+    return [
+      { rut: "12.345.678-5", nombre: "María González", etapa: "Contactado" },
+      { rut: "15.234.567-8", nombre: "Carlos Rojas", etapa: "Documentos" },
+      { rut: "18.765.432-1", nombre: "Juan Pérez", etapa: "Preaprobado" },
+      { rut: "11.222.333-4", nombre: "Ana Torres", etapa: "Interesado" },
+      { rut: "16.543.210-K", nombre: "Pedro Gómez", etapa: "Nuevo Lead" },
+      { rut: "19.876.543-2", nombre: "Laura Sánchez", etapa: "Aprobado" },
+    ];
+  }, [leads]);
+
   const handleBuscar = () => {
     if (!rut.trim()) {
       setError("Por favor ingresa tu RUT para continuar");
@@ -130,11 +150,15 @@ export default function PortalClientePage() {
     setError("");
 
     setTimeout(() => {
+      // Normalizar el RUT ingresado
+      const normalizarRut = (r: string) => r.replace(/\./g, "").replace("-", "").replace(/\s/g, "").toLowerCase();
+      const rutIngresado = normalizarRut(rut);
+
       // Buscar en los leads reales del sistema
-      const rutLimpio = rut.replace(/\./g, "").replace("-", "").toLowerCase();
       const lead = leads.find((l) => {
-        const rutLead = l.rut.replace(/\./g, "").replace("-", "").toLowerCase();
-        return rutLead.includes(rutLimpio) || l.rut.includes(rut);
+        const rutLead = normalizarRut(l.rut);
+        // Coincidencia exacta o parcial (al menos 6 digitos)
+        return rutLead === rutIngresado || (rutIngresado.length >= 6 && rutLead.includes(rutIngresado));
       });
 
       if (lead) {
@@ -143,13 +167,19 @@ export default function PortalClientePage() {
         setDocumentos([
           { id: "d1", nombre: "Cédula de Identidad", tipo: "cedula", estado: "aprobado", fechaSubida: new Date(Date.now() - 864000000), tamaño: 245000 },
           { id: "d2", nombre: "Liquidación de Sueldo", tipo: "liq-sueldo", estado: "subido", fechaSubida: new Date(Date.now() - 259200000), tamaño: 180000 },
+          { id: "d3", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" },
         ]);
       } else {
-        setError("No encontramos un crédito asociado a este RUT. Verifica los datos e intenta nuevamente.");
+        setError("No encontramos un crédito asociado a este RUT. Verifica los datos o prueba con uno de los RUTs de ejemplo.");
         setCliente(null);
       }
       setBuscando(false);
-    }, 1500);
+    }, 1200);
+  };
+
+  const seleccionarRutEjemplo = (rutEjemplo: string) => {
+    setRut(rutEjemplo);
+    setError("");
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -306,6 +336,29 @@ export default function PortalClientePage() {
               <div className="mt-4 p-3 bg-red-50 rounded-xl flex items-center gap-2 border border-red-100">
                 <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
                 <span className="text-[11px] text-red-600">{error}</span>
+              </div>
+            )}
+
+            {/* RUTs de ejemplo */}
+            {rutsEjemplo.length > 0 && !cliente && (
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <p className="text-[11px] font-bold text-blue-700 mb-3 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                  RUTs de prueba disponibles
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {rutsEjemplo.map((ejemplo, i) => (
+                    <button
+                      key={i}
+                      onClick={() => seleccionarRutEjemplo(ejemplo.rut)}
+                      className="text-left p-2.5 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group"
+                    >
+                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{ejemplo.rut}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{ejemplo.nombre}</div>
+                      <div className="text-[9px] text-blue-500 font-medium mt-1">{ejemplo.etapa}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

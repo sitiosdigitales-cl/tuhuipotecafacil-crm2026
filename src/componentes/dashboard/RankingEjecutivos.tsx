@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight, TrendingUp, Trophy, Medal, Target, Users, DollarSign, ArrowUpRight, Crown } from "lucide-react";
 import { RANKING_EJECUTIVOS } from "@/datos/mock";
@@ -201,10 +202,10 @@ export function RankingEjecutivos() {
       </div>
 
       {/* Botón ver más */}
-      <button className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-[11px] text-blue-600 font-semibold hover:text-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-500/10 rounded-xl transition-colors">
+      <Link href="/usuarios" className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-[11px] text-blue-600 font-semibold hover:text-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-500/10 rounded-xl transition-colors">
         Ver ranking completo
         <ChevronRight size={14} />
-      </button>
+      </Link>
     </div>
   );
 }
