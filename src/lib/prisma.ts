@@ -1,5 +1,5 @@
-// Prisma client singleton - solo funciona con prisma generate ejecutado
-// En Vercel (sin generate), prisma será null y la app usa localStorage
+// Prisma client singleton para PostgreSQL
+// En Vercel usa DATABASE_URL, localmente usa SQLite
 
 let prismaInstance: any = null;
 
@@ -8,12 +8,11 @@ function getPrismaClient(): any {
   if (prismaInstance) return prismaInstance;
 
   try {
-    // Intento dinámico - si prisma no fue generado, falla silenciosamente
     const { PrismaClient } = require("@prisma/client");
-    const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
-
-    const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
-    prismaInstance = new PrismaClient({ adapter });
+    
+    prismaInstance = new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    });
     return prismaInstance;
   } catch {
     return null;

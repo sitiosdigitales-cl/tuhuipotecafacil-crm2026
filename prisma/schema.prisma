@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Usuario {
@@ -92,18 +93,17 @@ model Actividad {
   creadoEn  DateTime @default(now())
 }
 
-// Modelo para Tasas de Interés CMF
 model CMFTasaInteres {
   id              String   @id @default(cuid())
-  fecha           String   // Fecha de vigencia (YYYY-MM-DD)
-  hasta           String?  // Fecha de término
-  tipoOperacion   String   // Tipo de operación (hipotecario, consumo, etc.)
-  codigoTipo      String?  // Código del tipo
-  tasa            Float    // Tasa promedio
-  moneda          String   @default("CLP") // CLP o UF
+  fecha           String
+  hasta           String?
+  tipoOperacion   String
+  codigoTipo      String?
+  tasa            Float
+  moneda          String   @default("CLP")
   fuente          String   @default("CMF")
-  jsonOriginal    String?  // JSON completo de la respuesta API
-  fechaConsulta   DateTime @default(now()) // Cuándo se consultó
+  jsonOriginal    String?
+  fechaConsulta   DateTime @default(now())
   creadoEn        DateTime @default(now())
   actualizadoEn   DateTime @updatedAt
 
@@ -112,25 +112,23 @@ model CMFTasaInteres {
   @@index([tipoOperacion])
 }
 
-// Log de actualizaciones CMF
 model CMFLog {
   id          String   @id @default(cuid())
-  tipo        String   // "SUCCESS", "ERROR", "WARNING"
+  tipo        String
   mensaje     String
-  registros   Int?     // Cantidad de registros procesados
-  duracionMs  Int?     // Duración en milisegundos
-  error       String?  // Detalle del error si lo hay
+  registros   Int?
+  duracionMs  Int?
+  error       String?
   creadoEn    DateTime @default(now())
 }
 
-// Configuración CMF
 model CMFConfig {
-  id                String   @id @default(cuid())
-  apiKey            String?  // API Key cifrada
-  urlBase           String   @default("https://api.cmfchile.cl/api-sbifv3")
-  intervaloHoras    Int      @default(24) // Frecuencia de actualización
+  id                 String   @id @default(cuid())
+  apiKey             String?
+  urlBase            String   @default("https://api.cmfchile.cl/api-sbifv3")
+  intervaloHoras     Int      @default(24)
   ultimaActualizacion DateTime?
-  activo            Boolean  @default(true)
-  creadoEn          DateTime @default(now())
-  actualizadoEn     DateTime @updatedAt
+  activo             Boolean  @default(true)
+  creadoEn           DateTime @default(now())
+  actualizadoEn      DateTime @updatedAt
 }

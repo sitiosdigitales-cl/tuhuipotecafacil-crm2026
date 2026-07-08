@@ -1,194 +1,115 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import bcrypt from "bcryptjs";
 
-const adapter = new PrismaBetterSqlite3({ url: "file:./dev.db" });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Limpiando datos existentes...");
-  await prisma.actividad.deleteMany();
-  await prisma.documento.deleteMany();
-  await prisma.tarea.deleteMany();
-  await prisma.lead.deleteMany();
+  console.log("🌱 Poblando base de datos...");
 
-  console.log("Creando leads de ejemplo...");
-
-  const leads = [
-    {
-      nombre: "María",
-      apellido: "González",
-      rut: "15.234.567-8",
-      email: "maria.gonzalez@email.com",
-      telefono: "+56 9 1234 5678",
-      origen: "WEB",
-      etapa: "DOCS_COMPLETAS",
-      prioridad: "ALTA",
-      banco: "Banco Estado",
-      tipoCredito: "Hipotecario",
-      montoSolicitado: 150000000,
-      valorPropiedad: 180000000,
-      pieDisponible: 30000000,
-      situacionLaboral: "DEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $1.400.000 y $1.600.000",
-      complementarRenta: false,
-      cuentaPie: true,
-    },
-    {
-      nombre: "Carlos",
-      apellido: "Rojas",
-      rut: "18.345.678-9",
-      email: "carlos.rojas@email.com",
-      telefono: "+56 9 2345 6789",
-      origen: "FACEBOOK",
-      etapa: "CALIFICACION_COMERCIAL",
-      prioridad: "MEDIA",
-      banco: "Santander",
-      tipoCredito: "Hipotecario",
-      montoSolicitado: 120000000,
-      valorPropiedad: 150000000,
-      pieDisponible: 30000000,
-      situacionLaboral: "INDEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $1.800.000 y $2.000.000",
-      complementarRenta: false,
-      cuentaPie: false,
-    },
-    {
-      nombre: "Juan",
-      apellido: "Pérez",
-      rut: "12.456.789-0",
-      email: "juan.perez@email.com",
-      telefono: "+56 9 3456 7890",
-      origen: "REFERIDO",
-      etapa: "EVALUACION_BANCARIA",
-      prioridad: "ALTA",
-      banco: "Banco de Chile",
-      tipoCredito: "Hipotecario",
-      montoSolicitado: 200000000,
-      valorPropiedad: 250000000,
-      pieDisponible: 50000000,
-      situacionLaboral: "DEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $2.000.000 y $2.200.000",
-      complementarRenta: true,
-      cuentaPie: true,
-    },
-    {
-      nombre: "Ana",
-      apellido: "Torres",
-      rut: "16.567.890-1",
-      email: "ana.torres@email.com",
-      telefono: "+56 9 4567 8901",
-      origen: "WHATSAPP",
-      etapa: "INTERESADO",
-      prioridad: "URGENTE",
-      banco: "Banco BCI",
-      tipoCredito: "Comercial",
-      montoSolicitado: 180000000,
-      valorPropiedad: 220000000,
-      pieDisponible: 40000000,
-      situacionLaboral: "INDEPENDIENTE",
-      enDicom: true,
-      dicomDetalle: "Moratoria menor, ya regularizada",
-      rentaMensual: "Entre $2.200.000 y $2.400.000",
-      complementarRenta: false,
-      cuentaPie: false,
-    },
-    {
-      nombre: "Diego",
-      apellido: "Díaz",
-      rut: "17.678.901-2",
-      email: "diego.diaz@email.com",
-      telefono: "+56 9 5678 9012",
-      origen: "INSTAGRAM",
-      etapa: "PREAPROBADO",
-      prioridad: "MEDIA",
-      banco: "Banco Scotiabank",
-      tipoCredito: "Hipotecario",
-      montoSolicitado: 160000000,
-      valorPropiedad: 200000000,
-      pieDisponible: 40000000,
-      situacionLaboral: "DEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $1.600.000 y $1.800.000",
-      complementarRenta: false,
-      cuentaPie: true,
-    },
-    {
-      nombre: "Sofía",
-      apellido: "Martínez",
-      rut: "19.789.012-3",
-      email: "sofia.martinez@email.com",
-      telefono: "+56 9 6789 0123",
-      origen: "GOOGLE",
-      etapa: "DOCS_PENDIENTES",
-      prioridad: "BAJA",
-      banco: "Banco Itaú",
-      tipoCredito: "Solar",
-      montoSolicitado: 80000000,
-      valorPropiedad: 120000000,
-      pieDisponible: 40000000,
-      situacionLaboral: "DEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $1.200.000 y $1.400.000",
-      complementarRenta: false,
-      cuentaPie: false,
-    },
-    {
-      nombre: "Roberto",
-      apellido: "Silva",
-      rut: "11.890.123-4",
-      email: "roberto.silva@email.com",
-      telefono: "+56 9 7890 1234",
-      origen: "LINKEDIN",
-      etapa: "APROBADO",
-      prioridad: "ALTA",
-      banco: "Banco Estado",
-      tipoCredito: "Hipotecario",
-      montoSolicitado: 250000000,
-      valorPropiedad: 320000000,
-      pieDisponible: 70000000,
-      situacionLaboral: "INDEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $3.000.000 y $3.200.000",
-      complementarRenta: false,
-      cuentaPie: true,
-    },
-    {
-      nombre: "Fernanda",
-      apellido: "Rojas",
-      rut: "14.901.234-5",
-      email: "fernanda.rojas@email.com",
-      telefono: "+56 9 8901 2345",
-      origen: "TIKTOK",
-      etapa: "CONTACTADO",
-      prioridad: "MEDIA",
-      banco: "",
-      tipoCredito: "",
-      montoSolicitado: 100000000,
-      valorPropiedad: 130000000,
-      pieDisponible: 30000000,
-      situacionLaboral: "DEPENDIENTE",
-      enDicom: false,
-      rentaMensual: "Entre $1.000.000 y $1.200.000",
-      complementarRenta: false,
-      cuentaPie: false,
-    },
+  // Crear usuarios
+  const usuarios = [
+    { nombre: "Super", apellido: "Admin", email: "admin@tuhipotecafacil.cl", password: "demo1234", rol: "SUPER_ADMIN" },
+    { nombre: "Andrés", apellido: "Pérez", email: "andres.perez@tuhipotecafacil.cl", password: "demo1234", rol: "ADMIN" },
+    { nombre: "Carolina", apellido: "Muñoz", email: "carolina.munoz@tuhipotecafacil.cl", password: "demo1234", rol: "GERENTE" },
+    { nombre: "Diego", apellido: "Silva", email: "diego.silva@tuhipotecafacil.cl", password: "demo1234", rol: "EJECUTIVO" },
+    { nombre: "Valentina", apellido: "Torres", email: "valentina.torres@tuhipotecafacil.cl", password: "demo1234", rol: "EJECUTIVO" },
+    { nombre: "Javier", apellido: "Morales", email: "javier.morales@tuhipotecafacil.cl", password: "demo1234", rol: "EJECUTIVO" },
   ];
 
-  for (const leadData of leads) {
-    await prisma.lead.create({
-      data: leadData,
+  for (const userData of usuarios) {
+    const existingUser = await prisma.usuario.findUnique({
+      where: { email: userData.email },
     });
+
+    if (!existingUser) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(userData.password, salt);
+
+      await prisma.usuario.create({
+        data: {
+          ...userData,
+          password: hashedPassword,
+        },
+      });
+      console.log(`✅ Usuario creado: ${userData.nombre} ${userData.apellido}`);
+    }
   }
 
-  console.log(`✅ ${leads.length} leads creados correctamente`);
+  // Crear lead de prueba
+  const existingLead = await prisma.lead.findUnique({
+    where: { rut: "16.567.890-1" },
+  });
+
+  if (!existingLead) {
+    await prisma.lead.create({
+      data: {
+        nombre: "Juan Carlos",
+        apellido: "Silva Muñoz",
+        rut: "16.567.890-1",
+        email: "juan.silva@gmail.com",
+        telefono: "+56987654321",
+        situacionLaboral: "INDEPENDIENTE",
+        enDicom: false,
+        origen: "REFERIDO",
+        etapa: "DOCS_COMPLETAS",
+        prioridad: "ALTA",
+        banco: "Banco de Chile",
+        tipoCredito: "Crédito Hipotecario",
+        montoSolicitado: 150000000,
+        valorPropiedad: 220000000,
+        pieDisponible: 70000000,
+        rentaMensual: "$3.500.000",
+        nombreEjecutivo: "Andrés Pérez",
+        notas: "Cliente interesado en crédito hipotecario para propiedad en Las Condes",
+        diasEnEtapa: 5,
+      },
+    });
+    console.log("✅ Lead de prueba creado: Juan Carlos Silva Muñoz (RUT: 16.567.890-1)");
+  }
+
+  // Crear leads de ejemplo
+  const leadsEjemplo = [
+    { nombre: "María", apellido: "González", rut: "12.345.678-5", etapa: "CONTACTADO", banco: "Santander", montoSolicitado: 120000000, valorPropiedad: 180000000, pieDisponible: 60000000 },
+    { nombre: "Carlos", apellido: "Rojas", rut: "15.234.567-8", etapa: "INTERESADO", banco: "Bci", montoSolicitado: 95000000, valorPropiedad: 140000000, pieDisponible: 45000000 },
+    { nombre: "Juan", apellido: "Pérez", rut: "18.765.432-1", etapa: "PREAPROBADO", banco: "Itaú", montoSolicitado: 200000000, valorPropiedad: 300000000, pieDisponible: 100000000 },
+    { nombre: "Ana", apellido: "Torres", rut: "11.222.333-4", etapa: "EVALUACION_BANCARIA", banco: "Scotiabank", montoSolicitado: 80000000, valorPropiedad: 120000000, pieDisponible: 40000000 },
+    { nombre: "Laura", apellido: "Sánchez", rut: "19.876.543-2", etapa: "APROBADO", banco: "Banco de Chile", montoSolicitado: 175000000, valorPropiedad: 250000000, pieDisponible: 75000000 },
+  ];
+
+  for (const leadData of leadsEjemplo) {
+    const existingLead = await prisma.lead.findUnique({
+      where: { rut: leadData.rut },
+    });
+
+    if (!existingLead) {
+      await prisma.lead.create({
+        data: {
+          ...leadData,
+          email: `${leadData.nombre.toLowerCase()}.${leadData.apellido.toLowerCase()}@email.cl`,
+          telefono: `+569${Math.floor(Math.random() * 90000000 + 10000000)}`,
+          origen: "REFERIDO",
+          prioridad: "MEDIA",
+          situacionLaboral: "DEPENDIENTE",
+          nombreEjecutivo: "Andrés Pérez",
+          diasEnEtapa: Math.floor(Math.random() * 15) + 1,
+        },
+      });
+      console.log(`✅ Lead creado: ${leadData.nombre} ${leadData.apellido}`);
+    }
+  }
+
+  console.log("\n🎉 Base de datos poblada exitosamente!");
+  console.log("\n📧 Usuarios creados:");
+  console.log("  - admin@tuhipotecafacil.cl / demo1234 (Super Admin)");
+  console.log("  - andres.perez@tuhipotecafacil.cl / demo1234 (Admin)");
+  console.log("  - carolina.munoz@tuhipotecafacil.cl / demo1234 (Gerente)");
+  console.log("\n👤 Lead de prueba:");
+  console.log("  - RUT: 16.567.890-1 / Juan Carlos Silva Muñoz");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("Error:", e);
     process.exit(1);
   })
   .finally(async () => {
