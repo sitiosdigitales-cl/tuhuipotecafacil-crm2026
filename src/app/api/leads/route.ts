@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 // GET - Obtener todos los leads
 export async function GET(request: NextRequest) {
@@ -9,30 +9,31 @@ export async function GET(request: NextRequest) {
     const etapa = searchParams.get("etapa") || "";
     const ejecutivo = searchParams.get("ejecutivo") || "";
 
-    if (!prisma) {
+    let query = supabase
+      .from("leads")
+      .select("*")
+      .order("creadoen", { ascending: false });
+
+    if (busqueda) {
+      query = query.or(`nombre.ilike.%${busqueda}%,apellido.ilike.%${busqueda}%,rut.ilike.%${busqueda}%,email.ilike.%${busqueda}%`);
+    }
+
+    if (etapa) {
+      query = query.eq("etapa", etapa);
+    }
+
+    if (ejecutivo) {
+      query = query.eq("nombreejecutivo", ejecutivo);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error al obtener leads:", error);
       return NextResponse.json({ success: true, data: [] });
     }
 
-    const where: any = {};
-
-    if (busqueda) {
-      where.OR = [
-        { nombre: { contains: busqueda, mode: "insensitive" } },
-        { apellido: { contains: busqueda, mode: "insensitive" } },
-        { rut: { contains: busqueda } },
-        { email: { contains: busqueda, mode: "insensitive" } },
-      ];
-    }
-
-    if (etapa) where.etapa = etapa;
-    if (ejecutivo) where.nombreEjecutivo = ejecutivo;
-
-    const leads = await prisma.lead.findMany({
-      where,
-      orderBy: { creadoEn: "desc" },
-    });
-
-    return NextResponse.json({ success: true, data: leads });
+    return NextResponse.json({ success: true, data: data || [] });
   } catch (error) {
     console.error("Error al obtener leads:", error);
     return NextResponse.json({ success: true, data: [] });
@@ -51,15 +52,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!prisma) {
-      return NextResponse.json(
-        { success: false, error: "Base de datos no disponible" },
-        { status: 503 }
-      );
-    }
-
-    const lead = await prisma.lead.create({
-      data: {
+    const { data, error } = await supabase
+      .from("leads")
+      .insert({
         nombre: body.nombre,
         apellido: body.apellido,
         rut: body.rut || "",
@@ -68,21 +63,27 @@ export async function POST(request: NextRequest) {
         origen: body.origen || "WEB",
         etapa: body.etapa || "NUEVO_LEAD",
         prioridad: body.prioridad || "MEDIA",
-        nombreEjecutivo: body.nombreEjecutivo || null,
+        nombreejecutivo: body.nombreEjecutivo || null,
         banco: body.banco || null,
-        tipoCredito: body.tipoCredito || null,
-        montoSolicitado: body.montoSolicitado || null,
-        valorPropiedad: body.valorPropiedad || null,
-        pieDisponible: body.pieDisponible || null,
+        tipocredito: body.tipoCredito || null,
+        montosolicitado: body.montoSolicitado || null,
+        valorpropiedad: body.valorPropiedad || null,
+        piedisponible: body.pieDisponible || null,
         notas: body.notas || null,
-        situacionLaboral: body.situacionLaboral || "DEPENDIENTE",
-        enDicom: body.enDicom || false,
-        dicomDetalle: body.dicomDetalle || null,
-        rentaMensual: body.rentaMensual || null,
-      },
-    });
+        situacionlaboral: body.situacionLaboral || "DEPENDIENTE",
+        endicom: body.enDicom || false,
+        dicomdetalle: body.dicomDetalle || null,
+        rentamensual: body.rentaMensual || null,
+      })
+      .select()
+      .single();
 
-    return NextResponse.json({ success: true, data: lead }, { status: 201 });
+    if (error) {
+      console.error("Error al crear lead:", error);
+      return NextResponse.json({ success: false, error: "Error al crear lead" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error) {
     console.error("Error al crear lead:", error);
     return NextResponse.json({ success: false, error: "Error al crear lead" }, { status: 500 });
