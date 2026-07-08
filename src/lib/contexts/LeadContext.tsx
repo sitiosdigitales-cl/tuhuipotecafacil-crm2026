@@ -60,17 +60,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       if (data.success && data.data && data.data.length > 0) {
         setLeads(data.data.map((l: any) => ({
           ...l,
-          creadoEn: new Date(l.creadoen || l.creadoEn),
-          nombreEjecutivo: l.nombreejecutivo || l.nombreEjecutivo,
-          tipoCredito: l.tipocredito || l.tipoCredito,
-          montoSolicitado: l.montosolicitado || l.montoSolicitado,
-          valorPropiedad: l.valorpropiedad || l.valorPropiedad,
-          pieDisponible: l.piedisponible || l.pieDisponible,
-          situacionLaboral: l.situacionlaboral || l.situacionLaboral,
-          enDicom: l.endicom || l.enDicom,
-          dicomDetalle: l.dicomdetalle || l.dicomDetalle,
-          rentaMensual: l.rentamensual || l.rentaMensual,
-          diasEnEtapa: l.diasenetapa || l.diasEnEtapa || 0,
+          creadoEn: new Date(l.creadoEn),
         })));
       } else {
         setLeads([]);
