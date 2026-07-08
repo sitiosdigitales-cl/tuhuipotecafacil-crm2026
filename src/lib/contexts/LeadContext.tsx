@@ -55,15 +55,25 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const cargarLeads = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .order("creadoen", { ascending: false });
-
-      if (error || !data || data.length === 0) {
-        setLeads([]);
+      const response = await fetch("/api/leads");
+      const data = await response.json();
+      if (data.success && data.data && data.data.length > 0) {
+        setLeads(data.data.map((l: any) => ({
+          ...l,
+          creadoEn: new Date(l.creadoen || l.creadoEn),
+          nombreEjecutivo: l.nombreejecutivo || l.nombreEjecutivo,
+          tipoCredito: l.tipocredito || l.tipoCredito,
+          montoSolicitado: l.montosolicitado || l.montoSolicitado,
+          valorPropiedad: l.valorpropiedad || l.valorPropiedad,
+          pieDisponible: l.piedisponible || l.pieDisponible,
+          situacionLaboral: l.situacionlaboral || l.situacionLaboral,
+          enDicom: l.endicom || l.enDicom,
+          dicomDetalle: l.dicomdetalle || l.dicomDetalle,
+          rentaMensual: l.rentamensual || l.rentaMensual,
+          diasEnEtapa: l.diasenetapa || l.diasEnEtapa || 0,
+        })));
       } else {
-        setLeads(data.map(convertirLead));
+        setLeads([]);
       }
     } catch {
       setLeads([]);
@@ -102,32 +112,41 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [initialized, cargarLeads]);
 
   const agregarLead = useCallback(async (leadData: Omit<Lead, "id" | "creadoEn">) => {
-    await supabase.from("leads").insert({
-      nombre: leadData.nombre, apellido: leadData.apellido, rut: leadData.rut,
-      email: leadData.email, telefono: leadData.telefono, origen: leadData.origen,
-      etapa: leadData.etapa, prioridad: leadData.prioridad,
-      nombreejecutivo: leadData.nombreEjecutivo, banco: leadData.banco,
-      tipocredito: leadData.tipoCredito, montosolicitado: leadData.montoSolicitado,
-      valorpropiedad: leadData.valorPropiedad, piedisponible: leadData.pieDisponible,
-      notas: leadData.notas, situacionlaboral: leadData.situacionLaboral,
-      endicom: leadData.enDicom, dicomdetalle: leadData.dicomDetalle,
-      rentamensual: leadData.rentaMensual,
-    });
-    await cargarLeads();
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(leadData),
+      });
+      const data = await response.json();
+      if (data.success && data.data) {
+        await cargarLeads();
+      }
+    } catch {
+      // fallback local
+    }
   }, [cargarLeads]);
 
   const actualizarLead = useCallback(async (id: string, datos: Partial<Lead>) => {
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...datos } : l)));
-    await supabase.from("leads").update({
-      nombre: datos.nombre, apellido: datos.apellido, etapa: datos.etapa,
-      prioridad: datos.prioridad, nombreejecutivo: datos.nombreEjecutivo,
-      banco: datos.banco, notas: datos.notas,
-    }).eq("id", id);
+    try {
+      await fetch(`/api/leads/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: datos.nombre, apellido: datos.apellido, etapa: datos.etapa,
+          prioridad: datos.prioridad, nombreejecutivo: datos.nombreEjecutivo,
+          banco: datos.banco, notas: datos.notas,
+        }),
+      });
+    } catch {}
   }, []);
 
   const eliminarLead = useCallback(async (id: string) => {
     setLeads((prev) => prev.filter((l) => l.id !== id));
-    await supabase.from("leads").delete().eq("id", id);
+    try {
+      await fetch(`/api/leads/${id}`, { method: "DELETE" });
+    } catch {}
   }, []);
 
   const obtenerLead = useCallback((id: string) => leads.find((l) => l.id === id), [leads]);
