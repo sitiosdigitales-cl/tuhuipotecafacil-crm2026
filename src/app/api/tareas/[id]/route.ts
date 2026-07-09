@@ -1,72 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
-// PUT - Actualizar tarea
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json();
-
-    const tareaExistente = await prisma.tarea.findUnique({
-      where: { id },
-    });
-
-    if (!tareaExistente) {
-      return NextResponse.json(
-        { success: false, error: "Tarea no encontrada" },
-        { status: 404 }
-      );
-    }
-
-    const tarea = await prisma.tarea.update({
-      where: { id },
-      data: {
-        titulo: body.titulo ?? tareaExistente.titulo,
-        descripcion: body.descripcion ?? tareaExistente.descripcion,
-        estado: body.estado ?? tareaExistente.estado,
-        tipo: body.tipo ?? tareaExistente.tipo,
-        prioridad: body.prioridad ?? tareaExistente.prioridad,
-        asignadoA: body.asignadoA ?? tareaExistente.asignadoA,
-        nombreEjecutivo: body.nombreEjecutivo ?? tareaExistente.nombreEjecutivo,
-        fechaVencimiento: body.fechaVencimiento
-          ? new Date(body.fechaVencimiento)
-          : tareaExistente.fechaVencimiento,
-        duracionEstimada: body.duracionEstimada ?? tareaExistente.duracionEstimada,
-        etiquetas: body.etiquetas ?? tareaExistente.etiquetas,
-      },
-    });
-
-    return NextResponse.json({ success: true, data: tarea });
-  } catch (error) {
-    console.error("Error al actualizar tarea:", error);
-    return NextResponse.json(
-      { success: false, error: "Error al actualizar tarea" },
-      { status: 500 }
-    );
+    const { data, error } = await supabase.from("tareas").select("*").eq("id", id).single();
+    if (error || !data) return NextResponse.json({ success: false, error: "No encontrado" }, { status: 404 });
+    return NextResponse.json({ success: true, data });
+  } catch {
+    return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
   }
 }
 
-// DELETE - Eliminar tarea
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const body = await request.json();
+    const { data, error } = await supabase.from("tareas").update(body).eq("id", id).select().single();
+    if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+    return NextResponse.json({ success: true, data });
+  } catch {
+    return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+  }
+}
 
-    await prisma.tarea.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true, message: "Tarea eliminada" });
-  } catch (error) {
-    console.error("Error al eliminar tarea:", error);
-    return NextResponse.json(
-      { success: false, error: "Error al eliminar tarea" },
-      { status: 500 }
-    );
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const { error } = await supabase.from("tareas").delete().eq("id", id);
+    if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
   }
 }
