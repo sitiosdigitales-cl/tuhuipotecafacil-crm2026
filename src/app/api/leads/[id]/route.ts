@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { queryOne, update, remove } from "@/lib/db";
 
 // GET
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
-    if (error || !data) return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
-    return NextResponse.json({ success: true, data });
+    const lead = await queryOne("SELECT * FROM leads WHERE id = ?", [id]);
+    if (!lead) return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
+    return NextResponse.json({ success: true, data: lead });
   } catch {
     return NextResponse.json({ success: false, error: "Error al obtener lead" }, { status: 500 });
   }
@@ -18,16 +18,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
-    const { data, error } = await supabase.from("leads").update({
-      nombre: body.nombre, apellido: body.apellido, etapa: body.etapa,
-      prioridad: body.prioridad, nombreejecutivo: body.nombreEjecutivo || body.nombreejecutivo,
-      banco: body.banco, notas: body.notas, tipocredito: body.tipoCredito || body.tipocredito,
-      montosolicitado: body.montoSolicitado || body.montosolicitado,
-      valorpropiedad: body.valorPropiedad || body.valorpropiedad,
-      piedisponible: body.pieDisponible || body.piedisponible,
-    }).eq("id", id).select().single();
-    if (error) return NextResponse.json({ success: false, error: "Error al actualizar" }, { status: 500 });
-    return NextResponse.json({ success: true, data });
+    
+    const data: Record<string, any> = {};
+    if (body.nombre) data.nombre = body.nombre;
+    if (body.apellido) data.apellido = body.apellido;
+    if (body.etapa) data.etapa = body.etapa;
+    if (body.prioridad) data.prioridad = body.prioridad;
+    if (body.nombreEjecutivo) data.nombreEjecutivo = body.nombreEjecutivo;
+    if (body.banco) data.banco = body.banco;
+    if (body.notas) data.notas = body.notas;
+    if (body.tipoCredito) data.tipoCredito = body.tipoCredito;
+    if (body.montoSolicitado) data.montoSolicitado = body.montoSolicitado;
+    if (body.valorPropiedad) data.valorPropiedad = body.valorPropiedad;
+    if (body.pieDisponible) data.pieDisponible = body.pieDisponible;
+
+    await update("leads", id, data);
+    return NextResponse.json({ success: true, data: { id, ...data } });
   } catch {
     return NextResponse.json({ success: false, error: "Error al actualizar" }, { status: 500 });
   }
@@ -37,8 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { error } = await supabase.from("leads").delete().eq("id", id);
-    if (error) return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
+    await remove("leads", id);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
