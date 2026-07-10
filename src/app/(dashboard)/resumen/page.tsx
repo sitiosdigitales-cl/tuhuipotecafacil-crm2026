@@ -52,47 +52,25 @@ import {
 } from "lucide-react";
 import {
   ETAPAS_CONFIG,
+  ORIGEN_LABELS,
 } from "@/datos/mock";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useUserData } from "@/lib/hooks/useUserData";
 import type { Etapa, Lead } from "@/tipos";
 
-// Datos adicionales para el resumen
-const EVOLUCION_MENSUAL = [
-  { mes: "Ene", leads: 420, aprobados: 120, monto: 9800 },
-  { mes: "Feb", leads: 485, aprobados: 135, monto: 11200 },
-  { mes: "Mar", leads: 520, aprobados: 155, monto: 12800 },
-  { mes: "Abr", leads: 498, aprobados: 142, monto: 11500 },
-  { mes: "May", leads: 560, aprobados: 168, monto: 13900 },
-  { mes: "Jun", leads: 610, aprobados: 180, monto: 15200 },
-  { mes: "Jul", leads: 580, aprobados: 165, monto: 14100 },
-  { mes: "Ago", leads: 540, aprobados: 148, monto: 12600 },
-  { mes: "Sep", leads: 650, aprobados: 190, monto: 16400 },
-  { mes: "Oct", leads: 720, aprobados: 200, monto: 17800 },
-  { mes: "Nov", leads: 680, aprobados: 195, monto: 16900 },
-  { mes: "Dic", leads: 620, aprobados: 175, monto: 15100 },
-];
-
-const RENDIMIENTO_EQUIPO = [
-  { nombre: "Andrés Pérez", leads: 85, conversion: 32, monto: 2450, satisfaccion: 94 },
-  { nombre: "Carolina Muñoz", leads: 78, conversion: 28, monto: 1980, satisfaccion: 91 },
-  { nombre: "Diego Silva", leads: 72, conversion: 25, monto: 1620, satisfaccion: 88 },
-  { nombre: "Valentina Torres", leads: 65, conversion: 22, monto: 1120, satisfaccion: 92 },
-  { nombre: "Javier Morales", leads: 58, conversion: 20, monto: 980, satisfaccion: 85 },
-];
-
-const TIPOS_CREDITO_DONUT = [
-  { nombre: "Hipotecario", valor: 68, color: "#3B82F6" },
-  { nombre: "Consumo", valor: 18, color: "#8B5CF6" },
-  { nombre: "Fines Generales", valor: 9, color: "#F59E0B" },
-  { nombre: "Empresas", valor: 5, color: "#10B981" },
-];
+// Colores para gráficos
+const COLORES_CREDITO: Record<string, string> = {
+  "Créditos Hipotecarios": "#3B82F6",
+  "Créditos de Consumos": "#8B5CF6",
+  "Fines Generales": "#F59E0B",
+  "Capital para Empresas": "#10B981",
+};
 
 const METAS_MENSUALES = {
-  leads: { actual: 720, meta: 800 },
-  aprobados: { actual: 200, meta: 220 },
-  monto: { actual: 17800, meta: 20000 },
-  conversion: { actual: 24.6, meta: 28 },
+  leads: { meta: 50 },
+  aprobados: { meta: 15 },
+  monto: { meta: 5000 },
+  conversion: { meta: 25 },
 };
 
 const PERIODOS = [
@@ -107,6 +85,24 @@ export default function ResumenPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [cargando, setCargando] = useState(true);
   const { usuarioActual, esSuperAdmin } = useUserData();
+
+  const exportarResumen = () => {
+    const headers = ["Nombre", "Apellido", "RUT", "Email", "Etapa", "Origen", "Monto", "Banco", "Ejecutivo"];
+    const rows = leads.map(l => [
+      l.nombre, l.apellido, l.rut, l.email || "",
+      ETAPAS_CONFIG[l.etapa]?.label || l.etapa,
+      ORIGEN_LABELS[l.origen] || l.origen,
+      l.montoSolicitado || 0, l.banco || "", l.nombreEjecutivo || ""
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${c}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `resumen-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     async function cargarLeads() {
@@ -291,6 +287,71 @@ export default function ResumenPage() {
       .slice(0, 6);
   }, [leadsFiltrados]);
 
+  // Evolución mensual - datos reales
+  const evolucionMensual = useMemo(() => {
+    const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const agrupado: Record<string, { leads: number; aprobados: number; monto: number }> = {};
+
+    meses.forEach((m) => { agrupado[m] = { leads: 0, aprobados: 0, monto: 0 }; });
+
+    leadsFiltrados.forEach((l) => {
+      const fecha = l.creadoEn instanceof Date ? l.creadoEn : new Date(l.creadoEn);
+      const mesIdx = fecha.getMonth();
+      const mes = meses[mesIdx];
+      agrupado[mes].leads++;
+      agrupado[mes].monto += l.montoSolicitado || 0;
+      if (["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)) {
+        agrupado[mes].aprobados++;
+      }
+    });
+
+    return meses.map((mes) => ({
+      mes,
+      leads: agrupado[mes].leads,
+      aprobados: agrupado[mes].aprobados,
+      monto: Math.round(agrupado[mes].monto / 1000000),
+    }));
+  }, [leadsFiltrados]);
+
+  // Tipos de crédito - datos reales
+  const tiposCreditoDonut = useMemo(() => {
+    const agrupado: Record<string, number> = {};
+    leadsFiltrados.forEach((l) => {
+      const tipo = l.tipoCredito || "Sin especificar";
+      agrupado[tipo] = (agrupado[tipo] || 0) + 1;
+    });
+    const total = leadsFiltrados.length || 1;
+    return Object.entries(agrupado)
+      .map(([nombre, count]) => ({
+        nombre,
+        valor: Math.round((count / total) * 100),
+        color: COLORES_CREDITO[nombre] || "#64748B",
+      }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [leadsFiltrados]);
+
+  // Rendimiento del equipo - datos reales
+  const rendimientoEquipo = useMemo(() => {
+    const agrupado: Record<string, { leads: number; aprobados: number; monto: number }> = {};
+    leadsFiltrados.forEach((l) => {
+      const ej = l.nombreEjecutivo || "Sin asignar";
+      if (!agrupado[ej]) agrupado[ej] = { leads: 0, aprobados: 0, monto: 0 };
+      agrupado[ej].leads++;
+      agrupado[ej].monto += l.montoSolicitado || 0;
+      if (["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)) {
+        agrupado[ej].aprobados++;
+      }
+    });
+    return Object.entries(agrupado)
+      .map(([nombre, data]) => ({
+        nombre,
+        leads: data.leads,
+        conversion: data.leads > 0 ? Math.round((data.aprobados / data.leads) * 100) : 0,
+        monto: data.monto,
+      }))
+      .sort((a, b) => b.monto - a.monto);
+  }, [leadsFiltrados]);
+
   const leadsPorOrigen = useMemo(() => {
     const colores: Record<string, string> = {
       WEB: "#3B82F6", FACEBOOK: "#1877F2", INSTAGRAM: "#E4405F", GOOGLE: "#EA4335",
@@ -369,7 +430,7 @@ export default function ResumenPage() {
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
+          <button onClick={exportarResumen} className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
             <Download size={14} /> Exportar
           </button>
         </div>
@@ -382,15 +443,11 @@ export default function ResumenPage() {
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
               <Users size={18} className="text-blue-600" />
             </div>
-            <div className="flex items-center gap-1 text-emerald-600">
-              <ArrowUpRight size={14} />
-              <span className="text-[10px] font-bold">+12%</span>
-            </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">{stats.totalLeads.toLocaleString("es-CL")}</div>
           <div className="text-[10px] text-slate-400 font-medium mt-1">Total Leads</div>
           <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(stats.totalLeads / 1000) * 100}%` }} />
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((stats.totalLeads / METAS_MENSUALES.leads.meta) * 100, 100)}%` }} />
           </div>
         </div>
 
@@ -399,15 +456,11 @@ export default function ResumenPage() {
             <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
               <CheckCircle size={18} className="text-emerald-600" />
             </div>
-            <div className="flex items-center gap-1 text-emerald-600">
-              <ArrowUpRight size={14} />
-              <span className="text-[10px] font-bold">+8%</span>
-            </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">{stats.aprobados}</div>
           <div className="text-[10px] text-slate-400 font-medium mt-1">Créditos Aprobados</div>
           <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(stats.aprobados / METAS_MENSUALES.aprobados.meta) * 100}%` }} />
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min((stats.aprobados / METAS_MENSUALES.aprobados.meta) * 100, 100)}%` }} />
           </div>
         </div>
 
@@ -416,15 +469,11 @@ export default function ResumenPage() {
             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
               <DollarSign size={18} className="text-purple-600" />
             </div>
-            <div className="flex items-center gap-1 text-emerald-600">
-              <ArrowUpRight size={14} />
-              <span className="text-[10px] font-bold">+15%</span>
-            </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">{formatoMonedaAbreviado(stats.montoTotal)}</div>
           <div className="text-[10px] text-slate-400 font-medium mt-1">Monto Total Financiado</div>
           <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(stats.montoTotal / (METAS_MENSUALES.monto.meta * 1000000)) * 100}%` }} />
+            <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min((stats.montoTotal / (METAS_MENSUALES.monto.meta * 1000000)) * 100, 100)}%` }} />
           </div>
         </div>
 
@@ -433,15 +482,11 @@ export default function ResumenPage() {
             <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
               <Target size={18} className="text-amber-600" />
             </div>
-            <div className="flex items-center gap-1 text-emerald-600">
-              <ArrowUpRight size={14} />
-              <span className="text-[10px] font-bold">+2.1%</span>
-            </div>
           </div>
           <div className="text-2xl font-bold text-slate-900">{stats.tasaConversion}%</div>
           <div className="text-[10px] text-slate-400 font-medium mt-1">Tasa de Conversión</div>
           <div className="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(parseFloat(stats.tasaConversion) / METAS_MENSUALES.conversion.meta) * 100}%` }} />
+            <div className="h-full bg-amber-500 rounded-full" style={{ width: `${Math.min((parseFloat(stats.tasaConversion) / METAS_MENSUALES.conversion.meta) * 100, 100)}%` }} />
           </div>
         </div>
       </div>
@@ -590,7 +635,7 @@ export default function ResumenPage() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={EVOLUCION_MENSUAL}>
+            <AreaChart data={evolucionMensual}>
               <defs>
                 <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
@@ -634,7 +679,7 @@ export default function ResumenPage() {
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={TIPOS_CREDITO_DONUT}
+                data={tiposCreditoDonut}
                 cx="50%"
                 cy="50%"
                 innerRadius={55}
@@ -642,7 +687,7 @@ export default function ResumenPage() {
                 paddingAngle={4}
                 dataKey="valor"
               >
-                {TIPOS_CREDITO_DONUT.map((entry, index) => (
+                {tiposCreditoDonut.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -653,7 +698,7 @@ export default function ResumenPage() {
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-2 mt-2">
-            {TIPOS_CREDITO_DONUT.map((item) => (
+            {tiposCreditoDonut.map((item) => (
               <div key={item.nombre} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -700,7 +745,7 @@ export default function ResumenPage() {
             <Award size={16} className="text-amber-500" />
           </div>
           <div className="space-y-3">
-            {RENDIMIENTO_EQUIPO.map((ejecutivo, i) => (
+            {rendimientoEquipo.map((ejecutivo, i) => (
               <div key={ejecutivo.nombre} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white ${
                   i === 0 ? "bg-amber-500" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-amber-700" : "bg-blue-500"
@@ -712,8 +757,7 @@ export default function ResumenPage() {
                   <div className="text-[9px] text-slate-400">{ejecutivo.leads} leads • {ejecutivo.conversion}% conversión</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[11px] font-bold text-slate-800">{formatoMonedaAbreviado(ejecutivo.monto * 1000000)}</div>
-                  <div className="text-[9px] text-slate-400">{ejecutivo.satisfaccion}% satisfacción</div>
+                  <div className="text-[11px] font-bold text-slate-800">{formatoMonedaAbreviado(ejecutivo.monto)}</div>
                 </div>
               </div>
             ))}
@@ -773,34 +817,27 @@ export default function ResumenPage() {
           <Calendar size={16} className="text-slate-400" />
         </div>
         <div className="grid grid-cols-4 gap-4">
-          {Object.entries(METAS_MENSUALES).map(([key, meta]) => {
-            const porcentaje = Math.min((meta.actual / meta.meta) * 100, 100);
-            const labels: Record<string, string> = {
-              leads: "Leads Generados",
-              aprobados: "Créditos Aprobados",
-              monto: "Monto Financiado (MM)",
-              conversion: "Tasa de Conversión (%)",
-            };
-            const colores: Record<string, string> = {
-              leads: "bg-blue-500",
-              aprobados: "bg-emerald-500",
-              monto: "bg-purple-500",
-              conversion: "bg-amber-500",
-            };
+          {[
+            { key: "leads", label: "Leads Generados", actual: stats.totalLeads, meta: METAS_MENSUALES.leads.meta, color: "bg-blue-500" },
+            { key: "aprobados", label: "Créditos Aprobados", actual: stats.aprobados, meta: METAS_MENSUALES.aprobados.meta, color: "bg-emerald-500" },
+            { key: "monto", label: "Monto Financiado (MM)", actual: Math.round(stats.montoTotal / 1000000), meta: METAS_MENSUALES.monto.meta, color: "bg-purple-500" },
+            { key: "conversion", label: "Tasa de Conversión (%)", actual: parseFloat(stats.tasaConversion), meta: METAS_MENSUALES.conversion.meta, color: "bg-amber-500" },
+          ].map((item) => {
+            const porcentaje = Math.min((item.actual / item.meta) * 100, 100);
             return (
-              <div key={key} className="p-3 bg-slate-50 rounded-xl">
-                <div className="text-[9px] text-slate-400 uppercase font-medium mb-2">{labels[key]}</div>
+              <div key={item.key} className="p-3 bg-slate-50 rounded-xl">
+                <div className="text-[9px] text-slate-400 uppercase font-medium mb-2">{item.label}</div>
                 <div className="flex items-end justify-between mb-2">
                   <span className="text-lg font-bold text-slate-900">
-                    {key === "monto" ? `$${meta.actual}` : key === "conversion" ? `${meta.actual}%` : meta.actual}
+                    {item.key === "monto" ? `$${item.actual}` : item.key === "conversion" ? `${item.actual}%` : item.actual}
                   </span>
                   <span className="text-[9px] text-slate-400">
-                    de {key === "monto" ? `$${meta.meta}` : key === "conversion" ? `${meta.meta}%` : meta.meta}
+                    de {item.key === "monto" ? `$${item.meta}` : item.key === "conversion" ? `${item.meta}%` : item.meta}
                   </span>
                 </div>
                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${colores[key]}`}
+                    className={`h-full rounded-full transition-all duration-500 ${item.color}`}
                     style={{ width: `${porcentaje}%` }}
                   />
                 </div>

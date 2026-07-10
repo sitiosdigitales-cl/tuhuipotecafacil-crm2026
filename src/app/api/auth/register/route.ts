@@ -1,16 +1,32 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { generarToken } from "@/lib/jwt";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
+
+// Roles permitidos para crear usuarios (sin SUPER_ADMIN)
+const ROLES_PERMITIDOS = ["AGENTE", "GERENTE", "ADMIN"];
 
 export async function POST(request: NextRequest) {
+  // Solo usuarios autenticados pueden crear nuevos usuarios
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+
+  // Solo ADMIN y SUPER_ADMIN pueden crear usuarios
+  if (!["ADMIN", "SUPER_ADMIN"].includes(auth.rol)) {
+    return NextResponse.json({ success: false, error: "No tienes permisos para crear usuarios" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { nombre, apellido, email, password, telefono, rol } = body;
     if (!nombre || !apellido || !email || !password) {
       return NextResponse.json({ success: false, error: "Campos requeridos faltantes" }, { status: 400 });
     }
+
+    // Validar que el rol sea permitido (nunca SUPER_ADMIN desde aquí)
+    const rolFinal = ROLES_PERMITIDOS.includes(rol) ? rol : "AGENTE";
+
     const { data: existente } = await supabase.from("usuarios").select("id").eq("email", email.toLowerCase()).single();
     if (existente) return NextResponse.json({ success: false, error: "Email ya registrado" }, { status: 409 });
 
@@ -18,7 +34,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, salt);
     const { data: usuario, error } = await supabase.from("usuarios").insert({
       nombre, apellido, email: email.toLowerCase(), password: hashedPassword,
-      telefono: telefono || null, rol: rol || "AGENTE",
+      telefono: telefono || null, rol: rolFinal,
     }).select("id,nombre,email,rol").single();
 
     if (error) return NextResponse.json({ success: false, error: "Error al crear usuario" }, { status: 500 });

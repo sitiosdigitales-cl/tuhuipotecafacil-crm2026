@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda") || "";
@@ -37,6 +39,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const body = await request.json();
     if (!body.nombre || !body.apellido) {
@@ -67,6 +70,30 @@ export async function POST(request: NextRequest) {
         situacionLaboral: body.situacionLaboral || "DEPENDIENTE",
         enDicom: body.enDicom || false,
         diasEnEtapa: 0,
+        // Datos personales extendidos
+        cargaslegales: body.cargasLegales || null,
+        estadocivil: body.estadoCivil || null,
+        regimenmatrimonial: body.regimenMatrimonial || null,
+        fechanacimiento: body.fechaNacimiento || null,
+        estudios: body.estudios || null,
+        profesion: body.profesion || null,
+        domicilioparticular: body.domicilioParticular || null,
+        comunaciudad: body.comunaCiudad || null,
+        valorarriendo: body.valorArriendo || null,
+        afp: body.afp || null,
+        // Datos del empleador
+        nombreempleador: body.nombreEmpleador || null,
+        rutfactura: body.rutEmpresa || null,
+        fechaingreso: body.fechaIngreso || null,
+        cargo: body.cargo || null,
+        rentaliquida: body.rentaLiquida || null,
+        bancoabonorenta: body.bancoAbonoRenta || null,
+        fechapago: body.fechaPago || null,
+        direccionlaboral: body.direccionLaboral || null,
+        comunaciudadlaboral: body.comunaCiudadLaboral || null,
+        telefonolaboralfijo: body.telefonoLaboralFijo || null,
+        emaillaboral: body.emailLaboral || null,
+        otrosingresos: body.otrosIngresos || null,
       }))
       .select()
       .single();

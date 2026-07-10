@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ROLES_CONFIG } from "@/tipos";
 import { CampanaNotificaciones } from "@/componentes/notificaciones/CampanaNotificaciones";
 import { InstallAppButton } from "@/componentes/layout/InstallAppButton";
@@ -110,7 +109,7 @@ const MENSAJES_MOCK = [
 export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: BarraSuperiorProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { usuarioActual, cambiarUsuario, esSuperAdmin } = useUser();
+  const { usuarioActual, cambiarUsuario, esSuperAdmin, usuarios } = useUser();
   const { logout } = useAuth();
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [mostrarMensajes, setMostrarMensajes] = useState(false);
@@ -376,7 +375,7 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
 
               {/* Lista de Usuarios */}
               <div className="p-2 max-h-[320px] overflow-y-auto">
-                {USUARIOS_MOCK.map((user) => {
+                {usuarios.map((user) => {
                   const userRol = ROLES_CONFIG[user.rol];
                   const esActual = user.id === usuarioActual.id;
                   return (

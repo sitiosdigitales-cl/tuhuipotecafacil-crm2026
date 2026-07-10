@@ -31,9 +31,10 @@ import {
   ExternalLink,
   Eye,
   Trash2,
+  Activity,
   MessageSquare as MessageSquareIcon,
 } from "lucide-react";
-import { generarLeads, ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
@@ -142,22 +143,13 @@ Saludos cordiales,
 Equipo Tu Hipoteca Fácil
 🏦 Gestión y Asesoría Financiera`;
 
-const ACTIVIDADES_LEAD = [
-  { id: "a1", tipo: "Llamada", descripcion: "Llamada inicial de contacto", fecha: new Date(Date.now() - 86400000), usuario: "Andrés Pérez" },
-  { id: "a2", tipo: "Email", descripcion: "Envío de información por correo", fecha: new Date(Date.now() - 172800000), usuario: "Andrés Pérez" },
-  { id: "a3", tipo: "WhatsApp", descripcion: "Mensaje de seguimiento", fecha: new Date(Date.now() - 259200000), usuario: "Carolina Muñoz" },
-  { id: "a4", tipo: "Reunión", descripcion: "Revisión de condiciones", fecha: new Date(Date.now() - 345600000), usuario: "Diego Silva" },
-  { id: "a5", tipo: "Cambio de Etapa", descripcion: "Movido a Calificación Comercial", fecha: new Date(Date.now() - 432000000), usuario: "Sistema" },
-];
-
-// Documentos subidos mock - se generan dinámicamente
-function generarDocsSubidosLead(lead: Lead): DocumentoLead[] {
-  const leadNombre = `${lead.nombre} ${lead.apellido}`;
-  return [
-    { id: `ds1-${lead.id}`, leadId: lead.id, leadNombre, nombre: "Cedula_Frontal.jpg", tipo: "CEDULA_IDENTIDAD", estado: "APROBADO", creadoEn: new Date(Date.now() - 864000000) },
-    { id: `ds2-${lead.id}`, leadId: lead.id, leadNombre, nombre: "Cedula_Trasyera.jpg", tipo: "CEDULA_IDENTIDAD", estado: "APROBADO", creadoEn: new Date(Date.now() - 864000000) },
-    { id: `ds3-${lead.id}`, leadId: lead.id, leadNombre, nombre: "Contrato_Laboral.pdf", tipo: "CONTRATO_TRABAJO", estado: "EN_REVISION", creadoEn: new Date(Date.now() - 259200000) },
-  ];
+// Actividades del lead (se cargan desde la API)
+interface ActividadLead {
+  id: string;
+  tipo: string;
+  descripcion: string;
+  fecha: Date;
+  usuario: string;
 }
 
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -188,10 +180,54 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [tipoTrabajador, setTipoTrabajador] = useState<TipoTrabajador>("DEPENDIENTE");
-  const [documentos, setDocumentos] = useState(DOCUMENTOS_LEAD_MOCK);
+  const [documentos, setDocumentos] = useState<Record<string, { estado: "RECIBIDO" | "EN_REVISION" | "APROBADO" | "RECHAZADO" | "PENDIENTE"; fecha?: Date; archivoUrl?: string }>>({});
   const [docsSubidos, setDocsSubidos] = useState<DocumentoLead[]>([]);
+  const [actividades, setActividades] = useState<ActividadLead[]>([]);
   const [plantillaOpen, setPlantillaOpen] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [cargandoDocs, setCargandoDocs] = useState(true);
+
+  // Cargar documentos desde Supabase
+  useEffect(() => {
+    async function cargarDocumentos() {
+      if (!lead) return;
+      try {
+        const res = await fetch(`/api/documentos?leadId=${lead.id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setDocsSubidos(json.data.map((d: Record<string, any>) => ({
+            ...d,
+            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+          })));
+        }
+      } catch {
+        // Silenciar errores
+      } finally {
+        setCargandoDocs(false);
+      }
+    }
+    cargarDocumentos();
+  }, [lead]);
+
+  // Cargar actividades desde Supabase
+  useEffect(() => {
+    async function cargarActividades() {
+      if (!lead) return;
+      try {
+        const res = await fetch(`/api/actividades?leadId=${lead.id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setActividades(json.data.map((a: Record<string, any>) => ({
+            ...a,
+            fecha: a.fecha ? new Date(a.fecha) : new Date(),
+          })));
+        }
+      } catch {
+        // Silenciar errores
+      }
+    }
+    cargarActividades();
+  }, [lead]);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -272,13 +308,42 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     window.open(`https://wa.me/?text=${texto}`, "_blank");
   };
 
-  const handleUploadDoc = (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
-    const doc: DocumentoLead = {
-      ...nuevoDoc,
-      id: `doc-${Date.now()}`,
-      creadoEn: new Date(),
-    };
-    setDocsSubidos((prev) => [doc, ...prev]);
+  const handleUploadDoc = async (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
+    try {
+      const res = await fetch("/api/documentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: lead.id,
+          leadNombre: `${lead.nombre} ${lead.apellido}`,
+          nombre: nuevoDoc.nombre,
+          tipo: nuevoDoc.tipo,
+          estado: nuevoDoc.estado || "PENDIENTE",
+          archivoUrl: nuevoDoc.archivoUrl || null,
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setDocsSubidos((prev) => [{
+          ...json.data,
+          creadoEn: new Date(json.data.creadoEn),
+        }, ...prev]);
+      }
+    } catch {
+      // Fallback local
+      const doc: DocumentoLead = {
+        ...nuevoDoc,
+        id: `doc-${Date.now()}`,
+        creadoEn: new Date(),
+      };
+      setDocsSubidos((prev) => [doc, ...prev]);
+    }
+  };
+
+  const handleDownloadDoc = (doc: DocumentoLead) => {
+    if (doc.archivoUrl) {
+      window.open(doc.archivoUrl, "_blank");
+    }
   };
 
   const handlePreviewDoc = (doc: DocumentoLead) => {
@@ -296,14 +361,28 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     setEliminarDocOpen(true);
   };
 
-  const handleConfirmarEliminarDoc = () => {
+  const handleConfirmarEliminarDoc = async () => {
     if (docSeleccionado) {
+      try {
+        await fetch(`/api/documentos/${docSeleccionado.id}`, { method: "DELETE" });
+      } catch {
+        // Continuar con la eliminación local
+      }
       setDocsSubidos((prev) => prev.filter((d) => d.id !== docSeleccionado.id));
       setDocSeleccionado(null);
     }
   };
 
-  const handleCambiarEstadoDoc = (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
+  const handleCambiarEstadoDoc = async (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
+    try {
+      await fetch(`/api/documentos/${docId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+    } catch {
+      // Continuar con la actualización local
+    }
     setDocsSubidos((prev) =>
       prev.map((d) => (d.id === docId ? { ...d, estado: nuevoEstado } : d))
     );
@@ -445,12 +524,18 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               </button>
             </div>
 
-            {docsSubidos.length === 0 ? (
+            {cargandoDocs ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                <p className="text-[11px] text-slate-500">Cargando documentos...</p>
+              </div>
+            ) : docsSubidos.length === 0 ? (
               <div className="text-center py-8">
                 <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                   <FileText size={20} className="text-slate-300" />
                 </div>
                 <p className="text-[11px] text-slate-500">No hay documentos subidos aún</p>
+                <p className="text-[9px] text-slate-400 mt-1">Haz clic en "Subir" para agregar documentos</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -469,7 +554,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         {configDoc.icono}
                         {configDoc.label}
                       </span>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-0.5">
+                        {doc.archivoUrl && (
+                          <button
+                            onClick={() => handleDownloadDoc(doc)}
+                            className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Descargar"
+                          >
+                            <Download size={12} className="text-blue-500" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handlePreviewDoc(doc)}
                           className="p-1.5 hover:bg-white rounded-lg transition-colors"
@@ -502,28 +596,37 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
           {/* Historial de Actividades */}
           <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
             <h3 className="text-sm font-bold text-slate-900 mb-4">Historial de Actividades</h3>
-            <div className="space-y-3">
-              {ACTIVIDADES_LEAD.map((actividad, i) => (
-                <div key={actividad.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                      {iconoActividad[actividad.tipo]}
-                    </div>
-                    {i < ACTIVIDADES_LEAD.length - 1 && <div className="w-px h-full bg-slate-200 mt-2" />}
-                  </div>
-                  <div className="flex-1 pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-[11px] font-semibold text-slate-800">{actividad.tipo}</div>
-                      <div className="text-[9px] text-slate-400 flex items-center gap-1">
-                        <Clock size={9} /> {actividad.fecha.toLocaleDateString("es-CL")}
-                      </div>
-                    </div>
-                    <div className="text-[10px] text-slate-600 mt-0.5">{actividad.descripcion}</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">por {actividad.usuario}</div>
-                  </div>
+            {actividades.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Activity size={16} className="text-slate-300" />
                 </div>
-              ))}
-            </div>
+                <p className="text-[10px] text-slate-400">Sin actividades registradas</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {actividades.map((actividad, i) => (
+                  <div key={actividad.id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                        {iconoActividad[actividad.tipo] || <Activity size={14} />}
+                      </div>
+                      {i < actividades.length - 1 && <div className="w-px h-full bg-slate-200 mt-2" />}
+                    </div>
+                    <div className="flex-1 pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[11px] font-semibold text-slate-800">{actividad.tipo}</div>
+                        <div className="text-[9px] text-slate-400 flex items-center gap-1">
+                          <Clock size={9} /> {actividad.fecha.toLocaleDateString("es-CL")}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-slate-600 mt-0.5">{actividad.descripcion}</div>
+                      <div className="text-[9px] text-slate-400 mt-0.5">por {actividad.usuario}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

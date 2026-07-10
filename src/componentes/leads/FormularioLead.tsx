@@ -62,7 +62,7 @@ const BANCOS = [
   "CorpGroup",
 ];
 
-const TIPOS_CREDITO = ["Crédito Hipotecario", "Crédito de Consumo", "Fines Generales", "Capital para Empresas"];
+const TIPOS_CREDITO = ["Créditos Hipotecarios", "Créditos de Consumos", "Fines Generales", "Capital para Empresas"];
 
 const EJECUTIVOS = [
   "Andrés Pérez",
@@ -78,10 +78,10 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     nombre: "",
     apellido: "",
     rut: "",
-    edad: undefined,
+    edad: 0,
     email: "",
     telefono: "",
-    situacionLaboral: "INDEPENDIENTE",
+    situacionLaboral: "DEPENDIENTE",
     enDicom: false,
     dicomDetalle: "",
     rentaMensual: "",
@@ -93,9 +93,9 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     etapa: "NUEVO_LEAD",
     prioridad: "MEDIA",
     banco: "",
-    montoSolicitado: undefined,
-    valorPropiedad: undefined,
-    pieDisponible: undefined,
+    montoSolicitado: 0,
+    valorPropiedad: 0,
+    pieDisponible: 0,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -131,10 +131,10 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
         nombre: "",
         apellido: "",
         rut: "",
-        edad: undefined,
+        edad: 0,
         email: "",
         telefono: "",
-        situacionLaboral: "INDEPENDIENTE",
+        situacionLaboral: "DEPENDIENTE",
         enDicom: false,
         dicomDetalle: "",
         rentaMensual: "",
@@ -146,9 +146,9 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
         banco: "",
-        montoSolicitado: undefined,
-        valorPropiedad: undefined,
-        pieDisponible: undefined,
+        montoSolicitado: 0,
+        valorPropiedad: 0,
+        pieDisponible: 0,
       });
     }
     setErrors({});

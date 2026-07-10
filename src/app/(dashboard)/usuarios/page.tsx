@@ -20,7 +20,6 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
 import { formatoMoneda } from "@/lib/utils";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";

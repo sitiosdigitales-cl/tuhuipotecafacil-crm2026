@@ -32,7 +32,7 @@ export default function LoginPage() {
     if (exito) {
       router.push("/dashboard");
     } else {
-      setError("Credenciales incorrectas. Intenta con un usuario de demostración.");
+      setError("Credenciales incorrectas.");
       setCargando(false);
     }
   };
@@ -148,55 +148,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Demo users */}
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-[10px] text-blue-200/50 text-center mb-3 uppercase tracking-wider font-semibold">
-              Usuarios de demostración
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  setEmail("admin@tuhipotecafacil.cl");
-                  setPassword("demo1234");
-                }}
-                className="text-left p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors"
-              >
-                <div className="text-[11px] font-semibold text-white">Super Admin</div>
-                <div className="text-[9px] text-blue-300/50">admin@tuhipotecafacil.cl</div>
-              </button>
-              <button
-                onClick={() => {
-                  setEmail("andres.perez@tuhipotecafacil.cl");
-                  setPassword("demo1234");
-                }}
-                className="text-left p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors"
-              >
-                <div className="text-[11px] font-semibold text-white">Andrés Pérez</div>
-                <div className="text-[9px] text-blue-300/50">andres.perez@...</div>
-              </button>
-              <button
-                onClick={() => {
-                  setEmail("carolina.munoz@tuhipotecafacil.cl");
-                  setPassword("demo1234");
-                }}
-                className="text-left p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors"
-              >
-                <div className="text-[11px] font-semibold text-white">Carolina Muñoz</div>
-                <div className="text-[9px] text-blue-300/50">carolina.munoz@...</div>
-              </button>
-              <button
-                onClick={() => {
-                  setEmail("diego.silva@tuhipotecafacil.cl");
-                  setPassword("demo1234");
-                }}
-                className="text-left p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors"
-              >
-                <div className="text-[11px] font-semibold text-white">Diego Silva</div>
-                <div className="text-[9px] text-blue-300/50">diego.silva@...</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

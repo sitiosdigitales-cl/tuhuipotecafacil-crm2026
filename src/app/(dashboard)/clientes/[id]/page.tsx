@@ -43,12 +43,13 @@ import {
   MapPin,
   BriefcaseBusiness,
 } from "lucide-react";
-import { generarLeads, ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
 import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useActivities, getIconoActividad, formatearTiempoRelativo, type Actividad } from "@/lib/contexts/ActivityContext";
+import { toast } from "sonner";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
 import { GestionarEstado } from "@/componentes/documentos/GestionarEstado";
@@ -83,37 +84,26 @@ const DOCUMENTOS_POR_TIPO: Record<SituacionLaboral, { id: string; nombre: string
   ],
 };
 
-// Generar documentos mock basados en el lead
+// Generar documentos basados en el lead (todos pendientes por defecto)
 function generarDocumentosLead(lead: Lead): DocumentoLead[] {
   const docsConfig = DOCUMENTOS_POR_TIPO[lead.situacionLaboral] || DOCUMENTOS_POR_TIPO.DEPENDIENTE;
   const leadNombre = `${lead.nombre} ${lead.apellido}`;
 
-  return docsConfig.map((doc, i) => {
-    const estados = ["APROBADO", "APROBADO", "EN_REVISION", "PENDIENTE", "PENDIENTE", "PENDIENTE", "RECHAZADO"];
-    const estado = estados[i % estados.length] as DocumentoLead["estado"];
-
-    return {
-      id: `${lead.id}-doc-${i}`,
-      leadId: lead.id,
-      leadNombre,
-      nombre: doc.nombre,
-      tipo: doc.tipo as DocumentoLead["tipo"],
-      estado,
-      creadoEn: new Date(Date.now() - (i + 1) * 86400000 * (i + 1)),
-    };
-  });
+  return docsConfig.map((doc, i) => ({
+    id: `${lead.id}-doc-${i}`,
+    leadId: lead.id,
+    leadNombre,
+    nombre: doc.nombre,
+    tipo: doc.tipo as DocumentoLead["tipo"],
+    estado: "PENDIENTE" as DocumentoLead["estado"],
+    creadoEn: new Date(),
+  }));
 }
 
-// Generar actividades mock basadas en el lead
+// Generar actividades basadas en el lead (solo la actividad de creación)
 function generarActividadesLead(lead: Lead) {
   return [
-    { id: "1", tipo: "llamada", titulo: "Llamada de seguimiento", descripcion: `Seguimiento a ${lead.nombre} sobre documentos pendientes`, fecha: new Date(Date.now() - 3600000), usuario: lead.nombreEjecutivo || "Sin asignar", icono: Phone, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { id: "2", tipo: "whatsapp", titulo: "Mensaje de recordatorio", descripcion: "Envío de lista de documentos faltantes", fecha: new Date(Date.now() - 86400000), usuario: lead.nombreEjecutivo || "Sin asignar", icono: MessageSquare, color: "text-green-500", bg: "bg-green-50" },
-    { id: "3", tipo: "email", titulo: "Envío de propuesta", descripcion: `Propuesta de crédito ${lead.tipoCredito || "hipotecario"}`, fecha: new Date(Date.now() - 172800000), usuario: "Sistema", icono: Mail, color: "text-blue-500", bg: "bg-blue-50" },
-    { id: "4", tipo: "documento", titulo: "Documento subido", descripcion: "Cédula de Identidad", fecha: new Date(Date.now() - 259200000), usuario: "Cliente", icono: FileText, color: "text-purple-500", bg: "bg-purple-50" },
-    { id: "5", tipo: "reunion", titulo: "Reunión presencial", descripcion: `Revisión condiciones bancarias en ${lead.banco || "banco"}`, fecha: new Date(Date.now() - 345600000), usuario: lead.nombreEjecutivo || "Sin asignar", icono: Calendar, color: "text-amber-500", bg: "bg-amber-50" },
-    { id: "6", tipo: "sistema", titulo: "Cambio de etapa", descripcion: `Movido a ${ETAPAS_CONFIG[lead.etapa]?.label || lead.etapa}`, fecha: new Date(Date.now() - 432000000), usuario: "Sistema", icono: ChevronRight, color: "text-slate-500", bg: "bg-slate-50" },
-    { id: "7", tipo: "llamada", titulo: "Llamada inicial", descripcion: "Contacto por solicitud de crédito", fecha: lead.creadoEn, usuario: lead.nombreEjecutivo || "Sin asignar", icono: Phone, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { id: "1", tipo: "sistema", titulo: "Lead creado", descripcion: `${lead.nombre} ${lead.apellido} fue agregado al sistema`, fecha: lead.creadoEn, usuario: lead.nombreEjecutivo || "Sistema", icono: ChevronRight, color: "text-slate-500", bg: "bg-slate-50" },
   ];
 }
 
@@ -451,6 +441,38 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
               <InfoRow icon={<Building2 size={13} />} label="Origen" value={ORIGEN_LABELS[lead.origen]} />
               <InfoRow icon={<CreditCard size={13} />} label="En DICOM" value={lead.enDicom ? "Sí" : "No"} />
               <InfoRow icon={<DollarSign size={13} />} label="Renta mensual" value={lead.rentaMensual || "No especificada"} />
+              <InfoRow icon={<Shield size={13} />} label="Cargas legales" value={lead.cargasLegales || "No especificado"} />
+              <InfoRow icon={<User size={13} />} label="Estado civil" value={lead.estadoCivil || "No especificado"} />
+              <InfoRow icon={<User size={13} />} label="Régimen matrimonial" value={lead.regimenMatrimonial || "No especificado"} />
+              <InfoRow icon={<Calendar size={13} />} label="Fecha nacimiento" value={lead.fechaNacimiento || "No especificado"} />
+              <InfoRow icon={<FileText size={13} />} label="Estudios" value={lead.estudios || "No especificado"} />
+              <InfoRow icon={<Briefcase size={13} />} label="Profesión" value={lead.profesion || "No especificado"} />
+              <InfoRow icon={<Home size={13} />} label="Domicilio" value={lead.domicilioParticular || "No especificado"} />
+              <InfoRow icon={<MapPin size={13} />} label="Comuna/Ciudad" value={lead.comunaCiudad || "No especificado"} />
+              <InfoRow icon={<DollarSign size={13} />} label="Valor arriendo" value={lead.valorArriendo ? formatoMoneda(lead.valorArriendo) : "No aplica"} />
+              <InfoRow icon={<Shield size={13} />} label="AFP" value={lead.afp || "No especificado"} />
+            </div>
+          </div>
+
+          {/* Datos del Empleador */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Building2 size={16} className="text-emerald-500" />
+              Datos del Empleador
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <InfoRow icon={<Building2 size={13} />} label="Nombre empleador" value={lead.nombreEmpleador || "No especificado"} />
+              <InfoRow icon={<Hash size={13} />} label="RUT Empresa" value={lead.rutEmpresa || "No especificado"} />
+              <InfoRow icon={<Calendar size={13} />} label="Fecha ingreso" value={lead.fechaIngreso || "No especificado"} />
+              <InfoRow icon={<Briefcase size={13} />} label="Cargo" value={lead.cargo || "No especificado"} />
+              <InfoRow icon={<DollarSign size={13} />} label="Renta líquida" value={lead.rentaLiquida ? formatoMoneda(lead.rentaLiquida) : "No especificado"} />
+              <InfoRow icon={<Building2 size={13} />} label="Banco abono renta" value={lead.bancoAbonoRenta || "No especificado"} />
+              <InfoRow icon={<Calendar size={13} />} label="Fecha pago" value={lead.fechaPago || "No especificado"} />
+              <InfoRow icon={<Home size={13} />} label="Dirección laboral" value={lead.direccionLaboral || "No especificado"} />
+              <InfoRow icon={<MapPin size={13} />} label="Comuna/Ciudad" value={lead.comunaCiudadLaboral || "No especificado"} />
+              <InfoRow icon={<Phone size={13} />} label="Teléfono fijo" value={lead.telefonoLaboralFijo || "No especificado"} />
+              <InfoRow icon={<Mail size={13} />} label="Email laboral" value={lead.emailLaboral || "No especificado"} />
+              <InfoRow icon={<DollarSign size={13} />} label="Otros ingresos" value={lead.otrosIngresos || "No especificado"} />
             </div>
           </div>
 
@@ -729,7 +751,29 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
             <button onClick={() => setAgendarOpen(false)} className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
               Cancelar
             </button>
-            <button onClick={() => setAgendarOpen(false)} className="px-4 py-2 bg-purple-500 text-white text-[11px] font-semibold rounded-xl hover:bg-purple-600 transition-colors">
+            <button onClick={async () => {
+              try {
+                await fetch("/api/eventos", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    titulo: `Reunión con ${lead.nombre} ${lead.apellido}`,
+                    fecha: fechaReunion,
+                    horaInicio: horaReunion,
+                    horaFin: horaReunion,
+                    tipo: "reunion",
+                    leadId: lead.id,
+                    leadNombre: `${lead.nombre} ${lead.apellido}`,
+                    descripcion: notasReunion,
+                    recordatorio: true,
+                  }),
+                });
+                toast.success("Reunión agendada", { description: `${fechaReunion} a las ${horaReunion}` });
+              } catch {
+                toast.error("Error al agendar");
+              }
+              setAgendarOpen(false);
+            }} className="px-4 py-2 bg-purple-500 text-white text-[11px] font-semibold rounded-xl hover:bg-purple-600 transition-colors">
               Agendar
             </button>
           </div>
@@ -844,6 +888,30 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
   const [pieDisponible, setPieDisponible] = useState(lead.pieDisponible?.toString() || "");
   const [banco, setBanco] = useState(lead.banco || "");
   const [etiqueta, setEtiqueta] = useState(lead.etiquetas || "");
+  // Datos personales extendidos
+  const [cargasLegales, setCargasLegales] = useState(lead.cargasLegales || "");
+  const [estadoCivil, setEstadoCivil] = useState(lead.estadoCivil || "");
+  const [regimenMatrimonial, setRegimenMatrimonial] = useState(lead.regimenMatrimonial || "");
+  const [fechaNacimiento, setFechaNacimiento] = useState(lead.fechaNacimiento || "");
+  const [estudios, setEstudios] = useState(lead.estudios || "");
+  const [profesion, setProfesion] = useState(lead.profesion || "");
+  const [domicilioParticular, setDomicilioParticular] = useState(lead.domicilioParticular || "");
+  const [comunaCiudad, setComunaCiudad] = useState(lead.comunaCiudad || "");
+  const [valorArriendo, setValorArriendo] = useState(lead.valorArriendo?.toString() || "");
+  const [afp, setAfp] = useState(lead.afp || "");
+  // Datos del empleador
+  const [nombreEmpleador, setNombreEmpleador] = useState(lead.nombreEmpleador || "");
+  const [rutEmpresa, setRutEmpresa] = useState(lead.rutEmpresa || "");
+  const [fechaIngreso, setFechaIngreso] = useState(lead.fechaIngreso || "");
+  const [cargo, setCargo] = useState(lead.cargo || "");
+  const [rentaLiquida, setRentaLiquida] = useState(lead.rentaLiquida?.toString() || "");
+  const [bancoAbonoRenta, setBancoAbonoRenta] = useState(lead.bancoAbonoRenta || "");
+  const [fechaPago, setFechaPago] = useState(lead.fechaPago || "");
+  const [direccionLaboral, setDireccionLaboral] = useState(lead.direccionLaboral || "");
+  const [comunaCiudadLaboral, setComunaCiudadLaboral] = useState(lead.comunaCiudadLaboral || "");
+  const [telefonoLaboralFijo, setTelefonoLaboralFijo] = useState(lead.telefonoLaboralFijo || "");
+  const [emailLaboral, setEmailLaboral] = useState(lead.emailLaboral || "");
+  const [otrosIngresos, setOtrosIngresos] = useState(lead.otrosIngresos || "");
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
@@ -854,17 +922,19 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
   ];
 
   const tiposCredito = [
-    "Hipotecario", "Comercial", "Solar", "Remodelación",
-    "Línea de Crédito", "Capital para Empresas", "Otros"
+    "Créditos Hipotecarios", "Créditos de Consumos", "Fines Generales", "Capital para Empresas"
   ];
+
+  const estadosCiviles = ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Unión Civil"];
+  const regimenesMatrimoniales = ["Separación de Bienes", "Sociedad Conyugal", "No aplica"];
+  const afps = ["Capital", "Cuprum", "Habitat", "Planvital", "Provida", "Rencoret", "Santa María", "Otros"];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGuardando(true);
 
     try {
-      // Guardar en localStorage a través del contexto
-      actualizarLead(lead.id, {
+      await actualizarLead(lead.id, {
         nombre,
         apellido,
         rut,
@@ -883,6 +953,30 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
         rentaMensual: rentaMensual || undefined,
         complementarRenta,
         cuentaPie,
+        // Datos personales extendidos
+        cargasLegales: cargasLegales || undefined,
+        estadoCivil: estadoCivil || undefined,
+        regimenMatrimonial: regimenMatrimonial || undefined,
+        fechaNacimiento: fechaNacimiento || undefined,
+        estudios: estudios || undefined,
+        profesion: profesion || undefined,
+        domicilioParticular: domicilioParticular || undefined,
+        comunaCiudad: comunaCiudad || undefined,
+        valorArriendo: valorArriendo ? parseFloat(valorArriendo) : undefined,
+        afp: afp || undefined,
+        // Datos del empleador
+        nombreEmpleador: nombreEmpleador || undefined,
+        rutEmpresa: rutEmpresa || undefined,
+        fechaIngreso: fechaIngreso || undefined,
+        cargo: cargo || undefined,
+        rentaLiquida: rentaLiquida ? parseFloat(rentaLiquida) : undefined,
+        bancoAbonoRenta: bancoAbonoRenta || undefined,
+        fechaPago: fechaPago || undefined,
+        direccionLaboral: direccionLaboral || undefined,
+        comunaCiudadLaboral: comunaCiudadLaboral || undefined,
+        telefonoLaboralFijo: telefonoLaboralFijo || undefined,
+        emailLaboral: emailLaboral || undefined,
+        otrosIngresos: otrosIngresos || undefined,
       });
 
       setGuardando(false);
@@ -897,7 +991,7 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 py-4">
+    <form onSubmit={handleSubmit} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto">
       {/* Sección: Datos Personales */}
       <div>
         <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -907,75 +1001,193 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Nombre *</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-              required
-            />
+            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" required />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Apellido *</label>
-            <input
-              type="text"
-              value={apellido}
-              onChange={(e) => setApellido(e.target.value)}
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-              required
-            />
+            <input type="text" value={apellido} onChange={(e) => setApellido(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" required />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">RUT *</label>
-            <input
-              type="text"
-              value={rut}
-              onChange={(e) => setRut(e.target.value)}
-              placeholder="12.345.678-9"
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-              required
-            />
+            <input type="text" value={rut} onChange={(e) => setRut(e.target.value)} placeholder="12.345.678-9"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" required />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Fecha Nacimiento</label>
+            <input type="date" value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Estado Civil</label>
+            <select value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
+              <option value="">Seleccionar</option>
+              {estadosCiviles.map((ec) => <option key={ec} value={ec}>{ec}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Régimen Matrimonial</label>
+            <select value={regimenMatrimonial} onChange={(e) => setRegimenMatrimonial(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
+              <option value="">Seleccionar</option>
+              {regimenesMatrimoniales.map((rm) => <option key={rm} value={rm}>{rm}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Cargas Legales</label>
+            <input type="text" value={cargasLegales} onChange={(e) => setCargasLegales(e.target.value)} placeholder="Ej: Caja Compensación"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Estudios</label>
+            <input type="text" value={estudios} onChange={(e) => setEstudios(e.target.value)} placeholder="Ej: Universitario"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Profesión</label>
+            <input type="text" value={profesion} onChange={(e) => setProfesion(e.target.value)} placeholder="Ej: Ingeniero"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Situación Laboral *</label>
-            <select
-              value={situacionLaboral}
-              onChange={(e) => setSituacionLaboral(e.target.value as SituacionLaboral)}
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            >
+            <select value={situacionLaboral} onChange={(e) => setSituacionLaboral(e.target.value as SituacionLaboral)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
               <option value="DEPENDIENTE">Trabajador Dependiente</option>
               <option value="INDEPENDIENTE">Trabajador Independiente</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">AFP</label>
+            <select value={afp} onChange={(e) => setAfp(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
+              <option value="">Seleccionar</option>
+              {afps.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
         </div>
       </div>
 
-      {/* Sección: Contacto */}
+      {/* Sección: Contacto y Domicilio */}
       <div>
         <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Phone size={13} className="text-emerald-500" />
-          Información de Contacto
+          Contacto y Domicilio
         </h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Teléfono</label>
-            <input
-              type="tel"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-              placeholder="+56 9 1234 5678"
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            />
+            <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+56 9 1234 5678"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Domicilio Particular</label>
+            <input type="text" value={domicilioParticular} onChange={(e) => setDomicilioParticular(e.target.value)} placeholder="Dirección completa"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
+            <input type="text" value={comunaCiudad} onChange={(e) => setComunaCiudad(e.target.value)} placeholder="Ej: Las Condes"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Valor Arriendo (si aplica)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+              <input type="number" value={valorArriendo} onChange={(e) => setValorArriendo(e.target.value)} placeholder="0"
+                className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sección: Datos del Empleador */}
+      <div>
+        <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Building2 size={13} className="text-emerald-500" />
+          Datos del Empleador
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Nombre Empleador</label>
+            <input type="text" value={nombreEmpleador} onChange={(e) => setNombreEmpleador(e.target.value)} placeholder="Nombre de la empresa"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">RUT Empresa</label>
+            <input type="text" value={rutEmpresa} onChange={(e) => setRutEmpresa(e.target.value)} placeholder="12.345.678-9"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Fecha de Ingreso</label>
+            <input type="date" value={fechaIngreso} onChange={(e) => setFechaIngreso(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Cargo</label>
+            <input type="text" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ej: Gerente"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Renta Líquida</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+              <input type="number" value={rentaLiquida} onChange={(e) => setRentaLiquida(e.target.value)} placeholder="0"
+                className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Banco Abono Renta</label>
+            <select value={bancoAbonoRenta} onChange={(e) => setBancoAbonoRenta(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
+              <option value="">Seleccionar</option>
+              {bancos.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Fecha de Pago</label>
+            <select value={fechaPago} onChange={(e) => setFechaPago(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
+              <option value="">Seleccionar</option>
+              <option value="1">Dia 1</option>
+              <option value="5">Dia 5</option>
+              <option value="10">Dia 10</option>
+              <option value="15">Dia 15</option>
+              <option value="20">Dia 20</option>
+              <option value="25">Dia 25</option>
+              <option value="30">Dia 30</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Teléfono Laboral</label>
+            <input type="tel" value={telefonoLaboralFijo} onChange={(e) => setTelefonoLaboralFijo(e.target.value)} placeholder="Fijo"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Dirección Laboral</label>
+            <input type="text" value={direccionLaboral} onChange={(e) => setDireccionLaboral(e.target.value)} placeholder="Dirección del trabajo"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
+            <input type="text" value={comunaCiudadLaboral} onChange={(e) => setComunaCiudadLaboral(e.target.value)} placeholder="Ej: Santiago"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Email Laboral</label>
+            <input type="email" value={emailLaboral} onChange={(e) => setEmailLaboral(e.target.value)} placeholder="correo@empresa.cl"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <label className="text-[11px] font-semibold text-slate-700">Otros Ingresos</label>
+            <input type="text" value={otrosIngresos} onChange={(e) => setOtrosIngresos(e.target.value)} placeholder="Detallar otros ingresos"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
           </div>
         </div>
       </div>
@@ -989,39 +1201,22 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Renta Mensual</label>
-            <select
-              value={rentaMensual}
-              onChange={(e) => setRentaMensual(e.target.value)}
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            >
+            <select value={rentaMensual} onChange={(e) => setRentaMensual(e.target.value)}
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all">
               <option value="">Seleccionar</option>
-              {RENTAS_MENSUALES.map((renta) => (
-                <option key={renta} value={renta}>{renta}</option>
-              ))}
+              {RENTAS_MENSUALES.map((renta) => <option key={renta} value={renta}>{renta}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">En DICOM</label>
             <div className="flex gap-3 h-10 items-center">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="dicom"
-                  checked={enDicom === false}
-                  onChange={() => setEnDicom(false)}
-                  className="w-4 h-4 text-blue-600"
-                />
+                <input type="radio" name="dicom" checked={enDicom === false} onChange={() => setEnDicom(false)} className="w-4 h-4 text-blue-600" />
                 <span className="text-[11px] text-slate-600">No</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="dicom"
-                  checked={enDicom === true}
-                  onChange={() => setEnDicom(true)}
-                  className="w-4 h-4 text-red-600"
-                />
-                <span className="text-[11px] text-slate-600">Sí</span>
+                <input type="radio" name="dicom" checked={enDicom === true} onChange={() => setEnDicom(true)} className="w-4 h-4 text-red-600" />
+                <span className="text-[11px] text-slate-600">Si</span>
               </label>
             </div>
           </div>
@@ -1029,24 +1224,12 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
             <label className="text-[11px] font-semibold text-slate-700">Complementar Renta</label>
             <div className="flex gap-3 h-10 items-center">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="complementar"
-                  checked={complementarRenta === false}
-                  onChange={() => setComplementarRenta(false)}
-                  className="w-4 h-4 text-blue-600"
-                />
+                <input type="radio" name="complementar" checked={complementarRenta === false} onChange={() => setComplementarRenta(false)} className="w-4 h-4 text-blue-600" />
                 <span className="text-[11px] text-slate-600">No</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="complementar"
-                  checked={complementarRenta === true}
-                  onChange={() => setComplementarRenta(true)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-[11px] text-slate-600">Sí</span>
+                <input type="radio" name="complementar" checked={complementarRenta === true} onChange={() => setComplementarRenta(true)} className="w-4 h-4 text-blue-600" />
+                <span className="text-[11px] text-slate-600">Si</span>
               </label>
             </div>
           </div>
@@ -1054,13 +1237,8 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
         {enDicom && (
           <div className="mt-3 space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Detalle DICOM</label>
-            <input
-              type="text"
-              value={dicomDetalle}
-              onChange={(e) => setDicomDetalle(e.target.value)}
-              placeholder="Describe la situación en DICOM"
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            />
+            <input type="text" value={dicomDetalle} onChange={(e) => setDicomDetalle(e.target.value)} placeholder="Describe la situacion en DICOM"
+              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all" />
           </div>
         )}
       </div>

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
@@ -13,6 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const body = await request.json();
@@ -35,6 +38,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.notas !== undefined) updateData.notas = body.notas;
     if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
     if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
+    // Datos personales extendidos
+    if (body.cargasLegales !== undefined) updateData.cargaslegales = body.cargasLegales;
+    if (body.estadoCivil !== undefined) updateData.estadocivil = body.estadoCivil;
+    if (body.regimenMatrimonial !== undefined) updateData.regimenmatrimonial = body.regimenMatrimonial;
+    if (body.fechaNacimiento !== undefined) updateData.fechanacimiento = body.fechaNacimiento;
+    if (body.estudios !== undefined) updateData.estudios = body.estudios;
+    if (body.profesion !== undefined) updateData.profesion = body.profesion;
+    if (body.domicilioParticular !== undefined) updateData.domicilioparticular = body.domicilioParticular;
+    if (body.comunaCiudad !== undefined) updateData.comunaciudad = body.comunaCiudad;
+    if (body.valorArriendo !== undefined) updateData.valorarriendo = body.valorArriendo;
+    if (body.afp !== undefined) updateData.afp = body.afp;
+    // Datos del empleador
+    if (body.nombreEmpleador !== undefined) updateData.nombreempleador = body.nombreEmpleador;
+    if (body.rutEmpresa !== undefined) updateData.rutfactura = body.rutEmpresa;
+    if (body.fechaIngreso !== undefined) updateData.fechaingreso = body.fechaIngreso;
+    if (body.cargo !== undefined) updateData.cargo = body.cargo;
+    if (body.rentaLiquida !== undefined) updateData.rentaliquida = body.rentaLiquida;
+    if (body.bancoAbonoRenta !== undefined) updateData.bancoabonorenta = body.bancoAbonoRenta;
+    if (body.fechaPago !== undefined) updateData.fechapago = body.fechaPago;
+    if (body.direccionLaboral !== undefined) updateData.direccionlaboral = body.direccionLaboral;
+    if (body.comunaCiudadLaboral !== undefined) updateData.comunaciudadlaboral = body.comunaCiudadLaboral;
+    if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
+    if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
+    if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
 
     updateData.actualizadoEn = new Date().toISOString();
 
@@ -57,6 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const { error } = await supabase.from("leads").delete().eq("id", id);

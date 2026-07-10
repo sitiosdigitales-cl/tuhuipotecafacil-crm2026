@@ -14,13 +14,13 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Usuario por defecto mientras se carga
+// Usuario por defecto mientras se carga (sin permisos reales)
 const USUARIO_DEFAULT: Usuario = {
-  id: "u1",
-  nombre: "Super",
-  apellido: "Admin",
-  email: "admin@tuhipotecafacil.cl",
-  rol: "SUPER_ADMIN",
+  id: "",
+  nombre: "Cargando",
+  apellido: "...",
+  email: "",
+  rol: "AGENTE",
   estado: "ACTIVO",
   creadoEn: new Date(),
 };
@@ -75,10 +75,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser, isAuthenticated, usuarios]);
 
-  const cambiarUsuario = (usuarioId: string) => {
-    const usuario = usuarios.find((u) => u.id === usuarioId);
-    if (usuario) {
-      setUsuarioActual(usuario);
+  const cambiarUsuario = async (usuarioId: string) => {
+    try {
+      const response = await fetch("/api/auth/switch-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: usuarioId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Actualizar el usuario actual localmente
+        setUsuarioActual(data.data.usuario);
+
+        // Recargar la página para aplicar los cambios
+        window.location.reload();
+      }
+    } catch {
+      // Fallback: cambio local sin API
+      const usuario = usuarios.find((u) => u.id === usuarioId);
+      if (usuario) {
+        setUsuarioActual(usuario);
+      }
     }
   };
 

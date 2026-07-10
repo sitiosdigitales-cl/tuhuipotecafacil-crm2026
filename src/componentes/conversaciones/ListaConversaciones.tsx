@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { useConversaciones } from "@/lib/hooks/useConversaciones";
-import { USUARIOS_MOCK } from "@/datos/mock";
+import { useUser } from "@/lib/contexts/UserContext";
 import type { Conversacion, TipoConversacion } from "@/tipos/conversaciones";
 
 interface ListaConversacionesProps {
@@ -40,6 +40,7 @@ export function ListaConversaciones({
   onSeleccionarConversacion,
   usuarioActualId,
 }: ListaConversacionesProps) {
+  const { usuarios } = useUser();
   const { conversaciones, cargando } = useConversaciones({ usuarioActualId });
   const [busqueda, setBusqueda] = useState("");
   const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<TipoConversacion, boolean>>({
@@ -87,7 +88,7 @@ export function ListaConversaciones({
     if (conversacion.tipo !== "DIRECTO") return conversacion.nombre;
     const otroId = conversacion.participantes?.find((p) => p !== usuarioActualId);
     if (!otroId) return conversacion.nombre;
-    const otro = USUARIOS_MOCK.find((u) => u.id === otroId);
+    const otro = usuarios.find((u) => u.id === otroId);
     return otro ? `${otro.nombre} ${otro.apellido}` : conversacion.nombre;
   };
 

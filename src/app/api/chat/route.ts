@@ -1,6 +1,8 @@
-﻿import { openai } from "@ai-sdk/openai";
+import { openai } from "@ai-sdk/openai";
 
 import { streamText } from "ai";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 const systemPromptBase = `Eres el asistente IA de TuHipotecaFacil.cl, un CRM hipotecario inteligente para el mercado chileno.
 
@@ -20,7 +22,8 @@ Contexto del negocio:
 
 Responde siempre en espaÃ±ol, sÃ© conciso y accionable. Usa los datos del CRM que se te proporcionan en el mensaje para fundamentar tus respuestas. Los datos vienen entre [CONTEXTO CRM] y [/CONTEXTO CRM].`;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  if (!requireAuth(req)) return unauthorized();
   const body = await req.json();
   const { messages } = body;
 

@@ -27,7 +27,8 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import { useNotificaciones, type Notificacion } from "@/lib/contexts/NotificationContext";
-import { RECORDATORIOS_SISTEMA, RESUMEN_SISTEMA, ACTIVIDAD_RECIENTE } from "@/datos/mock";
+import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/lib/contexts/UserContext";
 
 const iconoRecordatorio = (icono: string) => {
   const clases = "w-8 h-8 rounded-xl flex items-center justify-center";
@@ -96,7 +97,21 @@ interface PanelDerechoProps {
 
 export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: PanelDerechoProps) {
   const { notificaciones, noLeidas, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion } = useNotificaciones();
+  const { leads } = useLeads();
+  const { usuarios } = useUser();
   const [mostrarTodas, setMostrarTodas] = useState(false);
+
+  // Datos reales del sistema
+  const resumenSistema = [
+    { icono: "users", titulo: "Usuarios Activos", valor: usuarios.filter(u => u.estado === "ACTIVO").length.toString(), cambio: "+2" },
+    { icono: "database", titulo: "Leads Totales", valor: leads.length.toString(), cambio: `+${leads.filter(l => l.etapa === "NUEVO_LEAD").length}` },
+    { icono: "zap", titulo: "Conversiones", valor: leads.filter(l => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)).length.toString(), cambio: "0" },
+  ];
+
+  const recordatoriosSistema = [
+    { icono: "refresh-cw", titulo: "Actualizar datos", descripcion: "Última actualización hace 2 horas" },
+    { icono: "users", titulo: "Leads sin asignar", descripcion: `${leads.filter(l => !l.nombreEjecutivo).length} leads pendientes` },
+  ];
 
   // Mostrar solo las primeras 5 en el panel
   const notificacionesVisuales = mostrarTodas ? notificaciones.slice(0, 10) : notificaciones.slice(0, 5);
@@ -214,12 +229,12 @@ export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: 
           <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100">Recordatorios</h3>
         </div>
         <div className="space-y-1">
-          {RECORDATORIOS_SISTEMA.map((rec) => (
-            <div key={rec.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+          {recordatoriosSistema.map((rec, i) => (
+            <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
               {iconoRecordatorio(rec.icono)}
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{rec.titulo}</div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{rec.proximo}</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{rec.descripcion}</div>
               </div>
             </div>
           ))}
@@ -235,13 +250,13 @@ export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: 
           </Link>
         </div>
         <div className="space-y-1">
-          {ACTIVIDAD_RECIENTE.map((act) => (
-            <div key={act.id} className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-              {iconoActividad(act.icono, act.color)}
+          {leads.slice(0, 5).map((lead) => (
+            <div key={lead.id} className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+              {iconoActividad("lead", "blue")}
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">{act.titulo}</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{act.detalle}</div>
-                <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{act.tiempo}</div>
+                <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">{lead.nombre} {lead.apellido}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{lead.etapa}</div>
+                <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{lead.origen}</div>
               </div>
             </div>
           ))}
@@ -276,7 +291,7 @@ export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: 
       <div className="p-5">
         <h3 className="text-[13px] font-bold text-slate-900 dark:text-slate-100 mb-4">Resumen del sistema</h3>
         <div className="space-y-2">
-          {RESUMEN_SISTEMA.map((item, i) => (
+          {resumenSistema.map((item, i) => (
             <div key={i} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
               <div className="flex items-center gap-2.5">
                 {iconoResumen(item.icono)}

@@ -35,7 +35,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { generarLeads, ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/datos/mock";
+import { useLeads } from "@/lib/contexts/LeadContext";
 import { GoogleCalendarIntegration, CrearEventoGoogle, MeetLinkDisplay } from "@/componentes/agenda/GoogleCalendarIntegration";
 import { createGoogleCalendarEvent, isGoogleAuthenticated } from "@/lib/services/googleCalendar";
 import { toast } from "sonner";
@@ -202,6 +203,7 @@ const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const HORAS_DIA = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, "0")}:00`);
 
 export default function AgendaPage() {
+  const { leads } = useLeads();
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [mesActual, setMesActual] = useState(new Date());
   const [vista, setVista] = useState<"mes" | "semana" | "dia">("mes");
@@ -244,7 +246,7 @@ export default function AgendaPage() {
   }, []);
 
   // Leads para selector
-  const leads = useMemo(() => generarLeads().slice(0, 20), []);
+  const leadsFiltrados = useMemo(() => leads.slice(0, 20), [leads]);
 
   // Cálculos del calendario
   const primerDiaMes = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1);
@@ -877,7 +879,7 @@ export default function AgendaPage() {
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
                 >
                   <option value="">Sin cliente</option>
-                  {leads.slice(0, 10).map((lead) => (
+                  {leadsFiltrados.slice(0, 10).map((lead) => (
                     <option key={lead.id} value={`${lead.nombre} ${lead.apellido}`}>{lead.nombre} {lead.apellido}</option>
                   ))}
                 </select>

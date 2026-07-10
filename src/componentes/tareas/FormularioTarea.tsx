@@ -22,9 +22,10 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { USUARIOS_MOCK, generarLeads } from "@/datos/mock";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { Tarea, EstadoTarea, TipoTarea, Prioridad } from "@/tipos";
+import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/lib/contexts/UserContext";
 
 interface FormularioTareaProps {
   open: boolean;
@@ -47,8 +48,9 @@ export function FormularioTarea({
   onSubmit,
 }: FormularioTareaProps) {
   const esEdicion = !!tarea;
-  const leads = generarLeads();
-  const ejecutivos = USUARIOS_MOCK.filter(
+  const { leads } = useLeads();
+  const { usuarios } = useUser();
+  const ejecutivos = usuarios.filter(
     (u) => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN"
   );
 

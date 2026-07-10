@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { verificarToken } from "@/lib/jwt";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,16 +9,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
 
-    const payload = JSON.parse(Buffer.from(token, "base64").toString());
-
-    if (!payload.exp || payload.exp < Date.now()) {
-      return NextResponse.json({ success: false, error: "Sesión expirada" }, { status: 401 });
+    const payload = verificarToken(token);
+    if (!payload) {
+      return NextResponse.json({ success: false, error: "Token inválido o expirado" }, { status: 401 });
     }
 
     const { data, error } = await supabase
       .from("usuarios")
       .select("id,nombre,apellido,email,rol")
-      .eq("id", payload.id)
+      .eq("id", payload.userId)
       .single();
 
     if (error || !data) {

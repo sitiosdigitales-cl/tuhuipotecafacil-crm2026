@@ -95,7 +95,6 @@ export function SubirDocumento({
   const handleSubir = async () => {
     setSubiendo(true);
 
-    // Simular subida
     for (let i = 0; i < archivos.length; i++) {
       setArchivos((prev) =>
         prev.map((a, idx) =>
@@ -103,33 +102,49 @@ export function SubirDocumento({
         )
       );
 
-      // Simular progreso
-      for (let p = 0; p <= 100; p += 20) {
-        await new Promise((r) => setTimeout(r, 100));
+      try {
+        // Subir archivo a Supabase Storage
+        const formData = new FormData();
+        formData.append("archivo", archivos[i].file);
+        formData.append("leadId", leadId);
+        formData.append("tipo", tipoDocumento);
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+
+        if (json.success && json.data) {
+          setArchivos((prev) =>
+            prev.map((a, idx) =>
+              idx === i ? { ...a, estado: "listo" as const, progreso: 100 } : a
+            )
+          );
+
+          onUpload({
+            leadId,
+            leadNombre,
+            nombre: archivos[i].file.name,
+            tipo: tipoDocumento,
+            estado: "PENDIENTE",
+            archivoUrl: json.data.archivoUrl,
+          });
+        } else {
+          setArchivos((prev) =>
+            prev.map((a, idx) =>
+              idx === i ? { ...a, estado: "error" as const } : a
+            )
+          );
+        }
+      } catch {
         setArchivos((prev) =>
           prev.map((a, idx) =>
-            idx === i ? { ...a, progreso: p } : a
+            idx === i ? { ...a, estado: "error" as const } : a
           )
         );
       }
-
-      setArchivos((prev) =>
-        prev.map((a, idx) =>
-          idx === i ? { ...a, estado: "listo" as const, progreso: 100 } : a
-        )
-      );
     }
-
-    // Crear documentos
-    archivos.forEach((archivo) => {
-      onUpload({
-        leadId,
-        leadNombre,
-        nombre: archivo.file.name,
-        tipo: tipoDocumento,
-        estado: "PENDIENTE",
-      });
-    });
 
     setSubiendo(false);
     setArchivos([]);

@@ -128,6 +128,9 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
     "CRM COMERCIAL": true,
   });
 
+  // Verificar si es admin
+  const esAdmin = ["SUPER_ADMIN", "ADMIN"].includes(usuarioActual.rol);
+
   // Calcular badges dinámicos
   const badges = useMemo(() => ({
     leads: leads.length,
@@ -267,10 +270,12 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
       {/* Separador */}
       <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-      {/* Selector Rápido de Usuario */}
-      <div className="px-3 py-2">
-        <CambioRapidoUsuario />
-      </div>
+      {/* Selector Rápido de Usuario (solo para admins) */}
+      {esAdmin && (
+        <div className="px-3 py-2">
+          <CambioRapidoUsuario />
+        </div>
+      )}
 
       {/* Botón Cerrar Sesión */}
       <div className="px-3 pb-2">

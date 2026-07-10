@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ROLES_CONFIG } from "@/tipos";
 import {
   UserPlus,
@@ -9,6 +8,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useUser } from "@/lib/contexts/UserContext";
 
 interface AsignarEjecutivoProps {
   ejecutivoActual?: string;
@@ -17,10 +17,11 @@ interface AsignarEjecutivoProps {
 }
 
 export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }: AsignarEjecutivoProps) {
+  const { usuarios } = useUser();
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
 
-  const ejecutivos = USUARIOS_MOCK.filter((u) => u.estado === "ACTIVO");
+  const ejecutivos = usuarios.filter((u) => u.estado === "ACTIVO");
   const ejecutivosFiltrados = ejecutivos.filter((e) =>
     `${e.nombre} ${e.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );

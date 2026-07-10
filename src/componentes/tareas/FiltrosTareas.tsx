@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Search, X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { EstadoTarea, TipoTarea, Prioridad } from "@/tipos";
+import { useUser } from "@/lib/contexts/UserContext";
 
 export interface FiltrosTareasState {
   busqueda: string;
@@ -31,10 +31,6 @@ const prioridades: { value: Prioridad; label: string; color: string; activeColor
   { value: "URGENTE", label: "Urgente", color: "bg-slate-50 text-slate-500 border-slate-200", activeColor: "bg-red-500 text-white border-red-500" },
 ];
 
-const ejecutivos = USUARIOS_MOCK.filter(
-  (u) => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN"
-);
-
 export const FILTROS_VACIOS: FiltrosTareasState = {
   busqueda: "",
   ejecutivo: "",
@@ -51,6 +47,10 @@ export function FiltrosTareas({
   onCambiarFiltros,
   totalResultados,
 }: FiltrosTareasProps) {
+  const { usuarios } = useUser();
+  const ejecutivos = usuarios.filter(
+    (u) => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN"
+  );
   const [expandido, setExpandido] = useState(false);
 
   const tieneFiltrosActivos =

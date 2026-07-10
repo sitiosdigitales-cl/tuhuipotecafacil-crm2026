@@ -2,25 +2,42 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ROLES_CONFIG } from "@/tipos";
 import {
   ArrowLeftRight,
   Check,
   ChevronUp,
+  Loader2,
 } from "lucide-react";
 
 export function CambioRapidoUsuario() {
-  const { usuarioActual, cambiarUsuario } = useUser();
+  const { usuarioActual, cambiarUsuario, usuarios } = useUser();
   const [abierto, setAbierto] = useState(false);
+  const [cambiando, setCambiando] = useState(false);
   const rolConfig = ROLES_CONFIG[usuarioActual.rol];
+
+  const handleCambiarUsuario = async (userId: string) => {
+    if (userId === usuarioActual.id) {
+      setAbierto(false);
+      return;
+    }
+
+    setCambiando(true);
+    try {
+      await cambiarUsuario(userId);
+    } finally {
+      setCambiando(false);
+      setAbierto(false);
+    }
+  };
 
   return (
     <div className="relative">
       {/* Botón flotante */}
       <button
         onClick={() => setAbierto(!abierto)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all hover:bg-white/10 group"
+        disabled={cambiando}
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all hover:bg-white/10 group disabled:opacity-50"
         title="Cambiar usuario"
       >
         <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
@@ -31,7 +48,11 @@ export function CambioRapidoUsuario() {
               'linear-gradient(135deg, #64748b, #475569)'
           }}
         >
-          {usuarioActual.nombre[0]}{usuarioActual.apellido[0]}
+          {cambiando ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <>{usuarioActual.nombre[0]}{usuarioActual.apellido[0]}</>
+          )}
         </div>
         <div className="flex-1 text-left min-w-0">
           <div className="text-[11px] font-semibold text-white truncate">
@@ -63,22 +84,23 @@ export function CambioRapidoUsuario() {
                   Cambiar Usuario
                 </span>
               </div>
+              <p className="text-[8px] text-slate-500 mt-1">
+                Solo visible para administradores
+              </p>
             </div>
 
             {/* Lista de usuarios */}
             <div className="p-1.5 max-h-[240px] overflow-y-auto">
-              {USUARIOS_MOCK.map((user) => {
+              {usuarios.filter(u => u.estado === "ACTIVO").map((user) => {
                 const userRol = ROLES_CONFIG[user.rol];
                 const esActual = user.id === usuarioActual.id;
 
                 return (
                   <button
                     key={user.id}
-                    onClick={() => {
-                      cambiarUsuario(user.id);
-                      setAbierto(false);
-                    }}
-                    className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all ${
+                    onClick={() => handleCambiarUsuario(user.id)}
+                    disabled={cambiando}
+                    className={`w-full flex items-center gap-2 p-2 rounded-lg transition-all disabled:opacity-50 ${
                       esActual
                         ? "bg-blue-50 border border-blue-200"
                         : "hover:bg-slate-50 border border-transparent"

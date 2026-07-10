@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get("rol");
@@ -41,6 +43,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Solo ADMIN y SUPER_ADMIN pueden crear usuarios
+  if (!requireRole(request, ["ADMIN", "SUPER_ADMIN"])) return forbidden();
   try {
     const body = await request.json();
     const { nombre, apellido, email, password, telefono, rol } = body;

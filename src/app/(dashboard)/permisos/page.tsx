@@ -35,7 +35,6 @@ import {
   Copy,
   ArrowRight,
 } from "lucide-react";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import { ROLES_CONFIG } from "@/tipos";
 
 // Módulos del sistema

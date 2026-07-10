@@ -44,8 +44,9 @@ import {
   BarChart3,
   ExternalLink,
 } from "lucide-react";
-import { generarLeads, RENDIMIENTO_BANCOS, ETAPAS_CONFIG } from "@/datos/mock";
+import { RENDIMIENTO_BANCOS, ETAPAS_CONFIG } from "@/datos/mock";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
+import { useLeads } from "@/lib/contexts/LeadContext";
 
 // Datos detallados de bancos
 const BANCOS_DETALLE = [
@@ -242,11 +243,11 @@ const VISTAS = [
 ];
 
 export default function BancosPage() {
+  const { leads } = useLeads();
   const [vista, setVista] = useState("grid");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [bancoSeleccionado, setBancoSeleccionado] = useState<string | null>(null);
-  const leads = useMemo(() => generarLeads(), []);
 
   // Leads por banco
   const leadsPorBanco = useMemo(() => {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const formData = await request.formData();
     const archivo = formData.get("archivo") as File;

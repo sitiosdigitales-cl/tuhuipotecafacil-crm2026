@@ -67,6 +67,32 @@ export interface Lead {
   codigoReferido?: string;
   creadoEn: Date;
   diasEnEtapa: number;
+
+  // Datos personales extendidos
+  cargasLegales?: string;
+  estadoCivil?: string;
+  regimenMatrimonial?: string;
+  fechaNacimiento?: string;
+  estudios?: string;
+  profesion?: string;
+  domicilioParticular?: string;
+  comunaCiudad?: string;
+  valorArriendo?: number;
+  afp?: string;
+
+  // Datos del empleador
+  nombreEmpleador?: string;
+  rutEmpresa?: string;
+  fechaIngreso?: string;
+  cargo?: string;
+  rentaLiquida?: number;
+  bancoAbonoRenta?: string;
+  fechaPago?: string;
+  direccionLaboral?: string;
+  comunaCiudadLaboral?: string;
+  telefonoLaboralFijo?: string;
+  emailLaboral?: string;
+  otrosIngresos?: string;
 }
 
 export const SITUACION_LABORAL_CONFIG: Record<SituacionLaboral, { label: string; icono: string }> = {

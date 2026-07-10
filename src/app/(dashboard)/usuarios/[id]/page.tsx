@@ -49,11 +49,12 @@ import {
   Lock,
   Percent,
 } from "lucide-react";
-import { generarLeads, ETAPAS_CONFIG, ORIGEN_LABELS, USUARIOS_MOCK, RANKING_EJECUTIVOS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
 import { ROLES_CONFIG, ESTADOS_USUARIO_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Usuario, Lead, Etapa } from "@/tipos";
+import { useLeads } from "@/lib/contexts/LeadContext";
 
 // Actividad mock del usuario
 function generarActividadUsuario(nombreUsuario: string) {
@@ -86,7 +87,7 @@ const RENDIMIENTO_MENSUAL = [
 export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const leads = useMemo(() => generarLeads(), []);
+  const { leads } = useLeads();
   const [esSuperAdmin, setEsSuperAdmin] = useState(true);
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);

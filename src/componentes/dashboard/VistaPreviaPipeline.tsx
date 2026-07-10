@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { generarLeads, ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/datos/mock";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import type { Etapa } from "@/tipos";
 import { LayoutGrid, List, ChevronRight } from "lucide-react";
+import { useLeads } from "@/lib/contexts/LeadContext";
 
 const ETAPAS_VISIBLES: Etapa[] = [
   "NUEVO_LEAD",
@@ -24,7 +25,7 @@ const ETAPAS_VISIBLES: Etapa[] = [
 
 export function VistaPreviaPipeline() {
   const router = useRouter();
-  const leads = generarLeads();
+  const { leads } = useLeads();
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100/80">

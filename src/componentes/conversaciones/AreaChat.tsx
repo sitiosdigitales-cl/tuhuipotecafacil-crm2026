@@ -15,7 +15,7 @@ import { Avatar } from "./Avatar";
 import { MensajeItem } from "./MensajeItem";
 import { InputMensaje } from "./InputMensaje";
 import { useChat } from "@/lib/hooks/useChat";
-import { USUARIOS_MOCK } from "@/datos/mock";
+import { useUser } from "@/lib/contexts/UserContext";
 import type { Mensaje, Conversacion } from "@/tipos/conversaciones";
 
 interface AreaChatProps {
@@ -24,6 +24,7 @@ interface AreaChatProps {
 }
 
 export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
+  const { usuarios } = useUser();
   const [conversacion, setConversacion] = useState<Conversacion | null>(null);
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const mensajesRef = useRef<HTMLDivElement>(null);
@@ -92,7 +93,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
     if (conversacion.tipo === "DIRECTO") {
       const otroId = conversacion.participantes.find((p) => p !== usuarioActualId);
       if (!otroId) return conversacion.nombre;
-      const otro = USUARIOS_MOCK.find((u) => u.id === otroId);
+      const otro = usuarios.find((u) => u.id === otroId);
       return otro ? `${otro.nombre} ${otro.apellido}` : conversacion.nombre;
     }
     return conversacion.nombre;
@@ -249,7 +250,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
               </h5>
               <div className="space-y-2">
                 {conversacion.participantes.map((pid) => {
-                  const usuario = USUARIOS_MOCK.find((u) => u.id === pid);
+                  const usuario = usuarios.find((u) => u.id === pid);
                   if (!usuario) return null;
 
                   return (

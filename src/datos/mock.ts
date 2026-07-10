@@ -67,7 +67,7 @@ const APELLIDOS = [
   "Ruiz", "Muñoz", "Jara", "Sepúlveda", "Cáceres", "Miranda",
 ];
 
-const TIPOS_CREDITO = ["Crédito Hipotecario", "Crédito de Consumo", "Fines Generales", "Capital para Empresas"];
+const TIPOS_CREDITO = ["Créditos Hipotecarios", "Créditos de Consumos", "Fines Generales", "Capital para Empresas"];
 
 // Generador pseudo-random determinístico basado en seed
 function seededRandom(seed: number): number {
