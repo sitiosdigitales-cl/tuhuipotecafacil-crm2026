@@ -6,6 +6,7 @@ import { PanelRightOpen } from "lucide-react";
 import { BarraLateral } from "@/componentes/layout/BarraLateral";
 import { BarraSuperior } from "@/componentes/layout/BarraSuperior";
 import { PanelDerecho } from "@/componentes/layout/PanelDerecho";
+import { BottomNav } from "@/componentes/layout/BottomNav";
 
 const RUTAS_FULLSCREEN = ["/pipeline"];
 
@@ -48,7 +49,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Contenido principal */}
-      <div className={`transition-all duration-300 lg:ml-[260px] mr-0 ${panelDerechoColapsado ? 'lg:mr-0' : 'lg:mr-[320px]'}`}>
+      <div className={`transition-all duration-300 lg:ml-[260px] mr-0 pb-20 lg:pb-0 ${panelDerechoColapsado ? 'lg:mr-0' : 'lg:mr-[320px]'}`}>
         <BarraSuperior
           onMenuClick={() => setSidebarAbierto(true)}
           onPanelClick={() => setPanelDerechoAbierto(!panelDerechoAbierto)}
@@ -56,6 +57,9 @@ export default function DashboardLayout({
         />
         <main className="p-4 lg:p-6">{children}</main>
       </div>
+
+      {/* Bottom navigation para mobile */}
+      <BottomNav />
 
       {/* Panel derecho - Fixed en desktop, drawer en móvil */}
       <div className={`fixed inset-0 z-40 lg:hidden ${panelDerechoAbierto ? "block" : "hidden"}`}>

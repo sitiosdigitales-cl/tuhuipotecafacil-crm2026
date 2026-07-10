@@ -223,6 +223,7 @@ button, a, [role="button"], input, select, textarea {
 @media (pointer: coarse) {
   button, a, [role="button"], input, select, textarea {
     min-height: 44px;
+    min-width: 44px;
   }
 }
 
@@ -239,4 +240,80 @@ button, a, [role="button"], input, select, textarea {
 .table-responsive::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 10px;
+}
+
+/* Safe area para iPhone notch */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Evitar scroll bounce en iOS */
+.no-bounce {
+  overscroll-behavior: none;
+}
+
+/* Mejorar feedback táctil */
+@media (hover: none) {
+  .card-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .card-hover:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Animaciones reducidas para accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mejorar contraste en modo oscuro */
+.dark .bg-slate-50\/80 {
+  background-color: rgba(30, 41, 59, 0.8);
+}
+
+/* Floating action button para mobile */
+.fab-mobile {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.5);
+}
+@media (min-width: 1024px) {
+  .fab-mobile {
+    display: none;
+  }
+}
+
+/* Bottom navigation para mobile */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: white;
+  border-top: 1px solid #E2E8F0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (min-width: 1024px) {
+  .bottom-nav {
+    display: none;
+  }
 }
