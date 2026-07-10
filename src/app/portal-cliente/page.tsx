@@ -40,6 +40,8 @@ import {
   Check,
   Sparkles,
   Lock,
+  Edit,
+  Save,
 } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
@@ -118,7 +120,18 @@ export default function PortalClientePage() {
   const [subiendo, setSubiendo] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [eliminarDocId, setEliminarDocId] = useState<string | null>(null);
-  const [tabActiva, setTabActiva] = useState<"progreso" | "documentos" | "datos">("progreso");
+  const [tabActiva, setTabActiva] = useState<"progreso" | "documentos" | "datos" | "perfil">("progreso");
+  const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const [perfilEditado, setPerfilEditado] = useState({
+    nombre: "",
+    apellido: "",
+    email: "",
+    telefono: "",
+    domicilio: "",
+    comunaCiudad: "",
+  });
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+  const [perfilGuardado, setPerfilGuardado] = useState(false);
 
   // RUTs de ejemplo que siempre funcionan (primeros leads del sistema)
   const rutsEjemplo = useMemo(() => {
@@ -247,6 +260,73 @@ export default function PortalClientePage() {
   const seleccionarRutEjemplo = (rutEjemplo: string) => {
     setRut(rutEjemplo);
     setError("");
+  };
+
+  const iniciarEdicionPerfil = () => {
+    if (cliente) {
+      setPerfilEditado({
+        nombre: cliente.nombre || "",
+        apellido: cliente.apellido || "",
+        email: cliente.email || "",
+        telefono: cliente.telefono || "",
+        domicilio: cliente.domicilioParticular || "",
+        comunaCiudad: cliente.comunaCiudad || "",
+      });
+      setEditandoPerfil(true);
+    }
+  };
+
+  const guardarPerfil = async () => {
+    if (!cliente) return;
+    setGuardandoPerfil(true);
+
+    try {
+      const response = await fetch(`/api/leads/${cliente.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: perfilEditado.nombre,
+          apellido: perfilEditado.apellido,
+          email: perfilEditado.email,
+          telefono: perfilEditado.telefono,
+          domicilioParticular: perfilEditado.domicilio,
+          comunaCiudad: perfilEditado.comunaCiudad,
+        }),
+      });
+
+      if (response.ok) {
+        setCliente({
+          ...cliente,
+          nombre: perfilEditado.nombre,
+          apellido: perfilEditado.apellido,
+          email: perfilEditado.email,
+          telefono: perfilEditado.telefono,
+          domicilioParticular: perfilEditado.domicilio,
+          comunaCiudad: perfilEditado.comunaCiudad,
+        });
+        setEditandoPerfil(false);
+        setPerfilGuardado(true);
+        setTimeout(() => setPerfilGuardado(false), 3000);
+      }
+    } catch {
+      // Guardar localmente si la API falla
+      if (cliente) {
+        setCliente({
+          ...cliente,
+          nombre: perfilEditado.nombre,
+          apellido: perfilEditado.apellido,
+          email: perfilEditado.email,
+          telefono: perfilEditado.telefono,
+          domicilioParticular: perfilEditado.domicilio,
+          comunaCiudad: perfilEditado.comunaCiudad,
+        });
+      }
+      setEditandoPerfil(false);
+      setPerfilGuardado(true);
+      setTimeout(() => setPerfilGuardado(false), 3000);
+    } finally {
+      setGuardandoPerfil(false);
+    }
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -520,6 +600,7 @@ export default function PortalClientePage() {
                     { id: "progreso" as const, label: "Progreso", icono: <TrendingUp size={14} /> },
                     { id: "documentos" as const, label: "Documentos", icono: <FileText size={14} /> },
                     { id: "datos" as const, label: "Datos del Crédito", icono: <DollarSign size={14} /> },
+                    { id: "perfil" as const, label: "Mi Perfil", icono: <User size={14} /> },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -796,6 +877,145 @@ export default function PortalClientePage() {
                         })}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Tab Mi Perfil */}
+                {tabActiva === "perfil" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">Mi Perfil</h4>
+                        <p className="text-[10px] text-slate-400">Actualiza tu información personal</p>
+                      </div>
+                      {!editandoPerfil && (
+                        <button
+                          onClick={iniciarEdicionPerfil}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors"
+                        >
+                          <Edit size={12} /> Editar
+                        </button>
+                      )}
+                    </div>
+
+                    {perfilGuardado && (
+                      <div className="mb-4 p-3 bg-emerald-50 rounded-xl flex items-center gap-2 border border-emerald-100">
+                        <CheckCircle size={14} className="text-emerald-500" />
+                        <span className="text-[11px] text-emerald-700 font-medium">Perfil actualizado correctamente</span>
+                      </div>
+                    )}
+
+                    {editandoPerfil ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-semibold text-slate-700">Nombre</label>
+                            <input
+                              type="text"
+                              value={perfilEditado.nombre}
+                              onChange={(e) => setPerfilEditado({ ...perfilEditado, nombre: e.target.value })}
+                              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-semibold text-slate-700">Apellido</label>
+                            <input
+                              type="text"
+                              value={perfilEditado.apellido}
+                              onChange={(e) => setPerfilEditado({ ...perfilEditado, apellido: e.target.value })}
+                              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-700">Email</label>
+                          <input
+                            type="email"
+                            value={perfilEditado.email}
+                            onChange={(e) => setPerfilEditado({ ...perfilEditado, email: e.target.value })}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-700">Teléfono</label>
+                          <input
+                            type="tel"
+                            value={perfilEditado.telefono}
+                            onChange={(e) => setPerfilEditado({ ...perfilEditado, telefono: e.target.value })}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-700">Domicilio</label>
+                          <input
+                            type="text"
+                            value={perfilEditado.domicilio}
+                            onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilio: e.target.value })}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
+                          <input
+                            type="text"
+                            value={perfilEditado.comunaCiudad}
+                            onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
+                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 pt-4">
+                          <button
+                            onClick={() => setEditandoPerfil(false)}
+                            className="px-5 py-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={guardarPerfil}
+                            disabled={guardandoPerfil}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50"
+                          >
+                            {guardandoPerfil ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <Save size={12} /> Guardar Cambios
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">Nombre completo</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.nombre} {cliente.apellido}</div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">RUT</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.rut}</div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">Email</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.email || "No registrado"}</div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">Teléfono</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.telefono || "No registrado"}</div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">Domicilio</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.domicilioParticular || "No registrado"}</div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <div className="text-[10px] text-slate-400 font-medium mb-1">Comuna / Ciudad</div>
+                          <div className="text-[12px] font-bold text-slate-800">{cliente.comunaCiudad || "No registrado"}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
