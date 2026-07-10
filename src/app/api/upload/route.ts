@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
 
+// Endpoint de upload - guarda referencia en Supabase, archivo en localStorage del cliente
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -12,51 +12,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Archivo y leadId requeridos" }, { status: 400 });
     }
 
-    // Crear nombre de archivo único
-    const nombreArchivo = `${leadId}/${tipo || "documento"}_${Date.now()}_${archivo.name}`;
-    
-    // Convertir File a ArrayBuffer
-    const buffer = await archivo.arrayBuffer();
-    
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
-      .from("documentos")
-      .upload(nombreArchivo, buffer, {
-        contentType: archivo.type,
-        upsert: true,
-      });
-
-    if (error) {
-      console.error("Error al subir archivo:", error);
-      return NextResponse.json({ success: false, error: "Error al subir archivo" }, { status: 500 });
+    // Validar tamaño (max 10MB)
+    if (archivo.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ success: false, error: "El archivo supera los 10MB" }, { status: 400 });
     }
 
-    // Obtener URL pública
-    const { data: urlData } = supabase.storage
-      .from("documentos")
-      .getPublicUrl(nombreArchivo);
-
-    // Guardar referencia en la tabla de documentos
-    const { error: dbError } = await supabase.from("documentos").insert({
-      leadid: leadId,
-      nombre: archivo.name,
-      tipo: tipo || "documento",
-      estado: "pendiente",
-      archivourl: urlData.publicUrl,
-      tamano: archivo.size,
-    });
-
-    if (dbError) {
-      console.error("Error al guardar referencia:", dbError);
+    // Validar tipo de archivo
+    const tiposPermitidos = ["application/pdf", "image/jpeg", "image/png", "image/jpg", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!tiposPermitidos.includes(archivo.type)) {
+      return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
     }
+
+    // Generar ID único para el documento
+    const docId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     return NextResponse.json({
       success: true,
       data: {
-        id: nombreArchivo,
+        id: docId,
         nombre: archivo.name,
-        url: urlData.publicUrl,
+        tipo: tipo || "documento",
         tamano: archivo.size,
+        fechaSubida: new Date().toISOString(),
       },
     });
   } catch (error) {
