@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -18,68 +18,154 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Download, Calendar, Filter } from "lucide-react";
+import { Download, Calendar, Filter, TrendingUp, TrendingDown, Users, DollarSign, CheckCircle, Clock } from "lucide-react";
+import type { Lead } from "@/tipos";
 
-// Datos mock para reportes
-const LEADS_POR_MES = [
-  { mes: "Ene", leads: 120, aprobados: 45 },
-  { mes: "Feb", leads: 135, aprobados: 52 },
-  { mes: "Mar", leads: 155, aprobados: 61 },
-  { mes: "Abr", leads: 142, aprobados: 48 },
-  { mes: "May", leads: 168, aprobados: 65 },
-  { mes: "Jun", leads: 180, aprobados: 72 },
-  { mes: "Jul", leads: 165, aprobados: 58 },
-  { mes: "Ago", leads: 148, aprobados: 50 },
-  { mes: "Sep", leads: 190, aprobados: 78 },
-  { mes: "Oct", leads: 200, aprobados: 82 },
-  { mes: "Nov", leads: 195, aprobados: 75 },
-  { mes: "Dic", leads: 175, aprobados: 68 },
-];
-
-const CONVERSION_POR_ETAPA = [
-  { etapa: "Nuevo Lead", cantidad: 1248, tasa: 100 },
-  { etapa: "Contacto", cantidad: 912, tasa: 73 },
-  { etapa: "Interesado", cantidad: 512, tasa: 41 },
-  { etapa: "Calificación", cantidad: 398, tasa: 32 },
-  { etapa: "Doc. Completa", cantidad: 184, tasa: 15 },
-  { etapa: "Evaluación", cantidad: 78, tasa: 6 },
-  { etapa: "Aprobado", cantidad: 312, tasa: 25 },
-];
-
-const DISTRIBUCION_BANCOS = [
-  { nombre: "Banco de Chile", valor: 325, color: "#E31837" },
-  { nombre: "Santander", valor: 298, color: "#EC0000" },
-  { nombre: "Bci", valor: 245, color: "#003DA5" },
-  { nombre: "Itaú", valor: 210, color: "#F7941D" },
-  { nombre: "Scotiabank", valor: 185, color: "#EC111A" },
-  { nombre: "Otros", valor: 120, color: "#64748B" },
-];
-
-const RENDIMIENTO_EJECUTIVOS = [
-  { nombre: "Andrés P.", aprobados: 38, monto: 2450 },
-  { nombre: "Carolina M.", aprobados: 32, monto: 1980 },
-  { nombre: "Diego S.", aprobados: 28, monto: 1620 },
-  { nombre: "Valentina T.", aprobados: 24, monto: 1120 },
-  { nombre: "Javier M.", aprobados: 21, monto: 980 },
-];
-
-const METRICAS_RESUMEN = [
-  { titulo: "Total Leads", valor: "1.248", cambio: 18 },
-  { titulo: "Tasa Conversión", valor: "24.6%", cambio: 5.3 },
-  { titulo: "Ticket Promedio", valor: "$ 98.4 MM", cambio: -4 },
-  { titulo: "Tiempo Promedio Venta", valor: "32 días", cambio: -8 },
-];
+const COLORES_BANCOS: Record<string, string> = {
+  "Banco de Chile": "#E31837",
+  Santander: "#EC0000",
+  Bci: "#003DA5",
+  Itaú: "#F7941D",
+  Scotiabank: "#EC111A",
+  BancoEstado: "#00529B",
+  "Banco Falabella": "#00A859",
+  "Banco Ripley": "#E31837",
+};
 
 export default function ReportesPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [periodo, setPeriodo] = useState("este-año");
+
+  useEffect(() => {
+    async function cargarLeads() {
+      try {
+        const res = await fetch("/api/leads");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLeads(json.data.map((l: Record<string, any>) => ({
+            ...l,
+            creadoEn: l.creadoEn ? new Date(l.creadoEn) : new Date(),
+            montoSolicitado: l.montoSolicitado || 0,
+          })));
+        }
+      } catch {
+        setLeads([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarLeads();
+  }, []);
+
+  const metricas = useMemo(() => {
+    const total = leads.length;
+    const aprobados = leads.filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)).length;
+    const tasaConversion = total > 0 ? ((aprobados / total) * 100).toFixed(1) : "0";
+    const montoTotal = leads.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
+    const ticketPromedio = aprobados > 0 ? montoTotal / aprobados : 0;
+
+    return { total, aprobados, tasaConversion, montoTotal, ticketPromedio };
+  }, [leads]);
+
+  const leadsPorMes = useMemo(() => {
+    const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const agrupado: Record<number, { leads: number; aprobados: number }> = {};
+
+    leads.forEach((l) => {
+      const mes = l.creadoEn.getMonth();
+      if (!agrupado[mes]) agrupado[mes] = { leads: 0, aprobados: 0 };
+      agrupado[mes].leads++;
+      if (["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)) {
+        agrupado[mes].aprobados++;
+      }
+    });
+
+    return meses.map((mes, i) => ({
+      mes,
+      leads: agrupado[i]?.leads || 0,
+      aprobados: agrupado[i]?.aprobados || 0,
+    }));
+  }, [leads]);
+
+  const conversionPorEtapa = useMemo(() => {
+    const etapas = [
+      { key: "NUEVO_LEAD", label: "Nuevo Lead" },
+      { key: "CONTACTADO", label: "Contactado" },
+      { key: "INTERESADO", label: "Interesado" },
+      { key: "CALIFICACION_COMERCIAL", label: "Calificación" },
+      { key: "DOCS_COMPLETAS", label: "Doc. Completa" },
+      { key: "EVALUACION_BANCARIA", label: "Evaluación" },
+      { key: "APROBADO", label: "Aprobado" },
+    ];
+    const total = leads.length || 1;
+
+    return etapas.map((e) => ({
+      etapa: e.label,
+      cantidad: leads.filter((l) => l.etapa === e.key).length,
+      tasa: Math.round((leads.filter((l) => l.etapa === e.key).length / total) * 100),
+    }));
+  }, [leads]);
+
+  const distribucionBancos = useMemo(() => {
+    const agrupado: Record<string, number> = {};
+    leads.forEach((l) => {
+      if (l.banco) {
+        agrupado[l.banco] = (agrupado[l.banco] || 0) + 1;
+      }
+    });
+
+    return Object.entries(agrupado)
+      .map(([nombre, valor]) => ({
+        nombre,
+        valor,
+        color: COLORES_BANCOS[nombre] || "#64748B",
+      }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 6);
+  }, [leads]);
+
+  const rendimientoEjecutivos = useMemo(() => {
+    const agrupado: Record<string, { aprobados: number; monto: number }> = {};
+    leads.forEach((l) => {
+      const nombre = l.nombreEjecutivo || "Sin asignar";
+      if (!agrupado[nombre]) agrupado[nombre] = { aprobados: 0, monto: 0 };
+      if (["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)) {
+        agrupado[nombre].aprobados++;
+      }
+      agrupado[nombre].monto += l.montoSolicitado || 0;
+    });
+
+    return Object.entries(agrupado)
+      .map(([nombre, data]) => ({
+        nombre: nombre.split(" ")[0] + " " + (nombre.split(" ")[1]?.[0] || ""),
+        ...data,
+      }))
+      .sort((a, b) => b.aprobados - a.aprobados)
+      .slice(0, 6);
+  }, [leads]);
+
+  const formatoMoneda = (valor: number) => {
+    if (valor >= 1000000000) return `$${(valor / 1000000000).toFixed(1)} MM`;
+    if (valor >= 1000000) return `$${(valor / 1000000).toFixed(1)} M`;
+    return `$${valor.toLocaleString("es-CL")}`;
+  };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando reportes...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight">Reportes</h1>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Análisis y métricas del CRM</p>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Análisis y métricas del CRM basadas en datos reales</p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -99,26 +185,44 @@ export default function ReportesPage() {
       </div>
 
       {/* Métricas Resumen */}
-      <div className="grid grid-cols-4 gap-4">
-        {METRICAS_RESUMEN.map((metrica, i) => (
-          <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <div className="text-[11px] text-slate-500 font-medium mb-2">{metrica.titulo}</div>
-            <div className="text-2xl font-bold text-slate-900">{metrica.valor}</div>
-            <div className={`text-[11px] font-semibold mt-2 ${metrica.cambio >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-              {metrica.cambio >= 0 ? "+" : ""}{metrica.cambio}% vs período anterior
-            </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+          <div className="flex items-center gap-2 mb-2">
+            <Users size={14} className="text-blue-500" />
+            <span className="text-[11px] text-slate-500 font-medium">Total Leads</span>
           </div>
-        ))}
+          <div className="text-2xl font-bold text-slate-900">{metricas.total.toLocaleString("es-CL")}</div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle size={14} className="text-emerald-500" />
+            <span className="text-[11px] text-slate-500 font-medium">Tasa Conversión</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{metricas.tasaConversion}%</div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+          <div className="flex items-center gap-2 mb-2">
+            <DollarSign size={14} className="text-amber-500" />
+            <span className="text-[11px] text-slate-500 font-medium">Monto Total</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{formatoMoneda(metricas.montoTotal)}</div>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp size={14} className="text-purple-500" />
+            <span className="text-[11px] text-slate-500 font-medium">Ticket Promedio</span>
+          </div>
+          <div className="text-2xl font-bold text-slate-900">{formatoMoneda(metricas.ticketPromedio)}</div>
+        </div>
       </div>
 
       {/* Gráficos Principales */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Leads por Mes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Leads por Mes</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={LEADS_POR_MES} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <BarChart data={leadsPorMes} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                 <XAxis dataKey="mes" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
@@ -138,12 +242,11 @@ export default function ReportesPage() {
           </div>
         </div>
 
-        {/* Conversión por Etapa */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Tasa de Conversión por Etapa</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={CONVERSION_POR_ETAPA} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <AreaChart data={conversionPorEtapa} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorConversion" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
@@ -151,7 +254,7 @@ export default function ReportesPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                <XAxis dataKey="etapa" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="etapa" tick={{ fontSize: 9, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
@@ -169,73 +272,83 @@ export default function ReportesPage() {
       </div>
 
       {/* Segunda Fila */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Distribución por Banco */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Distribución por Banco</h3>
-          <div className="h-64 flex items-center">
-            <div className="w-1/2 h-full">
+          {distribucionBancos.length > 0 ? (
+            <div className="h-64 flex items-center">
+              <div className="w-1/2 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={distribucionBancos}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="valor"
+                    >
+                      {distribucionBancos.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 12,
+                        border: "1px solid #E2E8F0",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-1/2 space-y-2">
+                {distribucionBancos.map((banco, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: banco.color }} />
+                      <span className="text-[11px] text-slate-600">{banco.nombre}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-800">{banco.valor}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-sm text-slate-400">
+              Sin datos de bancos disponibles
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+          <h3 className="text-sm font-bold text-slate-900 mb-4">Rendimiento por Ejecutivo</h3>
+          {rendimientoEjecutivos.length > 0 ? (
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={DISTRIBUCION_BANCOS}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="valor"
-                  >
-                    {DISTRIBUCION_BANCOS.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
+                <BarChart data={rendimientoEjecutivos} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="nombre" type="category" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={70} />
                   <Tooltip
                     contentStyle={{
                       fontSize: 12,
                       borderRadius: 12,
                       border: "1px solid #E2E8F0",
+                      boxShadow: "0 4px 12px -2px rgba(0,0,0,0.08)",
                     }}
+                    formatter={(value) => [`${value} aprobados`, "Aprobados"]}
                   />
-                </PieChart>
+                  <Bar dataKey="aprobados" fill="#3B82F6" radius={[0, 6, 6, 0]} maxBarSize={20} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-1/2 space-y-2">
-              {DISTRIBUCION_BANCOS.map((banco, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: banco.color }} />
-                    <span className="text-[11px] text-slate-600">{banco.nombre}</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-800">{banco.valor}</span>
-                </div>
-              ))}
+          ) : (
+            <div className="h-64 flex items-center justify-center text-sm text-slate-400">
+              Sin datos de ejecutivos disponibles
             </div>
-          </div>
-        </div>
-
-        {/* Rendimiento por Ejecutivo */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Rendimiento por Ejecutivo</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={RENDIMIENTO_EJECUTIVOS} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="nombre" type="category" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} width={70} />
-                <Tooltip
-                  contentStyle={{
-                    fontSize: 12,
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    boxShadow: "0 4px 12px -2px rgba(0,0,0,0.08)",
-                  }}
-                  formatter={(value) => [`${value} aprobados`, "Aprobados"]}
-                />
-                <Bar dataKey="aprobados" fill="#3B82F6" radius={[0, 6, 6, 0]} maxBarSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          )}
         </div>
       </div>
     </div>

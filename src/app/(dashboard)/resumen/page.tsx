@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -51,12 +51,6 @@ import {
   Briefcase,
 } from "lucide-react";
 import {
-  generarLeads,
-  KPI_DATA,
-  RANKING_EJECUTIVOS,
-  RENDIMIENTO_BANCOS,
-  APROBACIONES_MENSUALES,
-  LEADS_POR_ORIGEN,
   ETAPAS_CONFIG,
 } from "@/datos/mock";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
@@ -110,8 +104,29 @@ const PERIODOS = [
 export default function ResumenPage() {
   const [periodo, setPeriodo] = useState("mes");
   const [ejecutivoFiltro, setEjecutivoFiltro] = useState("todos");
-  const { usuarioActual, esSuperAdmin, leads: userLeads } = useUserData();
-  const leads = useMemo(() => generarLeads(), []);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const { usuarioActual, esSuperAdmin } = useUserData();
+
+  useEffect(() => {
+    async function cargarLeads() {
+      try {
+        const res = await fetch("/api/leads");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLeads(json.data.map((l: Record<string, any>) => ({
+            ...l,
+            creadoEn: l.creadoEn ? new Date(l.creadoEn) : new Date(),
+          })));
+        }
+      } catch {
+        setLeads([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarLeads();
+  }, []);
 
   // Lista de ejecutivos únicos
   const ejecutivos = useMemo(() => {
@@ -260,6 +275,53 @@ export default function ResumenPage() {
       tasaAprobacion: data.total > 0 ? ((data.aprobados / data.total) * 100).toFixed(0) : "0",
     }));
   }, [leadsFiltrados, ejecutivoFiltro]);
+
+  const rendimientoBancos = useMemo(() => {
+    const colores = ["#E31837", "#EC0000", "#003DA5", "#F7941D", "#EC111A", "#00529B", "#00A859"];
+    const agrupado: Record<string, { total: number; montoTotal: number }> = {};
+    leadsFiltrados.forEach((l) => {
+      const banco = l.banco || "Sin banco";
+      if (!agrupado[banco]) agrupado[banco] = { total: 0, montoTotal: 0 };
+      agrupado[banco].total++;
+      agrupado[banco].montoTotal += l.montoSolicitado || 0;
+    });
+    return Object.entries(agrupado)
+      .map(([nombre, data], i) => ({ nombre, ...data, color: colores[i % colores.length] }))
+      .sort((a, b) => b.montoTotal - a.montoTotal)
+      .slice(0, 6);
+  }, [leadsFiltrados]);
+
+  const leadsPorOrigen = useMemo(() => {
+    const colores: Record<string, string> = {
+      WEB: "#3B82F6", FACEBOOK: "#1877F2", INSTAGRAM: "#E4405F", GOOGLE: "#EA4335",
+      TIKTOK: "#000000", LINKEDIN: "#0A66C2", WHATSAPP: "#25D366", REFERIDO: "#D4AF37", OTRO: "#64748B",
+    };
+    const labels: Record<string, string> = {
+      WEB: "Sitio Web", FACEBOOK: "Facebook", INSTAGRAM: "Instagram", GOOGLE: "Google",
+      TIKTOK: "TikTok", LINKEDIN: "LinkedIn", WHATSAPP: "WhatsApp", REFERIDO: "Referido", OTRO: "Otros",
+    };
+    const total = leadsFiltrados.length || 1;
+    const agrupado: Record<string, number> = {};
+    leadsFiltrados.forEach((l) => {
+      agrupado[l.origen] = (agrupado[l.origen] || 0) + 1;
+    });
+    return Object.entries(agrupado)
+      .map(([key, count]) => ({
+        nombre: labels[key] || key,
+        valor: Math.round((count / total) * 100),
+        color: colores[key] || "#64748B",
+      }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [leadsFiltrados]);
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando resumen...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -665,7 +727,7 @@ export default function ResumenPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Rendimiento por Banco</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={RENDIMIENTO_BANCOS} layout="vertical">
+            <BarChart data={rendimientoBancos} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} tickFormatter={(v) => formatoMonedaAbreviado(v)} />
               <YAxis dataKey="nombre" type="category" tick={{ fontSize: 10, fill: "#94A3B8" }} width={80} />
@@ -674,7 +736,7 @@ export default function ResumenPage() {
                 formatter={(value) => [formatoMonedaAbreviado(Number(value)), "Monto"]}
               />
               <Bar dataKey="montoTotal" radius={[0, 6, 6, 0]}>
-                {RENDIMIENTO_BANCOS.map((entry, index) => (
+                {rendimientoBancos.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Bar>
@@ -686,7 +748,7 @@ export default function ResumenPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Leads por Origen</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={LEADS_POR_ORIGEN}>
+            <BarChart data={leadsPorOrigen}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
               <XAxis dataKey="nombre" tick={{ fontSize: 9, fill: "#94A3B8" }} />
               <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} />
@@ -695,7 +757,7 @@ export default function ResumenPage() {
                 formatter={(value) => [`${value}%`, "Participación"]}
               />
               <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
-                {LEADS_POR_ORIGEN.map((entry, index) => (
+                {leadsPorOrigen.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Bar>
