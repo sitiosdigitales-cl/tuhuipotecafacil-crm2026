@@ -21,7 +21,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Usuarios mock para cuando la API no está disponible (Vercel, etc.)
+// Usuarios mock para cuando la API no está disponible (desarrollo local sin DB)
 const USUARIOS_MOCK: Record<string, { password: string; usuario: Usuario }> = {
   "admin@tuhipotecafacil.cl": {
     password: "demo1234",
@@ -55,7 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Verificar sesión al cargar
   useEffect(() => {
     const verificarSesion = async () => {
-      // Primero verificar localStorage (para Vercel / sin API)
+      // Intentar API (usa cookie httpOnly automaticamente)
+      try {
+        const response = await fetch("/api/auth/me");
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setUsuario(data.data);
+          setIsAuthenticated(true);
+          setCargando(false);
+          return;
+        }
+      } catch {}
+
+      // Fallback: verificar localStorage (para mock login)
       try {
         const sesionGuardada = localStorage.getItem(SESSION_KEY);
         if (sesionGuardada) {
@@ -67,20 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch {}
 
-      // Intentar API
-      try {
-        const response = await fetch("/api/auth/me");
-        const data = await response.json();
-
-        if (data.success && data.data) {
-          setUsuario(data.data);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        // No hay sesión activa
-      } finally {
-        setCargando(false);
-      }
+      setCargando(false);
     };
 
     verificarSesion();
@@ -102,11 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(true);
         return true;
       }
-    } catch (error) {
-      // API no disponible, usar mock
-    }
+    } catch {}
 
-    // Fallback a mock users
+    // Fallback a mock users (solo si API no disponible)
     const mockUser = USUARIOS_MOCK[email];
     if (mockUser && mockUser.password === password) {
       setUsuario(mockUser.usuario);
@@ -121,13 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-    } catch (error) {
-      // Ignorar errores de API
-    } finally {
-      setUsuario(null);
-      setIsAuthenticated(false);
-      localStorage.removeItem(SESSION_KEY);
-    }
+    } catch {}
+    setUsuario(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem(SESSION_KEY);
   };
 
   return (

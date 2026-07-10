@@ -16,61 +16,53 @@ export interface Actividad {
 
 interface ActivityContextType {
   actividades: Actividad[];
-  agregarActividad: (actividad: Omit<Actividad, "id" | "fecha">) => void;
+  agregarActividad: (actividad: Omit<Actividad, "id" | "fecha">) => Promise<void>;
   obtenerActividadesLead: (leadId: string) => Actividad[];
   obtenerActividadesRecientes: (leadId: string, limit?: number) => Actividad[];
 }
 
 const ActivityContext = createContext<ActivityContextType | undefined>(undefined);
 
-const STORAGE_KEY = "crm_actividades";
-
-function generarActividadesIniciales(): Actividad[] {
-  const ahora = new Date();
-  return [
-    { id: "act-1", leadId: "lead-1", tipo: "llamada", titulo: "Llamada de seguimiento", descripcion: "Seguimiento a María sobre documentos pendientes", fecha: new Date(ahora.getTime() - 3600000), usuario: "Andrés Pérez", usuarioId: "u2" },
-    { id: "act-2", leadId: "lead-1", tipo: "whatsapp", titulo: "Mensaje de recordatorio", descripcion: "Envío de lista de documentos faltantes", fecha: new Date(ahora.getTime() - 86400000), usuario: "Andrés Pérez", usuarioId: "u2" },
-    { id: "act-3", leadId: "lead-1", tipo: "email", titulo: "Envío de propuesta", descripcion: "Propuesta de crédito Crédito Hipotecario", fecha: new Date(ahora.getTime() - 172800000), usuario: "Sistema", usuarioId: "system" },
-    { id: "act-4", leadId: "lead-1", tipo: "documento", titulo: "Documento subido", descripcion: "Cédula de Identidad", fecha: new Date(ahora.getTime() - 259200000), usuario: "Cliente", usuarioId: "client" },
-    { id: "act-5", leadId: "lead-1", tipo: "reunion", titulo: "Reunión presencial", descripcion: "Revisión condiciones bancarias en Banco de Chile", fecha: new Date(ahora.getTime() - 345600000), usuario: "Andrés Pérez", usuarioId: "u2" },
-    { id: "act-6", leadId: "lead-1", tipo: "cambio_estado", titulo: "Cambio de etapa", descripcion: "Movido de Contacto Inicial a Documentos Pendientes", fecha: new Date(ahora.getTime() - 432000000), usuario: "Sistema", usuarioId: "system" },
-    { id: "act-7", leadId: "lead-2", tipo: "llamada", titulo: "Llamada de presentación", descripcion: "Primer contacto con Carlos Rojas", fecha: new Date(ahora.getTime() - 7200000), usuario: "Carolina Muñoz", usuarioId: "u3" },
-    { id: "act-8", leadId: "lead-2", tipo: "documento", titulo: "Documentos recibidos", descripcion: "Certificado AFP y Cédula de Identidad", fecha: new Date(ahora.getTime() - 172800000), usuario: "Cliente", usuarioId: "client" },
-    { id: "act-9", leadId: "lead-3", tipo: "email", titulo: "Propuesta enviada", descripcion: "Comparativa de tasas Banco Estado vs Santander", fecha: new Date(ahora.getTime() - 259200000), usuario: "Diego Silva", usuarioId: "u4" },
-    { id: "act-10", leadId: "lead-3", tipo: "tarea", titulo: "Tarea completada", descripcion: "Enviar propuesta comercial", fecha: new Date(ahora.getTime() - 345600000), usuario: "Diego Silva", usuarioId: "u4" },
-  ];
-}
-
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const [actividades, setActividades] = useState<Actividad[]>([]);
 
+  // Cargar actividades desde la API
   useEffect(() => {
-    const guardadas = localStorage.getItem(STORAGE_KEY);
-    if (guardadas) {
+    const cargarActividades = async () => {
       try {
-        const parsed = JSON.parse(guardadas);
-        setActividades(parsed.map((a: any) => ({ ...a, fecha: new Date(a.fecha) })));
+        const response = await fetch("/api/actividades?limit=200");
+        const data = await response.json();
+        if (data.success && data.data) {
+          setActividades(data.data.map((a: any) => ({
+            ...a,
+            fecha: new Date(a.fecha),
+          })));
+        }
       } catch {
-        setActividades(generarActividadesIniciales());
+        // Silenciar errores
       }
-    } else {
-      setActividades(generarActividadesIniciales());
-    }
+    };
+    cargarActividades();
   }, []);
 
-  useEffect(() => {
-    if (actividades.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actividades));
-    }
-  }, [actividades]);
-
-  const agregarActividad = useCallback((nuevaActividad: Omit<Actividad, "id" | "fecha">) => {
-    const actividad: Actividad = {
+  const agregarActividad = useCallback(async (nuevaActividad: Omit<Actividad, "id" | "fecha">) => {
+    // Optimistic update
+    const actividadLocal: Actividad = {
       ...nuevaActividad,
       id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       fecha: new Date(),
     };
-    setActividades((prev) => [actividad, ...prev]);
+    setActividades((prev) => [actividadLocal, ...prev]);
+
+    try {
+      await fetch("/api/actividades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevaActividad),
+      });
+    } catch {
+      // La actividad queda en el estado local
+    }
   }, []);
 
   const obtenerActividadesLead = useCallback((leadId: string) => {

@@ -1,7 +1,11 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "tuhipotecafacil-secret-key-2026";
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "24h";
+
+if (!JWT_SECRET) {
+  console.warn("Variable JWT_SECRET no configurada");
+}
 
 export interface TokenPayload {
   userId: string;
@@ -10,14 +14,14 @@ export interface TokenPayload {
 }
 
 export function generarToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET || "fallback-secret", { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verificarToken(token: string): TokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_SECRET || "fallback-secret") as TokenPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -28,7 +32,6 @@ export function obtenerTokenDeRequest(request: Request): string | null {
     return authHeader.substring(7);
   }
 
-  // También buscar en cookies
   const cookies = request.headers.get("cookie");
   if (cookies) {
     const tokenCookie = cookies.split(";").find((c) => c.trim().startsWith("auth_token="));

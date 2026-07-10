@@ -25,7 +25,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [cargando, setCargando] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
-  // Cargar leads desde la API
   const cargarLeads = useCallback(async () => {
     try {
       const response = await fetch("/api/leads");
@@ -67,7 +66,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         await cargarLeads();
       }
     } catch {
-      // Fallback local
+      // Fallback local si la API no está disponible
       const nuevoLead: Lead = {
         ...leadData,
         id: `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -78,22 +77,55 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [cargarLeads]);
 
   const actualizarLead = useCallback(async (id: string, datos: Partial<Lead>) => {
+    // Guardar estado anterior para rollback
+    const leadsAnteriores = leads;
+
+    // Optimistic update
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...datos } : l)));
+
     try {
-      await fetch(`/api/leads/${id}`, {
+      const response = await fetch(`/api/leads/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
       });
-    } catch {}
-  }, []);
+
+      if (!response.ok) {
+        // Rollback si la API falla
+        setLeads(leadsAnteriores);
+      }
+    } catch {
+      // Rollback si hay error de red
+      setLeads(leadsAnteriores);
+    }
+  }, [leads]);
 
   const eliminarLead = useCallback(async (id: string) => {
+    // Guardar estado anterior para rollback
+    const leadsAnteriores = leads;
+    const leadEliminado = leads.find((l) => l.id === id);
+
+    // Optimistic update
     setLeads((prev) => prev.filter((l) => l.id !== id));
+
     try {
-      await fetch(`/api/leads/${id}`, { method: "DELETE" });
-    } catch {}
-  }, []);
+      const response = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+
+      if (!response.ok && leadEliminado) {
+        // Rollback si la API falla
+        setLeads((prev) => [...prev, leadEliminado].sort((a, b) =>
+          new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
+        ));
+      }
+    } catch {
+      // Rollback si hay error de red
+      if (leadEliminado) {
+        setLeads((prev) => [...prev, leadEliminado].sort((a, b) =>
+          new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
+        ));
+      }
+    }
+  }, [leads]);
 
   const obtenerLead = useCallback((id: string) => leads.find((l) => l.id === id), [leads]);
 

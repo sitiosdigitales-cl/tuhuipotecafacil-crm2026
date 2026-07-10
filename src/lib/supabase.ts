@@ -1,9 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dcoyjvbhrkarrmetrhiv.supabase.co";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_hEiOOmx4G4nXXpa7pA7nLg_N3bOxPSw";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("Variables NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY no configuradas");
+}
+
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseKey || "placeholder-key"
+);
 
 // Convertir camelCase → minúsculas para columnas Supabase
 export function toSupabaseColumns(obj: Record<string, any>): Record<string, any> {
@@ -31,6 +38,14 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
     diasenetapa: "diasEnEtapa",
     creadoen: "creadoEn",
     actualizadoen: "actualizadoEn",
+    leadid: "leadId",
+    leadnombre: "leadNombre",
+    usuarioid: "usuarioId",
+    ultimacceso: "ultimoAcceso",
+    creadopor: "creadoPor",
+    fechavencimiento: "fechaVencimiento",
+    nombrearchivo: "nombreArchivo",
+    archivourl: "archivoUrl",
   };
   for (const [key, value] of Object.entries(obj)) {
     const mapped = keyMap[key] || key;

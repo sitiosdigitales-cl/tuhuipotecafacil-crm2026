@@ -1,7 +1,6 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { supabase, toSupabaseColumns } from "@/lib/supabase";
 
-
-// Endpoint de upload - guarda referencia en Supabase, archivo en localStorage del cliente
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -13,19 +12,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Archivo y leadId requeridos" }, { status: 400 });
     }
 
-    // Validar tamaÃ±o (max 10MB)
     if (archivo.size > 10 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: "El archivo supera los 10MB" }, { status: 400 });
     }
 
-    // Validar tipo de archivo
-    const tiposPermitidos = ["application/pdf", "image/jpeg", "image/png", "image/jpg", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    const tiposPermitidos = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
     if (!tiposPermitidos.includes(archivo.type)) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
     }
 
-    // Generar ID Ãºnico para el documento
-    const docId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Subir archivo a Supabase Storage
+    const docId = crypto.randomUUID();
+    const extension = archivo.name.split(".").pop() || "bin";
+    const filePath = `${leadId}/${docId}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("documentos")
+      .upload(filePath, archivo, { contentType: archivo.type });
+
+    if (uploadError) {
+      console.error("Error subiendo archivo:", uploadError);
+      return NextResponse.json({ success: false, error: "Error al subir archivo" }, { status: 500 });
+    }
+
+    // Obtener URL pública
+    const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(filePath);
+
+    // Guardar referencia en la tabla documentos
+    const { error: dbError } = await supabase.from("documentos").insert(toSupabaseColumns({
+      id: docId,
+      leadId,
+      nombre: archivo.name,
+      tipo: tipo || "OTRO",
+      estado: "PENDIENTE",
+      archivoUrl: urlData?.publicUrl || null,
+      creadoEn: new Date().toISOString(),
+    }));
+
+    if (dbError) {
+      console.error("Error guardando referencia:", dbError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -34,6 +67,7 @@ export async function POST(request: NextRequest) {
         nombre: archivo.name,
         tipo: tipo || "documento",
         tamano: archivo.size,
+        archivoUrl: urlData?.publicUrl || null,
         fechaSubida: new Date().toISOString(),
       },
     });

@@ -1,33 +1,67 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import { USUARIOS_MOCK } from "@/datos/mock";
 import type { Usuario } from "@/tipos";
 
 interface UserContextType {
   usuarioActual: Usuario;
   cambiarUsuario: (usuarioId: string) => void;
   esSuperAdmin: boolean;
+  usuarios: Usuario[];
+  cargarUsuarios: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Usuario por defecto mientras se carga
+const USUARIO_DEFAULT: Usuario = {
+  id: "u1",
+  nombre: "Super",
+  apellido: "Admin",
+  email: "admin@tuhipotecafacil.cl",
+  rol: "SUPER_ADMIN",
+  estado: "ACTIVO",
+  creadoEn: new Date(),
+};
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const { usuario: authUser, isAuthenticated } = useAuth();
-  const [usuarioActual, setUsuarioActual] = useState<Usuario>(USUARIOS_MOCK[0]);
+  const [usuarioActual, setUsuarioActual] = useState<Usuario>(USUARIO_DEFAULT);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+
+  const cargarUsuarios = useCallback(async () => {
+    try {
+      const response = await fetch("/api/usuarios");
+      const data = await response.json();
+      if (data.success && data.data) {
+        setUsuarios(data.data.map((u: any) => ({
+          ...u,
+          creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
+          ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
+        })));
+      }
+    } catch {
+      // Silenciar errores de carga de usuarios
+    }
+  }, []);
+
+  // Cargar usuarios al montar
+  useEffect(() => {
+    cargarUsuarios();
+  }, [cargarUsuarios]);
 
   // Sincronizar con el usuario de auth cuando cambie
   useEffect(() => {
     if (isAuthenticated && authUser) {
-      // Buscar el usuario mock correspondiente al email
-      const mockUser = USUARIOS_MOCK.find(
+      // Buscar el usuario en la lista cargada de la API
+      const usuarioEncontrado = usuarios.find(
         (u) => u.email.toLowerCase() === authUser.email.toLowerCase()
       );
-      if (mockUser) {
-        setUsuarioActual(mockUser);
+      if (usuarioEncontrado) {
+        setUsuarioActual(usuarioEncontrado);
       } else {
-        // Crear un usuario mock basado en los datos de auth
+        // Crear usuario basado en datos de auth
         setUsuarioActual({
           id: authUser.id,
           nombre: authUser.nombre,
@@ -39,14 +73,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
           creadoEn: new Date(),
         });
       }
-    } else {
-      // Sin auth, usar Super Admin por defecto
-      setUsuarioActual(USUARIOS_MOCK[0]);
     }
-  }, [authUser, isAuthenticated]);
+  }, [authUser, isAuthenticated, usuarios]);
 
   const cambiarUsuario = (usuarioId: string) => {
-    const usuario = USUARIOS_MOCK.find((u) => u.id === usuarioId);
+    const usuario = usuarios.find((u) => u.id === usuarioId);
     if (usuario) {
       setUsuarioActual(usuario);
     }
@@ -55,7 +86,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const esSuperAdmin = usuarioActual.rol === "SUPER_ADMIN";
 
   return (
-    <UserContext.Provider value={{ usuarioActual, cambiarUsuario, esSuperAdmin }}>
+    <UserContext.Provider value={{ usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios }}>
       {children}
     </UserContext.Provider>
   );
