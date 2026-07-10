@@ -33,6 +33,21 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
     if (error) return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
+
+    // Notificación automática
+    try {
+      await supabase.from("notificaciones").insert({
+        id: crypto.randomUUID(),
+        tipo: "documento",
+        titulo: "Documento recibido",
+        descripcion: `${body.leadNombre || "Cliente"} subió: ${body.nombre}`,
+        leida: false,
+        leadid: body.leadId,
+        accionurl: `/documentos`,
+        creadoen: new Date().toISOString(),
+      });
+    } catch {}
+
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch {
     return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });

@@ -115,8 +115,8 @@ export function CampanaNotificaciones() {
                   }`}
                   onClick={() => {
                     marcarComoLeida(notif.id);
-                    if (notif.accion?.enlace) {
-                      window.location.href = notif.accion.enlace;
+                    if (notif.accionUrl) {
+                      window.location.href = notif.accionUrl;
                     }
                   }}
                 >
@@ -139,9 +139,9 @@ export function CampanaNotificaciones() {
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {formatearTiempo(notif.fecha)}
                       </span>
-                      {notif.accion && (
+                      {notif.accionUrl && (
                         <span className="text-[10px] text-indigo-500 flex items-center gap-0.5">
-                          <ExternalLink size={8} /> {notif.accion.label}
+                          <ExternalLink size={8} /> Ver detalle
                         </span>
                       )}
                     </div>

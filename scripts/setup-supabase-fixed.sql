@@ -121,10 +121,11 @@ CREATE TABLE IF NOT EXISTS public.notificaciones (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   titulo TEXT NOT NULL,
   descripcion TEXT,
-  tipo TEXT NOT NULL DEFAULT 'seguimiento',
+  tipo TEXT NOT NULL DEFAULT 'sistema',
   leida BOOLEAN DEFAULT FALSE,
   usuarioid TEXT,
   leadid TEXT,
+  accionurl TEXT,
   creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.notificaciones DISABLE ROW LEVEL SECURITY;

@@ -165,8 +165,8 @@ export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: 
                 }`}
                 onClick={() => {
                   marcarComoLeida(notif.id);
-                  if (notif.accion?.enlace) {
-                    window.location.href = notif.accion.enlace;
+                  if (notif.accionUrl) {
+                    window.location.href = notif.accionUrl;
                   }
                 }}
               >

@@ -76,6 +76,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
+    // Crear notificación automática
+    try {
+      await supabase.from("notificaciones").insert({
+        id: crypto.randomUUID(),
+        tipo: "lead",
+        titulo: "Nuevo lead registrado",
+        descripcion: `${body.nombre} ${body.apellido} completó el formulario web`,
+        leida: false,
+        leadid: leadId,
+        accionurl: `/leads/${leadId}`,
+        creadoen: new Date().toISOString(),
+      });
+    } catch {
+      // Notificación es opcional
+    }
+
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error) {
     console.error("Error al crear lead:", error);

@@ -63,11 +63,18 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ success: false, error: "Error al enviar mensaje" }, { status: 500 });
 
-    // Actualizar último mensaje de la conversación
-    await supabase
-      .from("conversaciones")
-      .update({ mensajesnoleidos: 0 })
-      .eq("id", body.conversacionId);
+    // Notificación de nuevo mensaje
+    try {
+      await supabase.from("notificaciones").insert({
+        id: crypto.randomUUID(),
+        tipo: "mensaje",
+        titulo: "Nuevo mensaje",
+        descripcion: `${body.remitenteNombre} envió un mensaje`,
+        leida: false,
+        accionurl: `/conversaciones`,
+        creadoen: new Date().toISOString(),
+      });
+    } catch {}
 
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch {

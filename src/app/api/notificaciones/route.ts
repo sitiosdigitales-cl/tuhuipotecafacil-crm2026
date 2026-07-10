@@ -6,15 +6,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const usuarioId = searchParams.get("usuarioId");
     const limit = parseInt(searchParams.get("limit") || "50");
+    const soloNoLeidas = searchParams.get("noLeidas") === "true";
 
     let query = supabase
       .from("notificaciones")
       .select("*")
-      .order("fecha", { ascending: false })
+      .order("creadoen", { ascending: false })
       .limit(limit);
 
     if (usuarioId) {
       query = query.eq("usuarioid", usuarioId);
+    }
+    if (soloNoLeidas) {
+      query = query.eq("leida", false);
     }
 
     const { data, error } = await query;
@@ -26,8 +30,10 @@ export async function GET(request: NextRequest) {
       titulo: n.titulo,
       descripcion: n.descripcion,
       leida: n.leida,
-      fecha: n.fecha,
+      fecha: n.creadoen,
       usuarioId: n.usuarioid,
+      leadId: n.leadid,
+      accionUrl: n.accionurl,
     }));
 
     return NextResponse.json({ success: true, data: notificaciones });
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tipo, titulo, descripcion, usuarioId } = body;
+    const { tipo, titulo, descripcion, usuarioId, leadId, accionUrl } = body;
 
     if (!tipo || !titulo) {
       return NextResponse.json({ success: false, error: "tipo y titulo requeridos" }, { status: 400 });
@@ -53,8 +59,10 @@ export async function POST(request: NextRequest) {
         titulo,
         descripcion: descripcion || "",
         leida: false,
-        fecha: new Date().toISOString(),
         usuarioId: usuarioId || null,
+        leadId: leadId || null,
+        accionUrl: accionUrl || null,
+        creadoEn: new Date().toISOString(),
       }))
       .select()
       .single();
@@ -69,7 +77,16 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, leida } = body;
+    const { id, leida, marcarTodas } = body;
+
+    if (marcarTodas) {
+      const { error } = await supabase
+        .from("notificaciones")
+        .update({ leida: true })
+        .eq("leida", false);
+      if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
 
     if (!id) {
       return NextResponse.json({ success: false, error: "id requerido" }, { status: 400 });
@@ -77,12 +94,29 @@ export async function PUT(request: NextRequest) {
 
     const { error } = await supabase
       .from("notificaciones")
-      .update(toSupabaseColumns({ leida: leida ?? true }))
+      .update({ leida: leida ?? true })
       .eq("id", id);
 
     if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "id requerido" }, { status: 400 });
+    }
+
+    const { error } = await supabase.from("notificaciones").delete().eq("id", id);
+    if (error) return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
   }
 }

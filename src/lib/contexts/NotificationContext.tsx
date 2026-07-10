@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
 
 export interface Notificacion {
   id: string;
@@ -8,39 +9,40 @@ export interface Notificacion {
   titulo: string;
   descripcion: string;
   icono?: string;
-  accion?: {
-    label: string;
-    enlace: string;
-  };
+  accionUrl?: string;
   leida: boolean;
   fecha: Date;
   usuarioId?: string;
+  leadId?: string;
 }
 
 interface NotificationContextType {
   notificaciones: Notificacion[];
   noLeidas: number;
+  cargando: boolean;
   crearNotificacion: (notif: Omit<Notificacion, "id" | "fecha" | "leida">) => Promise<void>;
   marcarComoLeida: (id: string) => Promise<void>;
   marcarTodasLeidas: () => Promise<void>;
-  eliminarNotificacion: (id: string) => void;
-  limpiarNotificaciones: () => void;
+  eliminarNotificacion: (id: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-// Notificaciones simuladas para crear cada 45 segundos
-const NOTIFICACIONES_SIMULADAS = [
-  { tipo: "info" as const, titulo: "Nuevo lead registrado", descripcion: "Un nuevo lead completó el formulario web", icono: "👤", accion: { label: "Ver lead", enlace: "/leads" } },
-  { tipo: "exito" as const, titulo: "Documento recibido", descripcion: "El cliente subió un nuevo documento", icono: "📄", accion: { label: "Ver documento", enlace: "/documentos" } },
-  { tipo: "advertencia" as const, titulo: "Recordatorio pendiente", descripcion: "Tienes un recordatorio para hoy", icono: "⏰", accion: { label: "Ver recordatorio", enlace: "/recordatorios" } },
-  { tipo: "info" as const, titulo: "Mensaje de WhatsApp", descripcion: "Nuevo mensaje de un cliente", icono: "💬", accion: { label: "Ver mensaje", enlace: "/conversaciones" } },
-  { tipo: "exito" as const, titulo: "Lead avanzó de etapa", descripcion: "Un lead pasó a Evaluación Bancaria", icono: "📈", accion: { label: "Ver pipeline", enlace: "/pipeline" } },
-  { tipo: "advertencia" as const, titulo: "Lead estancado", descripcion: "Un lead lleva más de 14 días sin avance", icono: "⚠️", accion: { label: "Ver lead", enlace: "/leads" } },
-];
+const ICONOS_POR_TIPO: Record<string, string> = {
+  info: "ℹ️",
+  exito: "✅",
+  advertencia: "⚠️",
+  error: "❌",
+  sistema: "🔔",
+  lead: "👤",
+  tarea: "📋",
+  documento: "📄",
+  mensaje: "💬",
+};
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [cargando, setCargando] = useState(true);
 
   // Cargar notificaciones desde la API
   useEffect(() => {
@@ -52,58 +54,95 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           setNotificaciones(data.data.map((n: any) => ({
             ...n,
             fecha: new Date(n.fecha),
+            icono: ICONOS_POR_TIPO[n.tipo] || "🔔",
           })));
         }
       } catch {
         // Silenciar errores
+      } finally {
+        setCargando(false);
       }
     };
     cargarNotificaciones();
   }, []);
 
-  // Simular notificaciones cada 45 segundos (solo en desarrollo)
+  // Suscripción en tiempo real a nuevas notificaciones
   useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
+    const channel = supabase
+      .channel("notificaciones-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notificaciones",
+        },
+        (payload) => {
+          const nuevaNotif: Notificacion = {
+            id: payload.new.id,
+            tipo: payload.new.tipo,
+            titulo: payload.new.titulo,
+            descripcion: payload.new.descripcion || "",
+            leida: payload.new.leida || false,
+            fecha: new Date(payload.new.creadoen),
+            usuarioId: payload.new.usuarioid,
+            leadId: payload.new.leadid,
+            accionUrl: payload.new.accionurl,
+            icono: ICONOS_POR_TIPO[payload.new.tipo] || "🔔",
+          };
 
-    const interval = setInterval(() => {
-      const idx = Math.floor(Math.random() * NOTIFICACIONES_SIMULADAS.length);
-      const notifSimulada = NOTIFICACIONES_SIMULADAS[idx];
+          setNotificaciones((prev) => {
+            if (prev.some((n) => n.id === nuevaNotif.id)) return prev;
+            return [nuevaNotif, ...prev];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notificaciones",
+        },
+        (payload) => {
+          setNotificaciones((prev) =>
+            prev.map((n) =>
+              n.id === payload.new.id
+                ? { ...n, leida: payload.new.leida }
+                : n
+            )
+          );
+        }
+      )
+      .subscribe();
 
-      const nuevaNotif: Notificacion = {
-        ...notifSimulada,
-        id: `n-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        fecha: new Date(),
-        leida: false,
-      };
-
-      setNotificaciones(prev => [nuevaNotif, ...prev]);
-    }, 45000);
-
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const crearNotificacion = useCallback(async (notif: Omit<Notificacion, "id" | "fecha" | "leida">) => {
-    // Optimistic update
-    const nuevaNotif: Notificacion = {
-      ...notif,
-      id: `n-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      fecha: new Date(),
-      leida: false,
-    };
-    setNotificaciones(prev => [nuevaNotif, ...prev]);
-
     try {
       await fetch("/api/notificaciones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notif),
+        body: JSON.stringify({
+          tipo: notif.tipo,
+          titulo: notif.titulo,
+          descripcion: notif.descripcion,
+          usuarioId: notif.usuarioId,
+          leadId: notif.leadId,
+          accionUrl: notif.accionUrl,
+        }),
       });
-    } catch {}
+    } catch {
+      // Error silencioso
+    }
   }, []);
 
   const marcarComoLeida = useCallback(async (id: string) => {
-    setNotificaciones(prev =>
-      prev.map(n => n.id === id ? { ...n, leida: true } : n)
+    setNotificaciones((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
     );
 
     try {
@@ -112,48 +151,47 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, leida: true }),
       });
-    } catch {}
+    } catch {
+      // Error silencioso
+    }
   }, []);
 
   const marcarTodasLeidas = useCallback(async () => {
-    setNotificaciones(prev =>
-      prev.map(n => ({ ...n, leida: true }))
-    );
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
 
     try {
-      const noLeidas = notificaciones.filter(n => !n.leida);
-      await Promise.all(
-        noLeidas.map(n =>
-          fetch("/api/notificaciones", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: n.id, leida: true }),
-          })
-        )
-      );
-    } catch {}
-  }, [notificaciones]);
-
-  const eliminarNotificacion = useCallback((id: string) => {
-    setNotificaciones(prev => prev.filter(n => n.id !== id));
+      await fetch("/api/notificaciones", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marcarTodas: true }),
+      });
+    } catch {
+      // Error silencioso
+    }
   }, []);
 
-  const limpiarNotificaciones = useCallback(() => {
-    setNotificaciones([]);
+  const eliminarNotificacion = useCallback(async (id: string) => {
+    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+
+    try {
+      await fetch(`/api/notificaciones?id=${id}`, { method: "DELETE" });
+    } catch {
+      // Error silencioso
+    }
   }, []);
 
-  const noLeidas = notificaciones.filter(n => !n.leida).length;
+  const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   return (
     <NotificationContext.Provider
       value={{
         notificaciones,
         noLeidas,
+        cargando,
         crearNotificacion,
         marcarComoLeida,
         marcarTodasLeidas,
         eliminarNotificacion,
-        limpiarNotificaciones,
       }}
     >
       {children}
