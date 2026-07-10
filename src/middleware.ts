@@ -12,8 +12,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Buscar token en cookies
-  const authToken = request.cookies.get("crm_token")?.value;
+  // Buscar token en cookies (compatibilidad con ambos nombres)
+  const authToken = request.cookies.get("crm_token")?.value || request.cookies.get("auth_token")?.value;
 
   if (!authToken) {
     // Sin token, redirigir a login

@@ -43,6 +43,15 @@ export async function POST(request: NextRequest) {
       path: "/",
     });
 
+    // Compatibilidad con cookie antigua
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 86400,
+      path: "/",
+    });
+
     return response;
   } catch {
     return NextResponse.json({ success: false, error: "Error en login" }, { status: 500 });

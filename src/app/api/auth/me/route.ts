@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("crm_token")?.value;
+    const token = request.cookies.get("crm_token")?.value || request.cookies.get("auth_token")?.value;
     if (!token) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
