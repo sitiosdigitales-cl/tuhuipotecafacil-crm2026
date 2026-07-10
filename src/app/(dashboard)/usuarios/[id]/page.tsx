@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart,
@@ -87,9 +87,31 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { id } = use(params);
   const leads = useMemo(() => generarLeads(), []);
-  const [esSuperAdmin, setEsSuperAdmin] = useState(true); // Simulado - en producción viene del contexto
+  const [esSuperAdmin, setEsSuperAdmin] = useState(true);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [cargando, setCargando] = useState(true);
 
-  // Estado para modales
+  useEffect(() => {
+    async function cargarUsuario() {
+      try {
+        const res = await fetch(`/api/usuarios/${id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setUsuario({
+            ...json.data,
+            ultimoAcceso: json.data.ultimoAcceso ? new Date(json.data.ultimoAcceso) : undefined,
+            creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
+          });
+        }
+      } catch {
+        setUsuario(null);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarUsuario();
+  }, [id]);
+
   const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
   const [configuracionOpen, setConfiguracionOpen] = useState(false);
   const [editarNombre, setEditarNombre] = useState("");
@@ -98,7 +120,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   const [editarTelefono, setEditarTelefono] = useState("");
   const [editarRol, setEditarRol] = useState("");
 
-  // Configuración de comisiones por rol (solo super admin)
   const [comisionesPorRol, setComisionesPorRol] = useState({
     SUPER_ADMIN: { cobroCliente: 0, comisionAgente: 0 },
     ADMIN: { cobroCliente: 5, comisionAgente: 10 },
@@ -107,11 +128,9 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
     VISOR: { cobroCliente: 0, comisionAgente: 0 },
   });
 
-  // Buscar usuario
-  const usuario = USUARIOS_MOCK.find((u) => u.id === id) || USUARIOS_MOCK[0];
-
   // Abrir modal de editar perfil
   const abrirEditarPerfil = () => {
+    if (!usuario) return;
     setEditarNombre(usuario.nombre);
     setEditarApellido(usuario.apellido);
     setEditarEmail(usuario.email);
@@ -138,6 +157,7 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
 
   // Leads asignados al usuario (simulado - usando nombre del ejecutivo)
   const leadsAsignados = useMemo(() => {
+    if (!usuario) return [];
     return leads.filter((l) => l.nombreEjecutivo === `${usuario.nombre} ${usuario.apellido}`);
   }, [leads, usuario]);
 
@@ -171,9 +191,9 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
     return { totalLeads, aprobados, enPipeline, montoTotal, tasaConversion, ticketPromedio, porEtapa, porBanco, porOrigen };
   }, [leadsAsignados]);
 
-  const actividad = useMemo(() => generarActividadUsuario(`${usuario.nombre} ${usuario.apellido}`), [usuario]);
-  const rolConfig = ROLES_CONFIG[usuario.rol];
-  const estadoConfig = ESTADOS_USUARIO_CONFIG[usuario.estado];
+  const actividad = useMemo(() => generarActividadUsuario(`${usuario?.nombre} ${usuario?.apellido}`), [usuario]);
+  const rolConfig = ROLES_CONFIG[usuario?.rol || "AGENTE"];
+  const estadoConfig = ESTADOS_USUARIO_CONFIG[usuario?.estado || "ACTIVO"];
 
   // Datos para gráficos
   const datosEtapa = useMemo(() => {
@@ -190,6 +210,30 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
       valor: cantidad,
     }));
   }, [stats]);
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando usuario...</span>
+      </div>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+          <Users size={24} className="text-slate-300" />
+        </div>
+        <h2 className="text-sm font-bold text-slate-600 mb-1">Usuario no encontrado</h2>
+        <p className="text-[11px] text-slate-400 mb-4">El usuario que buscas no existe.</p>
+        <button onClick={() => router.push("/usuarios")} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+          Volver a Usuarios
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

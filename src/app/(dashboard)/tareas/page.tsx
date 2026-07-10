@@ -28,7 +28,7 @@ import type { FiltrosTareasState } from "@/componentes/tareas/FiltrosTareas";
 import { DashboardTareas } from "@/componentes/tareas/DashboardTareas";
 import { TableroKanban } from "@/componentes/tareas/TableroKanban";
 import { VistaCalendario } from "@/componentes/tareas/VistaCalendario";
-import { TAREAS_MOCK } from "@/datos/mock";
+import { useTareas } from "@/lib/hooks/useTareas";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { Tarea, EstadoTarea, Prioridad } from "@/tipos";
 
@@ -57,7 +57,7 @@ const estadoIcono: Record<EstadoTarea, React.ReactNode> = {
 
 export default function TareasPage() {
   const router = useRouter();
-  const [tareas, setTareas] = useState<Tarea[]>(TAREAS_MOCK);
+  const { tareas, cargando, crearTarea, actualizarTarea, eliminarTarea, cambiarEstado } = useTareas();
   const [vistaActiva, setVistaActiva] = useState<VistaActiva>("dashboard");
   const [filtros, setFiltros] = useState<FiltrosTareasState>(FILTROS_VACIOS);
   const [formularioOpen, setFormularioOpen] = useState(false);
@@ -117,30 +117,11 @@ export default function TareasPage() {
     paginaActual * TAREAS_POR_PAGINA
   );
 
-  const handleSubmitTarea = (datos: Partial<Tarea>) => {
+  const handleSubmitTarea = async (datos: Partial<Tarea>) => {
     if (tareaAEditar) {
-      setTareas((prev) =>
-        prev.map((t) =>
-          t.id === tareaAEditar.id
-            ? {
-                ...t,
-                ...datos,
-                historial: [
-                  ...t.historial,
-                  {
-                    id: `h-${Date.now()}`,
-                    accion: "Editada",
-                    usuario: "Usuario Actual",
-                    fecha: new Date(),
-                  },
-                ],
-              }
-            : t
-        )
-      );
+      await actualizarTarea(tareaAEditar.id, datos);
     } else {
-      const nuevaTarea: Tarea = {
-        id: `t-${Date.now()}`,
+      await crearTarea({
         titulo: datos.titulo || "",
         descripcion: datos.descripcion,
         estado: datos.estado || "PENDIENTE",
@@ -150,22 +131,8 @@ export default function TareasPage() {
         leadNombre: datos.leadNombre,
         asignadoA: datos.asignadoA,
         nombreEjecutivo: datos.nombreEjecutivo,
-        fechaVencimiento: datos.fechaVencimiento,
-        recordatorio: datos.recordatorio,
-        duracionEstimada: datos.duracionEstimada,
-        etiquetas: datos.etiquetas,
-        comentarios: [],
-        historial: [
-          {
-            id: `h-${Date.now()}`,
-            accion: "Creada",
-            usuario: "Usuario Actual",
-            fecha: new Date(),
-          },
-        ],
-        creadoEn: new Date(),
-      };
-      setTareas((prev) => [nuevaTarea, ...prev]);
+        fechaVencimiento: datos.fechaVencimiento ? new Date(datos.fechaVencimiento).toISOString() : undefined,
+      });
     }
     setTareaAEditar(null);
   };
@@ -179,33 +146,24 @@ export default function TareasPage() {
     router.push(`/tareas/${tarea.id}`);
   };
 
-  const handleEliminarTarea = () => {
+  const handleEliminarTarea = async () => {
     if (!tareaAEliminar) return;
-    setTareas((prev) => prev.filter((t) => t.id !== tareaAEliminar.id));
+    await eliminarTarea(tareaAEliminar.id);
     setTareaAEliminar(null);
   };
 
-  const handleMoverTarea = (tareaId: string, nuevoEstado: EstadoTarea) => {
-    setTareas((prev) =>
-      prev.map((t) =>
-        t.id === tareaId
-          ? {
-              ...t,
-              estado: nuevoEstado,
-              historial: [
-                ...t.historial,
-                {
-                  id: `h-${Date.now()}`,
-                  accion: `Movido a ${ESTADOS_TAREA_CONFIG[nuevoEstado].label}`,
-                  usuario: "Usuario Actual",
-                  fecha: new Date(),
-                },
-              ],
-            }
-          : t
-      )
-    );
+  const handleMoverTarea = async (tareaId: string, nuevoEstado: EstadoTarea) => {
+    await cambiarEstado(tareaId, nuevoEstado);
   };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando tareas...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -87,7 +87,8 @@ const TIPOS_DOCUMENTO_BASE: TipoDocumentoCustom[] = [
 
 export default function DocumentosPage() {
   const router = useRouter();
-  const [documentos, setDocumentos] = useState<DocumentoLead[]>(DOCUMENTOS_MOCK);
+  const [documentos, setDocumentos] = useState<DocumentoLead[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<EstadoDoc | "todos">("todos");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
@@ -109,6 +110,26 @@ export default function DocumentosPage() {
   const [nuevoTipoColor, setNuevoTipoColor] = useState(COLORES_DISPONIBLES[0]);
   const [editandoTipo, setEditandoTipo] = useState<string | null>(null);
   const [nombreEditandoTipo, setNombreEditandoTipo] = useState("");
+
+  useEffect(() => {
+    async function cargarDocumentos() {
+      try {
+        const res = await fetch("/api/documentos");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setDocumentos(json.data.map((d: Record<string, any>) => ({
+            ...d,
+            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+          })));
+        }
+      } catch {
+        setDocumentos([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarDocumentos();
+  }, []);
 
   // Obtener leads únicos
   const leadsUnicos = useMemo(() => {
@@ -222,26 +243,47 @@ export default function DocumentosPage() {
     setEliminarOpen(true);
   };
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (docSeleccionado) {
-      setDocumentos((prev) => prev.filter((d) => d.id !== docSeleccionado.id));
+      try {
+        await fetch(`/api/documentos/${docSeleccionado.id}`, { method: "DELETE" });
+        setDocumentos((prev) => prev.filter((d) => d.id !== docSeleccionado.id));
+      } catch {
+        // Error silencioso
+      }
       setDocSeleccionado(null);
     }
   };
 
-  const handleUpload = (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
-    const doc: DocumentoLead = {
-      ...nuevoDoc,
-      id: `doc-${Date.now()}`,
-      creadoEn: new Date(),
-    };
-    setDocumentos((prev) => [doc, ...prev]);
+  const handleUpload = async (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
+    try {
+      const res = await fetch("/api/documentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoDoc),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setDocumentos((prev) => [{ ...json.data, creadoEn: new Date(json.data.creadoEn) }, ...prev]);
+      }
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const handleCambiarEstado = (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
-    setDocumentos((prev) =>
-      prev.map((d) => (d.id === docId ? { ...d, estado: nuevoEstado } : d))
-    );
+  const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
+    try {
+      await fetch(`/api/documentos/${docId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      setDocumentos((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, estado: nuevoEstado } : d))
+      );
+    } catch {
+      // Error silencioso
+    }
   };
 
   const irAlCliente = (leadId: string) => {
@@ -257,6 +299,15 @@ export default function DocumentosPage() {
     const tipoConfig = tiposDocumento.find((t) => t.id === tipo);
     return tipoConfig?.nombre || TIPOS_DOCUMENTO_CONFIG[tipo as TipoDocumento]?.label || tipo;
   };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando documentos...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

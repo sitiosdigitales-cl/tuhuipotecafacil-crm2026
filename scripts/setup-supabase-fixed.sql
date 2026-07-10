@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
   rol TEXT NOT NULL DEFAULT 'EJECUTIVO',
   estado TEXT NOT NULL DEFAULT 'ACTIVO',
   avatar TEXT,
+  ultimoacceso TIMESTAMPTZ,
   creadoen TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizadoen TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -27,6 +28,42 @@ INSERT INTO public.usuarios (id, nombre, apellido, email, password, rol) VALUES
 ('u4', 'Diego', 'Silva', 'diego.silva@tuhipotecafacil.cl', 'demo1234', 'EJECUTIVO'),
 ('u5', 'Valentina', 'Torres', 'valentina.torres@tuhipotecafacil.cl', 'demo1234', 'EJECUTIVO')
 ON CONFLICT (id) DO NOTHING;
+
+-- TABLA LEADS (principal del CRM)
+CREATE TABLE IF NOT EXISTS public.leads (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  nombre TEXT NOT NULL,
+  apellido TEXT NOT NULL,
+  rut TEXT,
+  email TEXT,
+  telefono TEXT,
+  origen TEXT NOT NULL DEFAULT 'WEB',
+  etapa TEXT NOT NULL DEFAULT 'NUEVO_LEAD',
+  prioridad TEXT NOT NULL DEFAULT 'MEDIA',
+  nombreejecutivo TEXT,
+  banco TEXT,
+  tipocredito TEXT,
+  montosolicitado NUMERIC,
+  valorpropiedad NUMERIC,
+  piedisponible NUMERIC,
+  notas TEXT,
+  situacionlaboral TEXT DEFAULT 'DEPENDIENTE',
+  endicom BOOLEAN DEFAULT FALSE,
+  dicomdetalle TEXT,
+  rentamensual TEXT,
+  complementarrenta BOOLEAN DEFAULT FALSE,
+  cuentapie BOOLEAN DEFAULT FALSE,
+  comentarios TEXT,
+  etiquetas TEXT,
+  referidopor TEXT,
+  referidopornombre TEXT,
+  codigoreferido TEXT,
+  asignadoa TEXT,
+  diasenetapa INTEGER DEFAULT 0,
+  creadoen TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizadoen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.leads DISABLE ROW LEVEL SECURITY;
 
 -- TABLA TAREAS
 CREATE TABLE IF NOT EXISTS public.tareas (
@@ -44,19 +81,22 @@ CREATE TABLE IF NOT EXISTS public.tareas (
   recordatorio TIMESTAMPTZ,
   duracionestimada INTEGER,
   etiquetas TEXT,
+  comentarios JSONB DEFAULT '[]'::jsonb,
+  historial JSONB DEFAULT '[]'::jsonb,
   creadoen TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizadoen TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.tareas DISABLE ROW LEVEL SECURITY;
 
--- TABLA DOCUMENTOS (vinculada a leads, como espera el CRM)
+-- TABLA DOCUMENTOS (vinculada a leads)
 CREATE TABLE IF NOT EXISTS public.documentos (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   leadid TEXT NOT NULL,
+  leadnombre TEXT,
   nombre TEXT NOT NULL,
   tipo TEXT,
   estado TEXT NOT NULL DEFAULT 'PENDIENTE',
-  archivoUrl TEXT,
+  archivourl TEXT,
   tamano INTEGER,
   creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -76,8 +116,42 @@ CREATE TABLE IF NOT EXISTS public.actividades (
 );
 ALTER TABLE public.actividades DISABLE ROW LEVEL SECURITY;
 
+-- TABLA NOTIFICACIONES
+CREATE TABLE IF NOT EXISTS public.notificaciones (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  tipo TEXT NOT NULL DEFAULT 'seguimiento',
+  leida BOOLEAN DEFAULT FALSE,
+  usuarioid TEXT,
+  leadid TEXT,
+  creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.notificaciones DISABLE ROW LEVEL SECURITY;
+
+-- TABLA AUDITORIA
+CREATE TABLE IF NOT EXISTS public.auditoria (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  usuarioid TEXT NOT NULL,
+  usuarionombre TEXT,
+  accion TEXT NOT NULL,
+  modulo TEXT,
+  registroid TEXT,
+  registronombre TEXT,
+  valoranterior TEXT,
+  valornuevo TEXT,
+  motivo TEXT,
+  ip TEXT,
+  navegador TEXT,
+  dispositivo TEXT,
+  fecha TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.auditoria DISABLE ROW LEVEL SECURITY;
+
 -- VERIFICACION
 SELECT 'usuarios' as tabla, count(*) as registros FROM public.usuarios
+UNION ALL
+SELECT 'leads', count(*) FROM public.leads
 UNION ALL
 SELECT 'tareas', count(*) FROM public.tareas
 UNION ALL
@@ -85,4 +159,6 @@ SELECT 'documentos', count(*) FROM public.documentos
 UNION ALL
 SELECT 'actividades', count(*) FROM public.actividades
 UNION ALL
-SELECT 'leads', count(*) FROM public.leads;
+SELECT 'notificaciones', count(*) FROM public.notificaciones
+UNION ALL
+SELECT 'auditoria', count(*) FROM public.auditoria;

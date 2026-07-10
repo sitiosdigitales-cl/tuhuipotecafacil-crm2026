@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
-import { TAREAS_MOCK } from "@/datos/mock";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { Tarea, EstadoTarea } from "@/tipos";
 
@@ -45,14 +44,43 @@ export default function TareaDetallePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [tareas, setTareas] = useState<Tarea[]>(TAREAS_MOCK);
+  const [tarea, setTarea] = useState<Tarea | null>(null);
+  const [cargando, setCargando] = useState(true);
   const [nuevoComentario, setNuevoComentario] = useState("");
   const [eliminarOpen, setEliminarOpen] = useState(false);
 
-  const tarea = useMemo(
-    () => tareas.find((t) => t.id === id),
-    [tareas, id]
-  );
+  useEffect(() => {
+    async function cargarTarea() {
+      try {
+        const res = await fetch(`/api/tareas/${id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setTarea({
+            ...json.data,
+            fechaVencimiento: json.data.fechaVencimiento ? new Date(json.data.fechaVencimiento) : undefined,
+            creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
+            comentarios: json.data.comentarios || [],
+            historial: json.data.historial || [],
+            etiquetas: json.data.etiquetas ? (typeof json.data.etiquetas === "string" ? json.data.etiquetas.split(",") : json.data.etiquetas) : [],
+          });
+        }
+      } catch {
+        setTarea(null);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarTarea();
+  }, [id]);
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando tarea...</span>
+      </div>
+    );
+  }
 
   if (!tarea) {
     return (
@@ -73,54 +101,54 @@ export default function TareaDetallePage({
     );
   }
 
-  const cambiarEstado = (nuevoEstado: EstadoTarea) => {
-    setTareas((prev) =>
-      prev.map((t) =>
-        t.id === tarea.id
-          ? {
-              ...t,
-              estado: nuevoEstado,
-              historial: [
-                ...t.historial,
-                {
-                  id: `h-${Date.now()}`,
-                  accion: `Estado cambiado a ${ESTADOS_TAREA_CONFIG[nuevoEstado].label}`,
-                  usuario: "Usuario Actual",
-                  fecha: new Date(),
-                },
-              ],
-            }
-          : t
-      )
-    );
+  const cambiarEstado = async (nuevoEstado: EstadoTarea) => {
+    if (!tarea) return;
+    try {
+      await fetch(`/api/tareas/${tarea.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      setTarea((prev) => prev ? { ...prev, estado: nuevoEstado } : prev);
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const agregarComentario = () => {
-    if (!nuevoComentario.trim()) return;
-    setTareas((prev) =>
-      prev.map((t) =>
-        t.id === tarea.id
-          ? {
-              ...t,
-              comentarios: [
-                ...t.comentarios,
-                {
-                  id: `c-${Date.now()}`,
-                  autor: "Usuario Actual",
-                  contenido: nuevoComentario.trim(),
-                  creadoEn: new Date(),
-                },
-              ],
-            }
-          : t
-      )
-    );
-    setNuevoComentario("");
+  const agregarComentario = async () => {
+    if (!nuevoComentario.trim() || !tarea) return;
+    const comentario = {
+      id: `c-${Date.now()}`,
+      autor: "Usuario Actual",
+      contenido: nuevoComentario.trim(),
+      creadoEn: new Date(),
+    };
+    try {
+      await fetch(`/api/tareas/${tarea.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          comentarios: [...(tarea.comentarios || []), comentario],
+        }),
+      });
+      setTarea((prev) => prev ? {
+        ...prev,
+        comentarios: [...(prev.comentarios || []), comentario],
+      } : prev);
+      setNuevoComentario("");
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const handleEliminar = () => {
-    setTareas((prev) => prev.filter((t) => t.id !== tarea.id));
-    router.push("/tareas");
+  const handleEliminar = async () => {
+    if (!tarea) return;
+    try {
+      await fetch(`/api/tareas/${tarea.id}`, { method: "DELETE" });
+      router.push("/tareas");
+    } catch {
+      // Error silencioso
+    }
   };
 
   return (

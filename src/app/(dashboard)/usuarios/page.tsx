@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -28,12 +28,34 @@ import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
 export default function UsuariosPage() {
   const router = useRouter();
   const ahora = useMemo(() => Date.now(), []); // eslint-disable-line react-hooks/purity
-  const [usuarios, setUsuarios] = useState<Usuario[]>(USUARIOS_MOCK);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroRol, setFiltroRol] = useState<Rol | "todos">("todos");
   const [filtroEstado, setFiltroEstado] = useState<EstadoUsuario | "todos">("todos");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function cargarUsuarios() {
+      try {
+        const res = await fetch("/api/usuarios");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setUsuarios(json.data.map((u: Record<string, any>) => ({
+            ...u,
+            ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
+            creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
+          })));
+        }
+      } catch {
+        setUsuarios([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarUsuarios();
+  }, []);
 
   const usuariosFiltrados = usuarios.filter((user) => {
     const coincideBusqueda =
@@ -53,12 +75,21 @@ export default function UsuariosPage() {
     suspendidos: usuarios.filter((u) => u.estado === "SUSPENDIDO").length,
   };
 
-  const handleCambiarEstado = (usuarioId: string, nuevoEstado: EstadoUsuario) => {
-    setUsuarios((prev) =>
-      prev.map((u) =>
-        u.id === usuarioId ? { ...u, estado: nuevoEstado } : u
-      )
-    );
+  const handleCambiarEstado = async (usuarioId: string, nuevoEstado: EstadoUsuario) => {
+    try {
+      await fetch(`/api/usuarios/${usuarioId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      setUsuarios((prev) =>
+        prev.map((u) =>
+          u.id === usuarioId ? { ...u, estado: nuevoEstado } : u
+        )
+      );
+    } catch {
+      // Error silencioso
+    }
   };
 
   const getIniciales = (nombre: string, apellido: string) => {
@@ -74,6 +105,15 @@ export default function UsuariosPage() {
     if (horas < 24) return `Hace ${horas}h`;
     return `Hace ${dias}d`;
   };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando usuarios...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
