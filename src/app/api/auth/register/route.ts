@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { generarToken } from "@/lib/jwt";

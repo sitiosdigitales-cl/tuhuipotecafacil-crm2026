@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
@@ -9,7 +8,7 @@ export async function GET(request: NextRequest) {
     if (!authHeader) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
-    // En producción esto verificaría el JWT
+    // En producciÃ³n esto verificarÃ­a el JWT
     // Por ahora retornamos el primer usuario
     const { data, error } = await supabase.from("usuarios").select("id,nombre,apellido,email,rol").limit(1).single();
     if (error || !data) {
@@ -17,6 +16,6 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json({ success: true, data });
   } catch {
-    return NextResponse.json({ success: false, error: "Error de autenticación" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Error de autenticaciÃ³n" }, { status: 500 });
   }
 }

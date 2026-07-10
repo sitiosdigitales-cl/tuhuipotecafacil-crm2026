@@ -1,13 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 
 // Webhook para recibir formularios de WordPress/Elementor
-// Configurar en Elementor: Webhook URL → https://tu-dominio.com/api/webhook/wordpress
+// Configurar en Elementor: Webhook URL â†’ https://tu-dominio.com/api/webhook/wordpress
 
 export async function POST(request: NextRequest) {
   try {
-    // Elementor envía los datos en formato form-urlencoded o JSON
+    // Elementor envÃ­a los datos en formato form-urlencoded o JSON
     const contentType = request.headers.get("content-type") || "";
     let data: Record<string, any> = {};
 
@@ -27,10 +26,10 @@ export async function POST(request: NextRequest) {
     console.log("Webhook WordPress recibido:", data);
 
     // Mapear campos de Elementor a campos del CRM
-    // Los nombres de campo pueden variar según la configuración de Elementor
+    // Los nombres de campo pueden variar segÃºn la configuraciÃ³n de Elementor
     const leadData = {
       id: `lead-wp-${Date.now()}`,
-      // Campos estándar de Elementor Form
+      // Campos estÃ¡ndar de Elementor Form
       nombre: data.nombre || data.first_name || "",
       apellido: data.apellido || data.last_name || "",
       email: data.email || data.correo || "",
@@ -54,15 +53,15 @@ export async function POST(request: NextRequest) {
 
     // Validar que tenga al menos nombre y apellido
     if (!leadData.nombre || !leadData.apellido) {
-      console.warn("Webhook sin nombre/apellido válido:", data);
+      console.warn("Webhook sin nombre/apellido vÃ¡lido:", data);
       return NextResponse.json(
         { success: false, error: "Nombre y apellido son requeridos" },
         { status: 400 }
       );
     }
 
-    // Enviar notificación al CRM (simulado)
-    // En producción, aquí se guardaría en la base de datos
+    // Enviar notificaciÃ³n al CRM (simulado)
+    // En producciÃ³n, aquÃ­ se guardarÃ­a en la base de datos
     await notificarNuevoLead(leadData);
 
     return NextResponse.json({
@@ -80,10 +79,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Función para notificar al CRM sobre nuevo lead
+// FunciÃ³n para notificar al CRM sobre nuevo lead
 async function notificarNuevoLead(leadData: any) {
-  // En un sistema real, esto guardaría en la base de datos
-  // y enviaría una notificación push al CRM
+  // En un sistema real, esto guardarÃ­a en la base de datos
+  // y enviarÃ­a una notificaciÃ³n push al CRM
   console.log("Nuevo lead desde WordPress:", {
     nombre: `${leadData.nombre} ${leadData.apellido}`,
     email: leadData.email,

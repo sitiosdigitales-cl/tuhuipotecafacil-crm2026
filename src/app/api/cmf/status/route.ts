@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { obtenerEstadoCMF } from "@/lib/cmf/service";
 
 // GET /api/cmf/status - Estado del servicio CMF

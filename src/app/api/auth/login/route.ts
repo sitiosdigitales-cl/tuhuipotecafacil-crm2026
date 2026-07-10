@@ -1,25 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
     if (!email || !password) {
-      return NextResponse.json({ success: false, error: "Email y contraseña requeridos" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Email y contraseÃ±a requeridos" }, { status: 400 });
     }
 
     // Buscar usuario por email
     const { data: user, error } = await supabase.from("usuarios").select("*").eq("email", email).single();
 
     if (error || !user) {
-      return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
+      return NextResponse.json({ success: false, error: "Credenciales invÃ¡lidas" }, { status: 401 });
     }
 
-    // En producción verificaría bcrypt. Por ahora comparación directa para demo
+    // En producciÃ³n verificarÃ­a bcrypt. Por ahora comparaciÃ³n directa para demo
     if (password !== user.password) {
-      return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
+      return NextResponse.json({ success: false, error: "Credenciales invÃ¡lidas" }, { status: 401 });
     }
 
     return NextResponse.json({

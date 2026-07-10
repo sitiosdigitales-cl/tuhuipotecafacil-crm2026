@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { obtenerHistorico } from "@/lib/cmf/service";
 
-// GET /api/cmf/rates/history - Obtener histórico de tasas
+// GET /api/cmf/rates/history - Obtener histÃ³rico de tasas
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const meses = parseInt(searchParams.get("meses") || "12");
@@ -19,7 +18,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Error al obtener histórico" },
+      { error: "Error al obtener histÃ³rico" },
       { status: 500 }
     );
   }

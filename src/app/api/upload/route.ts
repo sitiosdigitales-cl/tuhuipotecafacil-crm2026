@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 
 // Endpoint de upload - guarda referencia en Supabase, archivo en localStorage del cliente
 export async function POST(request: NextRequest) {
@@ -14,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Archivo y leadId requeridos" }, { status: 400 });
     }
 
-    // Validar tamaño (max 10MB)
+    // Validar tamaÃ±o (max 10MB)
     if (archivo.size > 10 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: "El archivo supera los 10MB" }, { status: 400 });
     }
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
     }
 
-    // Generar ID único para el documento
+    // Generar ID Ãºnico para el documento
     const docId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     return NextResponse.json({

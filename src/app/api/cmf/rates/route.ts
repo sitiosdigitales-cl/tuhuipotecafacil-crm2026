@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { obtenerTasaVigente, obtenerHistorico, obtenerEstadoCMF, actualizarTasas } from "@/lib/cmf/service";
 
 // GET /api/cmf/rates/latest - Obtener tasa vigente

@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import {
   enviarEmail,
   enviarEmailTemplate,
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "credito_aprobado":
-        // Crédito aprobado
+        // CrÃ©dito aprobado
         if (!body.email || !body.nombre || !body.monto || !body.banco) {
           return NextResponse.json(
             { success: false, error: "email, nombre, monto y banco son requeridos" },
@@ -110,7 +109,7 @@ export async function POST(request: NextRequest) {
 
       default:
         return NextResponse.json(
-          { success: false, error: `Tipo de email no válido: ${tipo}` },
+          { success: false, error: `Tipo de email no vÃ¡lido: ${tipo}` },
           { status: 400 }
         );
     }
@@ -143,8 +142,8 @@ export async function GET() {
     templates: [
       { id: "bienvenida", nombre: "Bienvenida", descripcion: "Email de bienvenida a nuevos clientes" },
       { id: "documentos", nombre: "Solicitud de Documentos", descripcion: "Solicitar documentos pendientes" },
-      { id: "credito_aprobado", nombre: "Crédito Aprobado", descripcion: "Notificar aprobación de crédito" },
-      { id: "recordatorio", nombre: "Recordatorio", descripcion: "Enviar recordatorio genérico" },
+      { id: "credito_aprobado", nombre: "CrÃ©dito Aprobado", descripcion: "Notificar aprobaciÃ³n de crÃ©dito" },
+      { id: "recordatorio", nombre: "Recordatorio", descripcion: "Enviar recordatorio genÃ©rico" },
     ],
   });
 }

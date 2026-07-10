@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
-export const dynamic = "force-static";
 import { actualizarTasas } from "@/lib/cmf/service";
 
-// POST /api/cmf/update - Forzar actualización de tasas
+// POST /api/cmf/update - Forzar actualizaciÃ³n de tasas
 export async function POST() {
   try {
     const resultado = await actualizarTasas();
