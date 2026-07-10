@@ -129,6 +129,47 @@ CREATE TABLE IF NOT EXISTS public.notificaciones (
 );
 ALTER TABLE public.notificaciones DISABLE ROW LEVEL SECURITY;
 
+-- TABLA EVENTOS (agenda del CRM)
+CREATE TABLE IF NOT EXISTS public.eventos (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  titulo TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  horainicio TEXT,
+  horafin TEXT,
+  tipo TEXT NOT NULL DEFAULT 'reunion',
+  leadid TEXT,
+  leadnombre TEXT,
+  descripcion TEXT,
+  ubicacion TEXT,
+  recordatorio BOOLEAN DEFAULT FALSE,
+  completado BOOLEAN DEFAULT FALSE,
+  notas TEXT,
+  googleeventid TEXT,
+  meetlink TEXT,
+  calendarelink TEXT,
+  creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.eventos DISABLE ROW LEVEL SECURITY;
+
+-- TABLA RECORDATORIOS
+CREATE TABLE IF NOT EXISTS public.recordatorios (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  tipo TEXT NOT NULL DEFAULT 'sistema',
+  frecuencia TEXT NOT NULL DEFAULT 'una_vez',
+  leadid TEXT,
+  leadnombre TEXT,
+  fechaenvio TIMESTAMPTZ,
+  proximoenvio TIMESTAMPTZ,
+  estado TEXT NOT NULL DEFAULT 'pendiente',
+  activo BOOLEAN DEFAULT TRUE,
+  intentos INTEGER DEFAULT 0,
+  maxintentos INTEGER DEFAULT 3,
+  creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.recordatorios DISABLE ROW LEVEL SECURITY;
+
 -- TABLA AUDITORIA
 CREATE TABLE IF NOT EXISTS public.auditoria (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -160,5 +201,9 @@ UNION ALL
 SELECT 'actividades', count(*) FROM public.actividades
 UNION ALL
 SELECT 'notificaciones', count(*) FROM public.notificaciones
+UNION ALL
+SELECT 'eventos', count(*) FROM public.eventos
+UNION ALL
+SELECT 'recordatorios', count(*) FROM public.recordatorios
 UNION ALL
 SELECT 'auditoria', count(*) FROM public.auditoria;

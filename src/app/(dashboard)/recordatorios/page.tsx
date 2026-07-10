@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Bell,
   BellRing,
@@ -218,7 +218,8 @@ const frecuenciaConfig: Record<string, { label: string; icono: React.ReactNode }
 };
 
 export default function RecordatoriosPage() {
-  const [recordatorios, setRecordatorios] = useState<Recordatorio[]>(() => generarRecordatorios());
+  const [recordatorios, setRecordatorios] = useState<Recordatorio[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -233,6 +234,29 @@ export default function RecordatoriosPage() {
     fechaEnvio: "",
     horaEnvio: "09:00",
   });
+
+  useEffect(() => {
+    async function cargarRecordatorios() {
+      try {
+        const res = await fetch("/api/recordatorios");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setRecordatorios(json.data.map((r: Record<string, any>) => ({
+            ...r,
+            fechaEnvio: r.fechaEnvio ? new Date(r.fechaEnvio) : new Date(),
+            proximoEnvio: r.proximoEnvio ? new Date(r.proximoEnvio) : new Date(),
+            creadoEn: r.creadoEn ? new Date(r.creadoEn) : new Date(),
+            ultimoEnvio: r.ultimoEnvio ? new Date(r.ultimoEnvio) : undefined,
+          })));
+        }
+      } catch {
+        setRecordatorios([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarRecordatorios();
+  }, []);
 
   const leads = useMemo(() => generarLeads().slice(0, 15), []);
 
@@ -256,34 +280,60 @@ export default function RecordatoriosPage() {
     return { total, pendientes, enviados, fallidos, activos };
   }, [recordatorios]);
 
-  const toggleActivo = (id: string) => {
-    setRecordatorios((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, activo: !r.activo } : r))
-    );
+  const toggleActivo = async (id: string) => {
+    const rec = recordatorios.find((r) => r.id === id);
+    if (!rec) return;
+    try {
+      await fetch(`/api/recordatorios/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activo: !rec.activo }),
+      });
+      setRecordatorios((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, activo: !r.activo } : r))
+      );
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const eliminarRecordatorio = (id: string) => {
-    setRecordatorios((prev) => prev.filter((r) => r.id !== id));
-    setDetalle(null);
+  const eliminarRecordatorio = async (id: string) => {
+    try {
+      await fetch(`/api/recordatorios/${id}`, { method: "DELETE" });
+      setRecordatorios((prev) => prev.filter((r) => r.id !== id));
+      setDetalle(null);
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const handleCrear = () => {
-    const recordatorio: Recordatorio = {
-      id: `r-${Date.now()}`,
-      titulo: nuevoRecordatorio.titulo,
-      descripcion: nuevoRecordatorio.descripcion,
-      tipo: nuevoRecordatorio.tipo,
-      frecuencia: nuevoRecordatorio.frecuencia,
-      leadNombre: nuevoRecordatorio.leadNombre || undefined,
-      fechaEnvio: new Date(`${nuevoRecordatorio.fechaEnvio}T${nuevoRecordatorio.horaEnvio}`),
-      proximoEnvio: new Date(`${nuevoRecordatorio.fechaEnvio}T${nuevoRecordatorio.horaEnvio}`),
-      estado: "programado",
-      activo: true,
-      intentos: 0,
-      maxIntentos: 3,
-      creadoEn: new Date(),
-    };
-    setRecordatorios((prev) => [recordatorio, ...prev]);
+  const handleCrear = async () => {
+    try {
+      const res = await fetch("/api/recordatorios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: nuevoRecordatorio.titulo,
+          descripcion: nuevoRecordatorio.descripcion,
+          tipo: nuevoRecordatorio.tipo,
+          frecuencia: nuevoRecordatorio.frecuencia,
+          leadNombre: nuevoRecordatorio.leadNombre || null,
+          fechaEnvio: new Date(`${nuevoRecordatorio.fechaEnvio}T${nuevoRecordatorio.horaEnvio}`).toISOString(),
+          proximoEnvio: new Date(`${nuevoRecordatorio.fechaEnvio}T${nuevoRecordatorio.horaEnvio}`).toISOString(),
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setRecordatorios((prev) => [{
+          ...json.data,
+          fechaEnvio: new Date(json.data.fechaEnvio),
+          proximoEnvio: new Date(json.data.proximoEnvio),
+          creadoEn: new Date(json.data.creadoEn),
+        }, ...prev]);
+      }
+    } catch {
+      // Error silencioso
+    }
     setCrearOpen(false);
     setNuevoRecordatorio({
       titulo: "",
@@ -308,6 +358,15 @@ export default function RecordatoriosPage() {
     if (dias < 7) return `En ${dias}d`;
     return fecha.toLocaleDateString("es-CL");
   };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando recordatorios...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">

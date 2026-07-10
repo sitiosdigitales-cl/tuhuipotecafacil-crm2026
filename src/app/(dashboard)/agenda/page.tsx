@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -207,7 +207,8 @@ export default function AgendaPage() {
   const [vista, setVista] = useState<"mes" | "semana" | "dia">("mes");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [busqueda, setBusqueda] = useState("");
-  const [eventos, setEventos] = useState<Evento[]>(() => generarEventos());
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [crearEventoOpen, setCrearEventoOpen] = useState(false);
   const [crearEventoGoogleOpen, setCrearEventoGoogleOpen] = useState(false);
   const [detalleEvento, setDetalleEvento] = useState<Evento | null>(null);
@@ -221,6 +222,26 @@ export default function AgendaPage() {
     descripcion: "",
     recordatorio: true,
   });
+
+  useEffect(() => {
+    async function cargarEventos() {
+      try {
+        const res = await fetch("/api/eventos");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setEventos(json.data.map((e: Record<string, any>) => ({
+            ...e,
+            fecha: e.fecha ? new Date(e.fecha) : new Date(),
+          })));
+        }
+      } catch {
+        setEventos([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarEventos();
+  }, []);
 
   // Leads para selector
   const leads = useMemo(() => generarLeads().slice(0, 20), []);
@@ -292,32 +313,57 @@ export default function AgendaPage() {
     return eventosFiltrados.filter((e) => e.fecha.toDateString() === fecha.toDateString());
   };
 
-  const toggleCompletado = (eventoId: string) => {
-    setEventos((prev) =>
-      prev.map((e) => (e.id === eventoId ? { ...e, completado: !e.completado } : e))
-    );
+  const toggleCompletado = async (eventoId: string) => {
+    const evento = eventos.find((e) => e.id === eventoId);
+    if (!evento) return;
+    try {
+      await fetch(`/api/eventos/${eventoId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completado: !evento.completado }),
+      });
+      setEventos((prev) =>
+        prev.map((e) => (e.id === eventoId ? { ...e, completado: !e.completado } : e))
+      );
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const eliminarEvento = (eventoId: string) => {
-    setEventos((prev) => prev.filter((e) => e.id !== eventoId));
-    setDetalleEvento(null);
+  const eliminarEvento = async (eventoId: string) => {
+    try {
+      await fetch(`/api/eventos/${eventoId}`, { method: "DELETE" });
+      setEventos((prev) => prev.filter((e) => e.id !== eventoId));
+      setDetalleEvento(null);
+    } catch {
+      // Error silencioso
+    }
   };
 
-  const handleCrearEvento = () => {
-    const evento: Evento = {
-      id: `e-${Date.now()}`,
-      titulo: nuevoEvento.titulo,
-      fecha: new Date(fechaSeleccionada.getFullYear(), fechaSeleccionada.getMonth(), fechaSeleccionada.getDate()),
-      horaInicio: nuevoEvento.horaInicio,
-      horaFin: nuevoEvento.horaFin,
-      tipo: nuevoEvento.tipo,
-      leadNombre: nuevoEvento.leadNombre || undefined,
-      ubicacion: nuevoEvento.ubicacion || undefined,
-      descripcion: nuevoEvento.descripcion || undefined,
-      recordatorio: nuevoEvento.recordatorio,
-      completado: false,
-    };
-    setEventos((prev) => [...prev, evento]);
+  const handleCrearEvento = async () => {
+    try {
+      const res = await fetch("/api/eventos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: nuevoEvento.titulo,
+          fecha: fechaSeleccionada.toISOString().split("T")[0],
+          horaInicio: nuevoEvento.horaInicio,
+          horaFin: nuevoEvento.horaFin,
+          tipo: nuevoEvento.tipo,
+          leadNombre: nuevoEvento.leadNombre || null,
+          ubicacion: nuevoEvento.ubicacion || null,
+          descripcion: nuevoEvento.descripcion || null,
+          recordatorio: nuevoEvento.recordatorio,
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setEventos((prev) => [...prev, { ...json.data, fecha: new Date(json.data.fecha) }]);
+      }
+    } catch {
+      // Error silencioso
+    }
     setCrearEventoOpen(false);
     setNuevoEvento({
       titulo: "",
@@ -339,23 +385,13 @@ export default function AgendaPage() {
     crearMeet: boolean;
     emails: string[];
   }) => {
-    // Crear evento local
     const horaInicio = `${eventoData.fechaInicio.getHours().toString().padStart(2, "0")}:${eventoData.fechaInicio.getMinutes().toString().padStart(2, "0")}`;
     const horaFin = `${eventoData.fechaFin.getHours().toString().padStart(2, "0")}:${eventoData.fechaFin.getMinutes().toString().padStart(2, "0")}`;
 
-    const evento: Evento = {
-      id: `e-${Date.now()}`,
-      titulo: eventoData.titulo,
-      fecha: eventoData.fechaInicio,
-      horaInicio,
-      horaFin,
-      tipo: eventoData.crearMeet ? "videoconferencia" : "reunion",
-      descripcion: eventoData.descripcion || undefined,
-      recordatorio: true,
-      completado: false,
-    };
+    let googleEventId: string | undefined;
+    let meetLink: string | undefined;
+    let calendarLink: string | undefined;
 
-    // Si está autenticado con Google, crear en Google Calendar
     if (isGoogleAuthenticated()) {
       const result = await createGoogleCalendarEvent({
         titulo: eventoData.titulo,
@@ -367,25 +403,46 @@ export default function AgendaPage() {
       });
 
       if (result.success) {
-        evento.googleEventId = result.eventId;
-        evento.meetLink = result.meetLink;
-        evento.calendarLink = result.calendarLink;
-        evento.sincronizadoGoogle = true;
-
+        googleEventId = result.eventId;
+        meetLink = result.meetLink;
+        calendarLink = result.calendarLink;
         toast.success("Evento creado en Google Calendar", {
           description: result.meetLink ? "Se creó el enlace de Google Meet" : "Evento sincronizado",
         });
       }
     } else {
       if (eventoData.crearMeet) {
-        evento.meetLink = "https://meet.google.com/new";
+        meetLink = "https://meet.google.com/new";
         toast.info("Evento creado localmente", {
           description: "Conecta Google Calendar para sincronizar automáticamente",
         });
       }
     }
 
-    setEventos((prev) => [...prev, evento]);
+    try {
+      const res = await fetch("/api/eventos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: eventoData.titulo,
+          fecha: eventoData.fechaInicio.toISOString().split("T")[0],
+          horaInicio,
+          horaFin,
+          tipo: eventoData.crearMeet ? "videoconferencia" : "reunion",
+          descripcion: eventoData.descripcion || null,
+          recordatorio: true,
+          googleEventId: googleEventId || null,
+          meetLink: meetLink || null,
+          calendarLink: calendarLink || null,
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setEventos((prev) => [...prev, { ...json.data, fecha: new Date(json.data.fecha) }]);
+      }
+    } catch {
+      // Error silencioso
+    }
     setCrearEventoOpen(false);
   };
 
@@ -398,6 +455,15 @@ export default function AgendaPage() {
       return dia;
     });
   };
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando agenda...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
