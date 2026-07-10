@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-static";
+
 // Endpoint de upload - guarda referencia en Supabase, archivo en localStorage del cliente
 export async function POST(request: NextRequest) {
   try {

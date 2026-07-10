@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-static";
+
 // Webhook para recibir formularios de WordPress/Elementor
 // Configurar en Elementor: Webhook URL → https://tu-dominio.com/api/webhook/wordpress
 

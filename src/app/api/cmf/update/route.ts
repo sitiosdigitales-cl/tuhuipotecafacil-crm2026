@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-static";
 import { actualizarTasas } from "@/lib/cmf/service";
 
 // POST /api/cmf/update - Forzar actualización de tasas

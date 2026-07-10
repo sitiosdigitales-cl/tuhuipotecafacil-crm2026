@@ -1,4 +1,6 @@
 import { openai } from "@ai-sdk/openai";
+
+export const dynamic = "force-static";
 import { streamText } from "ai";
 
 const systemPromptBase = `Eres el asistente IA de TuHipotecaFacil.cl, un CRM hipotecario inteligente para el mercado chileno.

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-static";
 import { obtenerHistorico } from "@/lib/cmf/service";
 
 // GET /api/cmf/rates/history - Obtener histórico de tasas

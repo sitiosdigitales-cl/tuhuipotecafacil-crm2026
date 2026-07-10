@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-static";
 import { query, insert, update, remove } from "@/lib/db";
 
 // GET
