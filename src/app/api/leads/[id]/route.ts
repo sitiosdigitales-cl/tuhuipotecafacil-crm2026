@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
     if (error || !data) return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
   } catch {
     return NextResponse.json({ success: false, error: "Error al obtener lead" }, { status: 500 });
   }
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data, error } = await supabase
       .from("leads")
-      .update(updateData)
+      .update(toSupabaseColumns(updateData))
       .eq("id", id)
       .select()
       .single();
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
   } catch {
     return NextResponse.json({ success: false, error: "Error al actualizar" }, { status: 500 });
   }

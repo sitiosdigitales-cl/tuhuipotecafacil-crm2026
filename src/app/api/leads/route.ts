@@ -1,5 +1,5 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { NextRequest, NextResponse } from "next/server";
+import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       query = query.eq("etapa", etapa);
     }
     if (ejecutivo) {
-      query = query.eq("nombreEjecutivo", ejecutivo);
+      query = query.eq("nombreejecutivo", ejecutivo);
     }
 
     query = query.order("creadoen", { ascending: false });
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    return NextResponse.json({ success: true, data: data || [] });
+    return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
   } catch (error) {
     console.error("Error al obtener leads:", error);
     return NextResponse.json({ success: true, data: [] });
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("leads")
-      .insert({
+      .insert(toSupabaseColumns({
         id: leadId,
         nombre: body.nombre,
         apellido: body.apellido,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         situacionLaboral: body.situacionLaboral || "DEPENDIENTE",
         enDicom: body.enDicom || false,
         diasEnEtapa: 0,
-      })
+      }))
       .select()
       .single();
 
