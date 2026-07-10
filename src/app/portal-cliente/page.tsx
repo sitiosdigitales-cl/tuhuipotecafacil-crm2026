@@ -188,7 +188,7 @@ export default function PortalClientePage() {
     setBuscando(true);
     setError("");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       // Normalizar el RUT ingresado
       const normalizarRut = (r: string) => r.replace(/\./g, "").replace("-", "").replace(/\s/g, "").toLowerCase();
       const rutIngresado = normalizarRut(rut);
@@ -243,12 +243,40 @@ export default function PortalClientePage() {
       if (lead) {
         setCliente(lead);
         setError("");
-        setDocumentos([
-          { id: "d1", nombre: "Cédula de Identidad", tipo: "cedula", estado: "aprobado", fechaSubida: new Date(Date.now() - 864000000), tamaño: 245000 },
-          { id: "d2", nombre: "Liquidación de Sueldo", tipo: "liq-sueldo", estado: "subido", fechaSubida: new Date(Date.now() - 259200000), tamaño: 180000 },
-          { id: "d3", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" },
-          { id: "d4", nombre: "Comprobante de Domicilio", tipo: "domicilio", estado: "pendiente" },
-        ]);
+
+        // Cargar documentos reales desde la API
+        try {
+          const docsRes = await fetch(`/api/documentos?leadId=${lead.id}`);
+          const docsData = await docsRes.json();
+          if (docsData.success && docsData.data && docsData.data.length > 0) {
+            setDocumentos(docsData.data.map((d: any) => ({
+              id: d.id,
+              nombre: d.nombre,
+              tipo: d.tipo,
+              estado: d.estado?.toLowerCase() || "pendiente",
+              fechaSubida: d.creadoEn ? new Date(d.creadoEn) : undefined,
+              tamaño: d.tamaño || undefined,
+            })));
+          } else {
+            // Documentos base según tipo de trabajador
+            const docsBase = (lead.situacionLaboral === "INDEPENDIENTE" ? [
+              { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
+              { id: "carpeta-trib", nombre: "Carpeta Tributaria", tipo: "carpeta-trib", estado: "pendiente" as const },
+              { id: "renta", nombre: "Declaración de Renta", tipo: "renta", estado: "pendiente" as const },
+              { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
+            ] : [
+              { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
+              { id: "liq-sueldo", nombre: "Liquidaciones de Sueldo", tipo: "liq-sueldo", estado: "pendiente" as const },
+              { id: "afp", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" as const },
+              { id: "antiguedad", nombre: "Certificado Antigüedad", tipo: "antiguedad", estado: "pendiente" as const },
+              { id: "domicilio", nombre: "Comprobante de Domicilio", tipo: "domicilio", estado: "pendiente" as const },
+              { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
+            ]);
+            setDocumentos(docsBase);
+          }
+        } catch {
+          setDocumentos([]);
+        }
       } else {
         setError("Error al cargar los datos. Intenta nuevamente.");
         setCliente(null);
