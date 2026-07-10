@@ -368,106 +368,15 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
         </button>
       )}
 
-      {/* Selector de Usuario */}
-      <div className="relative">
-        <button
-          onClick={() => esSuperAdmin && setMostrarSelector(!mostrarSelector)}
-          className={`flex items-center gap-2.5 ml-2 pl-3 border-l border-slate-200/60 ${esSuperAdmin ? "cursor-pointer hover:bg-slate-50 -mx-2 px-2 py-1 rounded-xl transition-colors" : ""}`}
-        >
-          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-600/15">
-            {usuarioActual.nombre[0]}{usuarioActual.apellido[0]}
-          </div>
-          <div className="text-right hidden sm:block">
-            <div className="text-[13px] font-semibold text-slate-900">{usuarioActual.nombre}</div>
-            <div className="text-[10px] text-slate-400 font-medium">{rolConfig.label}</div>
-          </div>
-          {esSuperAdmin && <ChevronDown size={14} className={`text-slate-400 hidden sm:block transition-transform ${mostrarSelector ? "rotate-180" : ""}`} />}
-        </button>
-
-        {/* Dropdown de Selector de Cuentas */}
-        {mostrarSelector && esSuperAdmin && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setMostrarSelector(false)} />
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
-              {/* Header */}
-              <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div className="flex items-center gap-2 mb-1">
-                  <Shield size={14} className="text-blue-600" />
-                  <span className="text-[11px] font-bold text-slate-900">Cambiar de Cuenta</span>
-                </div>
-                <p className="text-[10px] text-slate-500">Selecciona un usuario para ver su perspectiva</p>
-              </div>
-
-              {/* Lista de Usuarios */}
-              <div className="p-2 max-h-[320px] overflow-y-auto">
-                {usuarios.map((user) => {
-                  const userRol = ROLES_CONFIG[user.rol];
-                  const esActual = user.id === usuarioActual.id;
-                  return (
-                    <button
-                      key={user.id}
-                      onClick={() => handleCambiarCuenta(user.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                        esActual
-                          ? "bg-blue-50 border border-blue-200"
-                          : "hover:bg-slate-50 border border-transparent"
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-[11px] font-bold shadow-sm ${
-                        user.rol === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
-                        user.rol === 'ADMIN' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
-                        user.rol === 'GERENTE' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
-                        'bg-gradient-to-br from-slate-400 to-slate-500'
-                      }`}>
-                        {user.nombre[0]}{user.apellido[0]}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-100">{user.nombre} {user.apellido}</div>
-                        <div className="text-[11px] text-slate-400">{user.email}</div>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>
-                            {userRol.label}
-                          </span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                            user.estado === "ACTIVO" ? "bg-emerald-100 text-emerald-700" :
-                            user.estado === "INACTIVO" ? "bg-slate-100 text-slate-600" :
-                            "bg-red-100 text-red-700"
-                          }`}>
-                            {user.estado}
-                          </span>
-                        </div>
-                      </div>
-                      {esActual && (
-                        <Check size={16} className="text-blue-500" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Footer */}
-              <div className="p-3 border-t border-slate-100 bg-slate-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                    <User size={12} />
-                    <span>Sesión: <strong className="text-slate-700">{usuarioActual.nombre}</strong></span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMostrarSelector(false);
-                      logout();
-                      router.push("/login");
-                    }}
-                    className="flex items-center gap-1.5 text-[10px] font-semibold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut size={12} />
-                    Salir
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+      {/* Avatar del usuario (solo visual, sin dropdown) */}
+      <div className="flex items-center gap-2.5 ml-2 pl-3 border-l border-slate-200/60">
+        <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-600/15">
+          {usuarioActual.nombre[0]}{usuarioActual.apellido[0]}
+        </div>
+        <div className="text-right hidden sm:block">
+          <div className="text-[13px] font-semibold text-slate-900">{usuarioActual.nombre}</div>
+          <div className="text-[10px] text-slate-400 font-medium">{rolConfig.label}</div>
+        </div>
       </div>
 
       {/* Command Palette */}
