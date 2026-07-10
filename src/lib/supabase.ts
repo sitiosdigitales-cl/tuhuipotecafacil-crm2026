@@ -29,8 +29,8 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
     dicomdetalle: "dicomDetalle",
     rentamensual: "rentaMensual",
     diasenetapa: "diasEnEtapa",
-    creadoEn: "creadoEn",
-    actualizadoEn: "actualizadoEn",
+    creadoen: "creadoEn",
+    actualizadoen: "actualizadoEn",
   };
   for (const [key, value] of Object.entries(obj)) {
     const mapped = keyMap[key] || key;
