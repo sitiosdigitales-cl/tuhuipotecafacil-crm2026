@@ -11,6 +11,7 @@ export interface Mensaje {
   contenido: string;
   tipo: "TEXTO" | "ARCHIVO" | "IMAGEN" | "SISTEMA";
   estado: EstadoMensaje;
+  archivoUrl?: string;
   creadoEn: Date;
   editadoEn?: Date;
   respondiendoA?: string;

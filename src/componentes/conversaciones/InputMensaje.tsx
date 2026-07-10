@@ -19,9 +19,10 @@ import {
 interface InputMensajeProps {
   onEnviar: (contenido: string) => void;
   nombreConversacion: string;
+  disabled?: boolean;
 }
 
-export function InputMensaje({ onEnviar, nombreConversacion }: InputMensajeProps) {
+export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMensajeProps) {
   const [mensaje, setMensaje] = useState("");
   const [mostrarFormato, setMostrarFormato] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -154,9 +155,10 @@ export function InputMensaje({ onEnviar, nombreConversacion }: InputMensajeProps
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Escribe un mensaje en ${nombreConversacion}...`}
+            placeholder={disabled ? "Enviando mensaje..." : `Escribe un mensaje en ${nombreConversacion}...`}
             rows={1}
-            className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none resize-none py-1 max-h-[120px]"
+            disabled={disabled}
+            className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none resize-none py-1 max-h-[120px] disabled:opacity-50"
           />
 
           {/* Botones derecha */}
@@ -173,15 +175,19 @@ export function InputMensaje({ onEnviar, nombreConversacion }: InputMensajeProps
             <div className="w-px h-4 bg-slate-200 mx-1" />
             <button
               onClick={handleEnviar}
-              disabled={!mensaje.trim()}
+              disabled={!mensaje.trim() || disabled}
               className={`p-2 rounded-xl transition-all ${
-                mensaje.trim()
+                mensaje.trim() && !disabled
                   ? "bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/25"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
               title="Enviar mensaje"
             >
-              <Send size={16} />
+              {disabled ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Send size={16} />
+              )}
             </button>
           </div>
         </div>

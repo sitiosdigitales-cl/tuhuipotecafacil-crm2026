@@ -5,26 +5,18 @@ import {
   Phone,
   Video,
   MoreHorizontal,
-  Users,
-  Pin,
   Search,
-  Settings,
-  Star,
-  Hash,
   Info,
   X,
+  Hash,
+  MessageSquare,
 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { MensajeItem } from "./MensajeItem";
 import { InputMensaje } from "./InputMensaje";
-import {
-  CONVERSACIONES_MOCK,
-  MENSAJES_MOCK,
-  getUsuarioById,
-  getEstadoOnline,
-} from "@/datos/conversaciones-mock";
-import type { Mensaje } from "@/tipos/conversaciones";
-import { ESTADO_ONLINE_CONFIG } from "@/tipos/conversaciones";
+import { useChat } from "@/lib/hooks/useChat";
+import { USUARIOS_MOCK } from "@/datos/mock";
+import type { Mensaje, Conversacion } from "@/tipos/conversaciones";
 
 interface AreaChatProps {
   conversacionId: string | null;
@@ -32,11 +24,46 @@ interface AreaChatProps {
 }
 
 export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
-  const [mensajes, setMensajes] = useState<Record<string, Mensaje[]>>(MENSAJES_MOCK);
+  const [conversacion, setConversacion] = useState<Conversacion | null>(null);
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const mensajesRef = useRef<HTMLDivElement>(null);
 
-  const conversacion = CONVERSACIONES_MOCK.find((c) => c.id === conversacionId);
+  const { mensajes, cargando, enviando, enviarMensaje } = useChat({
+    conversacionId,
+    usuarioActualId,
+  });
+
+  // Cargar datos de la conversación
+  useEffect(() => {
+    if (!conversacionId) {
+      setConversacion(null);
+      return;
+    }
+
+    async function cargarConversacion() {
+      try {
+        const res = await fetch(`/api/conversaciones/${conversacionId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setConversacion({
+            id: json.data.id,
+            nombre: json.data.nombre,
+            tipo: json.data.tipo,
+            participantes: json.data.participantes || [],
+            mensajesNoLeidos: json.data.mensajesNoLeidos || 0,
+            descripcion: json.data.descripcion,
+            esFijo: json.data.esFijo,
+            creadoEn: new Date(json.data.creadoEn || Date.now()),
+            creadoPor: json.data.creadoPor || "",
+          });
+        }
+      } catch {
+        setConversacion(null);
+      }
+    }
+
+    cargarConversacion();
+  }, [conversacionId]);
 
   useEffect(() => {
     if (mensajesRef.current) {
@@ -44,14 +71,9 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
     }
   }, [mensajes, conversacionId]);
 
-  const mensajesConversacion = useMemo(() => {
-    if (!conversacionId) return [];
-    return mensajes[conversacionId] || [];
-  }, [mensajes, conversacionId]);
-
   const mensajesAgrupados = useMemo(() => {
-    return mensajesConversacion.map((msg, idx) => {
-      const prev = idx > 0 ? mensajesConversacion[idx - 1] : null;
+    return mensajes.map((msg, idx) => {
+      const prev = idx > 0 ? mensajes[idx - 1] : null;
       const mostrarRemitente =
         !prev ||
         prev.remitenteId !== msg.remitenteId ||
@@ -63,34 +85,14 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
 
       return { ...msg, mostrarRemitente, primerDelDia };
     });
-  }, [mensajesConversacion]);
-
-  const handleEnviar = (contenido: string) => {
-    if (!conversacionId) return;
-
-    const nuevoMensaje: Mensaje = {
-      id: `m-${Date.now()}`,
-      conversacionId,
-      remitenteId: usuarioActualId,
-      remitenteNombre: getUsuarioById(usuarioActualId)?.nombre || "Usuario",
-      contenido,
-      tipo: "TEXTO",
-      estado: "ENVIADO",
-      creadoEn: new Date(),
-    };
-
-    setMensajes((prev) => ({
-      ...prev,
-      [conversacionId]: [...(prev[conversacionId] || []), nuevoMensaje],
-    }));
-  };
+  }, [mensajes]);
 
   const getNombreConversacion = (): string => {
     if (!conversacion) return "";
     if (conversacion.tipo === "DIRECTO") {
       const otroId = conversacion.participantes.find((p) => p !== usuarioActualId);
       if (!otroId) return conversacion.nombre;
-      const otro = getUsuarioById(otroId);
+      const otro = USUARIOS_MOCK.find((u) => u.id === otroId);
       return otro ? `${otro.nombre} ${otro.apellido}` : conversacion.nombre;
     }
     return conversacion.nombre;
@@ -98,12 +100,6 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
 
   const getDescripcionConversacion = (): string => {
     if (!conversacion) return "";
-    if (conversacion.tipo === "DIRECTO") {
-      const otroId = conversacion.participantes.find((p) => p !== usuarioActualId);
-      if (!otroId) return "";
-      const estado = getEstadoOnline(otroId);
-      return ESTADO_ONLINE_CONFIG[estado].label;
-    }
     if (conversacion.descripcion) return conversacion.descripcion;
     return `${conversacion.participantes.length} participantes`;
   };
@@ -113,7 +109,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-slate-100">
-            <MessageSquareIcon />
+            <MessageSquare size={32} className="text-slate-400" />
           </div>
           <h3 className="text-lg font-bold text-slate-700 mb-2">Selecciona una conversación</h3>
           <p className="text-sm text-slate-500 max-w-xs">
@@ -145,7 +141,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-900">{nombreConversacion}</h3>
               {conversacion.esFijo && (
-                <Pin size={12} className="text-amber-500" />
+                <span className="text-amber-500 text-xs">📌</span>
               )}
             </div>
             <p className="text-[11px] text-slate-500">{descripcionConversacion}</p>
@@ -153,7 +149,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Buscar en conversación">
+          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Buscar">
             <Search size={16} className="text-slate-500" />
           </button>
           <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Llamar">
@@ -181,9 +177,13 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
       <div className="flex-1 flex overflow-hidden">
         {/* Mensajes */}
         <div className="flex-1 flex flex-col">
-          {/* Lista de mensajes */}
           <div ref={mensajesRef} className="flex-1 overflow-y-auto py-4">
-            {mensajesAgrupados.length === 0 ? (
+            {cargando ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-xs text-slate-500">Cargando mensajes...</span>
+              </div>
+            ) : mensajesAgrupados.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
                   <Hash size={24} className="text-slate-400" />
@@ -209,8 +209,11 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
             )}
           </div>
 
-          {/* Input */}
-          <InputMensaje onEnviar={handleEnviar} nombreConversacion={nombreConversacion} />
+          <InputMensaje
+            onEnviar={enviarMensaje}
+            nombreConversacion={nombreConversacion}
+            disabled={enviando}
+          />
         </div>
 
         {/* Panel de información */}
@@ -228,7 +231,6 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
               </button>
             </div>
 
-            {/* Info de la conversación */}
             <div className="p-4 border-b border-slate-200 text-center">
               {esDirecto && otroId ? (
                 <Avatar nombre={nombreConversacion} id={otroId} size="lg" />
@@ -241,17 +243,14 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
               <p className="text-[11px] text-slate-500 mt-1">{descripcionConversacion}</p>
             </div>
 
-            {/* Participantes */}
-            <div className="p-4 border-b border-slate-200">
+            <div className="p-4">
               <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
                 Participantes ({conversacion.participantes.length})
               </h5>
               <div className="space-y-2">
                 {conversacion.participantes.map((pid) => {
-                  const usuario = getUsuarioById(pid);
+                  const usuario = USUARIOS_MOCK.find((u) => u.id === pid);
                   if (!usuario) return null;
-                  const estado = getEstadoOnline(pid);
-                  const estadoConfig = ESTADO_ONLINE_CONFIG[estado];
 
                   return (
                     <div key={pid} className="flex items-center gap-2.5">
@@ -264,63 +263,18 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
                         <div className="text-xs font-semibold text-slate-700 truncate">
                           {usuario.nombre} {usuario.apellido}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <div className={`w-1.5 h-1.5 rounded-full ${estadoConfig.color}`} />
-                          <span className="text-[9px] text-slate-500">
-                            {estadoConfig.label}
-                          </span>
-                        </div>
                       </div>
                       <span className="text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {usuario.rol.replace("_", " ")}
+                        {usuario.rol?.replace("_", " ")}
                       </span>
                     </div>
                   );
                 })}
               </div>
             </div>
-
-            {/* Acciones rápidas */}
-            <div className="p-4">
-              <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
-                Acciones
-              </h5>
-              <div className="space-y-2">
-                <button className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                  <Pin size={14} className="text-slate-500" />
-                  Fijar conversación
-                </button>
-                <button className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                  <Star size={14} className="text-slate-500" />
-                  Marcar como favorita
-                </button>
-                <button className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                  <Settings size={14} className="text-slate-500" />
-                  Configuración
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function MessageSquareIcon() {
-  return (
-    <svg
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-slate-400"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
   );
 }

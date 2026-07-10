@@ -189,6 +189,43 @@ CREATE TABLE IF NOT EXISTS public.auditoria (
 );
 ALTER TABLE public.auditoria DISABLE ROW LEVEL SECURITY;
 
+-- TABLA CONVERSACIONES (chat interno del CRM)
+CREATE TABLE IF NOT EXISTS public.conversaciones (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  nombre TEXT NOT NULL,
+  tipo TEXT NOT NULL DEFAULT 'DIRECTO',
+  descripcion TEXT,
+  participantes TEXT[] DEFAULT '{}',
+  mensajesnoleidos INTEGER DEFAULT 0,
+  esfijo BOOLEAN DEFAULT FALSE,
+  creadopor TEXT,
+  creadoen TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.conversaciones DISABLE ROW LEVEL SECURITY;
+
+-- TABLA MENSAJES (chat interno del CRM)
+CREATE TABLE IF NOT EXISTS public.mensajes (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  conversacionid TEXT NOT NULL,
+  remitenteid TEXT NOT NULL,
+  remitentenombre TEXT NOT NULL,
+  contenido TEXT NOT NULL,
+  tipo TEXT NOT NULL DEFAULT 'TEXTO',
+  estado TEXT NOT NULL DEFAULT 'ENVIADO',
+  archivourl TEXT,
+  creadoEn TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.mensajes DISABLE ROW LEVEL SECURITY;
+
+-- TABLA USUARIOS_ONLINE (presencia en tiempo real)
+CREATE TABLE IF NOT EXISTS public.usuarios_online (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  usuario_id TEXT NOT NULL UNIQUE,
+  estado TEXT NOT NULL DEFAULT 'OFFLINE',
+  ultima_actividad TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.usuarios_online DISABLE ROW LEVEL SECURITY;
+
 -- VERIFICACION
 SELECT 'usuarios' as tabla, count(*) as registros FROM public.usuarios
 UNION ALL
