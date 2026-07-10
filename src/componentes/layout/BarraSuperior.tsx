@@ -33,6 +33,7 @@ import {
   Archive,
   Sun,
   Moon,
+  RefreshCw,
 } from "lucide-react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -114,6 +115,7 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [mostrarMensajes, setMostrarMensajes] = useState(false);
   const [mensajes, setMensajes] = useState(MENSAJES_MOCK);
+  const [actualizando, setActualizando] = useState(false);
 
   const mensajesRef = useRef<HTMLDivElement>(null);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -121,6 +123,16 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
   const rolConfig = ROLES_CONFIG[usuarioActual.rol];
 
   const mensajesNoLeidos = mensajes.reduce((sum, m) => sum + m.noLeidos, 0);
+
+  const handleActualizarSistema = async () => {
+    setActualizando(true);
+    try {
+      // Recargar datos del sistema
+      window.location.reload();
+    } finally {
+      setActualizando(false);
+    }
+  };
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
@@ -342,6 +354,19 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
           <PanelRightOpen size={17} />
         </button>
       </div>
+
+      {/* Botón Actualizar Sistema */}
+      {esSuperAdmin && (
+        <button
+          onClick={handleActualizarSistema}
+          disabled={actualizando}
+          className="flex items-center gap-2 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[11px] font-semibold transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed mr-3"
+          title="Actualizar sistema - Recargar datos"
+        >
+          <RefreshCw size={14} className={actualizando ? "animate-spin" : ""} />
+          <span className="hidden sm:inline">Actualizar</span>
+        </button>
+      )}
 
       {/* Selector de Usuario */}
       <div className="relative">
