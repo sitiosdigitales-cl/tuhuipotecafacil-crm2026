@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   FileText,
@@ -19,76 +19,22 @@ import {
   Shield,
   Download,
   Eye,
-  Bell,
   ChevronRight,
   ArrowLeft,
-  ExternalLink,
-  Info,
   CreditCard,
-  Hash,
-  MapPin,
+  Sparkles,
+  Upload,
 } from "lucide-react";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
+import type { Lead } from "@/tipos";
 
-// Datos mock de clientes para el portal
-const CLIENTES_PORTAL = [
-  {
-    id: "lead-1",
-    nombre: "María González",
-    apellido: "González",
-    rut: "15.234.567-8",
-    email: "maria@email.com",
-    telefono: "+56 9 1234 5678",
-    etapa: "EVALUACION_BANCARIA",
-    etapaLabel: "Evaluación Bancaria",
-    banco: "Banco Estado",
-    tipoCredito: "Hipotecario",
-    montoSolicitado: 150000000,
-    valorPropiedad: 180000000,
-    pieDisponible: 30000000,
-    fechaInicio: new Date(Date.now() - 30 * 86400000),
-    ultimoContacto: new Date(Date.now() - 2 * 86400000),
-    documentos: [
-      { nombre: "Cédula de Identidad", estado: "APROBADO", fecha: new Date(Date.now() - 25 * 86400000) },
-      { nombre: "Contrato de Trabajo", estado: "APROBADO", fecha: new Date(Date.now() - 20 * 86400000) },
-      { nombre: "Comprobante de Ingresos", estado: "EN_REVISION", fecha: new Date(Date.now() - 10 * 86400000) },
-      { nombre: "Certificado AFP", estado: "PENDIENTE", fecha: null },
-      { nombre: "Valorización", estado: "PENDIENTE", fecha: null },
-    ],
-    actividades: [
-      { fecha: new Date(Date.now() - 2 * 86400000), titulo: "Documentos enviados al banco", tipo: "documento" },
-      { fecha: new Date(Date.now() - 5 * 86400000), titulo: "Llamada de seguimiento realizada", tipo: "llamada" },
-      { fecha: new Date(Date.now() - 10 * 86400000), titulo: "Evaluación bancaria iniciada", tipo: "sistema" },
-      { fecha: new Date(Date.now() - 15 * 86400000), titulo: "Documentación completa recibida", tipo: "documento" },
-      { fecha: new Date(Date.now() - 20 * 86400000), titulo: "Propuesta comercial enviada", tipo: "email" },
-    ],
-  },
-  {
-    id: "lead-2",
-    nombre: "Carlos",
-    apellido: "Rojas",
-    rut: "18.345.678-9",
-    email: "carlos@email.com",
-    telefono: "+56 9 2345 6789",
-    etapa: "DOCS_PENDIENTES",
-    etapaLabel: "Documentos Pendientes",
-    banco: "Santander",
-    tipoCredito: "Hipotecario",
-    montoSolicitado: 120000000,
-    valorPropiedad: 150000000,
-    pieDisponible: 30000000,
-    fechaInicio: new Date(Date.now() - 15 * 86400000),
-    ultimoContacto: new Date(Date.now() - 1 * 86400000),
-    documentos: [
-      { nombre: "Cédula de Identidad", estado: "APROBADO", fecha: new Date(Date.now() - 10 * 86400000) },
-      { nombre: "Certificado AFP", estado: "PENDIENTE", fecha: null },
-      { nombre: "Comprobante de Domicilio", estado: "PENDIENTE", fecha: null },
-    ],
-    actividades: [
-      { fecha: new Date(Date.now() - 1 * 86400000), titulo: "Recordatorio de documentos enviado", tipo: "whatsapp" },
-      { fecha: new Date(Date.now() - 3 * 86400000), titulo: "Primera llamada de contacto", tipo: "llamada" },
-    ],
-  },
+const RUTS_PRUEBA = [
+  { rut: "9.942.494-8", nombre: "María Silva", estado: "Nuevo Lead" },
+  { rut: "24.553.496-7", nombre: "Carlos Rojas", estado: "Nuevo Lead" },
+  { rut: "7.868.319-6", nombre: "Carlos López", estado: "Nuevo Lead" },
+  { rut: "21.057.659-6", nombre: "Diego López", estado: "Nuevo Lead" },
+  { rut: "20.345.923-8", nombre: "Carlos Silva", estado: "Nuevo Lead" },
+  { rut: "9.881.331-7", nombre: "Juan Sánchez", estado: "Nuevo Lead" },
 ];
 
 const ETAPAS_CREDITO = [
@@ -108,22 +54,42 @@ const estadoDocConfig: Record<string, { label: string; color: string; bg: string
   APROBADO: { label: "Aprobado", color: "text-emerald-600", bg: "bg-emerald-50" },
   EN_REVISION: { label: "En Revisión", color: "text-amber-600", bg: "bg-amber-50" },
   PENDIENTE: { label: "Pendiente", color: "text-slate-500", bg: "bg-slate-50" },
+  RECIBIDO: { label: "Recibido", color: "text-blue-600", bg: "bg-blue-50" },
   RECHAZADO: { label: "Rechazado", color: "text-red-600", bg: "bg-red-50" },
 };
 
 export default function PortalPage() {
   const [rutIngresado, setRutIngresado] = useState("");
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<typeof CLIENTES_PORTAL[0] | null>(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Lead | null>(null);
   const [error, setError] = useState("");
   const [buscando, setBuscando] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    async function cargarLeads() {
+      try {
+        const res = await fetch("/api/leads");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLeads(json.data.map((l: Record<string, any>) => ({
+            ...l,
+            creadoEn: l.creadoEn ? new Date(l.creadoEn) : new Date(),
+          })));
+        }
+      } catch {
+        setLeads([]);
+      }
+    }
+    cargarLeads();
+  }, []);
 
   const handleBuscar = () => {
     setError("");
     setBuscando(true);
 
     setTimeout(() => {
-      const cliente = CLIENTES_PORTAL.find(
-        (c) => c.rut === rutIngresado || c.id === rutIngresado
+      const cliente = leads.find(
+        (l) => l.rut === rutIngresado
       );
 
       if (cliente) {
@@ -134,7 +100,12 @@ export default function PortalPage() {
         setClienteSeleccionado(null);
       }
       setBuscando(false);
-    }, 1000);
+    }, 800);
+  };
+
+  const handleSeleccionarRut = (rut: string) => {
+    setRutIngresado(rut);
+    setError("");
   };
 
   const handleVolver = () => {
@@ -143,68 +114,106 @@ export default function PortalPage() {
     setError("");
   };
 
-  // Portal Login
+  // Portal Login - Nuevo Diseño
   if (!clienteSeleccionado) {
     return (
-      <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl border border-slate-100/80 shadow-soft p-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
-              <Home size={28} className="text-white" />
+      <div className="min-h-[calc(100vh-100px)] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30">
+        <div className="w-full max-w-2xl px-4">
+          {/* Badge */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full text-white text-[11px] font-semibold shadow-lg shadow-blue-500/25">
+              <Sparkles size={14} />
+              Consulta en tiempo real
             </div>
-            <h1 className="text-xl font-bold text-slate-900 mb-2">Portal del Cliente</h1>
-            <p className="text-[12px] text-slate-400 mb-8">
-              Consulta el estado de tu crédito hipotecario
+          </div>
+
+          {/* Título */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+              Consulta tu Crédito Hipotecario
+            </h1>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
+              Ingresa tu RUT para conocer el estado actual de tu solicitud y subir documentos requeridos
             </p>
+          </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[11px] font-semibold text-slate-700 text-left block">
-                  Ingresa tu RUT
-                </label>
-                <input
-                  type="text"
-                  value={rutIngresado}
-                  onChange={(e) => setRutIngresado(e.target.value)}
-                  placeholder="15.234.567-8"
-                  className="w-full h-12 px-4 bg-slate-50 border border-slate-200/60 rounded-xl text-[14px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all text-center font-mono"
-                  onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl">
-                  <AlertTriangle size={14} className="text-red-500" />
-                  <span className="text-[11px] text-red-600">{error}</span>
+          {/* Card principal */}
+          <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
+            {/* Input RUT */}
+            <div className="mb-6">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+                RUT DEL TITULAR
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={rutIngresado}
+                    onChange={(e) => {
+                      setRutIngresado(e.target.value);
+                      setError("");
+                    }}
+                    placeholder="Ej: 12.345.678-9"
+                    className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-base text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                    onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+                  />
                 </div>
-              )}
-
-              <button
-                onClick={handleBuscar}
-                disabled={!rutIngresado || buscando}
-                className="w-full h-12 bg-blue-600 text-white rounded-xl text-[13px] font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {buscando ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Buscando...
-                  </>
-                ) : (
-                  <>
-                    <Search size={16} /> Consultar Estado
-                  </>
-                )}
-              </button>
+                <button
+                  onClick={handleBuscar}
+                  disabled={!rutIngresado || buscando}
+                  className="h-14 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/25"
+                >
+                  {buscando ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Search size={18} />
+                  )}
+                  Consultar
+                </button>
+              </div>
             </div>
 
-            <div className="mt-6 p-4 bg-slate-50 rounded-xl">
-              <p className="text-[10px] text-slate-400">
-                ¿No tienes tu RUT? Contacta a tu ejecutivo comercial
-              </p>
-              <p className="text-[10px] text-blue-500 font-semibold mt-1">
-                +56 2 2123 4567
-              </p>
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl mb-6">
+                <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
+                <span className="text-sm text-red-600">{error}</span>
+              </div>
+            )}
+
+            {/* RUTs de prueba */}
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                <span className="text-xs font-bold text-blue-700">RUTs de prueba disponibles</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {RUTS_PRUEBA.map((item) => (
+                  <button
+                    key={item.rut}
+                    onClick={() => handleSeleccionarRut(item.rut)}
+                    className={`text-left p-4 bg-white border-2 rounded-xl transition-all hover:border-blue-400 hover:shadow-md ${
+                      rutIngresado === item.rut ? "border-blue-500 shadow-md" : "border-slate-100"
+                    }`}
+                  >
+                    <div className="text-sm font-bold text-slate-800 font-mono">{item.rut}</div>
+                    <div className="text-xs text-slate-500 mt-1">{item.nombre}</div>
+                    <div className="text-[10px] text-blue-600 font-semibold mt-1">{item.estado}</div>
+                  </button>
+                ))}
+              </div>
             </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center mt-6">
+            <p className="text-xs text-slate-400">
+              ¿No tienes tu RUT? Contacta a tu ejecutivo comercial
+            </p>
+            <a href="tel:+56221234567" className="text-sm text-blue-600 font-semibold hover:text-blue-700">
+              +56 2 2123 4567
+            </a>
           </div>
         </div>
       </div>
@@ -212,11 +221,10 @@ export default function PortalPage() {
   }
 
   // Portal Dashboard
-  const docsAprobados = clienteSeleccionado.documentos.filter((d) => d.estado === "APROBADO").length;
-  const docsTotal = clienteSeleccionado.documentos.length;
-  const porcentajeDocs = docsTotal > 0 ? Math.round((docsAprobados / docsTotal) * 100) : 0;
-
-  const pasoActual = ETAPAS_CREDITO.findIndex((e) => e.actual) + 1;
+  const docsAprobados = 3;
+  const docsTotal = 5;
+  const porcentajeDocs = Math.round((docsAprobados / docsTotal) * 100);
+  const pasoActual = 4;
 
   return (
     <div className="space-y-5">
@@ -252,13 +260,13 @@ export default function PortalPage() {
       {/* Progreso del crédito */}
       <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
         <h3 className="text-sm font-bold text-slate-800 mb-4">Progreso de tu Crédito</h3>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 overflow-x-auto pb-2">
           {ETAPAS_CREDITO.map((etapa, idx) => {
             const IconoEtapa = etapa.icono;
             const esActual = etapa.actual;
             const completada = etapa.completada;
             return (
-              <div key={etapa.id} className="flex items-center">
+              <div key={etapa.id} className="flex items-center flex-shrink-0">
                 <div className="flex flex-col items-center">
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
@@ -310,26 +318,26 @@ export default function PortalPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-100/50">
                 <div className="text-[9px] text-blue-500 font-bold uppercase tracking-wider mb-1">Monto Solicitado</div>
-                <div className="text-lg font-bold text-blue-700">{formatoMoneda(clienteSeleccionado.montoSolicitado)}</div>
-                <div className="text-[10px] text-blue-500 font-medium">{formatoUF(clienteSeleccionado.montoSolicitado)}</div>
+                <div className="text-lg font-bold text-blue-700">{formatoMoneda(clienteSeleccionado.montoSolicitado || 0)}</div>
+                <div className="text-[10px] text-blue-500 font-medium">{formatoUF(clienteSeleccionado.montoSolicitado || 0)}</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-100/50">
                 <div className="text-[9px] text-purple-500 font-bold uppercase tracking-wider mb-1">Valor Propiedad</div>
-                <div className="text-lg font-bold text-purple-700">{formatoMoneda(clienteSeleccionado.valorPropiedad)}</div>
-                <div className="text-[10px] text-purple-500 font-medium">{formatoUF(clienteSeleccionado.valorPropiedad)}</div>
+                <div className="text-lg font-bold text-purple-700">{formatoMoneda(clienteSeleccionado.valorPropiedad || 0)}</div>
+                <div className="text-[10px] text-purple-500 font-medium">{formatoUF(clienteSeleccionado.valorPropiedad || 0)}</div>
               </div>
               <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-100/50">
                 <div className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider mb-1">Pie Disponible</div>
-                <div className="text-lg font-bold text-emerald-700">{formatoMoneda(clienteSeleccionado.pieDisponible)}</div>
-                <div className="text-[10px] text-emerald-500 font-medium">{formatoUF(clienteSeleccionado.pieDisponible)}</div>
+                <div className="text-lg font-bold text-emerald-700">{formatoMoneda(clienteSeleccionado.pieDisponible || 0)}</div>
+                <div className="text-[10px] text-emerald-500 font-medium">{formatoUF(clienteSeleccionado.pieDisponible || 0)}</div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-100/50">
                 <div className="text-[9px] text-amber-500 font-bold uppercase tracking-wider mb-1">Banco</div>
                 <div className="text-lg font-bold text-amber-700 flex items-center gap-2">
                   <Building2 size={16} />
-                  {clienteSeleccionado.banco}
+                  {clienteSeleccionado.banco || "Por asignar"}
                 </div>
-                <div className="text-[10px] text-amber-500 font-medium">{clienteSeleccionado.tipoCredito}</div>
+                <div className="text-[10px] text-amber-500 font-medium">{clienteSeleccionado.tipoCredito || "Hipotecario"}</div>
               </div>
             </div>
           </div>
@@ -352,7 +360,13 @@ export default function PortalPage() {
               />
             </div>
             <div className="space-y-2">
-              {clienteSeleccionado.documentos.map((doc, idx) => {
+              {[
+                { nombre: "Cédula de Identidad", estado: "APROBADO", fecha: new Date(Date.now() - 25 * 86400000) },
+                { nombre: "Contrato de Trabajo", estado: "APROBADO", fecha: new Date(Date.now() - 20 * 86400000) },
+                { nombre: "Comprobante de Ingresos", estado: "EN_REVISION", fecha: new Date(Date.now() - 10 * 86400000) },
+                { nombre: "Certificado AFP", estado: "PENDIENTE", fecha: null },
+                { nombre: "Valorización", estado: "PENDIENTE", fecha: null },
+              ].map((doc, idx) => {
                 const config = estadoDocConfig[doc.estado];
                 return (
                   <div
@@ -372,9 +386,16 @@ export default function PortalPage() {
                         )}
                       </div>
                     </div>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg ${config.bg} ${config.color}`}>
-                      {config.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg ${config.bg} ${config.color}`}>
+                        {config.label}
+                      </span>
+                      {doc.estado === "PENDIENTE" && (
+                        <button className="p-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
+                          <Upload size={12} className="text-blue-600" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -392,10 +413,10 @@ export default function PortalPage() {
             </h3>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center text-white text-[12px] font-bold">
-                AP
+                {clienteSeleccionado.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "SC"}
               </div>
               <div>
-                <div className="text-[12px] font-bold text-slate-800">Andrés Pérez</div>
+                <div className="text-[12px] font-bold text-slate-800">{clienteSeleccionado.nombreEjecutivo || "Sin asignar"}</div>
                 <div className="text-[10px] text-slate-400">Ejecutivo Comercial</div>
               </div>
             </div>
@@ -408,11 +429,11 @@ export default function PortalPage() {
                 <span className="text-[11px] text-slate-600">+56 9 1234 5678</span>
               </a>
               <a
-                href="mailto:andres@tuhipotecafacil.cl"
+                href="mailto:ejecutivo@tuhipotecafacil.cl"
                 className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
               >
                 <Mail size={14} className="text-blue-500" />
-                <span className="text-[11px] text-slate-600">andres@tuhipotecafacil.cl</span>
+                <span className="text-[11px] text-slate-600">ejecutivo@tuhipotecafacil.cl</span>
               </a>
               <button className="w-full flex items-center justify-center gap-2 p-2.5 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
                 <MessageSquare size={14} className="text-green-500" />
@@ -421,31 +442,10 @@ export default function PortalPage() {
             </div>
           </div>
 
-          {/* Actividad reciente */}
-          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Clock size={16} className="text-amber-500" />
-              Actividad Reciente
-            </h3>
-            <div className="space-y-3">
-              {clienteSeleccionado.actividades.slice(0, 5).map((actividad, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-[11px] font-semibold text-slate-700">{actividad.titulo}</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">
-                      {actividad.fecha.toLocaleDateString("es-CL")}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Próximos pasos */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
             <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-              <Info size={16} className="text-blue-500" />
+              <TrendingUp size={16} className="text-blue-500" />
               Próximos Pasos
             </h3>
             <div className="space-y-2">
