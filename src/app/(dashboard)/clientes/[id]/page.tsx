@@ -1354,13 +1354,46 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Etiquetas</label>
-            <input
-              type="text"
-              value={etiqueta}
-              onChange={(e) => setEtiqueta(e.target.value)}
-              placeholder="Separadas por coma: urgente, vip, referido"
-              className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-            />
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: "urgente", label: "Urgente", color: "bg-red-100 text-red-700 border-red-200 hover:bg-red-200" },
+                { id: "vip", label: "VIP", color: "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200" },
+                { id: "referido", label: "Referido", color: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200" },
+                { id: "frecuente", label: "Frecuente", color: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200" },
+                { id: "nuevo", label: "Nuevo", color: "bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200" },
+                { id: "potencial", label: "Potencial", color: "bg-cyan-100 text-cyan-700 border-cyan-200 hover:bg-cyan-200" },
+                { id: "seguimiento", label: "Seguimiento", color: "bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200" },
+                { id: "completado", label: "Completado", color: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" },
+              ].map((tag) => {
+                const seleccionada = etiqueta.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => {
+                      const etiquetasActuales = etiqueta ? etiqueta.split(",").filter(Boolean) : [];
+                      if (seleccionada) {
+                        setEtiqueta(etiquetasActuales.filter((t: string) => t !== tag.id).join(","));
+                      } else {
+                        setEtiqueta(etiquetasActuales.length > 0 ? `${etiqueta},${tag.id}` : tag.id);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition-all ${
+                      seleccionada
+                        ? `${tag.color} border-current`
+                        : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {seleccionada && "✓ "}{tag.label}
+                  </button>
+                );
+              })}
+            </div>
+            {etiqueta && (
+              <p className="text-[9px] text-slate-400 mt-1">
+                Seleccionadas: {etiqueta.split(",").filter(Boolean).join(", ")}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold text-slate-700">Comentarios</label>
