@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Nombre y apellido requeridos" }, { status: 400 });
     }
 
-    const leadId = `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const leadId = crypto.randomUUID();
 
     const { data, error } = await supabase
       .from("leads")
