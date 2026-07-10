@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { DragDropContext, Droppable, Draggable, DropResult, DragStart } from "@hello-pangea/dnd";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -93,15 +93,14 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar }: {
          <div
            ref={provided.innerRef}
            {...provided.draggableProps}
-           {...provided.dragHandleProps}
-           className={`bg-white dark:bg-slate-800 rounded-xl border mb-2.5 cursor-grab active:cursor-grabbing transition-all duration-200 ${
+           className={`bg-white dark:bg-slate-800 rounded-xl border mb-2.5 transition-all duration-200 ${
              snapshot.isDragging
-               ? "shadow-2xl ring-2 ring-blue-500/30 scale-[1.02] rotate-[1deg] z-50"
+               ? "shadow-2xl ring-2 ring-blue-500/30 scale-[1.02] rotate-[1deg] z-50 opacity-90"
                : "border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-slate-200 dark:hover:border-slate-600"
            }`}
          >
-          {/* Header con prioridad */}
-         <div className={`px-3 py-2 border-b border-slate-100 dark:border-slate-700 ${
+          {/* Drag Handle + Header */}
+         <div {...provided.dragHandleProps} className={`px-3 py-2 border-b border-slate-100 dark:border-slate-700 cursor-grab active:cursor-grabbing ${
              lead.prioridad === 'URGENTE' ? 'bg-red-50/50 dark:bg-red-900/20' :
              lead.prioridad === 'ALTA' ? 'bg-orange-50/30 dark:bg-orange-900/20' : ''
            }`}>
@@ -261,6 +260,7 @@ export default function PipelinePage() {
   });
   const [nuevosLeads, setNuevosLeads] = useState(0);
   const leadsAnteriores = useRef(leads.length);
+  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
   // Detectar nuevos leads
   useEffect(() => {
@@ -312,7 +312,14 @@ export default function PipelinePage() {
     enProceso: leadsFiltrados.filter(l => !['CLIENTE_FINALIZADO', 'CREDITO_PAGADO', 'APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
   }), [leadsFiltrados]);
 
-  const onDragEnd = (result: DropResult) => {
+  // Capturar el lead al iniciar el arrastre
+  const onDragStart = useCallback((start: DragStart) => {
+    setDraggedLeadId(start.draggableId);
+  }, []);
+
+  const onDragEnd = useCallback((result: DropResult) => {
+    setDraggedLeadId(null);
+
     if (!result.destination) return;
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -357,7 +364,7 @@ export default function PipelinePage() {
     toast.success(`Lead movido a ${nombreEtapaDestino}`, {
       description: `${leadMovido.nombre} ${leadMovido.apellido} avanzó de etapa`,
     });
-  };
+  }, [leadsFiltrados, moverEtapa, agregarActividad, usuarioActual]);
 
   const forzarAvance = () => {
     if (!validacionModal.lead || !validacionModal.etapaDestino) return;
@@ -545,7 +552,7 @@ export default function PipelinePage() {
       </div>
 
       {/* Kanban Board - ocupa todo el espacio restante */}
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
         <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-4 pt-3 scroll-smooth">
           {ETAPAS_PIPELINE.map((etapa) => {
             const config = ETAPAS_CONFIG[etapa];
