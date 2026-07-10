@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -163,22 +163,65 @@ function generarDocsSubidosLead(lead: Lead): DocumentoLead[] {
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const leads = generarLeads();
-  const lead = leads.find((l) => l.id === id) || leads[0];
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    async function cargarLead() {
+      try {
+        const res = await fetch(`/api/leads/${id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLead({
+            ...json.data,
+            creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
+          });
+        }
+      } catch {
+        setLead(null);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarLead();
+  }, [id]);
 
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [tipoTrabajador, setTipoTrabajador] = useState<TipoTrabajador>("DEPENDIENTE");
   const [documentos, setDocumentos] = useState(DOCUMENTOS_LEAD_MOCK);
-  const [docsSubidos, setDocsSubidos] = useState<DocumentoLead[]>(() => generarDocsSubidosLead(lead));
+  const [docsSubidos, setDocsSubidos] = useState<DocumentoLead[]>([]);
   const [plantillaOpen, setPlantillaOpen] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
-  // Modales de documentos
   const [uploadOpen, setUploadOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [gestionarOpen, setGestionarOpen] = useState(false);
   const [docSeleccionado, setDocSeleccionado] = useState<DocumentoLead | null>(null);
   const [eliminarDocOpen, setEliminarDocOpen] = useState(false);
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando lead...</span>
+      </div>
+    );
+  }
+
+  if (!lead) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+          <User size={24} className="text-slate-300" />
+        </div>
+        <h2 className="text-sm font-bold text-slate-600 mb-1">Lead no encontrado</h2>
+        <p className="text-[11px] text-slate-400 mb-4">El lead que buscas no existe.</p>
+        <button onClick={() => router.push("/leads")} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold">
+          Volver a Leads
+        </button>
+      </div>
+    );
+  }
 
   const config = ETAPAS_CONFIG[lead.etapa];
 

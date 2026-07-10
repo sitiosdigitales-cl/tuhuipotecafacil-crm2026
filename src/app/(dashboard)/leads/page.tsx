@@ -77,6 +77,8 @@ export default function LeadsPage() {
   const [leadSeleccionado, setLeadSeleccionado] = useState<Lead | null>(null);
   const [eliminarDialogOpen, setEliminarDialogOpen] = useState(false);
   const [leadAEliminar, setLeadAEliminar] = useState<Lead | null>(null);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const LEADS_POR_PAGINA = 25;
 
   // Tiempo real
   const [nuevosLeads, setNuevosLeads] = useState(0);
@@ -134,6 +136,31 @@ export default function LeadsPage() {
     enPipeline: leads.filter((l) => !["CLIENTE_FINALIZADO", "CREDITO_PAGADO"].includes(l.etapa)).length,
     aprobados: leads.filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)).length,
     montoTotal: leads.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0),
+  };
+
+  const totalPaginas = Math.ceil(leadsFiltrados.length / LEADS_POR_PAGINA);
+  const leadsPaginados = leadsFiltrados.slice(
+    (paginaActual - 1) * LEADS_POR_PAGINA,
+    paginaActual * LEADS_POR_PAGINA
+  );
+
+  const exportarCSV = () => {
+    const headers = ["Nombre", "Apellido", "RUT", "Email", "Teléfono", "Etapa", "Origen", "Prioridad", "Monto", "Banco", "Ejecutivo", "Días en etapa", "Creado"];
+    const rows = leadsFiltrados.map((l) => [
+      l.nombre, l.apellido, l.rut, l.email || "", l.telefono || "",
+      ETAPAS_CONFIG[l.etapa]?.label || l.etapa, ORIGEN_LABELS[l.origen] || l.origen,
+      l.prioridad, l.montoSolicitado || 0, l.banco || "", l.nombreEjecutivo || "",
+      l.diasEnEtapa, l.creadoEn.toLocaleDateString("es-CL"),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exportado", { description: `${leadsFiltrados.length} leads exportados` });
   };
 
   const handleNuevoLead = () => {
@@ -259,8 +286,8 @@ export default function LeadsPage() {
           <span className="text-[10px] text-slate-400">
             Actualizado {ultimaActualizacion.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
           </span>
-          <button className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
-            <Download size={14} /> Exportar
+          <button onClick={exportarCSV} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
+            <Download size={14} /> Exportar CSV
           </button>
           <button
             onClick={handleNuevoLead}
@@ -409,7 +436,7 @@ export default function LeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {leadsFiltrados.slice(0, 50).map((lead) => {
+              {leadsPaginados.map((lead) => {
                 const config = ETAPAS_CONFIG[lead.etapa];
                 return (
                   <tr
@@ -514,9 +541,44 @@ export default function LeadsPage() {
               })}
             </tbody>
           </table>
-          {leadsFiltrados.length > 50 && (
-            <div className="p-4 text-center border-t border-slate-100">
-              <span className="text-[11px] text-slate-400">Mostrando 50 de {leadsFiltrados.length} leads</span>
+          {leadsFiltrados.length > LEADS_POR_PAGINA && (
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                Mostrando {(paginaActual - 1) * LEADS_POR_PAGINA + 1}-{Math.min(paginaActual * LEADS_POR_PAGINA, leadsFiltrados.length)} de {leadsFiltrados.length} leads
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Anterior
+                </button>
+                {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => {
+                  const pagina = i + 1;
+                  return (
+                    <button
+                      key={pagina}
+                      onClick={() => setPaginaActual(pagina)}
+                      className={`w-8 h-8 text-[11px] font-semibold rounded-lg ${
+                        paginaActual === pagina
+                          ? "bg-blue-600 text-white"
+                          : "border border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {pagina}
+                    </button>
+                  );
+                })}
+                {totalPaginas > 5 && <span className="text-[11px] text-slate-400">...</span>}
+                <button
+                  onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           )}
         </div>
