@@ -284,17 +284,55 @@ export default function PortalClientePage() {
   const agregarArchivos = async (files: File[]) => {
     setSubiendo(true);
     for (const file of files) {
-      const nuevoDoc: DocumentoCliente = {
-        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        nombre: file.name,
-        tipo: "otro",
-        estado: "subido",
-        archivo: file,
-        fechaSubida: new Date(),
-        tamaño: file.size,
-      };
-      setDocumentos((prev) => [...prev, nuevoDoc]);
-      await new Promise((r) => setTimeout(r, 500));
+      try {
+        const formData = new FormData();
+        formData.append("archivo", file);
+        formData.append("leadId", cliente?.id || "sin-lead");
+        formData.append("tipo", "documento");
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          const nuevoDoc: DocumentoCliente = {
+            id: result.data.id,
+            nombre: file.name,
+            tipo: "otro",
+            estado: "subido",
+            fechaSubida: new Date(),
+            tamaño: file.size,
+          };
+          setDocumentos((prev) => [...prev, nuevoDoc]);
+        } else {
+          // Fallback: guardar localmente si la API falla
+          const nuevoDoc: DocumentoCliente = {
+            id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            nombre: file.name,
+            tipo: "otro",
+            estado: "subido",
+            archivo: file,
+            fechaSubida: new Date(),
+            tamaño: file.size,
+          };
+          setDocumentos((prev) => [...prev, nuevoDoc]);
+        }
+      } catch {
+        // Fallback: guardar localmente
+        const nuevoDoc: DocumentoCliente = {
+          id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          nombre: file.name,
+          tipo: "otro",
+          estado: "subido",
+          archivo: file,
+          fechaSubida: new Date(),
+          tamaño: file.size,
+        };
+        setDocumentos((prev) => [...prev, nuevoDoc]);
+      }
     }
     setSubiendo(false);
   };
