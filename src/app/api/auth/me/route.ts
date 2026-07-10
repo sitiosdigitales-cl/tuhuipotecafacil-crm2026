@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { authenticateRequest } from "@/lib/jwt";
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = authenticateRequest(request);
-    if (!payload) {
+    const token = request.cookies.get("crm_token")?.value;
+    if (!token) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
+    }
+
+    const payload = JSON.parse(Buffer.from(token, "base64").toString());
+
+    if (!payload.exp || payload.exp < Date.now()) {
+      return NextResponse.json({ success: false, error: "Sesión expirada" }, { status: 401 });
     }
 
     const { data, error } = await supabase
       .from("usuarios")
       .select("id,nombre,apellido,email,rol")
-      .eq("id", payload.userId)
+      .eq("id", payload.id)
       .single();
 
     if (error || !data) {

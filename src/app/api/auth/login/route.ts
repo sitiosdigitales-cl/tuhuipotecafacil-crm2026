@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
-import { generarToken } from "@/lib/jwt";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Email y contraseña requeridos" }, { status: 400 });
     }
 
-    const { data: user, error } = await supabase.from("usuarios").select("*").eq("email", email.toLowerCase()).single();
+    const { data: user, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .single();
 
     if (error || !user) {
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
@@ -21,7 +24,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
     }
 
-    const token = generarToken({ userId: user.id, email: user.email, rol: user.rol });
+    // Token simple (base64 del id)
+    const token = Buffer.from(JSON.stringify({ id: user.id, email: user.email, rol: user.rol, exp: Date.now() + 86400000 })).toString("base64");
 
     const response = NextResponse.json({
       success: true,
@@ -31,9 +35,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    response.cookies.set("auth_token", token, {
+    response.cookies.set("crm_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 86400,
       path: "/",

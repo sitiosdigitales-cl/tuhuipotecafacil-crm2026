@@ -69,7 +69,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
           email: authUser.email,
           rol: authUser.rol as Usuario["rol"],
           estado: "ACTIVO",
-          avatar: authUser.avatar,
           creadoEn: new Date(),
         });
       }
