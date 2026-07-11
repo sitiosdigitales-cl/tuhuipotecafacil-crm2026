@@ -173,7 +173,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       {/* Banner de Bienvenida */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          <div className="flex-1 p-6 md:p-8">
+          <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
               Hola, {cliente.nombre} <span className="inline-block animate-bounce">👋</span>
             </h1>
@@ -181,8 +181,21 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               Bienvenido a tu portal. Aquí puedes hacer seguimiento de tu solicitud hipotecaria en tiempo real.
             </p>
           </div>
-          <div className="hidden md:flex w-64 bg-gradient-to-br from-teal-400 to-cyan-500 items-center justify-center">
-            <Home size={64} className="text-white/30" />
+          <div className="hidden md:block w-72 bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <Home size={14} className="text-teal-600" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-800">Tu hogar te espera</div>
+                    <div className="text-[9px] text-slate-500">Estamos trabajando para ti</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -203,34 +216,34 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             </div>
 
             {/* Barra de Progreso Horizontal */}
-            <div className="relative mb-8">
-              <div className="flex items-center justify-between">
+            <div className="relative mb-8 px-4">
+              <div className="flex items-center justify-between relative">
+                {/* Línea conectora de fondo */}
+                <div className="absolute top-6 left-[12%] right-[12%] h-1 bg-slate-100 rounded-full" />
+                {/* Línea de progreso */}
+                <div className="absolute top-6 left-[12%] h-1 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all duration-700"
+                  style={{ width: `${Math.max(0, ((progreso - 1) / 3) * 76)}%` }} />
+
                 {PASOS_PROGRESO.slice(0, 4).map((paso, i) => {
                   const completado = progreso > i + 1;
                   const actual = progreso === i + 1;
-                  const siguiente = progreso === i;
                   return (
-                    <div key={paso.paso} className="flex flex-col items-center relative z-10">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                        completado ? "bg-teal-500 text-white" :
-                        actual ? "bg-teal-500 text-white ring-4 ring-teal-100" :
-                        "bg-slate-100 text-slate-400 border-2 border-slate-200"
+                    <div key={paso.paso} className="flex flex-col items-center relative z-10 w-1/4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                        completado ? "bg-teal-500 text-white shadow-md shadow-teal-500/30" :
+                        actual ? "bg-teal-500 text-white ring-4 ring-teal-100 shadow-lg shadow-teal-500/30" :
+                        "bg-white text-slate-400 border-2 border-slate-200"
                       }`}>
-                        {completado ? <CheckCircle size={18} /> : i + 1}
+                        {completado ? <CheckCircle size={20} /> : i + 1}
                       </div>
-                      <span className={`text-[10px] font-semibold mt-2 text-center ${
+                      <span className={`text-[11px] font-semibold mt-3 text-center ${
                         actual ? "text-teal-600" : completado ? "text-teal-600" : "text-slate-400"
                       }`}>{paso.label}</span>
-                      <span className={`text-[9px] mt-0.5 ${
+                      <span className={`text-[10px] mt-1 ${
                         completado ? "text-emerald-500 font-semibold" : actual ? "text-teal-500 font-semibold" : "text-slate-300"
                       }`}>
                         {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
                       </span>
-                      {i < 3 && (
-                        <div className={`absolute top-5 left-full w-[calc(100%-2.5rem)] h-0.5 ${
-                          completado ? "bg-teal-500" : "bg-slate-200"
-                        }`} style={{ zIndex: -1 }} />
-                      )}
                     </div>
                   );
                 })}
@@ -327,32 +340,44 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           {/* Tu Asesor */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h3 className="text-sm font-bold text-slate-900 mb-4">Tu asesor</h3>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-lg font-bold">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-slate-600 text-xl font-bold flex-shrink-0">
                 {cliente.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "TH"}
               </div>
               <div>
                 <div className="text-sm font-bold text-slate-800">{cliente.nombreEjecutivo || "Sin asignar"}</div>
-                <div className="text-[11px] text-slate-500">Asesor Hipotecario</div>
+                <div className="text-[11px] text-slate-500">Asesor Hipotecario Senior</div>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <a href={`tel:${cliente.telefono || "+56912345678"}`}
-                className="flex items-center gap-2 text-xs text-slate-600 hover:text-teal-600 transition-colors">
-                <Phone size={14} className="text-slate-400" /> {cliente.telefono || "+56 9 1234 5678"}
+                className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
+                <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                  <Phone size={14} className="text-slate-400" />
+                </div>
+                <span>{cliente.telefono || "+56 9 1234 5678"}</span>
               </a>
               <a href={`mailto:${cliente.email || "asesor@tuhipotecafacil.cl"}`}
-                className="flex items-center gap-2 text-xs text-slate-600 hover:text-teal-600 transition-colors">
-                <Mail size={14} className="text-slate-400" /> {cliente.email || "asesor@tuhipotecafacil.cl"}
+                className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
+                <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                  <Mail size={14} className="text-slate-400" />
+                </div>
+                <span>{cliente.email || "asesor@tuhipotecafacil.cl"}</span>
               </a>
-              <button className="flex items-center gap-2 text-xs text-teal-600 hover:text-teal-700 font-semibold">
-                <MessageSquare size={14} /> Enviar mensaje
+              <button className="flex items-center gap-3 text-xs text-teal-600 hover:text-teal-700 font-semibold">
+                <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
+                  <MessageSquare size={14} className="text-teal-600" />
+                </div>
+                <span>Enviar mensaje</span>
               </button>
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                <Clock size={12} className="text-slate-400" />
-                <span>Horario: Lunes a Viernes 09:00 - 18:30</span>
+            <div className="mt-5 pt-4 border-t border-slate-100">
+              <div className="bg-slate-50 rounded-xl p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock size={14} className="text-slate-500" />
+                  <span className="text-[11px] font-semibold text-slate-700">Horario de atención</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Lunes a Viernes de 09:00 a 18:30 hrs.</p>
               </div>
             </div>
           </div>
