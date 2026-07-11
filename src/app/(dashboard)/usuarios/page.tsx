@@ -48,7 +48,7 @@ export default function UsuariosPage() {
   useEffect(() => {
     async function cargarUsuarios() {
       try {
-        const res = await fetch("/api/usuarios");
+        const res = await fetch("/api/usuarios", { credentials: "include" });
         const json = await res.json();
         if (json.success && json.data) {
           setUsuarios(json.data.map((u: Record<string, any>) => ({
@@ -88,6 +88,7 @@ export default function UsuariosPage() {
     try {
       await fetch(`/api/usuarios/${usuarioId}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
@@ -129,6 +130,7 @@ export default function UsuariosPage() {
     try {
       const res = await fetch("/api/usuarios", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: formNombre.trim(),
@@ -144,7 +146,7 @@ export default function UsuariosPage() {
         setModalOpen(false);
         resetForm();
         // Recargar usuarios
-        const reload = await fetch("/api/usuarios");
+        const reload = await fetch("/api/usuarios", { credentials: "include" });
         const reloadData = await reload.json();
         if (reloadData.success && reloadData.data) {
           setUsuarios(reloadData.data.map((u: Record<string, any>) => ({
