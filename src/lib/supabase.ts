@@ -35,8 +35,6 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
     endicom: "enDicom",
     dicomdetalle: "dicomDetalle",
     rentamensual: "rentaMensual",
-    complementarrenta: "complementarRenta",
-    cuentapie: "cuentaPie",
     cargaslegales: "cargasLegales",
     estadocivil: "estadoCivil",
     regimenmatrimonial: "regimenMatrimonial",
