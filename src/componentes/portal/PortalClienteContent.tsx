@@ -82,6 +82,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number }[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
 
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
     rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
@@ -96,8 +97,21 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       const rutLead = norm(l.rut);
       return rutLead === rutBuscado || (rutBuscado.length >= 6 && rutLead.includes(rutBuscado));
     });
-    if (found) { setCliente(found); setError(""); }
-    else { setError("RUT no encontrado"); setCliente(null); }
+    if (found) {
+      setCliente(found); setError("");
+      // Cargar datos del asesor
+      if (found.nombreEjecutivo) {
+        setAsesor({
+          nombre: found.nombreEjecutivo.split(" ")[0] || "",
+          apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
+          email: "asesor@tuhipotecafacil.cl",
+          telefono: "+56988182221",
+          cargo: "Asesor Hipotecario Senior",
+        });
+      }
+    } else {
+      setError("RUT no encontrado"); setCliente(null);
+    }
     setBuscando(false);
   };
 
@@ -778,28 +792,28 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h3 className="text-sm font-bold text-slate-900 mb-4">Tu asesor</h3>
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-slate-600 text-xl font-bold flex-shrink-0">
-                {cliente.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "TH"}
+              <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                {asesor ? `${asesor.nombre[0]}${asesor.apellido[0]}` : "TH"}
               </div>
               <div>
-                <div className="text-sm font-bold text-slate-800">{cliente.nombreEjecutivo || "Sin asignar"}</div>
-                <div className="text-[11px] text-slate-500">Asesor Hipotecario Senior</div>
+                <div className="text-sm font-bold text-slate-800">{asesor ? `${asesor.nombre} ${asesor.apellido}` : "Sin asignar"}</div>
+                <div className="text-[11px] text-slate-500">{asesor?.cargo || "Asesor Hipotecario"}</div>
               </div>
             </div>
             <div className="space-y-3">
-              <a href={`tel:${cliente.telefono || "+56912345678"}`}
+              <a href={`tel:${asesor?.telefono || "+56988182221"}`}
                 className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
                   <Phone size={14} className="text-slate-400" />
                 </div>
-                <span>{cliente.telefono || "+56 9 1234 5678"}</span>
+                <span>{asesor?.telefono || "+56 9 8818 2221"}</span>
               </a>
-              <a href={`mailto:${cliente.email || "asesor@tuhipotecafacil.cl"}`}
+              <a href={`mailto:${asesor?.email || "asesor@tuhipotecafacil.cl"}`}
                 className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
                   <Mail size={14} className="text-slate-400" />
                 </div>
-                <span>{cliente.email || "asesor@tuhipotecafacil.cl"}</span>
+                <span>{asesor?.email || "asesor@tuhipotecafacil.cl"}</span>
               </a>
               <button className="flex items-center gap-3 text-xs text-teal-600 hover:text-teal-700 font-semibold">
                 <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
