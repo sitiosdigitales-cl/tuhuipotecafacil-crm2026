@@ -62,7 +62,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import type { Lead, DocumentoLead, SituacionLaboral } from "@/tipos";
+import type { Lead, DocumentoLead, SituacionLaboral, Etapa } from "@/tipos";
 
 // Documentos por tipo de trabajador
 const DOCUMENTOS_POR_TIPO: Record<SituacionLaboral, { id: string; nombre: string; obligatorio: boolean; tipo: string }[]> = {
@@ -127,6 +127,20 @@ const TABS = [
   { id: "documentos", label: "Documentos", icono: FileText },
   { id: "actividad", label: "Actividad", icono: Activity },
   { id: "financiero", label: "Financiero", icono: DollarSign },
+  { id: "progreso", label: "Progreso", icono: TrendingUp },
+];
+
+const PASOS_PROGRESO = [
+  { paso: 1, label: "Registro", etapa: "NUEVO_LEAD" as Etapa },
+  { paso: 2, label: "Contacto", etapa: "CONTACTADO" as Etapa },
+  { paso: 3, label: "Calificación", etapa: "CALIFICACION_COMERCIAL" as Etapa },
+  { paso: 4, label: "Documentación", etapa: "DOCS_COMPLETAS" as Etapa },
+  { paso: 5, label: "Evaluación", etapa: "EVALUACION_BANCARIA" as Etapa },
+  { paso: 6, label: "Pre Aprobación", etapa: "PREAPROBADO" as Etapa },
+  { paso: 7, label: "Aprobado", etapa: "APROBADO" as Etapa },
+  { paso: 8, label: "Firma", etapa: "FIRMA_DIGITAL" as Etapa },
+  { paso: 9, label: "Notaría", etapa: "NOTARIA" as Etapa },
+  { paso: 10, label: "Desembolso", etapa: "CREDITO_PAGADO" as Etapa },
 ];
 
 export default function ClientePerfilPage() {
@@ -184,6 +198,24 @@ export default function ClientePerfilPage() {
   const [notasReunion, setNotasReunion] = useState("");
   const [editarOpen, setEditarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
+  const [guardandoProgreso, setGuardandoProgreso] = useState(false);
+
+  const etapaActual = lead ? PASOS_PROGRESO.find((p) => p.etapa === lead.etapa)?.paso || 1 : 0;
+  const progreso = (etapaActual / 10) * 100;
+
+  const moverEtapa = async (nuevaEtapa: Etapa) => {
+    if (!lead) return;
+    setGuardandoProgreso(true);
+    try {
+      await actualizarLead(lead.id, { etapa: nuevaEtapa, diasEnEtapa: 0 });
+      setLead({ ...lead, etapa: nuevaEtapa, diasEnEtapa: 0 });
+      toast.success("Etapa actualizada", { description: `Movido a ${PASOS_PROGRESO.find(p => p.etapa === nuevaEtapa)?.label}` });
+    } catch {
+      toast.error("Error al actualizar etapa");
+    } finally {
+      setGuardandoProgreso(false);
+    }
+  };
 
   // Actividades vacías por ahora (sin dependencia de ActivityContext)
   const actividades: Actividad[] = [];
@@ -749,6 +781,103 @@ export default function ClientePerfilPage() {
                   <p className="text-[11px] text-slate-600 mt-1">{lead.notas}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Progreso */}
+      {tabActiva === "progreso" && (
+        <div className="space-y-5">
+          {/* Header Progreso */}
+          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-blue-500" />
+                  Progreso de tu Crédito
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{progreso.toFixed(0)}% completado</p>
+              </div>
+              {guardandoProgreso && (
+                <span className="text-[10px] text-blue-500 flex items-center gap-1">
+                  <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  Guardando...
+                </span>
+              )}
+            </div>
+
+            {/* Barra de Progreso */}
+            <div className="mb-6">
+              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700"
+                  style={{ width: `${progreso}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Pasos Horizontales */}
+            <div className="bg-slate-50 rounded-xl p-4">
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-5 left-[5%] right-[5%] h-0.5 bg-slate-200" />
+                <div
+                  className="absolute top-5 left-[5%] h-0.5 bg-emerald-500 transition-all duration-700"
+                  style={{ width: `${Math.max(0, (progreso / 100) * 90)}%` }}
+                />
+
+                {PASOS_PROGRESO.map((paso) => {
+                  const esCompletado = etapaActual > paso.paso;
+                  const esActual = etapaActual === paso.paso;
+
+                  return (
+                    <div
+                      key={paso.paso}
+                      className="relative z-10 flex flex-col items-center gap-2 cursor-pointer"
+                      onClick={() => moverEtapa(paso.etapa)}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 ${
+                          esActual
+                            ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-100"
+                            : esCompletado
+                            ? "bg-emerald-500 text-white"
+                            : "bg-white text-slate-400 border-2 border-slate-200 hover:border-blue-400"
+                        }`}
+                      >
+                        {esCompletado ? <Check size={16} /> : <span className="text-[10px] font-bold">{paso.paso}</span>}
+                      </div>
+                      <span className={`text-[9px] font-semibold text-center max-w-[60px] leading-tight ${
+                        esActual ? "text-blue-700" : esCompletado ? "text-emerald-700" : "text-slate-400"
+                      }`}>
+                        {paso.label}
+                      </span>
+                      {esActual && (
+                        <span className="text-[7px] font-bold px-1.5 py-0.5 bg-blue-500 text-white rounded-full">
+                          ACTUAL
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Estado actual */}
+          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">
+                <TrendingUp size={18} style={{ color: config?.color || "#64748B" }} />
+              </div>
+              <div>
+                <div className="text-sm font-bold" style={{ color: config?.color || "#64748B" }}>
+                  {config?.label || "Estado desconocido"}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Haz clic en cualquier paso para cambiar la etapa del crédito
+                </div>
+              </div>
             </div>
           </div>
         </div>
