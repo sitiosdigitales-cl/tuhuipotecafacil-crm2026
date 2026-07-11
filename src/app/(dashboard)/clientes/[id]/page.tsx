@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, use, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
   Phone,
@@ -129,9 +129,10 @@ const TABS = [
   { id: "financiero", label: "Financiero", icono: DollarSign },
 ];
 
-export default function ClientePerfilPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ClientePerfilPage() {
   const router = useRouter();
-  const { id } = use(params);
+  const routeParams = useParams();
+  const id = routeParams.id as string;
   const { leads, actualizarLead, cargando: leadsCargando } = useLeads();
   const { usuarioActual } = useUser();
   const { obtenerActividadesLead, agregarActividad } = useActivities();
