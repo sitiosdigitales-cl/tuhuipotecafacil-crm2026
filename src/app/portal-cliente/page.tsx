@@ -42,12 +42,13 @@ import {
   Lock,
   Edit,
   Save,
+  CreditCard,
 } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
-import { SITUACION_LABORAL_CONFIG } from "@/tipos";
-import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
-import type { Lead, Etapa } from "@/tipos";
+import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
+import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
+import type { Lead, Etapa, SituacionLaboral } from "@/tipos";
 
 interface DocumentoCliente {
   id: string;
@@ -129,6 +130,41 @@ export default function PortalClientePage() {
     telefono: "",
     domicilio: "",
     comunaCiudad: "",
+    // Datos extendidos
+    cargasLegales: "",
+    estadoCivil: "",
+    regimenMatrimonial: "",
+    fechaNacimiento: "",
+    estudios: "",
+    profesion: "",
+    valorArriendo: "",
+    afp: "",
+    // Empleador
+    nombreEmpleador: "",
+    rutEmpresa: "",
+    fechaIngreso: "",
+    cargo: "",
+    rentaLiquida: "",
+    bancoAbonoRenta: "",
+    fechaPago: "",
+    direccionLaboral: "",
+    comunaCiudadLaboral: "",
+    telefonoLaboralFijo: "",
+    emailLaboral: "",
+    otrosIngresos: "",
+    // Financiero
+    situacionLaboral: "" as SituacionLaboral,
+    enDicom: false,
+    dicomDetalle: "",
+    rentaMensual: "",
+    complementarRenta: false,
+    // Crédito
+    tipoCredito: "",
+    cuentaPie: false,
+    montoSolicitado: "",
+    valorPropiedad: "",
+    pieDisponible: "",
+    banco: "",
   });
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [perfilGuardado, setPerfilGuardado] = useState(false);
@@ -241,6 +277,37 @@ export default function PortalClientePage() {
         telefono: cliente.telefono || "",
         domicilio: cliente.domicilioParticular || "",
         comunaCiudad: cliente.comunaCiudad || "",
+        cargasLegales: cliente.cargasLegales || "",
+        estadoCivil: cliente.estadoCivil || "",
+        regimenMatrimonial: cliente.regimenMatrimonial || "",
+        fechaNacimiento: cliente.fechaNacimiento || "",
+        estudios: cliente.estudios || "",
+        profesion: cliente.profesion || "",
+        valorArriendo: cliente.valorArriendo?.toString() || "",
+        afp: cliente.afp || "",
+        nombreEmpleador: cliente.nombreEmpleador || "",
+        rutEmpresa: cliente.rutEmpresa || "",
+        fechaIngreso: cliente.fechaIngreso || "",
+        cargo: cliente.cargo || "",
+        rentaLiquida: cliente.rentaLiquida?.toString() || "",
+        bancoAbonoRenta: cliente.bancoAbonoRenta || "",
+        fechaPago: cliente.fechaPago || "",
+        direccionLaboral: cliente.direccionLaboral || "",
+        comunaCiudadLaboral: cliente.comunaCiudadLaboral || "",
+        telefonoLaboralFijo: cliente.telefonoLaboralFijo || "",
+        emailLaboral: cliente.emailLaboral || "",
+        otrosIngresos: cliente.otrosIngresos || "",
+        situacionLaboral: cliente.situacionLaboral || "DEPENDIENTE",
+        enDicom: cliente.enDicom || false,
+        dicomDetalle: cliente.dicomDetalle || "",
+        rentaMensual: cliente.rentaMensual || "",
+        complementarRenta: cliente.complementarRenta || false,
+        tipoCredito: cliente.tipoCredito || "",
+        cuentaPie: cliente.cuentaPie || false,
+        montoSolicitado: cliente.montoSolicitado?.toString() || "",
+        valorPropiedad: cliente.valorPropiedad?.toString() || "",
+        pieDisponible: cliente.pieDisponible?.toString() || "",
+        banco: cliente.banco || "",
       });
       setEditandoPerfil(true);
     }
@@ -250,29 +317,57 @@ export default function PortalClientePage() {
     if (!cliente) return;
     setGuardandoPerfil(true);
 
+    const datosActualizar = {
+      nombre: perfilEditado.nombre,
+      apellido: perfilEditado.apellido,
+      email: perfilEditado.email,
+      telefono: perfilEditado.telefono,
+      domicilioParticular: perfilEditado.domicilio,
+      comunaCiudad: perfilEditado.comunaCiudad,
+      cargasLegales: perfilEditado.cargasLegales || undefined,
+      estadoCivil: perfilEditado.estadoCivil || undefined,
+      regimenMatrimonial: perfilEditado.regimenMatrimonial || undefined,
+      fechaNacimiento: perfilEditado.fechaNacimiento || undefined,
+      estudios: perfilEditado.estudios || undefined,
+      profesion: perfilEditado.profesion || undefined,
+      valorArriendo: perfilEditado.valorArriendo ? parseFloat(perfilEditado.valorArriendo) : undefined,
+      afp: perfilEditado.afp || undefined,
+      nombreEmpleador: perfilEditado.nombreEmpleador || undefined,
+      rutEmpresa: perfilEditado.rutEmpresa || undefined,
+      fechaIngreso: perfilEditado.fechaIngreso || undefined,
+      cargo: perfilEditado.cargo || undefined,
+      rentaLiquida: perfilEditado.rentaLiquida ? parseFloat(perfilEditado.rentaLiquida) : undefined,
+      bancoAbonoRenta: perfilEditado.bancoAbonoRenta || undefined,
+      fechaPago: perfilEditado.fechaPago || undefined,
+      direccionLaboral: perfilEditado.direccionLaboral || undefined,
+      comunaCiudadLaboral: perfilEditado.comunaCiudadLaboral || undefined,
+      telefonoLaboralFijo: perfilEditado.telefonoLaboralFijo || undefined,
+      emailLaboral: perfilEditado.emailLaboral || undefined,
+      otrosIngresos: perfilEditado.otrosIngresos || undefined,
+      situacionLaboral: perfilEditado.situacionLaboral,
+      enDicom: perfilEditado.enDicom,
+      dicomDetalle: perfilEditado.dicomDetalle || undefined,
+      rentaMensual: perfilEditado.rentaMensual || undefined,
+      complementarRenta: perfilEditado.complementarRenta,
+      tipoCredito: perfilEditado.tipoCredito || undefined,
+      cuentaPie: perfilEditado.cuentaPie,
+      montoSolicitado: perfilEditado.montoSolicitado ? parseFloat(perfilEditado.montoSolicitado) : undefined,
+      valorPropiedad: perfilEditado.valorPropiedad ? parseFloat(perfilEditado.valorPropiedad) : undefined,
+      pieDisponible: perfilEditado.pieDisponible ? parseFloat(perfilEditado.pieDisponible) : undefined,
+      banco: perfilEditado.banco || undefined,
+    };
+
     try {
       const response = await fetch(`/api/leads/${cliente.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: perfilEditado.nombre,
-          apellido: perfilEditado.apellido,
-          email: perfilEditado.email,
-          telefono: perfilEditado.telefono,
-          domicilioParticular: perfilEditado.domicilio,
-          comunaCiudad: perfilEditado.comunaCiudad,
-        }),
+        body: JSON.stringify(datosActualizar),
       });
 
       if (response.ok) {
         setCliente({
           ...cliente,
-          nombre: perfilEditado.nombre,
-          apellido: perfilEditado.apellido,
-          email: perfilEditado.email,
-          telefono: perfilEditado.telefono,
-          domicilioParticular: perfilEditado.domicilio,
-          comunaCiudad: perfilEditado.comunaCiudad,
+          ...datosActualizar,
         });
         setEditandoPerfil(false);
         setPerfilGuardado(true);
@@ -283,12 +378,7 @@ export default function PortalClientePage() {
       if (cliente) {
         setCliente({
           ...cliente,
-          nombre: perfilEditado.nombre,
-          apellido: perfilEditado.apellido,
-          email: perfilEditado.email,
-          telefono: perfilEditado.telefono,
-          domicilioParticular: perfilEditado.domicilio,
-          comunaCiudad: perfilEditado.comunaCiudad,
+          ...datosActualizar,
         });
       }
       setEditandoPerfil(false);
@@ -876,64 +966,419 @@ export default function PortalClientePage() {
                     )}
 
                     {editandoPerfil ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-700">Nombre</label>
-                            <input
-                              type="text"
-                              value={perfilEditado.nombre}
-                              onChange={(e) => setPerfilEditado({ ...perfilEditado, nombre: e.target.value })}
-                              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            />
+                      <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                        {/* Sección: Datos Personales */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <User size={13} className="text-blue-500" />
+                            Datos Personales
+                          </h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Nombre *</label>
+                              <input type="text" value={perfilEditado.nombre}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, nombre: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Apellido *</label>
+                              <input type="text" value={perfilEditado.apellido}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, apellido: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" required />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Fecha Nacimiento</label>
+                              <input type="date" value={perfilEditado.fechaNacimiento}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaNacimiento: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Estado Civil</label>
+                              <select value={perfilEditado.estadoCivil}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, estadoCivil: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                <option value="Soltero/a">Soltero/a</option>
+                                <option value="Casado/a">Casado/a</option>
+                                <option value="Divorciado/a">Divorciado/a</option>
+                                <option value="Viudo/a">Viudo/a</option>
+                                <option value="Unión Civil">Unión Civil</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Régimen Matrimonial</label>
+                              <select value={perfilEditado.regimenMatrimonial}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, regimenMatrimonial: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                <option value="Separación de Bienes">Separación de Bienes</option>
+                                <option value="Sociedad Conyugal">Sociedad Conyugal</option>
+                                <option value="No aplica">No aplica</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Cargas Legales</label>
+                              <input type="text" value={perfilEditado.cargasLegales}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, cargasLegales: e.target.value })}
+                                placeholder="Ej: Caja Compensación"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Estudios</label>
+                              <input type="text" value={perfilEditado.estudios}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, estudios: e.target.value })}
+                                placeholder="Ej: Universitario"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Profesión</label>
+                              <input type="text" value={perfilEditado.profesion}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, profesion: e.target.value })}
+                                placeholder="Ej: Ingeniero"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Situación Laboral *</label>
+                              <select value={perfilEditado.situacionLaboral}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="DEPENDIENTE">Trabajador Dependiente</option>
+                                <option value="INDEPENDIENTE">Trabajador Independiente</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">AFP</label>
+                              <select value={perfilEditado.afp}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, afp: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                <option value="Capital">Capital</option>
+                                <option value="Cuprum">Cuprum</option>
+                                <option value="Habitat">Habitat</option>
+                                <option value="Planvital">Planvital</option>
+                                <option value="Provida">Provida</option>
+                                <option value="Rencoret">Rencoret</option>
+                                <option value="Santa María">Santa María</option>
+                                <option value="Otros">Otros</option>
+                              </select>
+                            </div>
                           </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold text-slate-700">Apellido</label>
-                            <input
-                              type="text"
-                              value={perfilEditado.apellido}
-                              onChange={(e) => setPerfilEditado({ ...perfilEditado, apellido: e.target.value })}
-                              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            />
+                        </div>
+
+                        {/* Sección: Contacto y Domicilio */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Phone size={13} className="text-emerald-500" />
+                            Contacto y Domicilio
+                          </h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Teléfono</label>
+                              <input type="tel" value={perfilEditado.telefono}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, telefono: e.target.value })}
+                                placeholder="+56 9 1234 5678"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Email</label>
+                              <input type="email" value={perfilEditado.email}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, email: e.target.value })}
+                                placeholder="correo@ejemplo.com"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="col-span-2 space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Domicilio Particular</label>
+                              <input type="text" value={perfilEditado.domicilio}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilio: e.target.value })}
+                                placeholder="Dirección completa"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
+                              <input type="text" value={perfilEditado.comunaCiudad}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
+                                placeholder="Ej: Las Condes"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Valor Arriendo (si aplica)</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                                <input type="number" value={perfilEditado.valorArriendo}
+                                  onChange={(e) => setPerfilEditado({ ...perfilEditado, valorArriendo: e.target.value })}
+                                  placeholder="0"
+                                  className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-slate-700">Email</label>
-                          <input
-                            type="email"
-                            value={perfilEditado.email}
-                            onChange={(e) => setPerfilEditado({ ...perfilEditado, email: e.target.value })}
-                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                          />
+
+                        {/* Sección: Datos del Empleador */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Building2 size={13} className="text-emerald-500" />
+                            Datos del Empleador
+                          </h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Nombre Empleador</label>
+                              <input type="text" value={perfilEditado.nombreEmpleador}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, nombreEmpleador: e.target.value })}
+                                placeholder="Nombre de la empresa"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">RUT Empresa</label>
+                              <input type="text" value={perfilEditado.rutEmpresa}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, rutEmpresa: e.target.value })}
+                                placeholder="12.345.678-9"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Fecha de Ingreso</label>
+                              <input type="date" value={perfilEditado.fechaIngreso}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaIngreso: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Cargo</label>
+                              <input type="text" value={perfilEditado.cargo}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, cargo: e.target.value })}
+                                placeholder="Ej: Gerente"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Renta Líquida</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                                <input type="number" value={perfilEditado.rentaLiquida}
+                                  onChange={(e) => setPerfilEditado({ ...perfilEditado, rentaLiquida: e.target.value })}
+                                  placeholder="0"
+                                  className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Banco Abono Renta</label>
+                              <select value={perfilEditado.bancoAbonoRenta}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, bancoAbonoRenta: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                <option value="Banco Estado">Banco Estado</option>
+                                <option value="Santander">Santander</option>
+                                <option value="Banco de Chile">Banco de Chile</option>
+                                <option value="Banco BCI">Banco BCI</option>
+                                <option value="Banco Scotiabank">Banco Scotiabank</option>
+                                <option value="Banco Itaú">Banco Itaú</option>
+                                <option value="Banco Security">Banco Security</option>
+                                <option value="Banco Falabella">Banco Falabella</option>
+                                <option value="Banco Ripley">Banco Ripley</option>
+                                <option value="Banco Paris">Banco Paris</option>
+                                <option value="CorpGroup">CorpGroup</option>
+                                <option value="Otros">Otros</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Fecha de Pago</label>
+                              <select value={perfilEditado.fechaPago}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaPago: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                <option value="1">Dia 1</option>
+                                <option value="5">Dia 5</option>
+                                <option value="10">Dia 10</option>
+                                <option value="15">Dia 15</option>
+                                <option value="20">Dia 20</option>
+                                <option value="25">Dia 25</option>
+                                <option value="30">Dia 30</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Teléfono Laboral</label>
+                              <input type="tel" value={perfilEditado.telefonoLaboralFijo}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, telefonoLaboralFijo: e.target.value })}
+                                placeholder="Fijo"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="col-span-2 space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Dirección Laboral</label>
+                              <input type="text" value={perfilEditado.direccionLaboral}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, direccionLaboral: e.target.value })}
+                                placeholder="Dirección del trabajo"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
+                              <input type="text" value={perfilEditado.comunaCiudadLaboral}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudadLaboral: e.target.value })}
+                                placeholder="Ej: Santiago"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Email Laboral</label>
+                              <input type="email" value={perfilEditado.emailLaboral}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, emailLaboral: e.target.value })}
+                                placeholder="correo@empresa.cl"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                            <div className="col-span-2 space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Otros Ingresos</label>
+                              <input type="text" value={perfilEditado.otrosIngresos}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, otrosIngresos: e.target.value })}
+                                placeholder="Detallar otros ingresos"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-slate-700">Teléfono</label>
-                          <input
-                            type="tel"
-                            value={perfilEditado.telefono}
-                            onChange={(e) => setPerfilEditado({ ...perfilEditado, telefono: e.target.value })}
-                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                          />
+
+                        {/* Sección: Situación Financiera */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <DollarSign size={13} className="text-purple-500" />
+                            Situación Financiera
+                          </h5>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Renta Mensual</label>
+                              <select value={perfilEditado.rentaMensual}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, rentaMensual: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar</option>
+                                {RENTAS_MENSUALES.map((renta) => <option key={renta} value={renta}>{renta}</option>)}
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">En DICOM</label>
+                              <div className="flex gap-3 h-10 items-center">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="radio" name="dicom" checked={perfilEditado.enDicom === false}
+                                    onChange={() => setPerfilEditado({ ...perfilEditado, enDicom: false })} className="w-4 h-4 text-blue-600" />
+                                  <span className="text-[11px] text-slate-600">No</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="radio" name="dicom" checked={perfilEditado.enDicom === true}
+                                    onChange={() => setPerfilEditado({ ...perfilEditado, enDicom: true })} className="w-4 h-4 text-red-600" />
+                                  <span className="text-[11px] text-slate-600">Si</span>
+                                </label>
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Complementar Renta</label>
+                              <div className="flex gap-3 h-10 items-center">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="radio" name="complementar" checked={perfilEditado.complementarRenta === false}
+                                    onChange={() => setPerfilEditado({ ...perfilEditado, complementarRenta: false })} className="w-4 h-4 text-blue-600" />
+                                  <span className="text-[11px] text-slate-600">No</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input type="radio" name="complementar" checked={perfilEditado.complementarRenta === true}
+                                    onChange={() => setPerfilEditado({ ...perfilEditado, complementarRenta: true })} className="w-4 h-4 text-blue-600" />
+                                  <span className="text-[11px] text-slate-600">Si</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          {perfilEditado.enDicom && (
+                            <div className="mt-3 space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Detalle DICOM</label>
+                              <input type="text" value={perfilEditado.dicomDetalle}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, dicomDetalle: e.target.value })}
+                                placeholder="Describe la situacion en DICOM"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                            </div>
+                          )}
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-slate-700">Domicilio</label>
-                          <input
-                            type="text"
-                            value={perfilEditado.domicilio}
-                            onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilio: e.target.value })}
-                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                          />
+
+                        {/* Sección: Crédito Solicitado */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <CreditCard size={13} className="text-amber-500" />
+                            Crédito Solicitado
+                          </h5>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Monto Solicitado</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                                <input type="number" value={perfilEditado.montoSolicitado}
+                                  onChange={(e) => setPerfilEditado({ ...perfilEditado, montoSolicitado: e.target.value })}
+                                  placeholder="0"
+                                  className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Valor Propiedad</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                                <input type="number" value={perfilEditado.valorPropiedad}
+                                  onChange={(e) => setPerfilEditado({ ...perfilEditado, valorPropiedad: e.target.value })}
+                                  placeholder="0"
+                                  className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Pie Disponible</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                                <input type="number" value={perfilEditado.pieDisponible}
+                                  onChange={(e) => setPerfilEditado({ ...perfilEditado, pieDisponible: e.target.value })}
+                                  placeholder="0"
+                                  className="w-full h-10 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Banco</label>
+                              <select value={perfilEditado.banco}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, banco: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar banco</option>
+                                <option value="Banco Estado">Banco Estado</option>
+                                <option value="Santander">Santander</option>
+                                <option value="Banco de Chile">Banco de Chile</option>
+                                <option value="Banco BCI">Banco BCI</option>
+                                <option value="Banco Scotiabank">Banco Scotiabank</option>
+                                <option value="Banco Itaú">Banco Itaú</option>
+                                <option value="Banco Security">Banco Security</option>
+                                <option value="Banco Falabella">Banco Falabella</option>
+                                <option value="Banco Ripley">Banco Ripley</option>
+                                <option value="Banco Paris">Banco Paris</option>
+                                <option value="CorpGroup">CorpGroup</option>
+                                <option value="Otros">Otros</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-slate-700">Tipo de Crédito</label>
+                              <select value={perfilEditado.tipoCredito}
+                                onChange={(e) => setPerfilEditado({ ...perfilEditado, tipoCredito: e.target.value })}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                <option value="">Seleccionar tipo</option>
+                                <option value="Créditos Hipotecarios">Créditos Hipotecarios</option>
+                                <option value="Créditos de Consumos">Créditos de Consumos</option>
+                                <option value="Fines Generales">Fines Generales</option>
+                                <option value="Capital para Empresas">Capital para Empresas</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="mt-4 space-y-1.5">
+                            <label className="text-[11px] font-semibold text-slate-700">Cuenta de Ahorro (Cuenta Pie)</label>
+                            <div className="flex gap-3 h-10 items-center">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="cuentaPie" checked={perfilEditado.cuentaPie === false}
+                                  onChange={() => setPerfilEditado({ ...perfilEditado, cuentaPie: false })} className="w-4 h-4 text-blue-600" />
+                                <span className="text-[11px] text-slate-600">No tiene</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="cuentaPie" checked={perfilEditado.cuentaPie === true}
+                                  onChange={() => setPerfilEditado({ ...perfilEditado, cuentaPie: true })} className="w-4 h-4 text-blue-600" />
+                                <span className="text-[11px] text-slate-600">Tiene cuenta pie</span>
+                              </label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-slate-700">Comuna / Ciudad</label>
-                          <input
-                            type="text"
-                            value={perfilEditado.comunaCiudad}
-                            onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
-                            className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                          />
-                        </div>
-                        <div className="flex items-center gap-3 pt-4">
+
+                        {/* Botones */}
+                        <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                           <button
                             onClick={() => setEditandoPerfil(false)}
                             className="px-5 py-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
@@ -943,7 +1388,7 @@ export default function PortalClientePage() {
                           <button
                             onClick={guardarPerfil}
                             disabled={guardandoPerfil}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50"
                           >
                             {guardandoPerfil ? (
                               <>

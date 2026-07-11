@@ -31,7 +31,6 @@ import {
   Home,
   Bot,
   Sparkles,
-  Smartphone,
   TrendingUp,
   Calculator,
 } from "lucide-react";
@@ -107,7 +106,6 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
     items: [
       { label: "Usuarios y Roles", icon: <Users size={17} />, href: "/usuarios" },
       { label: "Configuración", icon: <Settings size={17} />, href: "/configuracion" },
-      { label: "PWA / App Móvil", icon: <Smartphone size={17} />, href: "/configuracion/pwa" },
       { label: "Permisos", icon: <Shield size={17} />, href: "/permisos" },
       { label: "Auditoría del Sistema", icon: <ClipboardList size={17} />, href: "/auditoria" },
     ],
