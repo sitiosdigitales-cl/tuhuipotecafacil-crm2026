@@ -44,7 +44,7 @@ import {
   BarChart3,
   ExternalLink,
 } from "lucide-react";
-import { RENDIMIENTO_BANCOS, ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 

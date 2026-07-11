@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -164,24 +164,37 @@ const COMISIONES_MENSUALES = [
 ];
 
 export default function ComisionesPage() {
+  const [comisiones, setComisiones] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<"resumen" | "ejecutivos" | "creditos" | "pagos" | "historial">("resumen");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [mesSeleccionado, setMesSeleccionado] = useState("dic-2026");
-  const [comisiones, setComisiones] = useState(COMISIONES_INICIALES);
   const [modalEditar, setModalEditar] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/comisiones");
+        const json = await res.json();
+        if (json.success && json.data) setComisiones(json.data);
+      } catch { setComisiones([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
+
   const stats = useMemo(() => ({
-    totalComisiones: comisiones.reduce((sum, e) => sum + e.comisionTotal, 0),
-    totalPagadas: comisiones.reduce((sum, e) => sum + e.comisionPagada, 0),
-    totalPendientes: comisiones.reduce((sum, e) => sum + e.comisionPendiente, 0),
-    totalVentas: comisiones.reduce((sum, e) => sum + e.ventas, 0),
-    promedioConversion: Math.round(comisiones.reduce((sum, e) => sum + e.tasaConversion, 0) / comisiones.length),
+    totalComisiones: comisiones.reduce((sum: number, e: any) => sum + (e.comisionTotal || 0), 0),
+    totalPagadas: comisiones.reduce((sum: number, e: any) => sum + (e.comisionPagada || 0), 0),
+    totalPendientes: comisiones.reduce((sum: number, e: any) => sum + (e.comisionPendiente || 0), 0),
+    totalVentas: comisiones.reduce((sum: number, e: any) => sum + (e.ventas || 0), 0),
+    promedioConversion: comisiones.length > 0 ? Math.round(comisiones.reduce((sum: number, e: any) => sum + (e.tasaConversion || 0), 0) / comisiones.length) : 0,
   }), [comisiones]);
 
-  const ejecutivoTop = comisiones.reduce((prev, curr) =>
+  const ejecutivoTop = comisiones.length > 0 ? comisiones.reduce((prev: any, curr: any) =>
     curr.comisionTotal > prev.comisionTotal ? curr : prev
-  );
+  ) : null;
 
   const ejecutivoEditar = comisiones.find((e) => e.id === modalEditar);
 

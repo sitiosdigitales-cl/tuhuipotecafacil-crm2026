@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   FileText,
   Mail,
@@ -292,6 +292,8 @@ const CATEGORIA_CONFIG: Record<string, { label: string; color: string }> = {
 type TabPlantilla = "todas" | "email" | "whatsapp" | "sms" | "documento";
 
 export default function PlantillasPage() {
+  const [plantillas, setPlantillas] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabPlantilla>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
@@ -300,8 +302,19 @@ export default function PlantillasPage() {
   const [modalPreview, setModalPreview] = useState<string | null>(null);
   const [modalVariables, setModalVariables] = useState(false);
   const [modalImagenes, setModalImagenes] = useState(false);
-  const [plantillas, setPlantillas] = useState(PLANTILLAS_MOCK);
   const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/plantillas");
+        const json = await res.json();
+        if (json.success && json.data) setPlantillas(json.data);
+      } catch { setPlantillas([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
 
   const plantillasFiltradas = useMemo(() => {
     return plantillas.filter((p) => {
@@ -805,7 +818,7 @@ export default function PlantillasPage() {
               <div className="mt-4">
                 <label className="text-[11px] font-semibold text-slate-700 mb-2 block">Imágenes Asociadas</label>
                 <div className="flex gap-2 flex-wrap">
-                  {plantillaEditar.imagenes?.map((imgId) => {
+                  {(plantillaEditar.imagenes || []).map((imgId: string) => {
                     const img = IMAGENES_EJEMPLO.find((i) => i.id === imgId);
                     return img ? (
                       <div key={imgId} className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">

@@ -27,9 +27,9 @@ import {
   RefreshCw,
   Bell,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
-import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";

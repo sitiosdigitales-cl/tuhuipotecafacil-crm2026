@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Workflow,
   Zap,
@@ -328,12 +328,25 @@ const tipoFlujoConfig: Record<string, { label: string; color: string; bg: string
 type TabFlujo = "todos" | "activos" | "pausados";
 
 export default function FlujosPage() {
+  const [flujos, setFlujos] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabFlujo>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<string | null>(null);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [flujos, setFlujos] = useState(FLUJOS_DETALLE);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/flujos");
+        const json = await res.json();
+        if (json.success && json.data) setFlujos(json.data);
+      } catch { setFlujos([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
 
   const flujosFiltrados = useMemo(() => {
     return flujos.filter((f) => {
@@ -588,7 +601,7 @@ export default function FlujosPage() {
                   <ArrowRight size={14} className="text-slate-300 flex-shrink-0" />
 
                   {/* Pasos del flujo */}
-                  {flujo.pasos.map((paso, idx) => {
+                  {(flujo.pasos || []).map((paso: any, idx: number) => {
                     const nodoConfig = TIPOS_NODOS.find((n) => n.id === paso.tipo);
                     return (
                       <div key={paso.id} className="flex items-center gap-2">
@@ -703,7 +716,7 @@ export default function FlujosPage() {
                   <ArrowRight size={16} className="text-slate-300 flex-shrink-0" />
 
                   {/* Pasos */}
-                  {flujoDetalle.pasos.map((paso, idx) => {
+                  {(flujoDetalle.pasos || []).map((paso: any, idx: number) => {
                     const nodoConfig = TIPOS_NODOS.find((n) => n.id === paso.tipo);
                     return (
                       <div key={paso.id} className="flex items-center gap-2">
@@ -763,7 +776,7 @@ export default function FlujosPage() {
               <div>
                 <h4 className="text-sm font-bold text-slate-800 mb-3">Actividad Reciente</h4>
                 <div className="space-y-2">
-                  {flujoDetalle.actividad.map((act, idx) => (
+                  {(flujoDetalle.actividad || []).map((act: any, idx: number) => (
                     <div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
                       <div className="w-2 h-2 bg-violet-500 rounded-full" />
                       <span className="text-[10px] text-slate-600 flex-1">{act.accion}</span>
@@ -993,7 +1006,7 @@ export default function FlujosPage() {
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {flujos.find((f) => f.id === modalEditar)?.pasos.map((paso, idx) => {
+                  {(flujos.find((f) => f.id === modalEditar)?.pasos || []).map((paso: any, idx: number) => {
                     const nodoConfig = TIPOS_NODOS.find((n) => n.id === paso.tipo);
                     return (
                       <div

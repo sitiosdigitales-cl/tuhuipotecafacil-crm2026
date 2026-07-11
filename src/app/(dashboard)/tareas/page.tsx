@@ -21,7 +21,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormularioTarea } from "@/componentes/tareas/FormularioTarea";
 import { FiltrosTareas, FILTROS_VACIOS } from "@/componentes/tareas/FiltrosTareas";
 import type { FiltrosTareasState } from "@/componentes/tareas/FiltrosTareas";

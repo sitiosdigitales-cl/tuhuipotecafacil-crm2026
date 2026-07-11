@@ -50,10 +50,7 @@ import {
   Star,
   Briefcase,
 } from "lucide-react";
-import {
-  ETAPAS_CONFIG,
-  ORIGEN_LABELS,
-} from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useUserData } from "@/lib/hooks/useUserData";
 import type { Etapa, Lead } from "@/tipos";

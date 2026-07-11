@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Zap,
   Play,
@@ -209,11 +209,24 @@ const CATEGORIA_COLORS: Record<string, string> = {
 type TabTrigger = "todos" | "activos" | "pausados";
 
 export default function TriggersPage() {
+  const [triggers, setTriggers] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabTrigger>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [triggers, setTriggers] = useState(TRIGGERS_MOCK);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/triggers");
+        const json = await res.json();
+        if (json.success && json.data) setTriggers(json.data);
+      } catch { setTriggers([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
 
   const triggersFiltrados = useMemo(() => {
     return triggers.filter((t) => {
@@ -445,7 +458,7 @@ export default function TriggersPage() {
                   {trigger.condiciones.length === 0 ? (
                     <span className="text-[10px] text-slate-400 italic">Sin condiciones (siempre se ejecuta)</span>
                   ) : (
-                    trigger.condiciones.map((cond, idx) => (
+                    (trigger.condiciones || []).map((cond: any, idx: number) => (
                       <span
                         key={idx}
                         className="text-[11px] font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg"
@@ -463,7 +476,7 @@ export default function TriggersPage() {
                   Acciones ({trigger.acciones.length})
                 </h5>
                 <div className="flex flex-wrap gap-2">
-                  {trigger.acciones.map((accion, idx) => {
+                  {(trigger.acciones || []).map((accion: any, idx: number) => {
                     const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
                     return (
                       <div
@@ -582,7 +595,7 @@ export default function TriggersPage() {
                   <ArrowRight size={16} className="text-slate-300 flex-shrink-0" />
 
                   {/* Acciones */}
-                  {triggerDetalle.acciones.map((accion, idx) => {
+                  {(triggerDetalle.acciones || []).map((accion: any, idx: number) => {
                     const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
                     return (
                       <div key={idx} className="flex items-center gap-2">
@@ -635,7 +648,7 @@ export default function TriggersPage() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {triggerDetalle.condiciones.map((cond, idx) => (
+                    {(triggerDetalle.condiciones || []).map((cond: any, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
                         <span className="text-[10px] font-semibold text-slate-600">{cond.campo}</span>
                         <span className="text-[10px] text-slate-400">{cond.operador}</span>
@@ -650,7 +663,7 @@ export default function TriggersPage() {
               <div>
                 <h4 className="text-sm font-bold text-slate-800 mb-3">Acciones</h4>
                 <div className="space-y-2">
-                  {triggerDetalle.acciones.map((accion, idx) => {
+                  {(triggerDetalle.acciones || []).map((accion: any, idx: number) => {
                     const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
                     return (
                       <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">

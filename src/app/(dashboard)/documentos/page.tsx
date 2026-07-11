@@ -33,13 +33,12 @@ import {
   Check,
   Tag,
 } from "lucide-react";
-import { DOCUMENTOS_MOCK } from "@/datos/mock";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
 import { GestionarEstado } from "@/componentes/documentos/GestionarEstado";
 import { SolicitarDocumentos } from "@/componentes/documentos/SolicitarDocumentos";
-import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import type { DocumentoLead, TipoDocumento } from "@/tipos";
 

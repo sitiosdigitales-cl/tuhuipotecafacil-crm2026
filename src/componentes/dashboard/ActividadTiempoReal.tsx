@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useLeads } from "@/lib/contexts/LeadContext";
-import { ORIGEN_LABELS } from "@/datos/mock";
+import { ORIGEN_LABELS } from "@/tipos";
 import {
   Users,
   FileText,

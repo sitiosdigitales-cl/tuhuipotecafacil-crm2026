@@ -30,7 +30,7 @@ import {
   ArrowUpRight,
   Star,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";

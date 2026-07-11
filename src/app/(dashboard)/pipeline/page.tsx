@@ -30,9 +30,9 @@ import {
   Minimize2,
   Layout,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
-import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";

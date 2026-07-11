@@ -40,7 +40,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/tipos";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import type { Lead } from "@/tipos";
 

@@ -34,9 +34,9 @@ import {
   Activity,
   MessageSquare as MessageSquareIcon,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
-import { ConfirmDialog } from "@/componentes/ui/confirm-dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
 import { GestionarEstado } from "@/componentes/documentos/GestionarEstado";

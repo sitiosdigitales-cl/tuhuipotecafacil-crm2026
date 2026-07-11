@@ -44,7 +44,7 @@ import {
   Save,
 } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import type { Lead, Etapa } from "@/tipos";

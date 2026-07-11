@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Globe,
   Plus,
@@ -188,12 +188,25 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }
 type TabLanding = "todas" | "activas" | "borradores" | "finalizadas";
 
 export default function LandingsPage() {
+  const [landings, setLandings] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabLanding>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<string | null>(null);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [landings, setLandings] = useState(LANDING_PAGES_MOCK);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/landings");
+        const json = await res.json();
+        if (json.success && json.data) setLandings(json.data);
+      } catch { setLandings([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
 
   const landingsFiltradas = useMemo(() => {
     return landings.filter((lp) => {
@@ -218,16 +231,16 @@ export default function LandingsPage() {
     activas: landings.filter((lp) => lp.estado === "ACTIVA").length,
     borradores: landings.filter((lp) => lp.estado === "BORRADOR").length,
     finalizadas: landings.filter((lp) => lp.estado === "FINALIZADA").length,
-    visitas: landings.reduce((sum, lp) => sum + lp.visits, 0),
-    leads: landings.reduce((sum, lp) => sum + lp.leads, 0),
-    conversion: landings.filter((lp) => lp.visits > 0).length > 0
-      ? Math.round((landings.reduce((sum, lp) => sum + lp.leads, 0) / landings.reduce((sum, lp) => sum + lp.visits, 0)) * 100 * 10) / 10
+    visitas: landings.reduce((sum: number, lp: any) => sum + (lp.visits || 0), 0),
+    leads: landings.reduce((sum: number, lp: any) => sum + (lp.leads || 0), 0),
+    conversion: landings.filter((lp: any) => (lp.visits || 0) > 0).length > 0
+      ? Math.round((landings.reduce((sum: number, lp: any) => sum + (lp.leads || 0), 0) / landings.reduce((sum: number, lp: any) => sum + (lp.visits || 0), 0)) * 100 * 10) / 10
       : 0,
   }), [landings]);
 
-  const landingTop = landings.reduce((prev, curr) =>
-    curr.leads > prev.leads ? curr : prev
-  );
+  const landingTop = landings.length > 0 ? landings.reduce((prev: any, curr: any) =>
+    (curr.leads || 0) > (prev.leads || 0) ? curr : prev
+  ) : null;
 
   return (
     <div className="space-y-5">
@@ -298,7 +311,7 @@ export default function LandingsPage() {
             </div>
             <span className="text-[10px] text-slate-400 font-medium">Mejor Landing</span>
           </div>
-          <div className="text-[13px] font-bold text-purple-600 truncate">{landingTop.nombre}</div>
+          <div className="text-[13px] font-bold text-purple-600 truncate">{landingTop?.nombre || "-"}</div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
           <div className="flex items-center gap-3 mb-3">

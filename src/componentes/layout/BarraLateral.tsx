@@ -39,6 +39,7 @@ import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";
 import { CambioRapidoUsuario } from "@/componentes/layout/CambioRapidoUsuario";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { useTareaCount } from "@/lib/hooks/useTareaCount";
 import { LogOut } from "lucide-react";
 import type { Rol } from "@/tipos";
 
@@ -123,6 +124,7 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
   const { leads } = useLeads();
   const { usuarioActual } = useUser();
   const { logout } = useAuth();
+  const tareasCount = useTareaCount();
   const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<string, boolean>>({
     GENERAL: true,
     "CRM COMERCIAL": true,
@@ -134,8 +136,8 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
   // Calcular badges dinámicos
   const badges = useMemo(() => ({
     leads: leads.length,
-    tareas: Math.floor(leads.length * 0.3), // Mock: 30% de leads como tareas pendientes
-  }), [leads]);
+    tareas: tareasCount,
+  }), [leads, tareasCount]);
 
   // Filtrar secciones según el rol del usuario
   const secciones = useMemo(() => {

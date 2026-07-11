@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Mail,
   MessageSquare,
@@ -224,6 +224,8 @@ const TOP_SEGMENTOS = [
 type TabCampana = "todas" | "activas" | "programadas" | "finalizadas";
 
 export default function CampanasPage() {
+  const [campanas, setCampanas] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabCampana>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -233,8 +235,20 @@ export default function CampanasPage() {
   const ahoraRef = useRef(Date.now());
   const ahora = ahoraRef.current;
 
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/campanas");
+        const json = await res.json();
+        if (json.success && json.data) setCampanas(json.data);
+      } catch { setCampanas([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
+
   const campanasFiltradas = useMemo(() => {
-    return CAMPANAS_MOCK.filter((c) => {
+    return campanas.filter((c) => {
       const coincideTab =
         tabActiva === "todas" ||
         (tabActiva === "activas" && c.estado === "ACTIVA") ||

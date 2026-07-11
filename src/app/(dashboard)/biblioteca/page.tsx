@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   BookOpen,
   FileText,
@@ -250,6 +250,8 @@ const CATEGORIA_CONFIG: Record<string, { label: string; color: string; icono: st
 type TabBiblioteca = "todos" | "favoritos" | "recientes" | "populares";
 
 export default function BibliotecaPage() {
+  const [documentos, setDocumentos] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<TabBiblioteca>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -257,9 +259,20 @@ export default function BibliotecaPage() {
   const [vistaActiva, setVistaActiva] = useState<"grid" | "lista">("grid");
   const [modalSubir, setModalSubir] = useState(false);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [documentos, setDocumentos] = useState(BIBLIOTECA_MOCK);
   // eslint-disable-next-line react-hooks/purity -- Timestamp estable, calculado una vez
   const hace7Dias = useMemo(() => new Date(Date.now() - 7 * 86400000), []);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/biblioteca");
+        const json = await res.json();
+        if (json.success && json.data) setDocumentos(json.data);
+      } catch { setDocumentos([]); }
+      finally { setCargando(false); }
+    }
+    cargar();
+  }, []);
 
   const documentosFiltrados = useMemo(() => {
     return documentos.filter((doc) => {
@@ -272,7 +285,7 @@ export default function BibliotecaPage() {
         !busqueda ||
         doc.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
         doc.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
-        doc.tags.some((tag) => tag.toLowerCase().includes(busqueda.toLowerCase()));
+        (doc.tags || []).some((tag: string) => tag.toLowerCase().includes(busqueda.toLowerCase()));
       const coincideTipo = filtroTipo === "todos" || doc.tipo === filtroTipo;
       const coincideCategoria = filtroCategoria === "todos" || doc.categoria === filtroCategoria;
       return coincideTab && coincideBusqueda && coincideTipo && coincideCategoria;
@@ -284,8 +297,8 @@ export default function BibliotecaPage() {
   const stats = useMemo(() => ({
     total: documentos.length,
     favoritos: documentos.filter((d) => d.favorito).length,
-    totalVistas: documentos.reduce((sum, d) => sum + d.vistas, 0),
-    totalDescargas: documentos.reduce((sum, d) => sum + d.descargas, 0),
+    totalVistas: documentos.reduce((sum: number, d: any) => sum + (d.vistas || 0), 0),
+    totalDescargas: documentos.reduce((sum: number, d: any) => sum + (d.descargas || 0), 0),
     documentos: documentos.filter((d) => d.tipo === "DOCUMENTO").length,
     presentaciones: documentos.filter((d) => d.tipo === "PRESENTACION").length,
     imagenes: documentos.filter((d) => d.tipo === "IMAGEN").length,
@@ -506,7 +519,7 @@ export default function BibliotecaPage() {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {doc.tags.slice(0, 3).map((tag) => (
+                  {(doc.tags || []).slice(0, 3).map((tag: string) => (
                     <span key={tag} className="text-[10px] font-medium px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded">
                       {tag}
                     </span>
@@ -527,7 +540,7 @@ export default function BibliotecaPage() {
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <div className="flex items-center gap-1.5">
                     <div className="w-5 h-5 bg-gradient-to-br from-slate-400 to-slate-500 rounded-md flex items-center justify-center text-[7px] font-bold text-white">
-                      {doc.autor.split(" ").map((n) => n[0]).join("")}
+                      {doc.autor.split(" ").map((n: string) => n[0]).join("")}
                     </div>
                     <span className="text-[11px] text-slate-500">{doc.autor.split(" ")[0]}</span>
                   </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import type { Etapa } from "@/tipos";
 import { LayoutGrid, List, ChevronRight } from "lucide-react";

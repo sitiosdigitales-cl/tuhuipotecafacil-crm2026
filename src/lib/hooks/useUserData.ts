@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useLeads } from "@/lib/contexts/LeadContext";
-import { ETAPAS_CONFIG } from "@/datos/mock";
+import { ETAPAS_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, clpToUf } from "@/lib/utils";
 import type { Lead, Etapa } from "@/tipos";
 

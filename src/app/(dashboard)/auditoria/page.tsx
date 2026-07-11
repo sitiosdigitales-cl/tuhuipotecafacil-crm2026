@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Filter,
@@ -24,7 +24,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
-import { AUDITORIA_MOCK } from "@/datos/mock";
 import { ACCIONES_AUDITORIA_CONFIG } from "@/tipos";
 import type { RegistroAuditoria, TipoAccion } from "@/tipos";
 
@@ -42,7 +41,28 @@ const iconoAccion: Record<TipoAccion, React.ReactNode> = {
 };
 
 export default function AuditoriaPage() {
-  const [registros, setRegistros] = useState<RegistroAuditoria[]>(AUDITORIA_MOCK);
+  const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/auditoria");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setRegistros(json.data.map((r: Record<string, any>) => ({
+            ...r,
+            fecha: r.fecha ? new Date(r.fecha) : new Date(),
+          })));
+        }
+      } catch {
+        setRegistros([]);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargar();
+  }, []);
   const [busqueda, setBusqueda] = useState("");
   const [filtroAccion, setFiltroAccion] = useState<TipoAccion | "todos">("todos");
   const [registroSeleccionado, setRegistroSeleccionado] = useState<RegistroAuditoria | null>(null);

@@ -49,7 +49,7 @@ import {
   Lock,
   Percent,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/datos/mock";
+import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { ROLES_CONFIG, ESTADOS_USUARIO_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
