@@ -959,31 +959,117 @@ export default function PortalClientePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">Nombre completo</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.nombre} {cliente.apellido}</div>
+                      <div className="space-y-6">
+                        {/* Sección: Datos Personales */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Datos Personales</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Nombre completo</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.nombre} {cliente.apellido}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">RUT</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.rut}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Email</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.email || "No registrado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Teléfono</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.telefono || "No registrado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Situación Laboral</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.situacionLaboral === "DEPENDIENTE" ? "Trabajador Dependiente" : "Trabajador Independiente"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Origen</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.origen || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">En DICOM</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.enDicom ? "Sí" : "No"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Renta Mensual</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.rentaMensual || "No especificada"}</div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">RUT</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.rut}</div>
+
+                        {/* Sección: Datos Extendidos */}
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Información Adicional</h5>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Cargas Legales</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.cargasLegales || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Estado Civil</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.estadoCivil || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Régimen Matrimonial</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.regimenMatrimonial || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Fecha Nacimiento</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.fechaNacimiento || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Estudios</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.estudios || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Profesión</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.profesion || "No especificado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Domicilio</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.domicilioParticular || "No registrado"}</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-xl">
+                              <div className="text-[10px] text-slate-400 font-medium mb-1">Comuna / Ciudad</div>
+                              <div className="text-[12px] font-bold text-slate-800">{cliente.comunaCiudad || "No registrado"}</div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">Email</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.email || "No registrado"}</div>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">Teléfono</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.telefono || "No registrado"}</div>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">Domicilio</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.domicilioParticular || "No registrado"}</div>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-xl">
-                          <div className="text-[10px] text-slate-400 font-medium mb-1">Comuna / Ciudad</div>
-                          <div className="text-[12px] font-bold text-slate-800">{cliente.comunaCiudad || "No registrado"}</div>
-                        </div>
+
+                        {/* Sección: Datos del Empleador */}
+                        {cliente.situacionLaboral === "DEPENDIENTE" && (
+                          <div>
+                            <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Datos del Empleador</h5>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">Nombre Empleador</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.nombreEmpleador || "No especificado"}</div>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">RUT Empresa</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.rutEmpresa || "No especificado"}</div>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">Cargo</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.cargo || "No especificado"}</div>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">Renta Líquida</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.rentaLiquida ? `$${cliente.rentaLiquida.toLocaleString()}` : "No especificado"}</div>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">Banco Abono Renta</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.bancoAbonoRenta || "No especificado"}</div>
+                              </div>
+                              <div className="p-4 bg-slate-50 rounded-xl">
+                                <div className="text-[10px] text-slate-400 font-medium mb-1">Fecha de Pago</div>
+                                <div className="text-[12px] font-bold text-slate-800">{cliente.fechaPago || "No especificado"}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
