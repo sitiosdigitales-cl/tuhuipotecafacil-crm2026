@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Mensaje } from "@/tipos/conversaciones";
 
 interface UseChatOptions {
@@ -53,7 +53,22 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
   const enviarMensaje = useCallback(async (contenido: string) => {
     if (!conversacionId || !contenido.trim()) return;
 
+    // Crear mensaje local inmediatamente
+    const mensajeLocal: Mensaje = {
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      conversacionId,
+      remitenteId: usuarioActualId,
+      remitenteNombre: usuarioActualNombre || "Usuario",
+      contenido: contenido.trim(),
+      tipo: "TEXTO",
+      estado: "ENVIADO",
+      creadoEn: new Date(),
+    };
+
+    // Agregar al estado inmediatamente
+    setMensajes((prev) => [...prev, mensajeLocal]);
     setEnviando(true);
+
     try {
       const res = await fetch("/api/mensajes", {
         method: "POST",
@@ -69,29 +84,37 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
 
       const json = await res.json();
       if (json.success && json.data) {
-        // Agregar el mensaje a la lista inmediatamente
-        const nuevoMensaje: Mensaje = {
-          id: json.data.id,
-          conversacionId: json.data.conversacionid,
-          remitenteId: json.data.remitenteid,
-          remitenteNombre: json.data.remitentenombre,
-          contenido: json.data.contenido,
-          tipo: json.data.tipo || "TEXTO",
-          estado: json.data.estado || "ENVIADO",
-          archivoUrl: json.data.archivourl,
-          creadoEn: new Date(json.data.creadoen),
-        };
-        setMensajes((prev) => {
-          if (prev.some((m) => m.id === nuevoMensaje.id)) return prev;
-          return [...prev, nuevoMensaje];
-        });
+        // Reemplazar el mensaje temporal con el real
+        setMensajes((prev) =>
+          prev.map((m) =>
+            m.id === mensajeLocal.id
+              ? {
+                  id: json.data.id,
+                  conversacionId: json.data.conversacionid,
+                  remitenteId: json.data.remitenteid,
+                  remitenteNombre: json.data.remitentenombre,
+                  contenido: json.data.contenido,
+                  tipo: json.data.tipo || "TEXTO",
+                  estado: json.data.estado || "ENVIADO",
+                  archivoUrl: json.data.archivourl,
+                  creadoEn: new Date(json.data.creadoen),
+                }
+              : m
+          )
+        );
       }
     } catch (error) {
       console.error("Error al enviar mensaje:", error);
+      // Si hay error, marcar el mensaje como fallido
+      setMensajes((prev) =>
+        prev.map((m) =>
+          m.id === mensajeLocal.id ? { ...m, estado: "ERROR" } : m
+        )
+      );
     } finally {
       setEnviando(false);
     }
-  }, [conversacionId, usuarioActualId]);
+  }, [conversacionId, usuarioActualId, usuarioActualNombre]);
 
   return {
     mensajes,
