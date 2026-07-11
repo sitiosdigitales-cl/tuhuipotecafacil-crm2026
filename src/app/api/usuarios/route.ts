@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get("rol");
@@ -22,7 +21,11 @@ export async function GET(request: NextRequest) {
     query = query.order("creadoen", { ascending: false });
 
     const { data, error } = await query;
-    if (error) return NextResponse.json({ success: true, data: [] });
+
+    if (error) {
+      console.error("Error al consultar usuarios:", error.message, error.details);
+      return NextResponse.json({ success: true, data: [], error: error.message });
+    }
 
     const usuarios = (data || []).map((u: any) => ({
       id: u.id,
@@ -37,7 +40,8 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ success: true, data: usuarios });
-  } catch {
+  } catch (e) {
+    console.error("Error interno en GET /api/usuarios:", e);
     return NextResponse.json({ success: true, data: [] });
   }
 }
