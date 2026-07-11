@@ -5,6 +5,11 @@ const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/ta
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // No bloquear rutas de API
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // Verificar si la ruta está protegida
   const rutaProtegida = RUTAS_PROTEGIDAS.some(ruta => pathname.startsWith(ruta));
 
