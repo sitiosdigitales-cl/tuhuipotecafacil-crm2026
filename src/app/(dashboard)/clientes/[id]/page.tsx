@@ -142,7 +142,7 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function cargarLead() {
       try {
-        const res = await fetch(`/api/leads/${id}`);
+        const res = await fetch(`/api/leads/${id}`, { credentials: "include" });
         const json = await res.json();
         if (json.success && json.data) {
           setLead({
