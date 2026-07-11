@@ -111,7 +111,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             // Encontrar el que coincida mejor
             const usuario = data.data.find((u: any) => {
               const nombreCompleto = `${u.nombre} ${u.apellido}`.toLowerCase();
-              return nombreCompleto.includes(found.nombreEjecutivo.toLowerCase());
+              return nombreCompleto.includes(found.nombreEjecutivo?.toLowerCase() || "");
             }) || data.data[0];
             setAsesor({
               nombre: usuario.nombre || "",

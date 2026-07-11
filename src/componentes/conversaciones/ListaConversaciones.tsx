@@ -9,13 +9,15 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-  Settings,
   Bell,
+  X,
+  Check,
 } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { useConversaciones } from "@/lib/hooks/useConversaciones";
 import { useUser } from "@/lib/contexts/UserContext";
 import type { Conversacion, TipoConversacion } from "@/tipos/conversaciones";
+import { toast } from "sonner";
 
 interface ListaConversacionesProps {
   conversacionActiva: string | null;
@@ -41,13 +43,18 @@ export function ListaConversaciones({
   usuarioActualId,
 }: ListaConversacionesProps) {
   const { usuarios } = useUser();
-  const { conversaciones, cargando } = useConversaciones({ usuarioActualId });
+  const { conversaciones, cargando, crearConversacion, recargar } = useConversaciones({ usuarioActualId });
   const [busqueda, setBusqueda] = useState("");
   const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<TipoConversacion, boolean>>({
     CANAL: true,
     GRUPO: true,
     DIRECTO: true,
   });
+  const [mostrarNuevaConversacion, setMostrarNuevaConversacion] = useState(false);
+  const [nuevaConversacionNombre, setNuevaConversacionNombre] = useState("");
+  const [nuevaConversacionTipo, setNuevaConversacionTipo] = useState<TipoConversacion>("DIRECTO");
+  const [nuevaConversacionParticipantes, setNuevaConversacionParticipantes] = useState<string[]>([]);
+  const [nuevaConversacionDescripcion, setNuevaConversacionDescripcion] = useState("");
 
   const toggleSeccion = (tipo: TipoConversacion) => {
     setSeccionesAbiertas((prev) => ({ ...prev, [tipo]: !prev[tipo] }));
@@ -96,6 +103,44 @@ export function ListaConversaciones({
     .filter((c) => c.participantes?.includes(usuarioActualId))
     .reduce((acc, c) => acc + (c.mensajesNoLeidos || 0), 0);
 
+  const handleCrearConversacion = async () => {
+    if (!nuevaConversacionNombre.trim()) {
+      toast.error("Ingresa un nombre para la conversación");
+      return;
+    }
+
+    const participantes = nuevaConversacionTipo === "DIRECTO" 
+      ? [usuarioActualId, ...nuevaConversacionParticipantes]
+      : [usuarioActualId];
+
+    const resultado = await crearConversacion({
+      nombre: nuevaConversacionNombre,
+      tipo: nuevaConversacionTipo,
+      participantes,
+      descripcion: nuevaConversacionDescripcion,
+    });
+
+    if (resultado) {
+      toast.success("Conversación creada", { description: nuevaConversacionNombre });
+      setMostrarNuevaConversacion(false);
+      setNuevaConversacionNombre("");
+      setNuevaConversacionParticipantes([]);
+      setNuevaConversacionDescripcion("");
+      onSeleccionarConversacion(resultado.id);
+    } else {
+      toast.error("Error al crear conversación");
+    }
+  };
+
+  const toggleParticipante = (usuarioId: string) => {
+    setNuevaConversacionParticipantes((prev) => {
+      if (prev.includes(usuarioId)) {
+        return prev.filter((id) => id !== usuarioId);
+      }
+      return [...prev, usuarioId];
+    });
+  };
+
   if (cargando) {
     return (
       <div className="w-80 bg-white border-r border-slate-200 flex flex-col h-full items-center justify-center">
@@ -122,7 +167,11 @@ export function ListaConversaciones({
             <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" title="Notificaciones">
               <Bell size={16} className="text-slate-500" />
             </button>
-            <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" title="Nueva conversación">
+            <button 
+              onClick={() => setMostrarNuevaConversacion(true)}
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" 
+              title="Nueva conversación"
+            >
               <Plus size={16} className="text-slate-500" />
             </button>
           </div>
@@ -199,29 +248,25 @@ export function ListaConversaciones({
                             <Icon size={14} />
                           </div>
                         )}
-
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span
-                              className={`text-xs font-semibold truncate ${
-                                activa ? "text-blue-700" : "text-slate-700"
-                              }`}
-                            >
+                            <span className={`text-[11px] font-semibold truncate ${
+                              activa ? "text-blue-700" : "text-slate-800"
+                            }`}>
                               {nombreMostrar}
                             </span>
+                            {conversacion.mensajesNoLeidos > 0 && (
+                              <span className="w-5 h-5 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                                {conversacion.mensajesNoLeidos}
+                              </span>
+                            )}
                           </div>
-                          {conversacion.descripcion && (
+                          {conversacion.ultimoMensaje && (
                             <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                              {conversacion.descripcion}
+                              {conversacion.ultimoMensaje.contenido}
                             </p>
                           )}
                         </div>
-
-                        {(conversacion.mensajesNoLeidos || 0) > 0 && (
-                          <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-bold rounded-full flex-shrink-0">
-                            {conversacion.mensajesNoLeidos}
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -231,31 +276,122 @@ export function ListaConversaciones({
           );
         })}
 
-        {conversaciones.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <MessageSquare size={32} className="text-slate-300 mb-3" />
-            <p className="text-xs text-slate-500">No hay conversaciones</p>
-            <p className="text-[10px] text-slate-400 mt-1">Crea una nueva para empezar</p>
+        {Object.values(conversacionesFiltradas).every((items) => items.length === 0) && (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+              <MessageSquare size={24} className="text-slate-300" />
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium text-center">No hay conversaciones</p>
+            <p className="text-[10px] text-slate-400 text-center mt-1">Crea una nueva para empezar</p>
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-        <div className="flex items-center gap-3">
-          <Avatar nombre="Usuario" id={usuarioActualId} size="sm" />
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-slate-700 truncate">En línea</div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-[9px] text-slate-500">Activo</span>
+      {/* Modal Nueva Conversación */}
+      {mostrarNuevaConversacion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-[420px] max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Nueva Conversación</h3>
+              <button onClick={() => setMostrarNuevaConversacion(false)} className="p-1 hover:bg-slate-100 rounded-lg">
+                <X size={16} className="text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-4">
+              {/* Tipo */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-2">Tipo</label>
+                <div className="flex gap-2">
+                  {(["DIRECTO", "GRUPO", "CANAL"] as TipoConversacion[]).map((tipo) => (
+                    <button
+                      key={tipo}
+                      onClick={() => setNuevaConversacionTipo(tipo)}
+                      className={`flex-1 py-2 px-3 rounded-xl text-[11px] font-semibold transition-all ${
+                        nuevaConversacionTipo === tipo
+                          ? "bg-blue-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {TIPO_LABEL[tipo]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nombre */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={nuevaConversacionNombre}
+                  onChange={(e) => setNuevaConversacionNombre(e.target.value)}
+                  placeholder={nuevaConversacionTipo === "DIRECTO" ? "Nombre de la conversación" : "Nombre del canal/grupo"}
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              {/* Descripción */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 block mb-1">Descripción (opcional)</label>
+                <input
+                  type="text"
+                  value={nuevaConversacionDescripcion}
+                  onChange={(e) => setNuevaConversacionDescripcion(e.target.value)}
+                  placeholder="Descripción breve"
+                  className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              {/* Participantes */}
+              {nuevaConversacionTipo === "DIRECTO" && (
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-2">Seleccionar usuario</label>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {usuarios.filter(u => u.id !== usuarioActualId && u.estado === "ACTIVO").map((usuario) => (
+                      <button
+                        key={usuario.id}
+                        onClick={() => toggleParticipante(usuario.id)}
+                        className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all ${
+                          nuevaConversacionParticipantes.includes(usuario.id)
+                            ? "bg-blue-50 border border-blue-200"
+                            : "hover:bg-slate-50 border border-transparent"
+                        }`}
+                      >
+                        <Avatar nombre={`${usuario.nombre} ${usuario.apellido}`} id={usuario.id} size="sm" />
+                        <div className="text-left">
+                          <div className="text-[11px] font-semibold text-slate-800">{usuario.nombre} {usuario.apellido}</div>
+                          <div className="text-[10px] text-slate-400">{usuario.email}</div>
+                        </div>
+                        {nuevaConversacionParticipantes.includes(usuario.id) && (
+                          <div className="ml-auto w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                            <Check size={12} className="text-white" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-100">
+              <button
+                onClick={() => setMostrarNuevaConversacion(false)}
+                className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCrearConversacion}
+                className="px-4 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20"
+              >
+                Crear
+              </button>
             </div>
           </div>
-          <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
-            <Settings size={14} className="text-slate-500" />
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
