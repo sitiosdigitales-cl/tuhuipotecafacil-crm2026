@@ -29,9 +29,13 @@ export async function GET(request: NextRequest) {
 
     // Filtrar por participante si se especifica
     if (participante) {
-      conversaciones = conversaciones.filter(c => 
-        c.participantes.includes(participante)
-      );
+      console.log("Buscando participante:", participante);
+      console.log("Conversaciones antes del filtro:", conversaciones.length);
+      conversaciones = conversaciones.filter(c => {
+        console.log("Participantes de conversación:", c.participantes);
+        return c.participantes.includes(participante);
+      });
+      console.log("Conversaciones después del filtro:", conversaciones.length);
     }
 
     return NextResponse.json({ success: true, data: conversaciones });
