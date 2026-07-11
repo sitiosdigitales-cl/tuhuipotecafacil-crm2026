@@ -136,46 +136,55 @@ export default function ClientePerfilPage() {
   const { leads, actualizarLead, cargando: leadsCargando } = useLeads();
   const { usuarioActual } = useUser();
   const { obtenerActividadesLead, agregarActividad } = useActivities();
-  const [lead, setLead] = useState<Lead | null>(null);
+  const [leadFromApi, setLeadFromApi] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  // Buscar lead en el contexto o cargar desde API
+  // Buscar lead en el contexto (reactivo sin loop infinito)
+  const lead = useMemo(() => {
+    if (!id) return null;
+    return leads.find((l) => l.id === id) || leadFromApi;
+  }, [id, leads, leadFromApi]);
+
+  // Cargar desde API solo si no está en el contexto
   useEffect(() => {
+    if (!id) return;
     if (leadsCargando) return;
 
     const leadEncontrado = leads.find((l) => l.id === id);
     if (leadEncontrado) {
-      setLead(leadEncontrado);
       setCargando(false);
       return;
     }
 
-    // Si no está en el contexto, intentar desde la API
+    let cancelado = false;
     async function cargarLead() {
       try {
         const res = await fetch(`/api/leads/${id}`, { credentials: "include" });
+        if (cancelado) return;
         if (!res.ok) {
-          setLead(null);
+          setLeadFromApi(null);
           setCargando(false);
           return;
         }
         const json = await res.json();
+        if (cancelado) return;
         if (json.success && json.data) {
-          setLead({
+          setLeadFromApi({
             ...json.data,
             creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
           });
         } else {
-          setLead(null);
+          setLeadFromApi(null);
         }
       } catch {
-        setLead(null);
+        if (!cancelado) setLeadFromApi(null);
       } finally {
-        setCargando(false);
+        if (!cancelado) setCargando(false);
       }
     }
     cargarLead();
-  }, [id, leads, leadsCargando]);
+    return () => { cancelado = true; };
+  }, [id]);
 
   const [tabActiva, setTabActiva] = useState("resumen");
   const [documentos, setDocumentos] = useState<DocumentoLead[]>(() => lead ? generarDocumentosLead(lead) : []);
