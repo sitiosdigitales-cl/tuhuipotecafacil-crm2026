@@ -13,10 +13,16 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
 
   const cargarConversaciones = useCallback(async () => {
     try {
-      const res = await fetch(`/api/conversaciones?participante=${usuarioActualId}`);
+      // Obtener todas las conversaciones y filtrar en el cliente
+      const res = await fetch(`/api/conversaciones`);
       const json = await res.json();
       if (json.success && json.data) {
-        setConversaciones(json.data);
+        // Filtrar conversaciones donde el usuario actual es participante
+        const filtradas = json.data.filter((c: any) => {
+          const participantes = Array.isArray(c.participantes) ? c.participantes : [];
+          return participantes.includes(usuarioActualId);
+        });
+        setConversaciones(filtradas);
       }
     } catch {
       setConversaciones([]);
