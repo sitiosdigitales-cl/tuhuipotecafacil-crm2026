@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!requireAuth(request)) return unauthorized();
@@ -15,29 +15,49 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
     const body = await request.json();
 
+    // Verificar que el lead pertenece al cliente (si es CLIENTE)
+    if (auth.rol === "CLIENTE") {
+      const { data: lead } = await supabase.from("leads").select("email").eq("id", id).single();
+      if (!lead || lead.email !== auth.email) {
+        return forbidden();
+      }
+    }
+
     const updateData: Record<string, any> = {};
-    if (body.nombre) updateData.nombre = body.nombre;
-    if (body.apellido) updateData.apellido = body.apellido;
-    if (body.rut !== undefined) updateData.rut = body.rut;
-    if (body.email !== undefined) updateData.email = body.email;
-    if (body.telefono !== undefined) updateData.telefono = body.telefono;
-    if (body.origen) updateData.origen = body.origen;
-    if (body.etapa) updateData.etapa = body.etapa;
-    if (body.prioridad) updateData.prioridad = body.prioridad;
-    if (body.nombreEjecutivo !== undefined) updateData.nombreEjecutivo = body.nombreEjecutivo;
-    if (body.banco !== undefined) updateData.banco = body.banco;
-    if (body.tipoCredito !== undefined) updateData.tipoCredito = body.tipoCredito;
-    if (body.montoSolicitado !== undefined) updateData.montoSolicitado = body.montoSolicitado;
-    if (body.valorPropiedad !== undefined) updateData.valorPropiedad = body.valorPropiedad;
-    if (body.pieDisponible !== undefined) updateData.pieDisponible = body.pieDisponible;
-    if (body.notas !== undefined) updateData.notas = body.notas;
-    if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
-    if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
+
+    // CLIENTE solo puede actualizar campos de perfil
+    if (auth.rol === "CLIENTE") {
+      if (body.nombre) updateData.nombre = body.nombre;
+      if (body.apellido) updateData.apellido = body.apellido;
+      if (body.email !== undefined) updateData.email = body.email;
+      if (body.telefono !== undefined) updateData.telefono = body.telefono;
+      if (body.domicilioParticular !== undefined) updateData.domicilioparticular = body.domicilioParticular;
+      if (body.comunaCiudad !== undefined) updateData.comunaciudad = body.comunaCiudad;
+    } else {
+      // Admin/Gerente/Agente pueden actualizar todo
+      if (body.nombre) updateData.nombre = body.nombre;
+      if (body.apellido) updateData.apellido = body.apellido;
+      if (body.rut !== undefined) updateData.rut = body.rut;
+      if (body.email !== undefined) updateData.email = body.email;
+      if (body.telefono !== undefined) updateData.telefono = body.telefono;
+      if (body.origen) updateData.origen = body.origen;
+      if (body.etapa) updateData.etapa = body.etapa;
+      if (body.prioridad) updateData.prioridad = body.prioridad;
+      if (body.nombreEjecutivo !== undefined) updateData.nombreEjecutivo = body.nombreEjecutivo;
+      if (body.banco !== undefined) updateData.banco = body.banco;
+      if (body.tipoCredito !== undefined) updateData.tipoCredito = body.tipoCredito;
+      if (body.montoSolicitado !== undefined) updateData.montoSolicitado = body.montoSolicitado;
+      if (body.valorPropiedad !== undefined) updateData.valorPropiedad = body.valorPropiedad;
+      if (body.pieDisponible !== undefined) updateData.pieDisponible = body.pieDisponible;
+      if (body.notas !== undefined) updateData.notas = body.notas;
+      if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
+      if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
     // Datos personales extendidos
     if (body.cargasLegales !== undefined) updateData.cargaslegales = body.cargasLegales;
     if (body.estadoCivil !== undefined) updateData.estadocivil = body.estadoCivil;
@@ -62,6 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
     if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
     if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
+    }
 
     updateData.actualizadoEn = new Date().toISOString();
 
@@ -84,7 +105,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  // CLIENTE no puede eliminar leads
+  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN", "GERENTE"])) return forbidden();
   try {
     const { id } = await params;
     const { error } = await supabase.from("leads").delete().eq("id", id);

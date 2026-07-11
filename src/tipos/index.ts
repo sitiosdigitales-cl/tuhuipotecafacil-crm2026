@@ -1,4 +1,4 @@
-export type Rol = "SUPER_ADMIN" | "ADMIN" | "GERENTE" | "AGENTE";
+export type Rol = "SUPER_ADMIN" | "ADMIN" | "GERENTE" | "AGENTE" | "CLIENTE";
 
 export type OrigenLead =
   | "WEB"
@@ -318,6 +318,7 @@ export const ROLES_CONFIG: Record<Rol, { label: string; color: string; descripci
   ADMIN: { label: "Administrador", color: "bg-blue-100 text-blue-700", descripcion: "Gestión avanzada" },
   GERENTE: { label: "Gerente", color: "bg-amber-100 text-amber-700", descripcion: "Supervisión de equipo" },
   AGENTE: { label: "Agente", color: "bg-slate-100 text-slate-700", descripcion: "Operaciones básicas" },
+  CLIENTE: { label: "Cliente", color: "bg-emerald-100 text-emerald-700", descripcion: "Solo puede ver y editar su perfil y documentos" },
 };
 
 // Tipos para Auditoría

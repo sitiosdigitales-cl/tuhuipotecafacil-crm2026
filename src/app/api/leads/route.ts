@@ -1,9 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+
+  // CLIENTE solo puede ver sus propios leads
+  if (auth.rol === "CLIENTE") {
+    const { searchParams } = new URL(request.url);
+    const busqueda = searchParams.get("busqueda") || "";
+
+    // Buscar lead por RUT del cliente
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .ilike("rut", `%${busqueda}%`)
+      .limit(1);
+
+    if (error || !data || data.length === 0) {
+      return NextResponse.json({ success: true, data: [] });
+    }
+
+    // Verificar que el lead pertenece al cliente (por email)
+    const lead = data[0];
+    if (lead.email !== auth.email) {
+      return NextResponse.json({ success: true, data: [] });
+    }
+
+    return NextResponse.json({ success: true, data: fromSupabaseArray([lead]) });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda") || "";
@@ -39,7 +66,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  // CLIENTE no puede crear leads
+  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE"])) return forbidden();
   try {
     const body = await request.json();
     if (!body.nombre || !body.apellido) {
