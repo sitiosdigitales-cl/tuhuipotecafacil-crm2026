@@ -68,22 +68,27 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
   }, [conversacionId]);
 
   useEffect(() => {
-    if (mensajesRef.current) {
-      mensajesRef.current.scrollTop = mensajesRef.current.scrollHeight;
-    }
-  }, [mensajes, conversacionId]);
+    // Scroll al fondo cuando cambian los mensajes
+    const timer = setTimeout(() => {
+      if (mensajesRef.current) {
+        mensajesRef.current.scrollTop = mensajesRef.current.scrollHeight;
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [mensajes.length, conversacionId]);
 
   const mensajesAgrupados = useMemo(() => {
+    if (!mensajes || mensajes.length === 0) return [];
     return mensajes.map((msg, idx) => {
       const prev = idx > 0 ? mensajes[idx - 1] : null;
       const mostrarRemitente =
         !prev ||
         prev.remitenteId !== msg.remitenteId ||
-        msg.creadoEn.getTime() - prev.creadoEn.getTime() > 300000;
+        (msg.creadoEn && prev.creadoEn && msg.creadoEn.getTime() - prev.creadoEn.getTime() > 300000);
 
       const primerDelDia =
         !prev ||
-        prev.creadoEn.toDateString() !== msg.creadoEn.toDateString();
+        (msg.creadoEn && prev.creadoEn && msg.creadoEn.toDateString() !== prev.creadoEn.toDateString());
 
       return { ...msg, mostrarRemitente, primerDelDia };
     });
