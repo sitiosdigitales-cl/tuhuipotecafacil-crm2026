@@ -197,7 +197,8 @@ export default function ClientePerfilPage() {
   const [guardandoProgreso, setGuardandoProgreso] = useState(false);
 
   const etapaActual = lead ? PASOS_PROGRESO.find((p) => p.etapa === lead.etapa)?.paso || 1 : 0;
-  const progreso = (etapaActual / 10) * 100;
+  const totalPasos = PASOS_PROGRESO.length;
+  const progreso = (etapaActual / totalPasos) * 100;
 
   const moverEtapa = async (nuevaEtapa: Etapa) => {
     if (!lead) return;

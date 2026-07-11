@@ -102,7 +102,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   };
 
   const etapaActual = cliente ? PASOS_PROGRESO.findIndex((p) => p.etapa === cliente.etapa) + 1 : 0;
-  const progreso = Math.max(1, Math.min(etapaActual, 10));
+  const totalPasos = PASOS_PROGRESO.length;
+  const progreso = Math.max(1, Math.min(etapaActual, totalPasos));
   const pasoActual = PASOS_PROGRESO.find((p) => p.etapa === cliente?.etapa);
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
   const docsConfig = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
@@ -366,7 +367,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 <div className="absolute top-6 left-[12%] right-[12%] h-1 bg-slate-100 rounded-full" />
                 {/* Línea de progreso */}
                 <div className="absolute top-6 left-[12%] h-1 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all duration-700"
-                  style={{ width: `${Math.max(0, ((progreso - 1) / 3) * 76)}%` }} />
+                  style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
 
                 {PASOS_PROGRESO.slice(0, 4).map((paso, i) => {
                   const completado = progreso > i + 1;
