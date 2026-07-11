@@ -44,14 +44,14 @@ import { AsignarEjecutivo } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
 import type { Lead, Etapa, Prioridad } from "@/tipos";
 
-const ETAPAS_PIPELINE: Etapa[] = [
+// Etapas por defecto (se cargan desde la API)
+const ETAPAS_POR_DEFECTO: Etapa[] = [
   "NUEVO_LEAD",
   "CONTACTO_INICIAL",
   "CONTACTADO",
   "INTERESADO",
   "CALIFICACION_COMERCIAL",
   "DOCS_PENDIENTES",
-  "DOCS_PARCIALES",
   "DOCS_COMPLETAS",
   "EVALUACION_BANCARIA",
   "PREAPROBADO",
@@ -59,7 +59,6 @@ const ETAPAS_PIPELINE: Etapa[] = [
   "FIRMA_DIGITAL",
   "NOTARIA",
   "CREDITO_PAGADO",
-  "CLIENTE_FINALIZADO",
 ];
 
 const prioridadConfig: Record<Prioridad, { label: string; color: string; bg: string }> = {
@@ -261,6 +260,28 @@ export default function PipelinePage() {
   const [nuevosLeads, setNuevosLeads] = useState(0);
   const leadsAnteriores = useRef(leads.length);
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+  const [etapasPipeline, setEtapasPipeline] = useState<Etapa[]>(ETAPAS_POR_DEFECTO);
+
+  // Cargar etapas desde la API
+  useEffect(() => {
+    async function cargarEtapas() {
+      try {
+        const res = await fetch("/api/pipeline/stages");
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          // Filtrar solo las etapas activas y ordenarlas
+          const etapasActivas = data.data
+            .filter((e: { activa: boolean }) => e.activa)
+            .sort((a: { orden: number }, b: { orden: number }) => a.orden - b.orden)
+            .map((e: { id: string }) => e.id as Etapa);
+          setEtapasPipeline(etapasActivas);
+        }
+      } catch {
+        // Usar etapas por defecto si falla
+      }
+    }
+    cargarEtapas();
+  }, []);
 
   // Detectar nuevos leads
   useEffect(() => {
@@ -554,7 +575,7 @@ export default function PipelinePage() {
       {/* Kanban Board - ocupa todo el espacio restante */}
       <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
         <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-4 pt-3 scroll-smooth">
-          {ETAPAS_PIPELINE.map((etapa) => {
+          {etapasPipeline.map((etapa) => {
             const config = ETAPAS_CONFIG[etapa];
             const leadsEnEtapa = leadsFiltrados.filter((l) => l.etapa === etapa);
             const montoEtapa = leadsEnEtapa.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
