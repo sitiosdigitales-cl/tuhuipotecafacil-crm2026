@@ -136,11 +136,7 @@ const PASOS_PROGRESO = [
   { paso: 3, label: "Calificación", etapa: "CALIFICACION_COMERCIAL" as Etapa },
   { paso: 4, label: "Documentación", etapa: "DOCS_COMPLETAS" as Etapa },
   { paso: 5, label: "Evaluación", etapa: "EVALUACION_BANCARIA" as Etapa },
-  { paso: 6, label: "Pre Aprobación", etapa: "PREAPROBADO" as Etapa },
-  { paso: 7, label: "Aprobado", etapa: "APROBADO" as Etapa },
-  { paso: 8, label: "Firma", etapa: "FIRMA_DIGITAL" as Etapa },
-  { paso: 9, label: "Notaría", etapa: "NOTARIA" as Etapa },
-  { paso: 10, label: "Desembolso", etapa: "CREDITO_PAGADO" as Etapa },
+  { paso: 6, label: "Aprobado", etapa: "APROBADO" as Etapa },
 ];
 
 export default function ClientePerfilPage() {
