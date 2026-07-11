@@ -86,7 +86,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number }[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
-  const [guardandoProgreso, setGuardandoProgreso] = useState(false);
 
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
     rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
@@ -210,24 +209,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  // Función para actualizar etapa del crédito
-  const actualizarEtapa = async (nuevaEtapa: Etapa) => {
-    if (!cliente) return;
-    setGuardandoProgreso(true);
-    try {
-      await fetch(`/api/leads/${cliente.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ etapa: nuevaEtapa }),
-      });
-      setCliente({ ...cliente, etapa: nuevaEtapa });
-      toast.success("Progreso actualizado", { description: `Movido a ${PASOS_PROGRESO.find(p => p.etapa === nuevaEtapa)?.label}` });
-    } catch {
-      toast.error("Error al actualizar");
-    }
-    setGuardandoProgreso(false);
   };
 
   // Vista de búsqueda
@@ -361,12 +342,11 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   const completado = progreso > i + 1;
                   const actual = progreso === i + 1;
                   return (
-                    <div key={paso.paso} className="flex flex-col items-center relative z-10 w-1/4 cursor-pointer group"
-                      onClick={() => actualizarEtapa(paso.etapa)}>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all group-hover:scale-110 ${
+                    <div key={paso.paso} className="flex flex-col items-center relative z-10 w-1/4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                         completado ? "bg-teal-500 text-white shadow-md shadow-teal-500/30" :
                         actual ? "bg-teal-500 text-white ring-4 ring-teal-100 shadow-lg shadow-teal-500/30" :
-                        "bg-white text-slate-400 border-2 border-slate-200 group-hover:border-teal-400"
+                        "bg-white text-slate-400 border-2 border-slate-200"
                       }`}>
                         {completado ? <CheckCircle size={20} /> : i + 1}
                       </div>
@@ -388,9 +368,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Info size={16} className="text-blue-500 flex-shrink-0" />
-                {guardandoProgreso && (
-                  <div className="w-4 h-4 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
-                )}
                 <p className="text-xs text-blue-700">
                   {pasoActual?.label === "Documentación"
                     ? "Hemos recibido tus documentos. Nuestro equipo los está revisando y pronto avanzaremos a la evaluación de tu perfil."
