@@ -6,20 +6,15 @@ import { useLeads } from "@/lib/contexts/LeadContext";
 import { ETAPAS_CONFIG } from "@/tipos";
 import type { Etapa } from "@/tipos";
 
-// Etapas del pipeline comercial - se pueden configurar desde aquí
+// Etapas del pipeline comercial
 const ETAPAS_PIPELINE: Etapa[] = [
   "NUEVO_LEAD",
-  "CONTACTO_INICIAL",
   "CONTACTADO",
   "INTERESADO",
-  "CALIFICACION_COMERCIAL",
   "DOCS_PENDIENTES",
   "DOCS_COMPLETAS",
   "EVALUACION_BANCARIA",
-  "PREAPROBADO",
   "APROBADO",
-  "FIRMA_DIGITAL",
-  "NOTARIA",
   "CREDITO_PAGADO",
 ];
 
