@@ -117,11 +117,11 @@ export default function PortalPage() {
   // Portal Login - Nuevo Diseño
   if (!clienteSeleccionado) {
     return (
-      <div className="min-h-[calc(100vh-100px)] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30">
+      <div className="min-h-[calc(100vh-100px)] flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
         <div className="w-full max-w-2xl px-4">
           {/* Badge */}
           <div className="flex justify-center mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full text-white text-[11px] font-semibold shadow-lg shadow-blue-500/25">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-[11px] font-semibold border border-white/20">
               <Sparkles size={14} />
               Consulta en tiempo real
             </div>
@@ -129,24 +129,24 @@ export default function PortalPage() {
 
           {/* Título */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
               Consulta tu Crédito Hipotecario
             </h1>
-            <p className="text-sm text-slate-500 max-w-md mx-auto">
+            <p className="text-sm text-blue-200/70 max-w-md mx-auto">
               Ingresa tu RUT para conocer el estado actual de tu solicitud y subir documentos requeridos
             </p>
           </div>
 
           {/* Card principal */}
-          <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-xl p-6 sm:p-8">
             {/* Input RUT */}
             <div className="mb-6">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+              <label className="text-[10px] font-bold text-blue-200/70 uppercase tracking-widest block mb-3">
                 RUT DEL TITULAR
               </label>
               <div className="flex gap-3">
                 <div className="flex-1 relative">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300/50" />
                   <input
                     type="text"
                     value={rutIngresado}
@@ -155,17 +155,17 @@ export default function PortalPage() {
                       setError("");
                     }}
                     placeholder="Ej: 12.345.678-9"
-                    className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-base text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                    className="w-full h-14 pl-12 pr-4 bg-white/10 border border-white/20 rounded-2xl text-base text-white placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 transition-all font-mono"
                     onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
                   />
                 </div>
                 <button
                   onClick={handleBuscar}
                   disabled={!rutIngresado || buscando}
-                  className="h-14 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/25"
+                  className="h-14 px-8 bg-white text-blue-900 rounded-2xl text-sm font-semibold hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
                 >
                   {buscando ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-900 rounded-full animate-spin" />
                   ) : (
                     <Search size={18} />
                   )}
@@ -176,30 +176,30 @@ export default function PortalPage() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl mb-6">
-                <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
-                <span className="text-sm text-red-600">{error}</span>
+              <div className="flex items-center gap-3 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl mb-6">
+                <AlertTriangle size={16} className="text-red-400 flex-shrink-0" />
+                <span className="text-sm text-red-300">{error}</span>
               </div>
             )}
 
             {/* RUTs de prueba */}
-            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                <span className="text-xs font-bold text-blue-700">RUTs de prueba disponibles</span>
+                <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                <span className="text-xs font-bold text-blue-200">RUTs de prueba disponibles</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {RUTS_PRUEBA.map((item) => (
                   <button
                     key={item.rut}
                     onClick={() => handleSeleccionarRut(item.rut)}
-                    className={`text-left p-4 bg-white border-2 rounded-xl transition-all hover:border-blue-400 hover:shadow-md ${
-                      rutIngresado === item.rut ? "border-blue-500 shadow-md" : "border-slate-100"
+                    className={`text-left p-4 bg-white/10 border-2 rounded-xl transition-all hover:bg-white/20 hover:border-white/30 ${
+                      rutIngresado === item.rut ? "border-blue-400 shadow-md" : "border-white/10"
                     }`}
                   >
-                    <div className="text-sm font-bold text-slate-800 font-mono">{item.rut}</div>
-                    <div className="text-xs text-slate-500 mt-1">{item.nombre}</div>
-                    <div className="text-[10px] text-blue-600 font-semibold mt-1">{item.estado}</div>
+                    <div className="text-sm font-bold text-white font-mono">{item.rut}</div>
+                    <div className="text-xs text-blue-200/70 mt-1">{item.nombre}</div>
+                    <div className="text-[10px] text-blue-300 font-semibold mt-1">{item.estado}</div>
                   </button>
                 ))}
               </div>
@@ -208,10 +208,10 @@ export default function PortalPage() {
 
           {/* Footer */}
           <div className="text-center mt-6">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-blue-200/50">
               ¿No tienes tu RUT? Contacta a tu ejecutivo comercial
             </p>
-            <a href="tel:+56221234567" className="text-sm text-blue-600 font-semibold hover:text-blue-700">
+            <a href="tel:+56221234567" className="text-sm text-white font-semibold hover:text-blue-200">
               +56 2 2123 4567
             </a>
           </div>
