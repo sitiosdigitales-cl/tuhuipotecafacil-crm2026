@@ -1,36 +1,38 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { TrendingDown, Info } from "lucide-react";
+import { TrendingDown } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
+import { ETAPAS_CONFIG } from "@/tipos";
+import type { Etapa } from "@/tipos";
 
-const COLORES: Record<string, string> = {
-  NUEVO_LEAD: "#3B82F6", CONTACTO_INICIAL: "#6366F1", CONTACTADO: "#8B5CF6",
-  INTERESADO: "#A855F7", CALIFICACION_COMERCIAL: "#D946EF", DOCS_PENDIENTES: "#F97316",
-  DOCS_PARCIALES: "#FB923C", DOCS_COMPLETAS: "#22C55E", EVALUACION_BANCARIA: "#06B6D4",
-  PREAPROBADO: "#14B8A6", APROBADO: "#10B981", FIRMA_DIGITAL: "#059669",
-  NOTARIA: "#047857", CREDITO_PAGADO: "#065F46", CLIENTE_FINALIZADO: "#064E3B",
-};
-
-const LABELS: Record<string, string> = {
-  NUEVO_LEAD: "Nuevo Lead", CONTACTO_INICIAL: "Contacto Inicial", CONTACTADO: "Contactado",
-  INTERESADO: "Interesado", CALIFICACION_COMERCIAL: "Calificación", DOCS_PENDIENTES: "Doc. Pendiente",
-  DOCS_PARCIALES: "Doc. Parcial", DOCS_COMPLETAS: "Doc. Completa", EVALUACION_BANCARIA: "Evaluación",
-  PREAPROBADO: "Preaprobado", APROBADO: "Aprobado", FIRMA_DIGITAL: "Firma",
-  NOTARIA: "Notaría", CREDITO_PAGADO: "Desembolso",
-};
+// Etapas del pipeline comercial - se pueden configurar desde aquí
+const ETAPAS_PIPELINE: Etapa[] = [
+  "NUEVO_LEAD",
+  "CONTACTO_INICIAL",
+  "CONTACTADO",
+  "INTERESADO",
+  "CALIFICACION_COMERCIAL",
+  "DOCS_PENDIENTES",
+  "DOCS_COMPLETAS",
+  "EVALUACION_BANCARIA",
+  "PREAPROBADO",
+  "APROBADO",
+  "FIRMA_DIGITAL",
+  "NOTARIA",
+  "CREDITO_PAGADO",
+];
 
 export function GraficoEmbudo() {
   const { leads } = useLeads();
   const [etapaSeleccionada, setEtapaSeleccionada] = useState<number | null>(null);
 
   const datos = useMemo(() => {
-    const etapasVisibles = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "DOCS_COMPLETAS", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO"];
-    return etapasVisibles.map((etapa) => ({
+    return ETAPAS_PIPELINE.map((etapa) => ({
       key: etapa,
-      label: LABELS[etapa] || etapa,
+      label: ETAPAS_CONFIG[etapa]?.label || etapa,
       valor: leads.filter((l) => l.etapa === etapa).length,
-      color: COLORES[etapa] || "#6B7280",
+      color: ETAPAS_CONFIG[etapa]?.color || "#6B7280",
     }));
   }, [leads]);
 
@@ -41,7 +43,7 @@ export function GraficoEmbudo() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Embudo de conversión</h3>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Flujo de leads por etapa</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Flujo de leads por etapa del pipeline</p>
         </div>
         <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-1 rounded-lg font-medium">Global</span>
       </div>
