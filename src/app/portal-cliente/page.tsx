@@ -133,53 +133,16 @@ export default function PortalClientePage() {
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [perfilGuardado, setPerfilGuardado] = useState(false);
 
-  // RUTs de ejemplo que siempre funcionan (primeros leads del sistema)
+  // RUTs de clientes reales del sistema
   const rutsEjemplo = useMemo(() => {
-    if (leads.length > 0) {
-      return leads.slice(0, 6).map((l) => ({
-        rut: l.rut,
-        nombre: `${l.nombre} ${l.apellido}`,
-        etapa: ETAPAS_CONFIG[l.etapa]?.label || l.etapa,
-      }));
-    }
-    // RUTs fijos de respaldo
-    return [
-      { rut: "12.345.678-5", nombre: "María González", etapa: "Contactado" },
-      { rut: "15.234.567-8", nombre: "Carlos Rojas", etapa: "Documentos" },
-      { rut: "18.765.432-1", nombre: "Juan Pérez", etapa: "Preaprobado" },
-      { rut: "11.222.333-4", nombre: "Ana Torres", etapa: "Interesado" },
-      { rut: "16.543.210-K", nombre: "Pedro Gómez", etapa: "Nuevo Lead" },
-      { rut: "19.876.543-2", nombre: "Laura Sánchez", etapa: "Aprobado" },
-    ];
+    return leads.slice(0, 6).map((l) => ({
+      rut: l.rut,
+      nombre: `${l.nombre} ${l.apellido}`,
+      etapa: ETAPAS_CONFIG[l.etapa]?.label || l.etapa,
+    }));
   }, [leads]);
 
-  // Lead de prueba hardcodeado que siempre funciona
-  const leadPrueba = useMemo(() => ({
-    id: "lead-prueba-001",
-    nombre: "Juan Carlos",
-    apellido: "Silva Muñoz",
-    rut: "16.567.890-1",
-    email: "juan.silva@gmail.com",
-    telefono: "+56987654321",
-    situacionLaboral: "INDEPENDIENTE" as const,
-    enDicom: false,
-    dicomDetalle: "Sin deudas registradas",
-    origen: "REFERIDO" as const,
-    etapa: "DOCS_COMPLETAS" as const,
-    prioridad: "ALTA" as const,
-    banco: "Banco de Chile",
-    tipoCredito: "Crédito Hipotecario",
-    montoSolicitado: 150000000,
-    valorPropiedad: 220000000,
-    pieDisponible: 70000000,
-    rentaMensual: "$3.500.000",
-    nombreEjecutivo: "Andrés Pérez",
-    notas: "Cliente interesado en crédito hipotecario para propiedad en Las Condes",
-    creadoEn: new Date(Date.now() - 20 * 86400000),
-    diasEnEtapa: 5,
-  }), []);
-
-  const handleBuscar = () => {
+  const handleBuscar = async () => {
     if (!rut.trim()) {
       setError("Por favor ingresa tu RUT para continuar");
       return;
@@ -188,101 +151,80 @@ export default function PortalClientePage() {
     setBuscando(true);
     setError("");
 
-    setTimeout(async () => {
+    try {
       // Normalizar el RUT ingresado
       const normalizarRut = (r: string) => r.replace(/\./g, "").replace("-", "").replace(/\s/g, "").toLowerCase();
       const rutIngresado = normalizarRut(rut);
 
-      // Buscar lead de prueba primero
-      let lead: Lead | null = null;
-      if (rutIngresado === normalizarRut(leadPrueba.rut)) {
-        lead = leadPrueba;
-      }
+      // Buscar en la API
+      const response = await fetch(`/api/leads?busqueda=${encodeURIComponent(rut)}`);
+      const data = await response.json();
 
-      // Si no es el lead de prueba, buscar en los leads del sistema
-      if (!lead) {
-        const found = leads.find((l) => {
+      if (data.success && data.data && data.data.length > 0) {
+        // Encontrar el lead que coincida con el RUT
+        const leadEncontrado = data.data.find((l: any) => {
           const rutLead = normalizarRut(l.rut);
           return rutLead === rutIngresado || (rutIngresado.length >= 6 && rutLead.includes(rutIngresado));
         });
-        if (found) lead = found;
-      }
 
-      // Si no se encuentra, crear un lead demo
-      if (!lead) {
-        const nombres = ["María", "Carlos", "Juan", "Ana", "Pedro", "Laura", "Roberto", "Fernanda", "Diego", "Valentina"];
-        const apellidos = ["González", "Rojas", "Pérez", "Torres", "Gómez", "Sánchez", "Silva", "Díaz", "Morales", "Torres"];
-        const bancos = ["Banco de Chile", "Santander", "Bci", "Itaú", "Scotiabank"];
-        const etapas: Etapa[] = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO"];
+        if (leadEncontrado) {
+          const lead: Lead = {
+            ...leadEncontrado,
+            creadoEn: new Date(leadEncontrado.creadoEn),
+          };
+          setCliente(lead);
+          setError("");
 
-        const idx = Math.floor(Math.random() * nombres.length);
-        const monto = Math.floor(Math.random() * 200 + 80) * 1000000;
-
-        lead = {
-          id: `demo-${Date.now()}`,
-          nombre: nombres[idx],
-          apellido: apellidos[idx],
-          rut: rut,
-          email: `${nombres[idx].toLowerCase()}.${apellidos[idx].toLowerCase()}@email.cl`,
-          telefono: `+569${Math.floor(Math.random() * 90000000 + 10000000)}`,
-          situacionLaboral: Math.random() > 0.5 ? "DEPENDIENTE" : "INDEPENDIENTE",
-          enDicom: false,
-          origen: "REFERIDO" as const,
-          etapa: etapas[Math.floor(Math.random() * etapas.length)],
-          prioridad: "MEDIA" as const,
-          banco: bancos[Math.floor(Math.random() * bancos.length)],
-          montoSolicitado: monto,
-          valorPropiedad: monto + Math.floor(Math.random() * 50 + 20) * 1000000,
-          pieDisponible: Math.floor(Math.random() * 50 + 10) * 1000000,
-          tipoCredito: "Crédito Hipotecario",
-          creadoEn: new Date(Date.now() - Math.random() * 30 * 86400000),
-          diasEnEtapa: Math.floor(Math.random() * 15) + 1,
-        };
-      }
-
-      if (lead) {
-        setCliente(lead);
-        setError("");
-
-        // Cargar documentos reales desde la API
-        try {
-          const docsRes = await fetch(`/api/documentos?leadId=${lead.id}`);
-          const docsData = await docsRes.json();
-          if (docsData.success && docsData.data && docsData.data.length > 0) {
-            setDocumentos(docsData.data.map((d: any) => ({
-              id: d.id,
-              nombre: d.nombre,
-              tipo: d.tipo,
-              estado: d.estado?.toLowerCase() || "pendiente",
-              fechaSubida: d.creadoEn ? new Date(d.creadoEn) : undefined,
-              tamaño: d.tamaño || undefined,
-            })));
-          } else {
-            // Documentos base según tipo de trabajador
-            const docsBase = (lead.situacionLaboral === "INDEPENDIENTE" ? [
-              { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
-              { id: "carpeta-trib", nombre: "Carpeta Tributaria", tipo: "carpeta-trib", estado: "pendiente" as const },
-              { id: "renta", nombre: "Declaración de Renta", tipo: "renta", estado: "pendiente" as const },
-              { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
-            ] : [
-              { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
-              { id: "liq-sueldo", nombre: "Liquidaciones de Sueldo", tipo: "liq-sueldo", estado: "pendiente" as const },
-              { id: "afp", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" as const },
-              { id: "antiguedad", nombre: "Certificado Antigüedad", tipo: "antiguedad", estado: "pendiente" as const },
-              { id: "domicilio", nombre: "Comprobante de Domicilio", tipo: "domicilio", estado: "pendiente" as const },
-              { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
-            ]);
-            setDocumentos(docsBase);
+          // Cargar documentos reales desde la API
+          try {
+            const docsRes = await fetch(`/api/documentos?leadId=${lead.id}`);
+            const docsData = await docsRes.json();
+            if (docsData.success && docsData.data && docsData.data.length > 0) {
+              setDocumentos(docsData.data.map((d: any) => ({
+                id: d.id,
+                nombre: d.nombre,
+                tipo: d.tipo,
+                estado: d.estado?.toLowerCase() || "pendiente",
+                fechaSubida: d.creadoEn ? new Date(d.creadoEn) : undefined,
+                tamaño: d.tamaño || undefined,
+              })));
+            } else {
+              // Documentos base según tipo de trabajador
+              const docsBase = (lead.situacionLaboral === "INDEPENDIENTE" ? [
+                { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
+                { id: "carpeta-trib", nombre: "Carpeta Tributaria", tipo: "carpeta-trib", estado: "pendiente" as const },
+                { id: "renta", nombre: "Declaración de Renta", tipo: "renta", estado: "pendiente" as const },
+                { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
+              ] : [
+                { id: "cedula", nombre: "Cédula de Identidad", tipo: "cedula", estado: "pendiente" as const },
+                { id: "liq-sueldo", nombre: "Liquidaciones de Sueldo", tipo: "liq-sueldo", estado: "pendiente" as const },
+                { id: "afp", nombre: "Certificado AFP", tipo: "afp", estado: "pendiente" as const },
+                { id: "antiguedad", nombre: "Certificado Antigüedad", tipo: "antiguedad", estado: "pendiente" as const },
+                { id: "domicilio", nombre: "Comprobante de Domicilio", tipo: "domicilio", estado: "pendiente" as const },
+                { id: "dicom", nombre: "Informe DICOM", tipo: "dicom", estado: "pendiente" as const },
+              ]);
+              setDocumentos(docsBase);
+            }
+          } catch {
+            setDocumentos([]);
           }
-        } catch {
+        } else {
+          setError("RUT no encontrado. Verifica el RUT e intenta nuevamente.");
+          setCliente(null);
           setDocumentos([]);
         }
       } else {
-        setError("Error al cargar los datos. Intenta nuevamente.");
+        setError("RUT no encontrado. Verifica el RUT e intenta nuevamente.");
         setCliente(null);
+        setDocumentos([]);
       }
+    } catch {
+      setError("Error al buscar el cliente. Intenta nuevamente.");
+      setCliente(null);
+      setDocumentos([]);
+    } finally {
       setBuscando(false);
-    }, 1200);
+    }
   };
 
   const seleccionarRutEjemplo = (rutEjemplo: string) => {
