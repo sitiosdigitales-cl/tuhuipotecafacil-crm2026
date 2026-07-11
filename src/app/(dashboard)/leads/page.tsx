@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -109,7 +109,19 @@ export default function LeadsPage() {
     setUltimaActualizacion(new Date());
   };
 
-  const leadsFiltrados = leads
+  // Leads visibles según rol (consistente con Pipeline)
+  const leadsVisibles = useMemo(() => {
+    if (esSuperAdmin) return leads;
+    const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+    return leads.filter((lead) => {
+      // Leads nuevos sin asignar: siempre visibles
+      if (lead.etapa === "NUEVO_LEAD") return true;
+      // Leads en otras etapas: solo si estoy asignado
+      return lead.nombreEjecutivo === nombreCompleto;
+    });
+  }, [leads, esSuperAdmin, usuarioActual]);
+
+  const leadsFiltrados = leadsVisibles
     .filter((lead) => {
       const coincideBusqueda =
         !busqueda ||
@@ -131,11 +143,11 @@ export default function LeadsPage() {
     });
 
   const stats = {
-    total: leads.length,
-    nuevosHoy: leads.filter((l) => l.etapa === "NUEVO_LEAD").length,
-    enPipeline: leads.filter((l) => !["CLIENTE_FINALIZADO", "CREDITO_PAGADO"].includes(l.etapa)).length,
-    aprobados: leads.filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)).length,
-    montoTotal: leads.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0),
+    total: leadsFiltrados.length,
+    nuevosHoy: leadsFiltrados.filter((l) => l.etapa === "NUEVO_LEAD").length,
+    enPipeline: leadsFiltrados.filter((l) => !["CLIENTE_FINALIZADO", "CREDITO_PAGADO"].includes(l.etapa)).length,
+    aprobados: leadsFiltrados.filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)).length,
+    montoTotal: leadsFiltrados.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0),
   };
 
   const totalPaginas = Math.ceil(leadsFiltrados.length / LEADS_POR_PAGINA);

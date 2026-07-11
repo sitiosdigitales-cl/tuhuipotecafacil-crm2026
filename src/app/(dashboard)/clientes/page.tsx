@@ -37,6 +37,7 @@ import {
 import { ETAPAS_CONFIG, ORIGEN_LABELS, SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/lib/contexts/UserContext";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { toast } from "sonner";
 import type { Lead, SituacionLaboral } from "@/tipos";
@@ -68,6 +69,7 @@ const ETAPAS_FILTRO = [
 export default function ClientesPage() {
   const router = useRouter();
   const { leads, agregarLead, actualizarLead } = useLeads();
+  const { usuarioActual, esSuperAdmin } = useUser();
   const [busqueda, setBusqueda] = useState("");
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [filtroEtapa, setFiltroEtapa] = useState("todos");
@@ -76,10 +78,18 @@ export default function ClientesPage() {
   const [editarOpen, setEditarOpen] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Lead | null>(null);
 
-  const clientes = leads;
+  // Leads visibles según rol (consistente con Pipeline y Leads)
+  const clientesVisibles = useMemo(() => {
+    if (esSuperAdmin) return leads;
+    const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+    return leads.filter((lead) => {
+      if (lead.etapa === "NUEVO_LEAD") return true;
+      return lead.nombreEjecutivo === nombreCompleto;
+    });
+  }, [leads, esSuperAdmin, usuarioActual]);
 
   const clientesFiltrados = useMemo(() => {
-    return clientes
+    return clientesVisibles
       .filter((lead) => {
         const coincideBusqueda = !busqueda ||
           lead.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -100,7 +110,7 @@ export default function ClientesPage() {
         }
         return 0;
       });
-  }, [clientes, busqueda, filtroEtapa, ordenarPor]);
+  }, [clientesVisibles, busqueda, filtroEtapa, ordenarPor]);
 
   const stats = useMemo(() => ({
     total: clientesFiltrados.length,
