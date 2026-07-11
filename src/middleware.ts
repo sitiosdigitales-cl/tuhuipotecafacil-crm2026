@@ -5,8 +5,13 @@ const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/ta
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // No bloquear rutas de API
+  // No bloquear rutas de API - los endpoints públicos no necesitan auth
   if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // No bloquear rutas de archivos estáticos
+  if (pathname.startsWith("/_next/") || pathname.startsWith("/favicon")) {
     return NextResponse.next();
   }
 
