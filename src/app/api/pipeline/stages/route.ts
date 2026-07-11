@@ -112,15 +112,20 @@ export async function PUT(request: NextRequest) {
 
     // Intentar actualizar en la base de datos
     try {
-      await supabase
+      const { error } = await supabase
         .from("pipeline_stages")
-        .update({ nombre, color, orden, activa })
+        .update({ nombre, color, orden, activa, updated_at: new Date().toISOString() })
         .eq("id", id);
-    } catch {
-      // Ignorar errores
+
+      if (error) {
+        console.log("Error updating in DB:", error.message);
+      }
+    } catch (e) {
+      console.log("Error updating in DB:", e);
     }
 
-    return NextResponse.json({ success: true, data: etapasEnMemoria[index] });
+    const etapaActualizada = index !== -1 ? etapasEnMemoria[index] : { id, nombre, color, orden, activa };
+    return NextResponse.json({ success: true, data: etapaActualizada });
   } catch {
     return NextResponse.json({ success: false, error: "Error al actualizar etapa" }, { status: 500 });
   }
