@@ -25,6 +25,7 @@ import {
   AlertCircle,
   FileCheck,
   FileClock,
+  Trash2,
 } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { ETAPAS_CONFIG, SITUACION_LABORAL_CONFIG } from "@/tipos";
@@ -72,7 +73,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [buscando, setBuscando] = useState(false);
   const [cliente, setCliente] = useState<Lead | null>(null);
   const [error, setError] = useState("");
-  const [tabActiva, setTabActiva] = useState<"resumen" | "perfil">("resumen");
+  const [tabActiva, setTabActiva] = useState<"resumen" | "perfil" | "documentos">("resumen");
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [perfilEditado, setPerfilEditado] = useState({
     nombre: "", apellido: "", email: "", telefono: "",
@@ -82,6 +83,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     situacionLaboral: "" as SituacionLaboral,
   });
   const [guardando, setGuardando] = useState(false);
+  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number }[]>([]);
+  const [arrastrando, setArrastrando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
 
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
     rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
@@ -170,6 +174,43 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     setGuardando(false);
   };
 
+  // Funciones de documentos
+  const handleSubirDocumento = async (files: FileList | null) => {
+    if (!files || !cliente) return;
+    setSubiendo(true);
+    for (const file of Array.from(files)) {
+      const nuevoDoc = {
+        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        nombre: file.name,
+        estado: "subido",
+        fecha: new Date().toLocaleDateString("es-CL"),
+        tamaño: file.size,
+      };
+      setDocumentos((prev) => [...prev, nuevoDoc]);
+      toast.success("Documento subido", { description: file.name });
+    }
+    setSubiendo(false);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setArrastrando(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setArrastrando(false); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation(); setArrastrando(false);
+    handleSubirDocumento(e.dataTransfer.files);
+  };
+
+  const eliminarDocumento = (id: string) => {
+    setDocumentos((prev) => prev.filter((d) => d.id !== id));
+    toast.success("Documento eliminado");
+  };
+
+  const formatTamano = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   // Vista de búsqueda
   if (!cliente) {
     return (
@@ -255,6 +296,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
         <div className="flex gap-1">
           {[
             { id: "resumen" as const, label: "Resumen", icono: <TrendingUp size={15} /> },
+            { id: "documentos" as const, label: "Documentos", icono: <FileText size={15} /> },
             { id: "perfil" as const, label: "Mi Perfil", icono: <User size={15} /> },
           ].map((tab) => (
             <button key={tab.id} onClick={() => setTabActiva(tab.id)}
@@ -406,6 +448,125 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             </div>
           </div>
             </>
+          )}
+
+          {/* Tab Documentos */}
+          {tabActiva === "documentos" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Mis Documentos</h2>
+                  <p className="text-[11px] text-slate-400">Sube los documentos requeridos para tu solicitud</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-teal-600">{documentos.length}</div>
+                  <div className="text-[10px] text-slate-400">documentos</div>
+                </div>
+              </div>
+
+              {/* Zona de subida */}
+              <div
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-input-portal")?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-6 ${
+                  arrastrando
+                    ? "border-teal-400 bg-teal-50"
+                    : "border-slate-200 hover:border-teal-300 hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  id="file-input-portal"
+                  type="file"
+                  multiple
+                  onChange={(e) => handleSubirDocumento(e.target.files)}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+                <div className="flex flex-col items-center gap-3">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                    arrastrando ? "bg-teal-100" : "bg-slate-100"
+                  }`}>
+                    <Upload size={24} className={arrastrando ? "text-teal-500" : "text-slate-400"} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {arrastrando ? "Suelta los archivos aquí" : "Arrastra archivos o haz clic para subir"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      PDF, JPG, PNG, DOC - Máx. 10MB por archivo
+                    </p>
+                  </div>
+                  {subiendo && (
+                    <div className="flex items-center gap-2 text-[11px] text-teal-600">
+                      <div className="w-4 h-4 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
+                      Subiendo...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Documentos Requeridos */}
+              <div className="mb-6">
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Requeridos</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"].map((doc) => {
+                    const subido = documentos.some((d) => d.nombre.toLowerCase().includes(doc.id));
+                    return (
+                      <div key={doc.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          subido ? "bg-emerald-100" : "bg-white border border-slate-200"
+                        }`}>
+                          {subido ? <CheckCircle size={14} className="text-emerald-500" /> : <FileText size={14} className="text-slate-400" />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[11px] font-semibold text-slate-700">{doc.nombre}</div>
+                          {doc.obligatorio && <div className="text-[9px] text-red-500">Obligatorio</div>}
+                        </div>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
+                          subido ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {subido ? "Subido" : "Pendiente"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Lista de documentos subidos */}
+              {documentos.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Subidos</h3>
+                  <div className="space-y-2">
+                    {documentos.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group">
+                        <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center">
+                          <FileCheck size={16} className="text-teal-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
+                          <div className="text-[10px] text-slate-400">
+                            {doc.tamaño ? formatTamano(doc.tamaño) : ""} {doc.fecha && `• ${doc.fecha}`}
+                          </div>
+                        </div>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                          En revisión
+                        </span>
+                        <button
+                          onClick={() => eliminarDocumento(doc.id)}
+                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={12} className="text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Tab Mi Perfil */}
