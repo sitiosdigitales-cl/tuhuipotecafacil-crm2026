@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 
-// Endpoint público para recibir leads desde formularios web (Elementor, WordPress, etc.)
+// Endpoint público para recibir leads desde formularios web
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
 
     console.log("Webhook recibido:", JSON.stringify(body));
 
-    // Extraer campos
     const nombre = body.nombre || body.first_name || body.Name || "";
     const apellido = body.apellido || body.last_name || "";
     
@@ -38,27 +37,23 @@ export async function POST(request: NextRequest) {
 
     const leadId = crypto.randomUUID();
 
-    const insertData = {
-      id: leadId,
-      nombre: nombre || "Sin nombre",
-      apellido: apellido || "Sin apellido",
-      rut: body.rut || body.Rut || "",
-      email: body.email || body["Correo Electrónico"] || null,
-      telefono: body.telefono || body["Número de Teléfono"] || null,
-      origen: "WEB",
-      etapa: "NUEVO_LEAD",
-      prioridad: "MEDIA",
-      situacionlaboral: "DEPENDIENTE",
-      endicom: false,
-      diasenetapa: 0,
-      creadoEn: new Date().toISOString(),
-    };
-
-    console.log("Insertando lead:", JSON.stringify(insertData));
-
+    // Usar toSupabaseColumns como en la ruta /api/leads
     const { data, error } = await supabase
       .from("leads")
-      .insert(insertData)
+      .insert(toSupabaseColumns({
+        id: leadId,
+        nombre: nombre || "Sin nombre",
+        apellido: apellido || "Sin apellido",
+        rut: body.rut || body.Rut || "",
+        email: body.email || body["Correo Electrónico"] || null,
+        telefono: body.telefono || body["Número de Teléfono"] || null,
+        origen: "WEB",
+        etapa: "NUEVO_LEAD",
+        prioridad: "MEDIA",
+        situacionLaboral: "DEPENDIENTE",
+        enDicom: false,
+        diasEnEtapa: 0,
+      }))
       .select()
       .single();
 
