@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 
-// Endpoint público para recibir leads desde formularios web
+// Endpoint público para recibir leads desde formularios web (Elementor)
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,41 +26,85 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("Webhook recibido:", JSON.stringify(body));
+    console.log("Webhook recibido:", JSON.stringify(body, null, 2));
 
+    // Mapear campos del formulario Elementor al CRM
     const nombre = body.nombre || body.first_name || body.Name || "";
-    const apellido = body.apellido || body.last_name || "";
+    const apellido = body.apellido || body.last_name || body.Apellido || "";
+    const rut = body.rut || body.Rut || body.RUT || "";
+    const email = body.email || body["Correo Electrónico"] || body.correo || null;
+    const telefono = body.telefono || body["Número de Teléfono"] || body.telefono || null;
     
+    // Mapear situación laboral
+    let situacionLaboral = "DEPENDIENTE";
+    const situacionRaw = body["¿Cuál es tu situación laboral?"] || body.situacionLaboral || "";
+    if (situacionRaw.toLowerCase().includes("independiente")) {
+      situacionLaboral = "INDEPENDIENTE";
+    }
+
+    // Mapear DICOM
+    let enDicom = false;
+    const dicomRaw = body["¿Estás actualmente en DICOM?"] || body.enDicom || "";
+    if (dicomRaw.toLowerCase().includes("sí") || dicomRaw.toLowerCase().includes("si")) {
+      enDicom = true;
+    }
+    const dicomDetalle = body["Si estás en DICOM, ¿corresponde?"] || body.dicomDetalle || null;
+
+    // Mapear renta
+    const rentaMensual = body["¿Cuál es tu renta mensual apro..."] || body["¿Cuál es tu renta mensual aproximada?"] || body.rentaMensual || null;
+
+    // Mapear complementar renta
+    let complementarRenta = false;
+    const complementarRaw = body["¿Deseas complementar renta?"] || body.complementarRenta || "";
+    if (complementarRaw.toLowerCase().includes("sí") || complementarRaw.toLowerCase().includes("si")) {
+      complementarRenta = true;
+    }
+
+    // Mapear tipo de crédito
+    const tipoCredito = body["¿Qué tipo de crédito buscas?"] || body.tipoCredito || null;
+
+    // Mapear cuenta pie
+    let cuentaPie = false;
+    const cuentaPieRaw = body["¿Cuentas con pie o ahorro inici..."] || body["¿Cuentas con pie o ahorro inicial?"] || body.cuentaPie || "";
+    if (cuentaPieRaw.toLowerCase().includes("sí") || cuentaPieRaw.toLowerCase().includes("si")) {
+      cuentaPie = true;
+    }
+
+    // Mapear comentarios
+    const comentarios = body["Comentarios adicionales"] || body.comentarios || body.notas || null;
+
     if (!nombre && !apellido) {
       return NextResponse.json({ success: false, error: "Nombre y apellido requeridos" }, { status: 400 });
     }
 
     const leadId = crypto.randomUUID();
 
-    // Misma estructura que /api/leads
     const { data, error } = await supabase
       .from("leads")
       .insert(toSupabaseColumns({
         id: leadId,
         nombre: nombre || "Sin nombre",
         apellido: apellido || "Sin apellido",
-        rut: body.rut || body.Rut || "",
-        email: body.email || body["Correo Electrónico"] || null,
-        telefono: body.telefono || body["Número de Teléfono"] || null,
+        rut: rut,
+        email: email,
+        telefono: telefono,
         origen: "WEB",
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
         nombreEjecutivo: null,
         banco: null,
-        tipoCredito: body.tipoCredito || null,
-        montoSolicitado: body.montoSolicitado ? parseFloat(body.montoSolicitado) : null,
+        tipoCredito: tipoCredito,
+        montoSolicitado: null,
         valorPropiedad: null,
         pieDisponible: null,
-        notas: body.comentarios || body.mensaje || null,
-        situacionLaboral: "DEPENDIENTE",
-        enDicom: false,
+        notas: comentarios,
+        situacionLaboral: situacionLaboral,
+        enDicom: enDicom,
+        dicomDetalle: dicomDetalle,
         diasEnEtapa: 0,
-        // Campos extendidos
+        rentaMensual: rentaMensual,
+        complementarRenta: complementarRenta,
+        cuentaPie: cuentaPie,
         cargasLegales: null,
         estadoCivil: null,
         regimenMatrimonial: null,
