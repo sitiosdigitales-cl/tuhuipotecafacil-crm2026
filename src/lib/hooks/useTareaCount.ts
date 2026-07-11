@@ -7,7 +7,7 @@ export function useTareaCount() {
 
   const cargarCount = useCallback(async () => {
     try {
-      const response = await fetch("/api/tareas");
+      const response = await fetch("/api/tareas", { credentials: "include" });
       const data = await response.json();
       if (data.success && data.data) {
         const pendientes = data.data.filter(
