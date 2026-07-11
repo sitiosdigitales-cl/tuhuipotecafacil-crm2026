@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
-import { requireRole, forbidden } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
-  // Solo SUPER_ADMIN y ADMIN pueden cambiar de usuario
-  const auth = requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
-  if (!auth) return forbidden();
-
   try {
     const { userId } = await request.json();
 
@@ -18,7 +13,7 @@ export async function POST(request: NextRequest) {
     // Buscar el usuario destino
     const { data: usuario, error } = await supabase
       .from("usuarios")
-      .select("id, nombre, apellido, email, rol")
+      .select("id, nombre, apellido, email, rol, estado")
       .eq("id", userId)
       .single();
 
@@ -27,13 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que el usuario esté activo
-    const { data: usuarioCompleto } = await supabase
-      .from("usuarios")
-      .select("estado")
-      .eq("id", userId)
-      .single();
-
-    if (usuarioCompleto?.estado !== "ACTIVO") {
+    if (usuario.estado !== "ACTIVO") {
       return NextResponse.json({ success: false, error: "Usuario inactivo" }, { status: 400 });
     }
 

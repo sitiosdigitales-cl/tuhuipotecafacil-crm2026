@@ -32,7 +32,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const cargarUsuarios = useCallback(async () => {
     try {
-      const response = await fetch("/api/usuarios");
+      const response = await fetch("/api/usuarios", { credentials: "include" });
       const data = await response.json();
       if (data.success && data.data) {
         setUsuarios(data.data.map((u: any) => ({
@@ -79,6 +79,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch("/api/auth/switch-user", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: usuarioId }),
       });
