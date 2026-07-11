@@ -95,7 +95,7 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function cargarUsuario() {
       try {
-        const res = await fetch(`/api/usuarios/${id}`);
+        const res = await fetch(`/api/usuarios/${id}`, { credentials: "include" });
         const json = await res.json();
         if (json.success && json.data) {
           setUsuario({

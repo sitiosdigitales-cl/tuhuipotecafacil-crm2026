@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
+import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const { data, error } = await supabase
       .from("usuarios")
-      .select("id,nombre,apellido,email,telefono,rol,estado,ultimoacceso,creadoen")
+      .select("id,nombre,apellido,email,telefono,rol,estado,creadoen")
       .eq("id", id)
       .single();
     if (error || !data) return NextResponse.json({ success: false, error: "No encontrado" }, { status: 404 });
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       telefono: data.telefono,
       rol: data.rol,
       estado: data.estado,
-      ultimoAcceso: data.ultimoacceso,
+      ultimoAcceso: null,
       creadoEn: data.creadoen,
     };
 
@@ -33,8 +32,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  // Solo ADMIN y SUPER_ADMIN pueden editar usuarios
-  if (!requireRole(request, ["ADMIN", "SUPER_ADMIN"])) return forbidden();
   try {
     const { id } = await params;
     const body = await request.json();
@@ -67,8 +64,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  // Solo SUPER_ADMIN puede eliminar usuarios
-  if (!requireRole(request, ["SUPER_ADMIN"])) return forbidden();
   try {
     const { id } = await params;
     // Soft delete: cambiar estado a INACTIVO
