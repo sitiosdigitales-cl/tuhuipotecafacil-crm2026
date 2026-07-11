@@ -19,44 +19,33 @@ export async function POST(request: NextRequest) {
     }
 
     const leadId = crypto.randomUUID();
+    const rut = body.Rut || body.rut || "";
+    const email = body["Correo Electrónico"] || body.email || null;
+    const telefono = body["Número de Teléfono"] || body.telefono || null;
 
-    // Usar SQL raw para evitar problemas con el schema cache
-    const { data, error } = await supabase.rpc('insert_lead_webhook', {
-      p_id: leadId,
-      p_nombre: nombre,
-      p_apellido: apellido,
-      p_rut: body.Rut || body.rut || "",
-      p_email: body["Correo Electrónico"] || body.email || null,
-      p_telefono: body["Número de Teléfono"] || body.telefono || null,
-    }).single();
+    // Usar SQL raw para evitar problemas con el schema cache de Supabase
+    const { data, error } = await supabase
+      .from("leads")
+      .insert({
+        id: leadId,
+        nombre: nombre,
+        apellido: apellido,
+        rut: rut,
+        email: email,
+        telefono: telefono,
+        origen: "WEB",
+        etapa: "NUEVO_LEAD",
+        prioridad: "MEDIA",
+        situacionlaboral: "DEPENDIENTE",
+        endicom: false,
+        diasenetapa: 0,
+      })
+      .select()
+      .single();
 
     if (error) {
-      // Si la función RPC no existe, usar insert directo
-      const { data: insertData, error: insertError } = await supabase
-        .from("leads")
-        .insert({
-          id: leadId,
-          nombre: nombre,
-          apellido: apellido,
-          rut: body.Rut || body.rut || "",
-          email: body["Correo Electrónico"] || body.email || null,
-          telefono: body["Número de Teléfono"] || body.telefono || null,
-          origen: "WEB",
-          etapa: "NUEVO_LEAD",
-          prioridad: "MEDIA",
-          situacionlaboral: "DEPENDIENTE",
-          endicom: false,
-          diasenetapa: 0,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Error Supabase:", insertError);
-        return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ success: true, data: insertData }, { status: 201 });
+      console.error("Error Supabase:", error);
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data }, { status: 201 });
