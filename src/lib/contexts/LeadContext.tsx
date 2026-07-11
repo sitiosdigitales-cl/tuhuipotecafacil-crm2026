@@ -27,7 +27,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const cargarLeads = useCallback(async () => {
     try {
-      const response = await fetch("/api/leads");
+      const response = await fetch("/api/leads", { credentials: "include" });
       const data = await response.json();
       if (data.success && data.data && data.data.length > 0) {
         setLeads(data.data.map((l: any) => ({
@@ -58,6 +58,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(leadData),
       });
@@ -86,6 +87,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`/api/leads/${id}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
       });
@@ -109,7 +111,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setLeads((prev) => prev.filter((l) => l.id !== id));
 
     try {
-      const response = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/leads/${id}`, { method: "DELETE", credentials: "include" });
 
       if (!response.ok && leadEliminado) {
         // Rollback si la API falla

@@ -3,34 +3,6 @@ import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
-  if (!auth) return unauthorized();
-
-  // CLIENTE solo puede ver sus propios leads
-  if (auth.rol === "CLIENTE") {
-    const { searchParams } = new URL(request.url);
-    const busqueda = searchParams.get("busqueda") || "";
-
-    // Buscar lead por RUT del cliente
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .ilike("rut", `%${busqueda}%`)
-      .limit(1);
-
-    if (error || !data || data.length === 0) {
-      return NextResponse.json({ success: true, data: [] });
-    }
-
-    // Verificar que el lead pertenece al cliente (por email)
-    const lead = data[0];
-    if (lead.email !== auth.email) {
-      return NextResponse.json({ success: true, data: [] });
-    }
-
-    return NextResponse.json({ success: true, data: fromSupabaseArray([lead]) });
-  }
-
   try {
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda") || "";
@@ -54,8 +26,8 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error al obtener leads:", error);
-      return NextResponse.json({ success: true, data: [] });
+      console.error("Error al obtener leads:", error.message, error.details);
+      return NextResponse.json({ success: true, data: [], error: error.message });
     }
 
     return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
