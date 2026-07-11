@@ -133,51 +133,36 @@ export default function ClientePerfilPage() {
   const router = useRouter();
   const routeParams = useParams();
   const id = routeParams.id as string;
-  const { leads, actualizarLead, cargando: leadsCargando } = useLeads();
+  const { actualizarLead } = useLeads();
   const { usuarioActual } = useUser();
   const { obtenerActividadesLead, agregarActividad } = useActivities();
-  const [leadFromApi, setLeadFromApi] = useState<Lead | null>(null);
+  const [lead, setLead] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  // Buscar lead en el contexto (reactivo sin loop infinito)
-  const lead = useMemo(() => {
-    if (!id) return null;
-    return leads.find((l) => l.id === id) || leadFromApi;
-  }, [id, leads, leadFromApi]);
-
-  // Cargar desde API solo si no está en el contexto
   useEffect(() => {
     if (!id) return;
-    if (leadsCargando) return;
-
-    const leadEncontrado = leads.find((l) => l.id === id);
-    if (leadEncontrado) {
-      setCargando(false);
-      return;
-    }
-
     let cancelado = false;
     async function cargarLead() {
       try {
         const res = await fetch(`/api/leads/${id}`, { credentials: "include" });
         if (cancelado) return;
         if (!res.ok) {
-          setLeadFromApi(null);
+          setLead(null);
           setCargando(false);
           return;
         }
         const json = await res.json();
         if (cancelado) return;
         if (json.success && json.data) {
-          setLeadFromApi({
+          setLead({
             ...json.data,
             creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
           });
         } else {
-          setLeadFromApi(null);
+          setLead(null);
         }
       } catch {
-        if (!cancelado) setLeadFromApi(null);
+        if (!cancelado) setLead(null);
       } finally {
         if (!cancelado) setCargando(false);
       }
@@ -201,6 +186,12 @@ export default function ClientePerfilPage() {
   const [editarOpen, setEditarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
 
+  // Obtener actividades reales del lead - DEBE estar antes de cualquier early return
+  const actividades = useMemo(() => {
+    if (!lead) return [];
+    return obtenerActividadesLead(lead.id);
+  }, [lead, obtenerActividadesLead]);
+
   if (cargando) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -216,11 +207,6 @@ export default function ClientePerfilPage() {
   const docsAprobados = documentos.filter((d) => d.estado === "APROBADO").length;
   const docsTotal = documentos.length;
   const porcentajeDocs = docsTotal > 0 ? Math.round((docsAprobados / docsTotal) * 100) : 0;
-
-  // Obtener actividades reales del lead
-  const actividades = useMemo(() => {
-    return obtenerActividadesLead(lead.id);
-  }, [lead.id, obtenerActividadesLead]);
 
   const handlePreview = (doc: DocumentoLead) => {
     setDocSeleccionado(doc);
