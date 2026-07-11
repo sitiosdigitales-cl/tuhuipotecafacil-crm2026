@@ -27,6 +27,8 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Webhook recibido:", JSON.stringify(body, null, 2));
+    console.log("Content-Type:", contentType);
+    console.log("Body keys:", Object.keys(body));
 
     // Buscar campos por diferentes nombres posibles
     const findField = (...keys: string[]): string => {
