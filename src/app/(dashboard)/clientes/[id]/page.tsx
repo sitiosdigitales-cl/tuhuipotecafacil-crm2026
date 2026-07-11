@@ -132,23 +132,40 @@ const TABS = [
 export default function ClientePerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const { actualizarLead } = useLeads();
+  const { leads, actualizarLead, cargando: leadsCargando } = useLeads();
   const { usuarioActual } = useUser();
   const { obtenerActividadesLead, agregarActividad } = useActivities();
   const [lead, setLead] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  // Cargar lead directamente desde la API
+  // Buscar lead en el contexto o cargar desde API
   useEffect(() => {
+    if (leadsCargando) return;
+
+    const leadEncontrado = leads.find((l) => l.id === id);
+    if (leadEncontrado) {
+      setLead(leadEncontrado);
+      setCargando(false);
+      return;
+    }
+
+    // Si no está en el contexto, intentar desde la API
     async function cargarLead() {
       try {
         const res = await fetch(`/api/leads/${id}`, { credentials: "include" });
+        if (!res.ok) {
+          setLead(null);
+          setCargando(false);
+          return;
+        }
         const json = await res.json();
         if (json.success && json.data) {
           setLead({
             ...json.data,
             creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
           });
+        } else {
+          setLead(null);
         }
       } catch {
         setLead(null);
@@ -157,7 +174,7 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
       }
     }
     cargarLead();
-  }, [id]);
+  }, [id, leads, leadsCargando]);
 
   const [tabActiva, setTabActiva] = useState("resumen");
   const [documentos, setDocumentos] = useState<DocumentoLead[]>(() => lead ? generarDocumentosLead(lead) : []);
