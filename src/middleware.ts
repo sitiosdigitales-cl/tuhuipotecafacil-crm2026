@@ -4,6 +4,8 @@ const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/ta
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  console.log("Middleware pathname:", pathname);
 
   // No bloquear rutas de API - los endpoints públicos no necesitan auth
   if (pathname.startsWith("/api/")) {
