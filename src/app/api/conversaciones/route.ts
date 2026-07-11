@@ -11,24 +11,28 @@ export async function GET(request: NextRequest) {
     let query = supabase.from("conversaciones").select("*");
 
     if (tipo) query = query.eq("tipo", tipo);
-    if (participante) {
-      query = query.contains("participantes", [participante]);
-    }
 
     const { data, error } = await query;
     if (error) return NextResponse.json({ success: true, data: [] });
 
-    const conversaciones = (data || []).map((c: any) => ({
+    let conversaciones = (data || []).map((c: any) => ({
       id: c.id,
       nombre: c.nombre,
       tipo: c.tipo,
       descripcion: c.descripcion,
-      participantes: c.participantes || [],
+      participantes: Array.isArray(c.participantes) ? c.participantes : (typeof c.participantes === 'string' ? JSON.parse(c.participantes) : []),
       mensajesNoLeidos: c.mensajesnoleidos || 0,
       esFijo: c.esfijo || false,
       creadoPor: c.creadopor,
       creadoEn: c.creadoen,
     }));
+
+    // Filtrar por participante si se especifica
+    if (participante) {
+      conversaciones = conversaciones.filter(c => 
+        c.participantes.includes(participante)
+      );
+    }
 
     return NextResponse.json({ success: true, data: conversaciones });
   } catch {
