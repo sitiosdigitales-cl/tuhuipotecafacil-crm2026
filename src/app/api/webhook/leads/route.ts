@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const leadId = crypto.randomUUID();
 
-    // Usar toSupabaseColumns como en la ruta /api/leads
+    // Misma estructura que /api/leads
     const { data, error } = await supabase
       .from("leads")
       .insert(toSupabaseColumns({
@@ -50,9 +50,39 @@ export async function POST(request: NextRequest) {
         origen: "WEB",
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
+        nombreEjecutivo: null,
+        banco: null,
+        tipoCredito: body.tipoCredito || null,
+        montoSolicitado: body.montoSolicitado ? parseFloat(body.montoSolicitado) : null,
+        valorPropiedad: null,
+        pieDisponible: null,
+        notas: body.comentarios || body.mensaje || null,
         situacionLaboral: "DEPENDIENTE",
         enDicom: false,
         diasEnEtapa: 0,
+        // Campos extendidos
+        cargasLegales: null,
+        estadoCivil: null,
+        regimenMatrimonial: null,
+        fechaNacimiento: null,
+        estudios: null,
+        profesion: null,
+        domicilioParticular: null,
+        comunaCiudad: null,
+        valorArriendo: null,
+        afp: null,
+        nombreEmpleador: null,
+        rutEmpresa: null,
+        fechaIngreso: null,
+        cargo: null,
+        rentaLiquida: null,
+        bancoAbonoRenta: null,
+        fechaPago: null,
+        direccionLaboral: null,
+        comunaCiudadLaboral: null,
+        telefonoLaboralFijo: null,
+        emailLaboral: null,
+        otrosIngresos: null,
       }))
       .select()
       .single();
