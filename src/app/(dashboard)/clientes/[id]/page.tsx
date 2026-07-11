@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -132,10 +132,32 @@ const TABS = [
 export default function ClientePerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const { leads, obtenerLead, actualizarLead } = useLeads();
+  const { actualizarLead } = useLeads();
   const { usuarioActual } = useUser();
   const { obtenerActividadesLead, agregarActividad } = useActivities();
-  const lead = obtenerLead(id) || leads[0];
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [cargando, setCargando] = useState(true);
+
+  // Cargar lead directamente desde la API
+  useEffect(() => {
+    async function cargarLead() {
+      try {
+        const res = await fetch(`/api/leads/${id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLead({
+            ...json.data,
+            creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
+          });
+        }
+      } catch {
+        setLead(null);
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarLead();
+  }, [id]);
 
   const [tabActiva, setTabActiva] = useState("resumen");
   const [documentos, setDocumentos] = useState<DocumentoLead[]>(() => lead ? generarDocumentosLead(lead) : []);
@@ -151,6 +173,15 @@ export default function ClientePerfilPage({ params }: { params: Promise<{ id: st
   const [notasReunion, setNotasReunion] = useState("");
   const [editarOpen, setEditarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
+
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-sm text-slate-500">Cargando cliente...</span>
+      </div>
+    );
+  }
 
   if (!lead) return null;
 
