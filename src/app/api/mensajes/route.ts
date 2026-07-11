@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .from("mensajes")
       .select("*")
       .eq("conversacionid", conversacionId)
-      .order("creadoEn", { ascending: true })
+      .order("creadoen", { ascending: true })
       .limit(limite);
 
     if (error) return NextResponse.json({ success: true, data: [] });
