@@ -28,53 +28,53 @@ export async function POST(request: NextRequest) {
 
     console.log("Webhook recibido:", JSON.stringify(body, null, 2));
 
-    // Mapear campos del formulario Elementor al CRM
-    const nombre = body.nombre || body.first_name || body.Name || "";
-    const apellido = body.apellido || body.last_name || body.Apellido || "";
-    const rut = body.rut || body.Rut || body.RUT || "";
-    const email = body.email || body["Correo Electrónico"] || body.correo || null;
-    const telefono = body.telefono || body["Número de Teléfono"] || body.telefono || null;
-    
-    // Mapear situación laboral
-    let situacionLaboral = "DEPENDIENTE";
-    const situacionRaw = body["¿Cuál es tu situación laboral?"] || body.situacionLaboral || "";
-    if (situacionRaw.toLowerCase().includes("independiente")) {
-      situacionLaboral = "INDEPENDIENTE";
-    }
+    // Buscar campos por diferentes nombres posibles
+    const findField = (...keys: string[]): string => {
+      for (const key of keys) {
+        if (body[key] !== undefined && body[key] !== null && body[key] !== "") {
+          return String(body[key]);
+        }
+      }
+      return "";
+    };
 
-    // Mapear DICOM
-    let enDicom = false;
-    const dicomRaw = body["¿Estás actualmente en DICOM?"] || body.enDicom || "";
-    if (dicomRaw.toLowerCase().includes("sí") || dicomRaw.toLowerCase().includes("si")) {
-      enDicom = true;
-    }
-    const dicomDetalle = body["Si estás en DICOM, ¿corresponde?"] || body.dicomDetalle || null;
+    // Datos personales
+    const nombre = findField("nombre", "first_name", "Name", "Nombre");
+    const apellido = findField("apellido", "last_name", "Apellido");
+    const rut = findField("rut", "Rut", "RUT");
+    const email = findField("email", "Correo Electrónico", "correo");
+    const telefono = findField("telefono", "Número de Teléfono", "teléfono");
 
-    // Mapear renta
-    const rentaMensual = body["¿Cuál es tu renta mensual apro..."] || body["¿Cuál es tu renta mensual aproximada?"] || body.rentaMensual || null;
+    // Situación laboral
+    const situacionRaw = findField("¿Cuál es tu situación laboral?", "situacionLaboral", "situacion_laboral");
+    const situacionLaboral = situacionRaw.toLowerCase().includes("independiente") ? "INDEPENDIENTE" : "DEPENDIENTE";
 
-    // Mapear complementar renta
-    let complementarRenta = false;
-    const complementarRaw = body["¿Deseas complementar renta?"] || body.complementarRenta || "";
-    if (complementarRaw.toLowerCase().includes("sí") || complementarRaw.toLowerCase().includes("si")) {
-      complementarRenta = true;
-    }
+    // DICOM
+    const dicomRaw = findField("¿Estás actualmente en DICOM?", "enDicom", "dicom");
+    const enDicom = dicomRaw.toLowerCase().includes("sí") || dicomRaw.toLowerCase().includes("si") || dicomRaw.toLowerCase().includes("yes");
+    const dicomDetalle = findField("Si estás en DICOM, ¿corresponde?", "dicomDetalle", "dicom_detalle");
 
-    // Mapear tipo de crédito
-    const tipoCredito = body["¿Qué tipo de crédito buscas?"] || body.tipoCredito || null;
+    // Renta
+    const rentaMensual = findField("¿Cuál es tu renta mensual apro...", "¿Cuál es tu renta mensual aproximada?", "rentaMensual", "renta_mensual");
 
-    // Mapear cuenta pie
-    let cuentaPie = false;
-    const cuentaPieRaw = body["¿Cuentas con pie o ahorro inici..."] || body["¿Cuentas con pie o ahorro inicial?"] || body.cuentaPie || "";
-    if (cuentaPieRaw.toLowerCase().includes("sí") || cuentaPieRaw.toLowerCase().includes("si")) {
-      cuentaPie = true;
-    }
+    // Complementar renta
+    const complementarRaw = findField("¿Deseas complementar renta?", "complementarRenta", "complementar_renta");
+    const complementarRenta = complementarRaw.toLowerCase().includes("sí") || complementarRaw.toLowerCase().includes("si") || complementarRaw.toLowerCase().includes("yes");
 
-    // Mapear comentarios
-    const comentarios = body["Comentarios adicionales"] || body.comentarios || body.notas || null;
+    // Tipo de crédito
+    const tipoCredito = findField("¿Qué tipo de crédito buscas?", "tipoCredito", "tipo_credito");
+
+    // Cuenta pie
+    const cuentaPieRaw = findField("¿Cuentas con pie o ahorro inici...", "¿Cuentas con pie o ahorro inicial?", "cuentaPie", "cuenta_pie");
+    const cuentaPie = cuentaPieRaw.toLowerCase().includes("sí") || cuentaPieRaw.toLowerCase().includes("si") || cuentaPieRaw.toLowerCase().includes("yes");
+
+    // Comentarios
+    const comentarios = findField("Comentarios adicionales", "comentarios", "notas", "mensaje");
+
+    console.log("Campos mapeados:", { nombre, apellido, rut, email, telefono, situacionLaboral, enDicom, tipoCredito, cuentaPie, comentarios });
 
     if (!nombre && !apellido) {
-      return NextResponse.json({ success: false, error: "Nombre y apellido requeridos" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Nombre y apellido requeridos", received: body }, { status: 400 });
     }
 
     const leadId = crypto.randomUUID();
@@ -86,23 +86,23 @@ export async function POST(request: NextRequest) {
         nombre: nombre || "Sin nombre",
         apellido: apellido || "Sin apellido",
         rut: rut,
-        email: email,
-        telefono: telefono,
+        email: email || null,
+        telefono: telefono || null,
         origen: "WEB",
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
         nombreEjecutivo: null,
         banco: null,
-        tipoCredito: tipoCredito,
+        tipoCredito: tipoCredito || null,
         montoSolicitado: null,
         valorPropiedad: null,
         pieDisponible: null,
-        notas: comentarios,
+        notas: comentarios || null,
         situacionLaboral: situacionLaboral,
         enDicom: enDicom,
-        dicomDetalle: dicomDetalle,
+        dicomDetalle: dicomDetalle || null,
         diasEnEtapa: 0,
-        rentaMensual: rentaMensual,
+        rentaMensual: rentaMensual || null,
         complementarRenta: complementarRenta,
         cuentaPie: cuentaPie,
         cargasLegales: null,
