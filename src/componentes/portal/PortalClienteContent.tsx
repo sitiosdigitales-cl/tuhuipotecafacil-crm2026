@@ -102,10 +102,17 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       // Cargar datos del asesor desde la API de usuarios
       if (found.nombreEjecutivo) {
         try {
-          const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(found.nombreEjecutivo)}`);
+          // Buscar por nombre completo separado en partes
+          const partes = found.nombreEjecutivo.split(' ');
+          const nombreBusqueda = partes[0]; // Solo el primer nombre
+          const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(nombreBusqueda)}`);
           const data = await res.json();
           if (data.success && data.data && data.data.length > 0) {
-            const usuario = data.data[0];
+            // Encontrar el que coincida mejor
+            const usuario = data.data.find((u: any) => {
+              const nombreCompleto = `${u.nombre} ${u.apellido}`.toLowerCase();
+              return nombreCompleto.includes(found.nombreEjecutivo.toLowerCase());
+            }) || data.data[0];
             setAsesor({
               nombre: usuario.nombre || "",
               apellido: usuario.apellido || "",
@@ -114,7 +121,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               cargo: usuario.cargo || "Asesor Hipotecario Senior",
             });
           } else {
-            // Si no se encuentra el usuario, usar datos del nombre
             setAsesor({
               nombre: found.nombreEjecutivo.split(" ")[0] || "",
               apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
