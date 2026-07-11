@@ -48,7 +48,7 @@ import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";
-import { useActivities, getIconoActividad, formatearTiempoRelativo, type Actividad } from "@/lib/contexts/ActivityContext";
+import { type Actividad } from "@/lib/contexts/ActivityContext";
 import { toast } from "sonner";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
@@ -135,7 +135,6 @@ export default function ClientePerfilPage() {
   const id = routeParams.id as string;
   const { actualizarLead } = useLeads();
   const { usuarioActual } = useUser();
-  const { obtenerActividadesLead, agregarActividad } = useActivities();
   const [lead, setLead] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -186,11 +185,12 @@ export default function ClientePerfilPage() {
   const [editarOpen, setEditarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
 
-  // Obtener actividades reales del lead - DEBE estar antes de cualquier early return
-  const actividades = useMemo(() => {
-    if (!lead) return [];
-    return obtenerActividadesLead(lead.id);
-  }, [lead, obtenerActividadesLead]);
+  // Actividades vacías por ahora (sin dependencia de ActivityContext)
+  const actividades: Actividad[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const agregarActividad = async (_data: any) => {};
+  const getIconoActividad = (_tipo: string) => ({ icono: Clock, color: "text-slate-500", bg: "bg-slate-50" });
+  const formatearTiempoRelativo = (fecha: Date) => fecha.toLocaleDateString("es-CL");
 
   if (cargando) {
     return (
