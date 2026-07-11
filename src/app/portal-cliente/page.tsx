@@ -471,21 +471,21 @@ export default function PortalClientePage() {
   const docsTotal = documentos.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50">
+      <header className="bg-white/10 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg">
               <Home size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-slate-900 tracking-tight">Tu Hipoteca Fácil</h1>
-              <p className="text-[9px] text-slate-400 font-medium">Portal del Cliente</p>
+              <h1 className="text-sm font-bold text-white tracking-tight">Tu Hipoteca Fácil</h1>
+              <p className="text-[9px] text-blue-200/70 font-medium">Portal del Cliente</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="tel:+56921234567" className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+            <a href="tel:+56921234567" className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-white hover:bg-white/10 rounded-lg transition-colors">
               <Phone size={13} /> Llamar
             </a>
             <a href="https://wa.me/56921234567" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors">
@@ -498,44 +498,44 @@ export default function PortalClientePage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mb-4 shadow-lg shadow-blue-500/20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-4 border border-white/20">
             <Sparkles size={14} className="text-white" />
             <span className="text-[11px] font-semibold text-white">Consulta en tiempo real</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">
             Consulta tu Crédito Hipotecario
           </h2>
-          <p className="text-sm text-slate-500 max-w-lg mx-auto">
+          <p className="text-sm text-blue-200/70 max-w-lg mx-auto">
             Ingresa tu RUT para conocer el estado actual de tu solicitud y subir documentos requeridos
           </p>
         </div>
 
         {/* Buscador */}
         <div className="max-w-xl mx-auto mb-10">
-          <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/20">
+            <label className="text-[11px] font-bold text-blue-200 uppercase tracking-wider mb-3 block">
               RUT del Titular
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300/50" />
                 <input
                   type="text"
                   placeholder="Ej: 12.345.678-9"
                   value={rut}
                   onChange={(e) => { setRut(e.target.value); setError(""); }}
                   onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 rounded-xl text-sm text-white placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
                 />
               </div>
               <button
                 onClick={handleBuscar}
                 disabled={buscando}
-                className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3.5 bg-white text-blue-900 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {buscando ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-900 rounded-full animate-spin" />
                     Buscando...
                   </>
                 ) : (
@@ -546,7 +546,7 @@ export default function PortalClientePage() {
               </button>
             </div>
             {error && (
-              <div className="mt-4 p-3 bg-red-50 rounded-xl flex items-center gap-2 border border-red-100">
+              <div className="mt-4 p-3 bg-red-500/20 rounded-xl flex items-center gap-2 border border-red-500/30">
                 <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
                 <span className="text-[11px] text-red-600">{error}</span>
               </div>
@@ -554,9 +554,9 @@ export default function PortalClientePage() {
 
             {/* RUTs de ejemplo */}
             {rutsEjemplo.length > 0 && !cliente && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                <p className="text-[11px] font-bold text-blue-700 mb-3 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+              <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                <p className="text-[11px] font-bold text-blue-200 mb-3 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
                   RUTs de prueba disponibles
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -564,11 +564,11 @@ export default function PortalClientePage() {
                     <button
                       key={i}
                       onClick={() => seleccionarRutEjemplo(ejemplo.rut)}
-                      className="text-left p-2.5 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group"
+                      className="text-left p-2.5 bg-white/10 rounded-xl border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all group"
                     >
-                      <div className="text-[11px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{ejemplo.rut}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{ejemplo.nombre}</div>
-                      <div className="text-[9px] text-blue-500 font-medium mt-1">{ejemplo.etapa}</div>
+                      <div className="text-[11px] font-bold text-white group-hover:text-blue-200 transition-colors">{ejemplo.rut}</div>
+                      <div className="text-[10px] text-blue-200/70 mt-0.5">{ejemplo.nombre}</div>
+                      <div className="text-[9px] text-blue-300 font-medium mt-1">{ejemplo.etapa}</div>
                     </button>
                   ))}
                 </div>
