@@ -3,8 +3,7 @@ import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { searchParams } = new URL(request.url);
     const usuarioId = searchParams.get("usuarioId");
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -45,8 +44,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     const { tipo, titulo, descripcion, usuarioId, leadId, accionUrl } = body;
 
@@ -78,8 +76,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     const { id, leida, marcarTodas } = body;
 
@@ -109,8 +106,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

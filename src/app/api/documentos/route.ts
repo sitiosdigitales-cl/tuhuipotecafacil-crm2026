@@ -3,8 +3,7 @@ import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
     let query = supabase.from("documentos").select("*");
@@ -18,8 +17,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     const { data, error } = await supabase
       .from("documentos")

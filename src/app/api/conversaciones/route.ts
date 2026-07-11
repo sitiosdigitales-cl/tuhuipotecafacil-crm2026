@@ -3,8 +3,7 @@ import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { searchParams } = new URL(request.url);
     const participante = searchParams.get("participante");
     const tipo = searchParams.get("tipo");
@@ -38,8 +37,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     if (!body.nombre || !body.participantes) {
       return NextResponse.json({ success: false, error: "Nombre y participantes requeridos" }, { status: 400 });

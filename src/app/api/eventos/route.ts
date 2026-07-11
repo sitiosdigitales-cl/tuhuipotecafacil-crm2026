@@ -3,8 +3,7 @@ import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
     const fechaDesde = searchParams.get("fechaDesde");
@@ -27,8 +26,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     if (!body.titulo || !body.fecha) {
       return NextResponse.json({ success: false, error: "Título y fecha requeridos" }, { status: 400 });

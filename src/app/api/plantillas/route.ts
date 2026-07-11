@@ -3,8 +3,7 @@ import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const { data, error } = await supabase.from("plantillas").select("*").order("creadoen", { ascending: false });
     if (error) return NextResponse.json({ success: true, data: [] });
     return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
@@ -14,8 +13,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-  try {
+    try {
     const body = await request.json();
     const { data, error } = await supabase
       .from("plantillas")
