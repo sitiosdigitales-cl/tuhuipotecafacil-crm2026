@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Settings,
   Building2,
@@ -68,21 +68,78 @@ export default function ConfiguracionPage() {
   const [notifAprobaciones, setNotifAprobaciones] = useState(true);
 
   // Pipeline
-  const [etapas, setEtapas] = useState([
-    { id: "NUEVO_LEAD", nombre: "Nuevo Lead", color: "#3B82F6", activa: true },
-    { id: "CONTACTO_INICIAL", nombre: "Contacto Inicial", color: "#6366F1", activa: true },
-    { id: "CONTACTADO", nombre: "Contactado", color: "#8B5CF6", activa: true },
-    { id: "INTERESADO", nombre: "Interesado", color: "#A855F7", activa: true },
-    { id: "CALIFICACION_COMERCIAL", nombre: "Calificación Comercial", color: "#D946EF", activa: true },
-    { id: "DOCS_PENDIENTES", nombre: "Docs. Pendientes", color: "#F97316", activa: true },
-    { id: "DOCS_COMPLETAS", nombre: "Docs. Completas", color: "#22C55E", activa: true },
-    { id: "EVALUACION_BANCARIA", nombre: "Evaluación Bancaria", color: "#06B6D4", activa: true },
-    { id: "PREAPROBADO", nombre: "Preaprobado", color: "#14B8A6", activa: true },
-    { id: "APROBADO", nombre: "Aprobado", color: "#10B981", activa: true },
-    { id: "FIRMA_DIGITAL", nombre: "Firma Digital", color: "#6366F1", activa: true },
-    { id: "NOTARIA", nombre: "Notaría", color: "#8B5CF6", activa: true },
-    { id: "CREDITO_PAGADO", nombre: "Crédito Pagado", color: "#22C55E", activa: true },
-  ]);
+  const [etapas, setEtapas] = useState<Array<{ id: string; nombre: string; color: string; activa: boolean }>>([]);
+  const [cargandoEtapas, setCargandoEtapas] = useState(true);
+
+  // Cargar etapas desde la API
+  useEffect(() => {
+    async function cargarEtapas() {
+      try {
+        const res = await fetch("/api/pipeline/stages");
+        const data = await res.json();
+        if (data.success && data.data) {
+          setEtapas(data.data);
+        }
+      } catch {
+        // Usar etapas por defecto si falla
+      } finally {
+        setCargandoEtapas(false);
+      }
+    }
+    cargarEtapas();
+  }, []);
+
+  // Función para crear nueva etapa
+  const crearEtapa = async () => {
+    const nombre = prompt("Nombre de la nueva etapa:");
+    if (!nombre) return;
+
+    try {
+      const res = await fetch("/api/pipeline/stages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, color: "#64748B" }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setEtapas([...etapas, data.data]);
+      }
+    } catch {
+      alert("Error al crear la etapa");
+    }
+  };
+
+  // Función para eliminar etapa
+  const eliminarEtapa = async (id: string) => {
+    if (!confirm("¿Estás seguro de eliminar esta etapa?")) return;
+
+    try {
+      const res = await fetch(`/api/pipeline/stages?id=${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEtapas(etapas.filter((e) => e.id !== id));
+      } else {
+        alert(data.error || "Error al eliminar la etapa");
+      }
+    } catch {
+      alert("Error al eliminar la etapa");
+    }
+  };
+
+  // Función para actualizar etapa
+  const actualizarEtapa = async (id: string, updates: { nombre?: string; color?: string; activa?: boolean }) => {
+    try {
+      await fetch("/api/pipeline/stages", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+    } catch {
+      // Silenciar error
+    }
+  };
 
   // Documentos
   const [tiposDocumento, setTiposDocumento] = useState([
@@ -358,60 +415,76 @@ Responde siempre en español, sé conciso y accionable.`);
             <div className="space-y-5">
               <SectionCard title="Etapas del Pipeline" icon={<Settings size={16} className="text-indigo-500" />}>
                 <p className="text-[11px] text-slate-400 mb-4">
-                  Configura las etapas del pipeline de ventas. Arrastra para reordenar.
+                  Configura las etapas del pipeline de ventas. Los cambios se guardan automáticamente.
                 </p>
-                <div className="space-y-2">
-                  {etapas.map((etapa, idx) => (
-                    <div
-                      key={etapa.id}
-                      className="flex items-center gap-3 p-3 bg-slate-50/80 rounded-xl border border-slate-100"
-                    >
-                      <div className="text-[10px] font-bold text-slate-400 w-6">{idx + 1}</div>
+                {cargandoEtapas ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    <span className="ml-2 text-[11px] text-slate-500">Cargando etapas...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {etapas.map((etapa, idx) => (
                       <div
-                        className="w-4 h-4 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: etapa.color }}
-                      />
-                      <input
-                        type="text"
-                        value={etapa.nombre}
-                        onChange={(e) => {
-                          const nuevasEtapas = [...etapas];
-                          nuevasEtapas[idx].nombre = e.target.value;
-                          setEtapas(nuevasEtapas);
-                        }}
-                        className="flex-1 bg-white border border-slate-200/60 rounded-lg px-3 py-1.5 text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-400"
-                      />
-                      <input
-                        type="color"
-                        value={etapa.color}
-                        onChange={(e) => {
-                          const nuevasEtapas = [...etapas];
-                          nuevasEtapas[idx].color = e.target.value;
-                          setEtapas(nuevasEtapas);
-                        }}
-                        className="w-8 h-8 rounded-lg cursor-pointer border-0"
-                      />
-                      <button
-                        onClick={() => {
-                          const nuevasEtapas = [...etapas];
-                          nuevasEtapas[idx].activa = !nuevasEtapas[idx].activa;
-                          setEtapas(nuevasEtapas);
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          etapa.activa
-                            ? "bg-emerald-100 text-emerald-600"
-                            : "bg-slate-100 text-slate-400"
-                        }`}
+                        key={etapa.id}
+                        className="flex items-center gap-3 p-3 bg-slate-50/80 rounded-xl border border-slate-100"
                       >
-                        {etapa.activa ? <Eye size={14} /> : <EyeOff size={14} />}
-                      </button>
-                      <button className="p-2 hover:bg-red-100 text-red-500 rounded-lg transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button className="flex items-center gap-2 mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 transition-colors">
+                        <div className="text-[10px] font-bold text-slate-400 w-6">{idx + 1}</div>
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: etapa.color }}
+                        />
+                        <input
+                          type="text"
+                          value={etapa.nombre}
+                          onChange={(e) => {
+                            const nuevasEtapas = [...etapas];
+                            nuevasEtapas[idx].nombre = e.target.value;
+                            setEtapas(nuevasEtapas);
+                            actualizarEtapa(etapa.id, { nombre: e.target.value });
+                          }}
+                          className="flex-1 bg-white border border-slate-200/60 rounded-lg px-3 py-1.5 text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-400"
+                        />
+                        <input
+                          type="color"
+                          value={etapa.color}
+                          onChange={(e) => {
+                            const nuevasEtapas = [...etapas];
+                            nuevasEtapas[idx].color = e.target.value;
+                            setEtapas(nuevasEtapas);
+                            actualizarEtapa(etapa.id, { color: e.target.value });
+                          }}
+                          className="w-8 h-8 rounded-lg cursor-pointer border-0"
+                        />
+                        <button
+                          onClick={() => {
+                            const nuevasEtapas = [...etapas];
+                            nuevasEtapas[idx].activa = !nuevasEtapas[idx].activa;
+                            setEtapas(nuevasEtapas);
+                            actualizarEtapa(etapa.id, { activa: !etapa.activa });
+                          }}
+                          className={`p-2 rounded-lg transition-colors ${
+                            etapa.activa
+                              ? "bg-emerald-100 text-emerald-600"
+                              : "bg-slate-100 text-slate-400"
+                          }`}
+                        >
+                          {etapa.activa ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button
+                          onClick={() => eliminarEtapa(etapa.id)}
+                          className="p-2 hover:bg-red-100 text-red-500 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={crearEtapa}
+                  className="flex items-center gap-2 mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 transition-colors"
+                >
                   <Plus size={14} /> Agregar Etapa
                 </button>
               </SectionCard>
