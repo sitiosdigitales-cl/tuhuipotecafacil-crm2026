@@ -34,6 +34,16 @@ export default function UsuariosPage() {
   const [filtroEstado, setFiltroEstado] = useState<EstadoUsuario | "todos">("todos");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  // Formulario nuevo usuario
+  const [formNombre, setFormNombre] = useState("");
+  const [formApellido, setFormApellido] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formTelefono, setFormTelefono] = useState("");
+  const [formRol, setFormRol] = useState<Rol>("AGENTE");
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     async function cargarUsuarios() {
@@ -93,6 +103,64 @@ export default function UsuariosPage() {
 
   const getIniciales = (nombre: string, apellido: string) => {
     return `${nombre[0]}${apellido[0]}`;
+  };
+
+  const resetForm = () => {
+    setFormNombre("");
+    setFormApellido("");
+    setFormEmail("");
+    setFormPassword("");
+    setFormTelefono("");
+    setFormRol("AGENTE");
+    setFormError("");
+  };
+
+  const handleCrearUsuario = async () => {
+    setFormError("");
+    if (!formNombre.trim() || !formApellido.trim() || !formEmail.trim() || !formPassword.trim()) {
+      setFormError("Nombre, apellido, email y contraseña son requeridos");
+      return;
+    }
+    if (formPassword.length < 6) {
+      setFormError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    setGuardando(true);
+    try {
+      const res = await fetch("/api/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: formNombre.trim(),
+          apellido: formApellido.trim(),
+          email: formEmail.trim(),
+          password: formPassword,
+          telefono: formTelefono.trim() || null,
+          rol: formRol,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setModalOpen(false);
+        resetForm();
+        // Recargar usuarios
+        const reload = await fetch("/api/usuarios");
+        const reloadData = await reload.json();
+        if (reloadData.success && reloadData.data) {
+          setUsuarios(reloadData.data.map((u: Record<string, any>) => ({
+            ...u,
+            ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
+            creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
+          })));
+        }
+      } else {
+        setFormError(data.error || "Error al crear usuario");
+      }
+    } catch {
+      setFormError("Error de conexión");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const getTiempoDesde = (fecha?: Date) => {
@@ -340,6 +408,129 @@ export default function UsuariosPage() {
           ))}
         </div>
       </div>
+
+      {/* Modal Nuevo Usuario */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setModalOpen(false); resetForm(); }} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+                  <Plus size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Nuevo Usuario</h3>
+                  <p className="text-[10px] text-slate-400">Crear una nueva cuenta de usuario</p>
+                </div>
+              </div>
+              <button onClick={() => { setModalOpen(false); resetForm(); }} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                <span className="text-slate-400 text-lg">×</span>
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="px-6 py-5 space-y-4">
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
+                  {formError}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Nombre *</label>
+                  <input
+                    type="text"
+                    value={formNombre}
+                    onChange={(e) => setFormNombre(e.target.value)}
+                    placeholder="Ej: Juan"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Apellido *</label>
+                  <input
+                    type="text"
+                    value={formApellido}
+                    onChange={(e) => setFormApellido(e.target.value)}
+                    placeholder="Ej: Pérez"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Email *</label>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="Ej: juan@tuhipotecafacil.cl"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Contraseña *</label>
+                <input
+                  type="password"
+                  value={formPassword}
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Teléfono</label>
+                <input
+                  type="tel"
+                  value={formTelefono}
+                  onChange={(e) => setFormTelefono(e.target.value)}
+                  placeholder="Ej: +56 9 1234 5678"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Rol</label>
+                <select
+                  value={formRol}
+                  onChange={(e) => setFormRol(e.target.value as Rol)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium"
+                >
+                  <option value="AGENTE">Agente</option>
+                  <option value="GERENTE">Gerente</option>
+                  <option value="ADMIN">Administrador</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="CLIENTE">Cliente</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button
+                onClick={() => { setModalOpen(false); resetForm(); }}
+                className="px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCrearUsuario}
+                disabled={guardando}
+                className="px-5 py-2.5 gradient-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {guardando ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    Creando...
+                  </span>
+                ) : (
+                  "Crear Usuario"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
