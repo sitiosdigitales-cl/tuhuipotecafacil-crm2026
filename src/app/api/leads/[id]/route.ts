@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const updateData: Record<string, any> = {};
 
-    // CLIENTE solo puede actualizar campos de perfil
+    // CLIENTE puede actualizar campos de perfil y datos financieros
     if (auth.rol === "CLIENTE") {
       if (body.nombre) updateData.nombre = body.nombre;
       if (body.apellido) updateData.apellido = body.apellido;
@@ -38,6 +38,40 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.telefono !== undefined) updateData.telefono = body.telefono;
       if (body.domicilioParticular !== undefined) updateData.domicilioparticular = body.domicilioParticular;
       if (body.comunaCiudad !== undefined) updateData.comunaciudad = body.comunaCiudad;
+      // Datos personales extendidos
+      if (body.cargasLegales !== undefined) updateData.cargaslegales = body.cargasLegales;
+      if (body.estadoCivil !== undefined) updateData.estadocivil = body.estadoCivil;
+      if (body.regimenMatrimonial !== undefined) updateData.regimenmatrimonial = body.regimenMatrimonial;
+      if (body.fechaNacimiento !== undefined) updateData.fechanacimiento = body.fechaNacimiento;
+      if (body.estudios !== undefined) updateData.estudios = body.estudios;
+      if (body.profesion !== undefined) updateData.profesion = body.profesion;
+      if (body.valorArriendo !== undefined) updateData.valorarriendo = body.valorArriendo;
+      if (body.afp !== undefined) updateData.afp = body.afp;
+      // Datos del empleador
+      if (body.nombreEmpleador !== undefined) updateData.nombreempleador = body.nombreEmpleador;
+      if (body.rutEmpresa !== undefined) updateData.rutfactura = body.rutEmpresa;
+      if (body.fechaIngreso !== undefined) updateData.fechaingreso = body.fechaIngreso;
+      if (body.cargo !== undefined) updateData.cargo = body.cargo;
+      if (body.rentaLiquida !== undefined) updateData.rentaliquida = body.rentaLiquida;
+      if (body.bancoAbonoRenta !== undefined) updateData.bancoabonorenta = body.bancoAbonoRenta;
+      if (body.fechaPago !== undefined) updateData.fechapago = body.fechaPago;
+      if (body.direccionLaboral !== undefined) updateData.direccionlaboral = body.direccionLaboral;
+      if (body.comunaCiudadLaboral !== undefined) updateData.comunaciudadlaboral = body.comunaCiudadLaboral;
+      if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
+      if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
+      if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
+      // Situación financiera
+      if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
+      if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
+      if (body.dicomDetalle !== undefined) updateData.dicomDetalle = body.dicomDetalle;
+      if (body.rentaMensual !== undefined) updateData.rentaMensual = body.rentaMensual;
+      if (body.complementarRenta !== undefined) updateData.complementarRenta = body.complementarRenta;
+      if (body.tipoCredito !== undefined) updateData.tipoCredito = body.tipoCredito;
+      if (body.cuentaPie !== undefined) updateData.cuentaPie = body.cuentaPie;
+      if (body.montoSolicitado !== undefined) updateData.montoSolicitado = body.montoSolicitado;
+      if (body.valorPropiedad !== undefined) updateData.valorPropiedad = body.valorPropiedad;
+      if (body.pieDisponible !== undefined) updateData.pieDisponible = body.pieDisponible;
+      if (body.banco !== undefined) updateData.banco = body.banco;
     } else {
       // Admin/Gerente/Agente pueden actualizar todo
       if (body.nombre) updateData.nombre = body.nombre;
@@ -57,30 +91,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.notas !== undefined) updateData.notas = body.notas;
       if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
       if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
-    // Datos personales extendidos
-    if (body.cargasLegales !== undefined) updateData.cargaslegales = body.cargasLegales;
-    if (body.estadoCivil !== undefined) updateData.estadocivil = body.estadoCivil;
-    if (body.regimenMatrimonial !== undefined) updateData.regimenmatrimonial = body.regimenMatrimonial;
-    if (body.fechaNacimiento !== undefined) updateData.fechanacimiento = body.fechaNacimiento;
-    if (body.estudios !== undefined) updateData.estudios = body.estudios;
-    if (body.profesion !== undefined) updateData.profesion = body.profesion;
-    if (body.domicilioParticular !== undefined) updateData.domicilioparticular = body.domicilioParticular;
-    if (body.comunaCiudad !== undefined) updateData.comunaciudad = body.comunaCiudad;
-    if (body.valorArriendo !== undefined) updateData.valorarriendo = body.valorArriendo;
-    if (body.afp !== undefined) updateData.afp = body.afp;
-    // Datos del empleador
-    if (body.nombreEmpleador !== undefined) updateData.nombreempleador = body.nombreEmpleador;
-    if (body.rutEmpresa !== undefined) updateData.rutfactura = body.rutEmpresa;
-    if (body.fechaIngreso !== undefined) updateData.fechaingreso = body.fechaIngreso;
-    if (body.cargo !== undefined) updateData.cargo = body.cargo;
-    if (body.rentaLiquida !== undefined) updateData.rentaliquida = body.rentaLiquida;
-    if (body.bancoAbonoRenta !== undefined) updateData.bancoabonorenta = body.bancoAbonoRenta;
-    if (body.fechaPago !== undefined) updateData.fechapago = body.fechaPago;
-    if (body.direccionLaboral !== undefined) updateData.direccionlaboral = body.direccionLaboral;
-    if (body.comunaCiudadLaboral !== undefined) updateData.comunaciudadlaboral = body.comunaCiudadLaboral;
-    if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
-    if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
-    if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
+      // Datos personales extendidos
+      if (body.cargasLegales !== undefined) updateData.cargaslegales = body.cargasLegales;
+      if (body.estadoCivil !== undefined) updateData.estadocivil = body.estadoCivil;
+      if (body.regimenMatrimonial !== undefined) updateData.regimenmatrimonial = body.regimenMatrimonial;
+      if (body.fechaNacimiento !== undefined) updateData.fechanacimiento = body.fechaNacimiento;
+      if (body.estudios !== undefined) updateData.estudios = body.estudios;
+      if (body.profesion !== undefined) updateData.profesion = body.profesion;
+      if (body.domicilioParticular !== undefined) updateData.domicilioparticular = body.domicilioParticular;
+      if (body.comunaCiudad !== undefined) updateData.comunaciudad = body.comunaCiudad;
+      if (body.valorArriendo !== undefined) updateData.valorarriendo = body.valorArriendo;
+      if (body.afp !== undefined) updateData.afp = body.afp;
+      // Datos del empleador
+      if (body.nombreEmpleador !== undefined) updateData.nombreempleador = body.nombreEmpleador;
+      if (body.rutEmpresa !== undefined) updateData.rutfactura = body.rutEmpresa;
+      if (body.fechaIngreso !== undefined) updateData.fechaingreso = body.fechaIngreso;
+      if (body.cargo !== undefined) updateData.cargo = body.cargo;
+      if (body.rentaLiquida !== undefined) updateData.rentaliquida = body.rentaLiquida;
+      if (body.bancoAbonoRenta !== undefined) updateData.bancoabonorenta = body.bancoAbonoRenta;
+      if (body.fechaPago !== undefined) updateData.fechapago = body.fechaPago;
+      if (body.direccionLaboral !== undefined) updateData.direccionlaboral = body.direccionLaboral;
+      if (body.comunaCiudadLaboral !== undefined) updateData.comunaciudadlaboral = body.comunaCiudadLaboral;
+      if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
+      if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
+      if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
+      if (body.dicomDetalle !== undefined) updateData.dicomDetalle = body.dicomDetalle;
+      if (body.rentaMensual !== undefined) updateData.rentaMensual = body.rentaMensual;
+      if (body.complementarRenta !== undefined) updateData.complementarRenta = body.complementarRenta;
+      if (body.cuentaPie !== undefined) updateData.cuentaPie = body.cuentaPie;
     }
 
     updateData.actualizadoEn = new Date().toISOString();
