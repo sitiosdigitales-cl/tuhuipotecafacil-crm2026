@@ -24,7 +24,7 @@ interface AreaChatProps {
 }
 
 export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
-  const { usuarios } = useUser();
+  const { usuarios, usuarioActual } = useUser();
   const [conversacion, setConversacion] = useState<Conversacion | null>(null);
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const mensajesRef = useRef<HTMLDivElement>(null);
@@ -32,6 +32,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
   const { mensajes, cargando, enviando, enviarMensaje } = useChat({
     conversacionId,
     usuarioActualId,
+    usuarioActualNombre: `${usuarioActual.nombre} ${usuarioActual.apellido}`,
   });
 
   // Cargar datos de la conversación

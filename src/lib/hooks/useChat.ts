@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Mensaje } from "@/tipos/conversaciones";
 
 interface UseChatOptions {
   conversacionId: string | null;
   usuarioActualId: string;
+  usuarioActualNombre?: string;
 }
 
-export function useChat({ conversacionId, usuarioActualId }: UseChatOptions) {
+export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }: UseChatOptions) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [cargando, setCargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const channelRef = useRef<any>(null);
 
   // Cargar mensajes de la conversación
   const cargarMensajes = useCallback(async (convId: string) => {
@@ -23,8 +22,15 @@ export function useChat({ conversacionId, usuarioActualId }: UseChatOptions) {
       const json = await res.json();
       if (json.success && json.data) {
         setMensajes(json.data.map((m: Record<string, any>) => ({
-          ...m,
-          creadoEn: new Date(m.creadoEn),
+          id: m.id,
+          conversacionId: m.conversacionId || m.conversacionid,
+          remitenteId: m.remitenteId || m.remitenteid,
+          remitenteNombre: m.remitenteNombre || m.remitentenombre,
+          contenido: m.contenido,
+          tipo: m.tipo || "TEXTO",
+          estado: m.estado || "ENVIADO",
+          archivoUrl: m.archivoUrl || m.archivourl,
+          creadoEn: new Date(m.creadoEn || m.creadoen),
         })));
       }
     } catch {
@@ -34,61 +40,13 @@ export function useChat({ conversacionId, usuarioActualId }: UseChatOptions) {
     }
   }, []);
 
-  // Suscribirse a nuevos mensajes en tiempo real
+  // Cargar mensajes cuando cambia la conversación
   useEffect(() => {
     if (!conversacionId) {
       setMensajes([]);
       return;
     }
-
     cargarMensajes(conversacionId);
-
-    // Limpiar suscripción anterior
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
-    // Crear suscripción en tiempo real
-    const channel = supabase
-      .channel(`mensajes:${conversacionId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "mensajes",
-          filter: `conversacionid=eq.${conversacionId}`,
-        },
-        (payload) => {
-          const nuevoMensaje: Mensaje = {
-            id: payload.new.id,
-            conversacionId: payload.new.conversacionid,
-            remitenteId: payload.new.remitenteid,
-            remitenteNombre: payload.new.remitentenombre,
-            contenido: payload.new.contenido,
-            tipo: payload.new.tipo || "TEXTO",
-            estado: payload.new.estado || "ENVIADO",
-            archivoUrl: payload.new.archivourl,
-            creadoEn: new Date(payload.new.creadoEn),
-          };
-
-          // Evitar duplicados
-          setMensajes((prev) => {
-            if (prev.some((m) => m.id === nuevoMensaje.id)) return prev;
-            return [...prev, nuevoMensaje];
-          });
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
   }, [conversacionId, cargarMensajes]);
 
   // Enviar mensaje
@@ -103,15 +61,30 @@ export function useChat({ conversacionId, usuarioActualId }: UseChatOptions) {
         body: JSON.stringify({
           conversacionId,
           remitenteId: usuarioActualId,
-          remitenteNombre: "Usuario Actual", // En producción, obtener del contexto
+          remitenteNombre: usuarioActualNombre || "Usuario",
           contenido: contenido.trim(),
           tipo: "TEXTO",
         }),
       });
 
       const json = await res.json();
-      if (!json.success) {
-        console.error("Error al enviar mensaje");
+      if (json.success && json.data) {
+        // Agregar el mensaje a la lista inmediatamente
+        const nuevoMensaje: Mensaje = {
+          id: json.data.id,
+          conversacionId: json.data.conversacionid,
+          remitenteId: json.data.remitenteid,
+          remitenteNombre: json.data.remitentenombre,
+          contenido: json.data.contenido,
+          tipo: json.data.tipo || "TEXTO",
+          estado: json.data.estado || "ENVIADO",
+          archivoUrl: json.data.archivourl,
+          creadoEn: new Date(json.data.creadoen),
+        };
+        setMensajes((prev) => {
+          if (prev.some((m) => m.id === nuevoMensaje.id)) return prev;
+          return [...prev, nuevoMensaje];
+        });
       }
     } catch (error) {
       console.error("Error al enviar mensaje:", error);
