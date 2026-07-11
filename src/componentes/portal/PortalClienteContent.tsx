@@ -72,8 +72,15 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [buscando, setBuscando] = useState(false);
   const [cliente, setCliente] = useState<Lead | null>(null);
   const [error, setError] = useState("");
+  const [tabActiva, setTabActiva] = useState<"resumen" | "perfil">("resumen");
   const [editandoPerfil, setEditandoPerfil] = useState(false);
-  const [perfilEditado, setPerfilEditado] = useState({ nombre: "", apellido: "", email: "", telefono: "" });
+  const [perfilEditado, setPerfilEditado] = useState({
+    nombre: "", apellido: "", email: "", telefono: "",
+    domicilioParticular: "", comunaCiudad: "",
+    estadoCivil: "", fechaNacimiento: "", profesion: "",
+    nombreEmpleador: "", cargo: "", rentaLiquida: "",
+    situacionLaboral: "" as SituacionLaboral,
+  });
   const [guardando, setGuardando] = useState(false);
 
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
@@ -104,7 +111,19 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
   const iniciarEdicion = () => {
     if (!cliente) return;
-    setPerfilEditado({ nombre: cliente.nombre, apellido: cliente.apellido, email: cliente.email || "", telefono: cliente.telefono || "" });
+    setPerfilEditado({
+      nombre: cliente.nombre, apellido: cliente.apellido,
+      email: cliente.email || "", telefono: cliente.telefono || "",
+      domicilioParticular: cliente.domicilioParticular || "",
+      comunaCiudad: cliente.comunaCiudad || "",
+      estadoCivil: cliente.estadoCivil || "",
+      fechaNacimiento: cliente.fechaNacimiento || "",
+      profesion: cliente.profesion || "",
+      nombreEmpleador: cliente.nombreEmpleador || "",
+      cargo: cliente.cargo || "",
+      rentaLiquida: cliente.rentaLiquida?.toString() || "",
+      situacionLaboral: cliente.situacionLaboral || "DEPENDIENTE",
+    });
     setEditandoPerfil(true);
   };
 
@@ -112,10 +131,41 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     if (!cliente) return;
     setGuardando(true);
     try {
-      await fetch(`/api/leads/${cliente.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(perfilEditado) });
-      setCliente({ ...cliente, ...perfilEditado });
+      await fetch(`/api/leads/${cliente.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: perfilEditado.nombre, apellido: perfilEditado.apellido,
+          email: perfilEditado.email, telefono: perfilEditado.telefono,
+          domicilioParticular: perfilEditado.domicilioParticular,
+          comunaCiudad: perfilEditado.comunaCiudad,
+          estadoCivil: perfilEditado.estadoCivil,
+          fechaNacimiento: perfilEditado.fechaNacimiento,
+          profesion: perfilEditado.profesion,
+          nombreEmpleador: perfilEditado.nombreEmpleador,
+          cargo: perfilEditado.cargo,
+          rentaLiquida: perfilEditado.rentaLiquida ? parseFloat(perfilEditado.rentaLiquida) : undefined,
+          situacionLaboral: perfilEditado.situacionLaboral,
+        }),
+      });
+      setCliente({
+        ...cliente,
+        nombre: perfilEditado.nombre,
+        apellido: perfilEditado.apellido,
+        email: perfilEditado.email,
+        telefono: perfilEditado.telefono,
+        domicilioParticular: perfilEditado.domicilioParticular,
+        comunaCiudad: perfilEditado.comunaCiudad,
+        estadoCivil: perfilEditado.estadoCivil,
+        fechaNacimiento: perfilEditado.fechaNacimiento,
+        profesion: perfilEditado.profesion,
+        nombreEmpleador: perfilEditado.nombreEmpleador,
+        cargo: perfilEditado.cargo,
+        rentaLiquida: perfilEditado.rentaLiquida ? parseFloat(perfilEditado.rentaLiquida) : undefined,
+        situacionLaboral: perfilEditado.situacionLaboral,
+      });
       setEditandoPerfil(false);
-      toast.success("Perfil actualizado");
+      toast.success("Perfil actualizado correctamente");
     } catch { toast.error("Error al guardar"); }
     setGuardando(false);
   };
@@ -200,9 +250,31 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1.5">
+        <div className="flex gap-1">
+          {[
+            { id: "resumen" as const, label: "Resumen", icono: <TrendingUp size={15} /> },
+            { id: "perfil" as const, label: "Mi Perfil", icono: <User size={15} /> },
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setTabActiva(tab.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-semibold transition-all ${
+                tabActiva === tab.id
+                  ? "bg-teal-500 text-white shadow-md shadow-teal-500/20"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}>
+              {tab.icono} {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Columna Principal */}
         <div className="lg:col-span-2 space-y-5">
+          {/* Tab Resumen */}
+          {tabActiva === "resumen" && (
+            <>
           {/* Estado de la Solicitud */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center gap-3 mb-5">
@@ -333,6 +405,179 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               ))}
             </div>
           </div>
+            </>
+          )}
+
+          {/* Tab Mi Perfil */}
+          {tabActiva === "perfil" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Mi Perfil</h2>
+                  <p className="text-[11px] text-slate-400">Completa tu información para agilizar el proceso</p>
+                </div>
+                {!editandoPerfil && (
+                  <button onClick={iniciarEdicion}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-teal-500 text-white rounded-xl text-[11px] font-semibold hover:bg-teal-600 transition-colors shadow-md shadow-teal-500/20">
+                    <Edit size={12} /> Editar
+                  </button>
+                )}
+              </div>
+
+              {editandoPerfil ? (
+                <div className="space-y-5">
+                  {/* Datos Personales */}
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos Personales</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: "Nombre", field: "nombre", type: "text", required: true },
+                        { label: "Apellido", field: "apellido", type: "text", required: true },
+                        { label: "Email", field: "email", type: "email", required: false },
+                        { label: "Teléfono", field: "telefono", type: "tel", required: false },
+                        { label: "Fecha Nacimiento", field: "fechaNacimiento", type: "date", required: false },
+                        { label: "Estado Civil", field: "estadoCivil", type: "select", required: false },
+                        { label: "Profesión", field: "profesion", type: "text", required: false },
+                      ].map((item) => (
+                        <div key={item.field}>
+                          <label className="text-[10px] font-semibold text-slate-600 mb-1 block">
+                            {item.label} {item.required && <span className="text-red-500">*</span>}
+                          </label>
+                          {item.type === "select" ? (
+                            <select value={(perfilEditado as any)[item.field]}
+                              onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
+                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                              <option value="">Seleccionar</option>
+                              <option value="Soltero/a">Soltero/a</option>
+                              <option value="Casado/a">Casado/a</option>
+                              <option value="Divorciado/a">Divorciado/a</option>
+                              <option value="Viudo/a">Viudo/a</option>
+                              <option value="Unión Civil">Unión Civil</option>
+                            </select>
+                          ) : (
+                            <input type={item.type} value={(perfilEditado as any)[item.field]}
+                              onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
+                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Domicilio */}
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Domicilio</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dirección</label>
+                        <input type="text" value={perfilEditado.domicilioParticular}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilioParticular: e.target.value })}
+                          placeholder="Dirección completa"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna / Ciudad</label>
+                        <input type="text" value={perfilEditado.comunaCiudad}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
+                          placeholder="Ej: Las Condes"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Empleador */}
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos del Empleador</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre Empresa</label>
+                        <input type="text" value={perfilEditado.nombreEmpleador}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, nombreEmpleador: e.target.value })}
+                          placeholder="Nombre de la empresa"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Cargo</label>
+                        <input type="text" value={perfilEditado.cargo}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, cargo: e.target.value })}
+                          placeholder="Ej: Gerente"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Renta Líquida</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">$</span>
+                          <input type="number" value={perfilEditado.rentaLiquida}
+                            onChange={(e) => setPerfilEditado({ ...perfilEditado, rentaLiquida: e.target.value })}
+                            placeholder="0"
+                            className="w-full h-10 pl-7 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Situación Laboral</label>
+                        <select value={perfilEditado.situacionLaboral}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                          <option value="DEPENDIENTE">Dependiente</option>
+                          <option value="INDEPENDIENTE">Independiente</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botones */}
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <button onClick={() => setEditandoPerfil(false)}
+                      className="px-5 py-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                      Cancelar
+                    </button>
+                    <button onClick={guardarPerfil} disabled={guardando}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-teal-500 text-white rounded-xl text-[11px] font-semibold hover:bg-teal-600 transition-all shadow-md shadow-teal-500/20 disabled:opacity-50">
+                      {guardando ? (
+                        <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Guardando...</>
+                      ) : (
+                        <><Save size={12} /> Guardar Cambios</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      ["Nombre completo", `${cliente.nombre} ${cliente.apellido}`],
+                      ["RUT", cliente.rut],
+                      ["Email", cliente.email || "No registrado"],
+                      ["Teléfono", cliente.telefono || "No registrado"],
+                      ["Estado Civil", cliente.estadoCivil || "No especificado"],
+                      ["Fecha Nacimiento", cliente.fechaNacimiento || "No especificado"],
+                      ["Profesión", cliente.profesion || "No especificado"],
+                      ["Situación Laboral", situacionConfig?.label || "No definida"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                        <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
+                        <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      ["Domicilio", cliente.domicilioParticular || "No especificado"],
+                      ["Comuna / Ciudad", cliente.comunaCiudad || "No especificado"],
+                      ["Nombre Empleador", cliente.nombreEmpleador || "No especificado"],
+                      ["Cargo", cliente.cargo || "No especificado"],
+                      ["Renta Líquida", cliente.rentaLiquida ? formatoMoneda(cliente.rentaLiquida) : "No especificado"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                        <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
+                        <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Columna Lateral */}
