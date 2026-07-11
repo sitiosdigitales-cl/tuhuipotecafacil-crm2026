@@ -16,7 +16,11 @@ export async function GET(request: NextRequest) {
     if (rol) query = query.eq("rol", rol);
     if (estado) query = query.eq("estado", estado);
     if (busqueda) {
-      query = query.or(`nombre.ilike.%${busqueda}%,apellido.ilike.%${busqueda}%,email.ilike.%${busqueda}%`);
+      // Dividir la búsqueda en palabras para buscar en nombre y apellido
+      const palabras = busqueda.split(' ').filter(p => p.length > 0);
+      const condiciones = palabras.map(p => `nombre.ilike.%${p}%`).join(',');
+      const condicionesApellido = palabras.map(p => `apellido.ilike.%${p}%`).join(',');
+      query = query.or(`${condiciones},${condicionesApellido},email.ilike.%${busqueda}%`);
     }
 
     query = query.order("creadoen", { ascending: false });
