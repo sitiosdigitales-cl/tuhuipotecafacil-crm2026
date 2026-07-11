@@ -75,11 +75,9 @@ export function GraficoEmbudo() {
                 <div className="flex-1">
                   <div className="h-7 rounded-lg transition-all duration-300 cursor-pointer relative overflow-hidden"
                     style={{ width: `${Math.max(ancho, 8)}%`, backgroundColor: etapa.color, opacity: isSelected ? 1 : 0.85 }}>
-                    {ancho > 25 && (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-white/90">
-                        {conversionTotal}%
-                      </span>
-                    )}
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-white/90">
+                      {conversionTotal}%
+                    </span>
                   </div>
                 </div>
                 <div className="w-24">
