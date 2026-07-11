@@ -8,26 +8,19 @@ export async function POST(request: NextRequest) {
     let body: Record<string, any> = {};
     
     const contentType = request.headers.get("content-type") || "";
+    const rawBody = await request.text();
     
-    if (contentType.includes("application/json")) {
-      body = await request.json();
-    } else if (contentType.includes("application/x-www-form-urlencoded")) {
-      const text = await request.text();
-      const params = new URLSearchParams(text);
+    console.log("Content-Type:", contentType);
+    console.log("Raw body:", rawBody);
+    
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      const params = new URLSearchParams(rawBody);
       params.forEach((value, key) => { body[key] = value; });
-    } else if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData();
-      formData.forEach((value, key) => { body[key] = value.toString(); });
-    } else {
-      try { body = await request.json(); } catch {
-        const text = await request.text();
-        const params = new URLSearchParams(text);
-        params.forEach((value, key) => { body[key] = value; });
-      }
     }
 
-    console.log("Webhook recibido:", JSON.stringify(body, null, 2));
-    console.log("Content-Type:", contentType);
+    console.log("Parsed body:", JSON.stringify(body, null, 2));
     console.log("Body keys:", Object.keys(body));
 
     // Buscar campos por diferentes nombres posibles
