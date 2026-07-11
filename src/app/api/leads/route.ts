@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // CLIENTE no puede crear leads
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE"])) return forbidden();
   try {
     const body = await request.json();
     if (!body.nombre || !body.apellido) {
