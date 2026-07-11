@@ -1,0 +1,5 @@
+-- Agregar columnas faltantes a la tabla usuarios
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultimoacceso TIMESTAMP WITH TIME ZONE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS doisfa BOOLEAN DEFAULT FALSE;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS intentosfallidos INTEGER DEFAULT 0;
+ALTER TABLE usuarios ADD COLUMN IF NOT suspendidohasta TIMESTAMP WITH TIME ZONE;

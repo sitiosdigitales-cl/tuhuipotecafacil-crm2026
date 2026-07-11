@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const estado = searchParams.get("estado");
     const busqueda = searchParams.get("busqueda");
 
-    let query = supabase.from("usuarios").select("id,nombre,apellido,email,telefono,rol,estado,ultimoacceso,creadoen");
+    // Seleccionar solo columnas que sabemos que existen
+    let query = supabase.from("usuarios").select("id,nombre,apellido,email,telefono,rol,estado,creadoen");
 
     if (rol) query = query.eq("rol", rol);
     if (estado) query = query.eq("estado", estado);
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       telefono: u.telefono,
       rol: u.rol,
       estado: u.estado,
-      ultimoAcceso: u.ultimoacceso,
+      ultimoAcceso: null,
       creadoEn: u.creadoen,
     }));
 
