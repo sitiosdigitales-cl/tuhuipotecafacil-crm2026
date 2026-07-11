@@ -498,42 +498,80 @@ export default function ClientePerfilPage() {
 
       {/* Contenido de Tabs */}
       {tabActiva === "resumen" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Info Personal */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <User size={16} className="text-blue-500" />
-              Información Personal
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <InfoRow icon={<User size={13} />} label="Nombre completo" value={`${lead.nombre} ${lead.apellido}`} />
-              <InfoRow icon={<Hash size={13} />} label="RUT" value={lead.rut} />
-              <InfoRow icon={<Phone size={13} />} label="Teléfono" value={lead.telefono || "No registrado"} />
-              <InfoRow icon={<Mail size={13} />} label="Email" value={lead.email || "No registrado"} />
-              <InfoRow icon={<BriefcaseBusiness size={13} />} label="Situación laboral" value={situacionConfig?.label || "No definida"} />
-              <InfoRow icon={<Building2 size={13} />} label="Origen" value={ORIGEN_LABELS[lead.origen]} />
-              <InfoRow icon={<CreditCard size={13} />} label="En DICOM" value={lead.enDicom ? "Sí" : "No"} />
-              <InfoRow icon={<DollarSign size={13} />} label="Renta mensual" value={lead.rentaMensual || "No especificada"} />
-              <InfoRow icon={<Shield size={13} />} label="Cargas legales" value={lead.cargasLegales || "No especificado"} />
-              <InfoRow icon={<User size={13} />} label="Estado civil" value={lead.estadoCivil || "No especificado"} />
-              <InfoRow icon={<User size={13} />} label="Régimen matrimonial" value={lead.regimenMatrimonial || "No especificado"} />
-              <InfoRow icon={<Calendar size={13} />} label="Fecha nacimiento" value={lead.fechaNacimiento || "No especificado"} />
-              <InfoRow icon={<FileText size={13} />} label="Estudios" value={lead.estudios || "No especificado"} />
-              <InfoRow icon={<Briefcase size={13} />} label="Profesión" value={lead.profesion || "No especificado"} />
-              <InfoRow icon={<Home size={13} />} label="Domicilio" value={lead.domicilioParticular || "No especificado"} />
-              <InfoRow icon={<MapPin size={13} />} label="Comuna/Ciudad" value={lead.comunaCiudad || "No especificado"} />
-              <InfoRow icon={<DollarSign size={13} />} label="Valor arriendo" value={lead.valorArriendo ? formatoMoneda(lead.valorArriendo) : "No aplica"} />
-              <InfoRow icon={<Shield size={13} />} label="AFP" value={lead.afp || "No especificado"} />
+        <div className="space-y-5">
+          {/* Fila 1: Info Personal + Actividad Reciente */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Info Personal */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <User size={16} className="text-blue-500" />
+                Información Personal
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <InfoRow icon={<User size={13} />} label="Nombre completo" value={`${lead.nombre} ${lead.apellido}`} />
+                <InfoRow icon={<Hash size={13} />} label="RUT" value={lead.rut} />
+                <InfoRow icon={<Phone size={13} />} label="Teléfono" value={lead.telefono || "No registrado"} />
+                <InfoRow icon={<Mail size={13} />} label="Email" value={lead.email || "No registrado"} />
+                <InfoRow icon={<BriefcaseBusiness size={13} />} label="Situación laboral" value={situacionConfig?.label || "No definida"} />
+                <InfoRow icon={<Building2 size={13} />} label="Origen" value={ORIGEN_LABELS[lead.origen]} />
+                <InfoRow icon={<CreditCard size={13} />} label="En DICOM" value={lead.enDicom ? "Sí" : "No"} />
+                <InfoRow icon={<DollarSign size={13} />} label="Renta mensual" value={lead.rentaMensual || "No especificada"} />
+                <InfoRow icon={<Shield size={13} />} label="Cargas legales" value={lead.cargasLegales || "No especificado"} />
+                <InfoRow icon={<User size={13} />} label="Estado civil" value={lead.estadoCivil || "No especificado"} />
+                <InfoRow icon={<User size={13} />} label="Régimen matrimonial" value={lead.regimenMatrimonial || "No especificado"} />
+                <InfoRow icon={<Calendar size={13} />} label="Fecha nacimiento" value={lead.fechaNacimiento || "No especificado"} />
+                <InfoRow icon={<FileText size={13} />} label="Estudios" value={lead.estudios || "No especificado"} />
+                <InfoRow icon={<Briefcase size={13} />} label="Profesión" value={lead.profesion || "No especificado"} />
+                <InfoRow icon={<Home size={13} />} label="Domicilio" value={lead.domicilioParticular || "No especificado"} />
+                <InfoRow icon={<MapPin size={13} />} label="Comuna/Ciudad" value={lead.comunaCiudad || "No especificado"} />
+                <InfoRow icon={<DollarSign size={13} />} label="Valor arriendo" value={lead.valorArriendo ? formatoMoneda(lead.valorArriendo) : "No aplica"} />
+                <InfoRow icon={<Shield size={13} />} label="AFP" value={lead.afp || "No especificado"} />
+              </div>
+            </div>
+
+            {/* Actividad Reciente */}
+            <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Activity size={16} className="text-purple-500" />
+                Actividad Reciente
+              </h3>
+              <div className="space-y-3">
+                {actividades.slice(0, 5).map((actividad) => {
+                  const configIcono = getIconoActividad(actividad.tipo);
+                  const IconoAct = configIcono.icono;
+                  return (
+                    <div key={actividad.id} className="flex items-start gap-3">
+                      <div className={`w-8 h-8 ${configIcono.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                        <IconoAct size={14} className={configIcono.color} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-semibold text-slate-700">{actividad.titulo}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{actividad.descripcion}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[9px] text-slate-300">{formatearTiempoRelativo(actividad.fecha)}</span>
+                          <span className="text-[9px] text-slate-400">• {actividad.usuario}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {actividades.length === 0 && (
+                  <div className="text-center py-6">
+                    <Activity size={24} className="text-slate-200 mx-auto mb-2" />
+                    <p className="text-[11px] text-slate-400">Sin actividad registrada</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Datos del Empleador */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+          {/* Fila 2: Datos del Empleador */}
+          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
             <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
               <Building2 size={16} className="text-emerald-500" />
               Datos del Empleador
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <InfoRow icon={<Building2 size={13} />} label="Nombre empleador" value={lead.nombreEmpleador || "No especificado"} />
               <InfoRow icon={<Hash size={13} />} label="RUT Empresa" value={lead.rutEmpresa || "No especificado"} />
               <InfoRow icon={<Calendar size={13} />} label="Fecha ingreso" value={lead.fechaIngreso || "No especificado"} />
@@ -546,41 +584,6 @@ export default function ClientePerfilPage() {
               <InfoRow icon={<Phone size={13} />} label="Teléfono fijo" value={lead.telefonoLaboralFijo || "No especificado"} />
               <InfoRow icon={<Mail size={13} />} label="Email laboral" value={lead.emailLaboral || "No especificado"} />
               <InfoRow icon={<DollarSign size={13} />} label="Otros ingresos" value={lead.otrosIngresos || "No especificado"} />
-            </div>
-          </div>
-
-          {/* Actividad reciente */}
-          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Activity size={16} className="text-purple-500" />
-              Actividad Reciente
-            </h3>
-            <div className="space-y-3">
-              {actividades.slice(0, 5).map((actividad) => {
-                const configIcono = getIconoActividad(actividad.tipo);
-                const IconoAct = configIcono.icono;
-                return (
-                  <div key={actividad.id} className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${configIcono.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <IconoAct size={14} className={configIcono.color} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-semibold text-slate-700">{actividad.titulo}</div>
-                      <div className="text-[10px] text-slate-400 truncate">{actividad.descripcion}</div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-300">{formatearTiempoRelativo(actividad.fecha)}</span>
-                        <span className="text-[9px] text-slate-400">• {actividad.usuario}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {actividades.length === 0 && (
-                <div className="text-center py-6">
-                  <Activity size={24} className="text-slate-200 mx-auto mb-2" />
-                  <p className="text-[11px] text-slate-400">Sin actividad registrada</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
