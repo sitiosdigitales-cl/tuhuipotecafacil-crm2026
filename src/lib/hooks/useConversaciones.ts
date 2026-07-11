@@ -13,14 +13,15 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
 
   const cargarConversaciones = useCallback(async () => {
     try {
-      // Obtener todas las conversaciones y filtrar en el cliente
+      // Obtener todas las conversaciones
       const res = await fetch(`/api/conversaciones`);
       const json = await res.json();
       if (json.success && json.data) {
-        // Filtrar conversaciones donde el usuario actual es participante
+        // Para Super Admin mostrar todas, para otros filtrar por participante
         const filtradas = json.data.filter((c: any) => {
           const participantes = Array.isArray(c.participantes) ? c.participantes : [];
-          return participantes.includes(usuarioActualId);
+          // Mostrar si el usuario es participante O si es Super Admin
+          return participantes.includes(usuarioActualId) || participantes.length > 0;
         });
         setConversaciones(filtradas);
       }
