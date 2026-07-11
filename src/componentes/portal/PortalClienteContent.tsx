@@ -99,15 +99,39 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     });
     if (found) {
       setCliente(found); setError("");
-      // Cargar datos del asesor
+      // Cargar datos del asesor desde la API de usuarios
       if (found.nombreEjecutivo) {
-        setAsesor({
-          nombre: found.nombreEjecutivo.split(" ")[0] || "",
-          apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
-          email: "asesor@tuhipotecafacil.cl",
-          telefono: "+56988182221",
-          cargo: "Asesor Hipotecario Senior",
-        });
+        try {
+          const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(found.nombreEjecutivo)}`);
+          const data = await res.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const usuario = data.data[0];
+            setAsesor({
+              nombre: usuario.nombre || "",
+              apellido: usuario.apellido || "",
+              email: usuario.email || "",
+              telefono: usuario.telefono || "",
+              cargo: usuario.cargo || "Asesor Hipotecario Senior",
+            });
+          } else {
+            // Si no se encuentra el usuario, usar datos del nombre
+            setAsesor({
+              nombre: found.nombreEjecutivo.split(" ")[0] || "",
+              apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
+              email: "",
+              telefono: "",
+              cargo: "Asesor Hipotecario Senior",
+            });
+          }
+        } catch {
+          setAsesor({
+            nombre: found.nombreEjecutivo.split(" ")[0] || "",
+            apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
+            email: "",
+            telefono: "",
+            cargo: "Asesor Hipotecario Senior",
+          });
+        }
       }
     } else {
       setError("RUT no encontrado"); setCliente(null);
