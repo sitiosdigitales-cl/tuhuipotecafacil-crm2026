@@ -16,7 +16,8 @@ const LABELS: Record<string, string> = {
   NUEVO_LEAD: "Nuevo Lead", CONTACTO_INICIAL: "Contacto Inicial", CONTACTADO: "Contactado",
   INTERESADO: "Interesado", CALIFICACION_COMERCIAL: "Calificación", DOCS_PENDIENTES: "Doc. Pendiente",
   DOCS_PARCIALES: "Doc. Parcial", DOCS_COMPLETAS: "Doc. Completa", EVALUACION_BANCARIA: "Evaluación",
-  PREAPROBADO: "Preaprobado", APROBADO: "Aprobado",
+  PREAPROBADO: "Preaprobado", APROBADO: "Aprobado", FIRMA_DIGITAL: "Firma",
+  NOTARIA: "Notaría", CREDITO_PAGADO: "Desembolso",
 };
 
 export function GraficoEmbudo() {
@@ -24,7 +25,7 @@ export function GraficoEmbudo() {
   const [etapaSeleccionada, setEtapaSeleccionada] = useState<number | null>(null);
 
   const datos = useMemo(() => {
-    const etapasVisibles = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "DOCS_COMPLETAS", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO"];
+    const etapasVisibles = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "DOCS_COMPLETAS", "EVALUACION_BANCARIA", "PREAPROBADO", "APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO"];
     return etapasVisibles.map((etapa) => ({
       key: etapa,
       label: LABELS[etapa] || etapa,
