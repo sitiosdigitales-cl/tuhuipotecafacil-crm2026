@@ -369,11 +369,11 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 <div className="absolute top-6 left-[12%] h-1 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all duration-700"
                   style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
 
-                {PASOS_PROGRESO.slice(0, 4).map((paso, i) => {
+                {PASOS_PROGRESO.map((paso, i) => {
                   const completado = progreso > i + 1;
                   const actual = progreso === i + 1;
                   return (
-                    <div key={paso.paso} className="flex flex-col items-center relative z-10 w-1/4">
+                    <div key={paso.paso} className="flex flex-col items-center relative z-10 flex-1">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                         completado ? "bg-teal-500 text-white shadow-md shadow-teal-500/30" :
                         actual ? "bg-teal-500 text-white ring-4 ring-teal-100 shadow-lg shadow-teal-500/30" :
