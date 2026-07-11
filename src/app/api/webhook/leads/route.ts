@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     const cuentaPie = cuentaPieRaw.toLowerCase().includes("sí") || cuentaPieRaw.toLowerCase().includes("si") || cuentaPieRaw.toLowerCase().includes("yes");
 
     // Comentarios
+
     const comentarios = findField("Comentarios adicionales", "comentarios", "notas", "mensaje");
 
     console.log("Campos mapeados:", { nombre, apellido, rut, email, telefono, situacionLaboral, enDicom, tipoCredito, cuentaPie, comentarios });
@@ -98,8 +99,6 @@ export async function POST(request: NextRequest) {
         dicomDetalle: dicomDetalle || null,
         diasEnEtapa: 0,
         rentaMensual: rentaMensual || null,
-        complementarRenta: complementarRenta,
-        cuentaPie: cuentaPie,
         cargasLegales: null,
         estadoCivil: null,
         regimenMatrimonial: null,
