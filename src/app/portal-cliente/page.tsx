@@ -97,16 +97,16 @@ const estadoConfig: Record<string, { label: string; icono: React.ReactNode; colo
 };
 
 const PASOS_PROGRESO = [
-  { paso: 1, label: "Solicitud", icono: <FileText size={14} /> },
-  { paso: 2, label: "Contacto", icono: <Phone size={14} /> },
-  { paso: 3, label: "Evaluación", icono: <User size={14} /> },
-  { paso: 4, label: "Documentos", icono: <FileCheck size={14} /> },
-  { paso: 5, label: "Banco", icono: <Building2 size={14} /> },
-  { paso: 6, label: "Preaprobado", icono: <TrendingUp size={14} /> },
-  { paso: 7, label: "Aprobado", icono: <CheckCircle size={14} /> },
-  { paso: 8, label: "Firma", icono: <FileCheck size={14} /> },
-  { paso: 9, label: "Notaría", icono: <Award size={14} /> },
-  { paso: 10, label: "Desembolso", icono: <DollarSign size={14} /> },
+  { paso: 1, label: "Registro", icono: <FileText size={14} />, etapa: "NUEVO_LEAD" as Etapa },
+  { paso: 2, label: "Contacto", icono: <Phone size={14} />, etapa: "CONTACTADO" as Etapa },
+  { paso: 3, label: "Calificación", icono: <User size={14} />, etapa: "CALIFICACION_COMERCIAL" as Etapa },
+  { paso: 4, label: "Documentación", icono: <FileCheck size={14} />, etapa: "DOCS_COMPLETAS" as Etapa },
+  { paso: 5, label: "Evaluación", icono: <Building2 size={14} />, etapa: "EVALUACION_BANCARIA" as Etapa },
+  { paso: 6, label: "Pre Aprobación", icono: <TrendingUp size={14} />, etapa: "PREAPROBADO" as Etapa },
+  { paso: 7, label: "Aprobado", icono: <CheckCircle size={14} />, etapa: "APROBADO" as Etapa },
+  { paso: 8, label: "Firma", icono: <FileCheck size={14} />, etapa: "FIRMA_DIGITAL" as Etapa },
+  { paso: 9, label: "Notaría", icono: <Award size={14} />, etapa: "NOTARIA" as Etapa },
+  { paso: 10, label: "Desembolso", icono: <DollarSign size={14} />, etapa: "CREDITO_PAGADO" as Etapa },
 ];
 
 export default function PortalClientePage() {
@@ -168,6 +168,8 @@ export default function PortalClientePage() {
   });
   const [guardandoPerfil, setGuardandoPerfil] = useState(false);
   const [perfilGuardado, setPerfilGuardado] = useState(false);
+  const [editandoProgreso, setEditandoProgreso] = useState(false);
+  const [guardandoProgreso, setGuardandoProgreso] = useState(false);
 
   // RUTs de clientes reales del sistema
   const rutsEjemplo = useMemo(() => {
@@ -386,6 +388,28 @@ export default function PortalClientePage() {
       setTimeout(() => setPerfilGuardado(false), 3000);
     } finally {
       setGuardandoPerfil(false);
+    }
+  };
+
+  const actualizarEtapaProgreso = async (nuevaEtapa: Etapa) => {
+    if (!cliente) return;
+    setGuardandoProgreso(true);
+
+    try {
+      const response = await fetch(`/api/leads/${cliente.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ etapa: nuevaEtapa }),
+      });
+
+      if (response.ok) {
+        setCliente({ ...cliente, etapa: nuevaEtapa });
+      }
+    } catch {
+      // Guardar localmente si la API falla
+      setCliente({ ...cliente, etapa: nuevaEtapa });
+    } finally {
+      setGuardandoProgreso(false);
     }
   };
 
@@ -683,78 +707,147 @@ export default function PortalClientePage() {
                 {/* Tab Progreso */}
                 {tabActiva === "progreso" && (
                   <div>
-                    {/* Barra de Progreso */}
-                    <div className="mb-8">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] text-slate-500 font-medium">Progreso General</span>
-                        <span className="text-sm font-bold text-blue-600">{progreso.toFixed(0)}%</span>
+                    {/* Header del Progreso */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900">Progreso de tu Crédito</h4>
+                        <p className="text-[10px] text-slate-400">
+                          {etapaActual > 0 ? `${progreso.toFixed(0)}% completado` : "Inicia tu proceso de crédito"}
+                        </p>
                       </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="flex items-center gap-2">
+                        {guardandoProgreso && (
+                          <span className="text-[10px] text-blue-500 flex items-center gap-1">
+                            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            Guardando...
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setEditandoProgreso(!editandoProgreso)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${
+                            editandoProgreso
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          {editandoProgreso ? (
+                            <>
+                              <Check size={12} /> Finalizar Edición
+                            </>
+                          ) : (
+                            <>
+                              <Edit size={12} /> Editar Progreso
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Barra de Progreso */}
+                    <div className="mb-6">
+                      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-1000"
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700"
                           style={{ width: `${progreso}%` }}
                         />
                       </div>
                     </div>
 
-                    {/* Timeline de Pasos */}
-                    <div className="relative">
-                      {PASOS_PROGRESO.map((paso, i) => {
-                        const esCompletado = etapaActual > paso.paso;
-                        const esActual = etapaActual === paso.paso;
-                        const esFuturo = etapaActual < paso.paso;
-                        const esUltimo = i === PASOS_PROGRESO.length - 1;
+                    {/* Progreso Horizontal de Pasos */}
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="flex items-center justify-between relative">
+                        {/* Línea de fondo */}
+                        <div className="absolute top-5 left-[5%] right-[5%] h-0.5 bg-slate-200" />
+                        <div
+                          className="absolute top-5 left-[5%] h-0.5 bg-emerald-500 transition-all duration-700"
+                          style={{ width: `${Math.max(0, (progreso / 100) * 90)}%` }}
+                        />
 
-                        return (
-                          <div key={paso.paso} className="flex items-start gap-4 relative">
-                            {/* Línea conectora */}
-                            {!esUltimo && (
-                              <div className={`absolute left-5 top-10 w-0.5 h-8 ${
-                                esCompletado ? "bg-emerald-500" : "bg-slate-200"
-                              }`} />
-                            )}
+                        {PASOS_PROGRESO.map((paso, i) => {
+                          const esCompletado = etapaActual > paso.paso;
+                          const esActual = etapaActual === paso.paso;
+                          const esFuturo = etapaActual < paso.paso;
 
-                            {/* Círculo del paso */}
-                            <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                              esActual
-                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-100"
-                                : esCompletado
-                                ? "bg-emerald-500 text-white"
-                                : "bg-slate-100 text-slate-400 border-2 border-slate-200"
-                            }`}>
-                              {esCompletado ? (
-                                <Check size={16} />
-                              ) : esActual ? (
-                                paso.icono
-                              ) : (
-                                <span className="text-[10px] font-bold">{paso.paso}</span>
-                              )}
-                            </div>
-
-                            {/* Contenido del paso */}
-                            <div className={`flex-1 pb-6 ${esActual ? "pt-0.5" : "pt-1"}`}>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[12px] font-bold ${
-                                  esActual ? "text-blue-700" : esCompletado ? "text-emerald-700" : "text-slate-400"
-                                }`}>
-                                  {paso.label}
-                                </span>
-                                {esActual && (
-                                  <span className="text-[8px] font-bold px-2 py-0.5 bg-blue-500 text-white rounded-full">
-                                    ACTUAL
-                                  </span>
-                                )}
-                                {esCompletado && (
-                                  <span className="text-[8px] font-bold px-2 py-0.5 bg-emerald-500 text-white rounded-full">
-                                    COMPLETADO
-                                  </span>
+                          return (
+                            <div
+                              key={paso.paso}
+                              className={`relative z-10 flex flex-col items-center gap-2 ${
+                                editandoProgreso ? "cursor-pointer" : ""
+                              }`}
+                              onClick={() => {
+                                if (editandoProgreso && cliente) {
+                                  actualizarEtapaProgreso(paso.etapa);
+                                }
+                              }}
+                            >
+                              {/* Círculo del paso */}
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                  esActual
+                                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-100"
+                                    : esCompletado
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-white text-slate-400 border-2 border-slate-200"
+                                } ${editandoProgreso && !esCompletado ? "hover:scale-110 hover:border-blue-400" : ""}`}
+                              >
+                                {esCompletado ? (
+                                  <Check size={16} />
+                                ) : (
+                                  paso.icono
                                 )}
                               </div>
+
+                              {/* Label */}
+                              <span
+                                className={`text-[9px] font-semibold text-center max-w-[60px] leading-tight ${
+                                  esActual
+                                    ? "text-blue-700"
+                                    : esCompletado
+                                    ? "text-emerald-700"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {paso.label}
+                              </span>
+
+                              {/* Badge */}
+                              {esActual && (
+                                <span className="text-[7px] font-bold px-1.5 py-0.5 bg-blue-500 text-white rounded-full">
+                                  ACTUAL
+                                </span>
+                              )}
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
+
+                    {/* Info del paso actual */}
+                    <div className={`mt-6 p-4 rounded-xl ${configEstado?.bg || "bg-slate-50"}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center ${configEstado?.color || "text-slate-500"}`}>
+                          {configEstado?.icono}
+                        </div>
+                        <div>
+                          <div className={`text-sm font-bold ${configEstado?.color || "text-slate-700"}`}>
+                            {configEstado?.label || "Estado desconocido"}
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            {configEstado?.descripcion || "Tu solicitud se encuentra en esta etapa"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Leyenda */}
+                    {editandoProgreso && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <p className="text-[10px] text-blue-700 flex items-center gap-1.5">
+                          <Edit size={11} />
+                          <span className="font-semibold">Modo edición:</span> Haz clic en cualquier paso para marcar la etapa actual del crédito.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
