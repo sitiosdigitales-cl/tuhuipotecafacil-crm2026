@@ -55,6 +55,7 @@ import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Usuario, Lead, Etapa } from "@/tipos";
 import { useLeads } from "@/lib/contexts/LeadContext";
+import { PerfilProfesional } from "@/componentes/usuarios/PerfilProfesional";
 
 // Actividad mock del usuario
 function generarActividadUsuario(nombreUsuario: string) {
@@ -238,65 +239,30 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-100/80 overflow-hidden">
-        {/* Banner */}
-        <div className="h-24 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 relative">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+      {/* Perfil Profesional */}
+      <PerfilProfesional
+        usuario={usuario}
+        onActualizar={(datos) => {
+          setUsuario({ ...usuario, ...datos });
+          toast.success("Perfil actualizado");
+        }}
+        esPropioPerfil={true}
+      />
+
+      {/* Stats del perfil */}
+      <div className="grid grid-cols-5 gap-3">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 border border-blue-100/50">
+          <div className="text-[9px] text-blue-500 font-medium uppercase tracking-wider mb-1">Total Leads</div>
+          <div className="text-lg font-bold text-blue-700">{stats.totalLeads}</div>
+          <div className="text-[10px] text-blue-500 font-medium">asignados</div>
         </div>
-
-        {/* Perfil */}
-        <div className="px-6 pb-5 -mt-10 relative">
-          <div className="flex items-end justify-between">
-            <div className="flex items-end gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white">
-                {usuario.nombre[0]}{usuario.apellido[0]}
-              </div>
-              <div className="pb-1">
-                <h1 className="text-xl font-bold text-slate-900">{usuario.nombre} {usuario.apellido}</h1>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-slate-400 font-medium">{usuario.email}</span>
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${rolConfig.color}`}>
-                    {rolConfig.label}
-                  </span>
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${estadoConfig.color}`}>
-                    {estadoConfig.label}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 pb-1">
-              <button
-                onClick={abrirEditarPerfil}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
-              >
-                <Edit size={14} /> Editar Perfil
-              </button>
-              {esSuperAdmin && (
-                <button
-                  onClick={() => setConfiguracionOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
-                >
-                  <Settings size={14} /> Configuración
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Stats del perfil */}
-          <div className="grid grid-cols-5 gap-3 mt-5">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 border border-blue-100/50">
-              <div className="text-[9px] text-blue-500 font-medium uppercase tracking-wider mb-1">Total Leads</div>
-              <div className="text-lg font-bold text-blue-700">{stats.totalLeads}</div>
-              <div className="text-[10px] text-blue-500 font-medium">asignados</div>
-            </div>
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-3 border border-emerald-100/50">
-              <div className="text-[9px] text-emerald-500 font-medium uppercase tracking-wider mb-1">Aprobados</div>
-              <div className="text-lg font-bold text-emerald-700">{stats.aprobados}</div>
-              <div className="text-[10px] text-emerald-500 font-medium">créditos</div>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 border border-purple-100/50">
-              <div className="text-[9px] text-purple-500 font-medium uppercase tracking-wider mb-1">Monto Total</div>
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-3 border border-emerald-100/50">
+          <div className="text-[9px] text-emerald-500 font-medium uppercase tracking-wider mb-1">Aprobados</div>
+          <div className="text-lg font-bold text-emerald-700">{stats.aprobados}</div>
+          <div className="text-[10px] text-emerald-500 font-medium">créditos</div>
+        </div>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 border border-purple-100/50">
+          <div className="text-[9px] text-purple-500 font-medium uppercase tracking-wider mb-1">Monto Total</div>
               <div className="text-lg font-bold text-purple-700">{formatoMonedaAbreviado(stats.montoTotal)}</div>
               <div className="text-[10px] text-purple-500 font-medium">financiado</div>
             </div>
@@ -311,8 +277,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
               <div className="text-[10px] text-indigo-500 font-medium">por crédito</div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Contenido */}
       <div className="grid grid-cols-3 gap-5">

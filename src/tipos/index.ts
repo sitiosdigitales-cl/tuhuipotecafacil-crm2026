@@ -305,6 +305,20 @@ export interface Usuario {
   doisFA?: boolean;
   intentosFallidos?: number;
   suspendidoHasta?: Date;
+  // Información personal extendida
+  cargo?: string;
+  departamento?: string;
+  telefonoTrabajo?: string;
+  direccion?: string;
+  ciudad?: string;
+  pais?: string;
+  fechaIngreso?: string;
+  fechaNacimiento?: string;
+  biografia?: string;
+  linkedin?: string;
+  website?: string;
+  especialidades?: string[];
+  idiomas?: string[];
 }
 
 export const ESTADOS_USUARIO_CONFIG: Record<EstadoUsuario, { label: string; color: string }> = {
