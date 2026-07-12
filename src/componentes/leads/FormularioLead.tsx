@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
@@ -20,13 +20,13 @@ import {
 import { Lead, ETAPAS_CONFIG, ORIGEN_LABELS, RENTAS_MENSUALES, SITUACION_LABORAL_CONFIG } from "@/tipos";
 import type { SituacionLaboral } from "@/tipos";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  CreditCard, 
-  Building2, 
-  FileText, 
+import {
+  User,
+  Mail,
+  Phone,
+  CreditCard,
+  Building2,
+  FileText,
   DollarSign,
   Home,
   PieChart,
@@ -42,6 +42,8 @@ import {
   Calendar,
   Shield,
   TrendingUp,
+  Hash,
+  Check,
 } from "lucide-react";
 
 interface FormularioLeadProps {
@@ -72,6 +74,28 @@ const EJECUTIVOS = [
   "Javier Morales",
 ];
 
+const PASOS_CONFIG = [
+  { id: 1, label: "Datos Personales", icono: User, color: "blue" },
+  { id: 2, label: "Situación", icono: Briefcase, color: "purple" },
+  { id: 3, label: "Crédito", icono: DollarSign, color: "emerald" },
+];
+
+function formatRUT(value: string): string {
+  const clean = value.replace(/[^0-9kK]/g, "");
+  if (clean.length < 2) return clean;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${formatted}-${dv}`;
+}
+
+function formatPhone(value: string): string {
+  const clean = value.replace(/[^0-9]/g, "");
+  if (clean.length <= 2) return clean;
+  if (clean.length <= 6) return `${clean.slice(0, 2)} ${clean.slice(2)}`;
+  return `${clean.slice(0, 2)} ${clean.slice(2, 6)} ${clean.slice(6, 10)}`;
+}
+
 export function FormularioLead({ open, onOpenChange, lead, onSubmit }: FormularioLeadProps) {
   const [paso, setPaso] = useState(1);
   const [formData, setFormData] = useState<Partial<Lead>>({
@@ -99,10 +123,11 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [direccionTransicion, setDireccionTransicion] = useState<"adelante" | "atras">("adelante");
 
   useEffect(() => {
     if (lead) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Inicializacion intencional del formulario al recibir prop
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         nombre: lead.nombre,
         apellido: lead.apellido,
@@ -206,97 +231,198 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     }
   };
 
+  const irAPaso = useCallback((nuevoPaso: number) => {
+    if (nuevoPaso > paso) {
+      if (paso === 1 && !validatePaso1()) return;
+      setDireccionTransicion("adelante");
+    } else {
+      setDireccionTransicion("atras");
+    }
+    setPaso(nuevoPaso);
+  }, [paso]);
+
+  const camposPaso1 = [formData.nombre, formData.apellido, formData.rut].filter(Boolean).length;
+  const progresoPaso1 = Math.round((camposPaso1 / 3) * 100);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto p-0">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-6 py-4">
+        {/* Header con gradiente */}
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <SheetTitle className="text-lg font-bold text-slate-900">
+              <SheetTitle className="text-lg font-bold text-white">
                 {lead ? "Editar Lead" : "Nuevo Lead"}
               </SheetTitle>
-              <SheetDescription className="text-[11px] text-slate-400 mt-0.5">
+              <SheetDescription className="text-[11px] text-blue-100 mt-0.5">
                 {lead ? "Modifica la información del lead" : "Completa los datos del formulario web"}
               </SheetDescription>
             </div>
-            <button onClick={() => onOpenChange(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <X size={18} className="text-slate-400" />
+            <button onClick={() => onOpenChange(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <X size={18} className="text-white/70" />
             </button>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center gap-2 mt-4">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold ${
-              paso >= 1 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"
-            }`}>
-              {paso > 1 ? <CheckCircle2 size={12} /> : <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center">1</span>}
-              Datos Personales
-            </div>
-            <ChevronRight size={12} className="text-slate-300" />
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold ${
-              paso >= 2 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"
-            }`}>
-              {paso > 2 ? <CheckCircle2 size={12} /> : <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center">2</span>}
-              Situación
-            </div>
-            <ChevronRight size={12} className="text-slate-300" />
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-semibold ${
-              paso >= 3 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"
-            }`}>
-              <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center">3</span>
-              Crédito
-            </div>
+          {/* Progress Steps mejorados */}
+          <div className="flex items-center gap-1 mt-4">
+            {PASOS_CONFIG.map((p, idx) => (
+              <div key={p.id} className="flex items-center flex-1">
+                <button
+                  type="button"
+                  onClick={() => irAPaso(p.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-semibold transition-all flex-1 ${
+                    paso === p.id
+                      ? "bg-white text-blue-700 shadow-lg"
+                      : paso > p.id
+                      ? "bg-white/20 text-white"
+                      : "bg-white/10 text-white/50"
+                  }`}
+                >
+                  {paso > p.id ? (
+                    <CheckCircle2 size={14} />
+                  ) : (
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                      paso === p.id ? "bg-blue-600 text-white" : "bg-white/20 text-white/70"
+                    }`}>
+                      {p.id}
+                    </span>
+                  )}
+                  <span className="hidden sm:inline">{p.label}</span>
+                </button>
+                {idx < 2 && (
+                  <div className={`w-4 h-0.5 mx-1 rounded-full transition-colors ${
+                    paso > p.id ? "bg-white/40" : "bg-white/10"
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5">
           {/* Paso 1: Datos Personales */}
           {paso === 1 && (
-            <div className="space-y-5 animate-fade-in">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <User size={16} className="text-blue-600" />
+            <div className="space-y-5" key="paso1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <User size={18} className="text-blue-600" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Datos Personales</h4>
                   <p className="text-[10px] text-slate-400">Información del formulario web</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold text-slate-700">Nombre *</Label>
-                  <Input value={formData.nombre || ""} onChange={(e) => updateField("nombre", e.target.value)} placeholder="Jorge" className={`h-11 ${errors.nombre ? "border-red-500" : ""}`} />
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <User size={11} className="text-slate-400" /> Nombre *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      value={formData.nombre || ""}
+                      onChange={(e) => updateField("nombre", e.target.value)}
+                      placeholder="Jorge"
+                      className={`h-11 pl-3 pr-8 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                        errors.nombre ? "border-red-400 bg-red-50/50" : formData.nombre ? "border-emerald-200 bg-emerald-50/30" : ""
+                      }`}
+                    />
+                    {formData.nombre && !errors.nombre && (
+                      <Check size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                    )}
+                  </div>
                   {errors.nombre && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={10} /> {errors.nombre}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold text-slate-700">Apellido *</Label>
-                  <Input value={formData.apellido || ""} onChange={(e) => updateField("apellido", e.target.value)} placeholder="Naranjo" className={`h-11 ${errors.apellido ? "border-red-500" : ""}`} />
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <User size={11} className="text-slate-400" /> Apellido *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      value={formData.apellido || ""}
+                      onChange={(e) => updateField("apellido", e.target.value)}
+                      placeholder="Naranjo"
+                      className={`h-11 pl-3 pr-8 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                        errors.apellido ? "border-red-400 bg-red-50/50" : formData.apellido ? "border-emerald-200 bg-emerald-50/30" : ""
+                      }`}
+                    />
+                    {formData.apellido && !errors.apellido && (
+                      <Check size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                    )}
+                  </div>
                   {errors.apellido && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={10} /> {errors.apellido}</p>}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">RUT *</Label>
-                <Input value={formData.rut || ""} onChange={(e) => updateField("rut", e.target.value)} placeholder="18.211.210-0" className={`h-11 ${errors.rut ? "border-red-500" : ""}`} />
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <Hash size={11} className="text-slate-400" /> RUT *
+                </Label>
+                <div className="relative">
+                  <Input
+                    value={formData.rut || ""}
+                    onChange={(e) => updateField("rut", formatRUT(e.target.value))}
+                    placeholder="12.679.334-3"
+                    maxLength={12}
+                    className={`h-11 pl-3 pr-8 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 font-mono tracking-wide ${
+                      errors.rut ? "border-red-400 bg-red-50/50" : formData.rut && validateRUT(formData.rut) ? "border-emerald-200 bg-emerald-50/30" : ""
+                    }`}
+                  />
+                  {formData.rut && (
+                    validateRUT(formData.rut)
+                      ? <Check size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                      : <AlertCircle size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500" />
+                  )}
+                </div>
                 {errors.rut && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={10} /> {errors.rut}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold text-slate-700">Edad</Label>
-                  <Input type="number" value={formData.edad || ""} onChange={(e) => updateField("edad", e.target.value ? Number(e.target.value) : undefined)} placeholder="33" className="h-11" />
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <Calendar size={11} className="text-slate-400" /> Edad
+                  </Label>
+                  <Input
+                    type="number"
+                    value={formData.edad || ""}
+                    onChange={(e) => updateField("edad", e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="33"
+                    min={18}
+                    max={99}
+                    className="h-11 pl-3 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold text-slate-700">Teléfono</Label>
-                  <Input value={formData.telefono || ""} onChange={(e) => updateField("telefono", e.target.value)} placeholder="+56966842168" className="h-11" />
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <Phone size={11} className="text-slate-400" /> Teléfono
+                  </Label>
+                  <Input
+                    value={formData.telefono || ""}
+                    onChange={(e) => updateField("telefono", formatPhone(e.target.value))}
+                    placeholder="+56 9 6684 2168"
+                    className="h-11 pl-3 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">Correo Electrónico</Label>
-                <Input type="email" value={formData.email || ""} onChange={(e) => updateField("email", e.target.value)} placeholder="sitiosdigitales.cl@gmail.com" className={`h-11 ${errors.email ? "border-red-500" : ""}`} />
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <Mail size={11} className="text-slate-400" /> Correo Electrónico
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="email"
+                    value={formData.email || ""}
+                    onChange={(e) => updateField("email", e.target.value)}
+                    placeholder="correo@ejemplo.com"
+                    className={`h-11 pl-3 pr-8 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                      errors.email ? "border-red-400 bg-red-50/50" : formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) ? "border-emerald-200 bg-emerald-50/30" : ""
+                    }`}
+                  />
+                  {formData.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                    <Check size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+                  )}
+                </div>
                 {errors.email && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</p>}
               </div>
             </div>
@@ -304,10 +430,10 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
 
           {/* Paso 2: Situación Laboral y Financiera */}
           {paso === 2 && (
-            <div className="space-y-5 animate-fade-in">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Briefcase size={16} className="text-purple-600" />
+            <div className="space-y-5" key="paso2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <Briefcase size={18} className="text-purple-600" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Situación Laboral</h4>
@@ -316,76 +442,84 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">¿Cuál es tu situación laboral? *</Label>
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <Briefcase size={11} className="text-slate-400" /> Situación laboral *
+                </Label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => updateField("situacionLaboral", "DEPENDIENTE")}
                     className={`p-4 rounded-xl border-2 transition-all ${
                       formData.situacionLaboral === "DEPENDIENTE"
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
                         : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
                     <div className="text-2xl mb-2">👔</div>
                     <div className="text-[11px] font-bold text-slate-800">Dependiente</div>
-                    <div className="text-[9px] text-slate-400">Trabaja para una empresa</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">Trabaja para una empresa</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => updateField("situacionLaboral", "INDEPENDIENTE")}
                     className={`p-4 rounded-xl border-2 transition-all ${
                       formData.situacionLaboral === "INDEPENDIENTE"
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-blue-500 bg-blue-50 shadow-sm"
                         : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
                     <div className="text-2xl mb-2">💼</div>
                     <div className="text-[11px] font-bold text-slate-800">Independiente</div>
-                    <div className="text-[9px] text-slate-400">Trabaja por cuenta propia</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">Trabaja por cuenta propia</div>
                   </button>
                 </div>
               </div>
 
+              {/* DICOM como toggle */}
               <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">¿Estás actualmente en DICOM? *</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <Shield size={11} className="text-slate-400" /> ¿Estás en DICOM? *
+                </Label>
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                   <button
                     type="button"
-                    onClick={() => { updateField("enDicom", true); updateField("dicomDetalle", ""); }}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.enDicom === true
-                        ? "border-red-500 bg-red-50"
-                        : "border-slate-200 hover:border-slate-300"
+                    onClick={() => updateField("enDicom", !formData.enDicom)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      formData.enDicom ? "bg-red-500" : "bg-slate-300"
                     }`}
                   >
-                    <div className="text-[11px] font-bold text-slate-800">Sí</div>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      formData.enDicom ? "translate-x-[22px]" : "translate-x-0.5"
+                    }`} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => { updateField("enDicom", false); updateField("dicomDetalle", "No aplica"); }}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.enDicom === false
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-[11px] font-bold text-slate-800">No</div>
-                  </button>
+                  <span className="text-[11px] font-medium text-slate-700">
+                    {formData.enDicom ? (
+                      <span className="text-red-600">Sí, estoy en DICOM</span>
+                    ) : (
+                      "No estoy en DICOM"
+                    )}
+                  </span>
                 </div>
               </div>
 
               {formData.enDicom && (
-                <div className="space-y-2">
+                <div className="space-y-1.5 animate-in slide-in-from-top-1">
                   <Label className="text-[11px] font-semibold text-slate-700">¿Corresponde a?</Label>
-                  <Input value={formData.dicomDetalle || ""} onChange={(e) => updateField("dicomDetalle", e.target.value)} placeholder="Describe el motivo del DICOM" className="h-11" />
+                  <Input
+                    value={formData.dicomDetalle || ""}
+                    onChange={(e) => updateField("dicomDetalle", e.target.value)}
+                    placeholder="Describe el motivo del DICOM"
+                    className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  />
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">¿Cuál es tu renta mensual aproximada? *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <DollarSign size={11} className="text-slate-400" /> Renta mensual *
+                </Label>
                 <Select value={formData.rentaMensual || ""} onValueChange={(v) => updateField("rentaMensual", v)}>
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
                     <SelectValue placeholder="Seleccionar rango de renta" />
                   </SelectTrigger>
                   <SelectContent>
@@ -396,31 +530,24 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                 </Select>
               </div>
 
+              {/* Complementar renta como toggle */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold text-slate-700">¿Deseas complementar renta?</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                   <button
                     type="button"
-                    onClick={() => updateField("complementarRenta", true)}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.complementarRenta === true
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-slate-200 hover:border-slate-300"
+                    onClick={() => updateField("complementarRenta", !formData.complementarRenta)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      formData.complementarRenta ? "bg-blue-500" : "bg-slate-300"
                     }`}
                   >
-                    <div className="text-[11px] font-bold text-slate-800">Sí</div>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      formData.complementarRenta ? "translate-x-[22px]" : "translate-x-0.5"
+                    }`} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => updateField("complementarRenta", false)}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.complementarRenta === false
-                        ? "border-slate-200"
-                        : "border-blue-500 bg-blue-50"
-                    }`}
-                  >
-                    <div className="text-[11px] font-bold text-slate-800">No</div>
-                  </button>
+                  <span className="text-[11px] font-medium text-slate-700">
+                    {formData.complementarRenta ? "Sí, deseo complementar" : "No, solo mi renta principal"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -428,10 +555,10 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
 
           {/* Paso 3: Tipo de Crédito */}
           {paso === 3 && (
-            <div className="space-y-5 animate-fade-in">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <DollarSign size={16} className="text-emerald-600" />
+            <div className="space-y-5" key="paso3">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                  <DollarSign size={18} className="text-emerald-600" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Tipo de Crédito</h4>
@@ -440,7 +567,9 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">¿Qué tipo de crédito buscas? *</Label>
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <TrendingUp size={11} className="text-slate-400" /> Tipo de crédito *
+                </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {TIPOS_CREDITO.map((tipo) => (
                     <button
@@ -449,7 +578,7 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                       onClick={() => updateField("tipoCredito", tipo)}
                       className={`p-3 rounded-xl border-2 transition-all text-left ${
                         formData.tipoCredito === tipo
-                          ? "border-blue-500 bg-blue-50"
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
                           : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
@@ -459,51 +588,48 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                 </div>
               </div>
 
+              {/* Pie como toggle */}
               <div className="space-y-2">
-                <Label className="text-[11px] font-semibold text-slate-700">¿Cuentas con pie o ahorro inicial? *</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                  <PieChart size={11} className="text-slate-400" /> ¿Cuentas con pie o ahorro inicial? *
+                </Label>
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                   <button
                     type="button"
-                    onClick={() => updateField("cuentaPie", true)}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.cuentaPie === true
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-slate-200 hover:border-slate-300"
+                    onClick={() => updateField("cuentaPie", !formData.cuentaPie)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      formData.cuentaPie ? "bg-emerald-500" : "bg-slate-300"
                     }`}
                   >
-                    <div className="text-[11px] font-bold text-slate-800">Sí</div>
+                    <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      formData.cuentaPie ? "translate-x-[22px]" : "translate-x-0.5"
+                    }`} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => updateField("cuentaPie", false)}
-                    className={`p-3 rounded-xl border-2 transition-all ${
-                      formData.cuentaPie === false
-                        ? "border-red-500 bg-red-50"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-[11px] font-bold text-slate-800">No</div>
-                  </button>
+                  <span className="text-[11px] font-medium text-slate-700">
+                    {formData.cuentaPie ? "Sí, cuento con pie" : "No, necesito financiar el pie"}
+                  </span>
                 </div>
               </div>
 
               {/* Datos internos CRM */}
               <div className="pt-4 mt-4 border-t border-slate-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Building2 size={16} className="text-slate-600" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <Building2 size={18} className="text-slate-600" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Datos CRM (Internos)</h4>
+                    <h4 className="text-sm font-bold text-slate-900">Datos CRM</h4>
                     <p className="text-[10px] text-slate-400">Información adicional del sistema</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-[11px] font-semibold text-slate-700">Banco</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                      <Building2 size={11} className="text-slate-400" /> Banco
+                    </Label>
                     <Select value={formData.banco} onValueChange={(v) => updateField("banco", v)}>
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -513,10 +639,12 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[11px] font-semibold text-slate-700">Ejecutivo</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                      <UserCheck size={11} className="text-slate-400" /> Ejecutivo
+                    </Label>
                     <Select value={formData.nombreEjecutivo || ""} onValueChange={(v) => updateField("nombreEjecutivo", v)}>
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -528,13 +656,16 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                   </div>
                 </div>
 
-                <div className="space-y-2 mt-4">
-                  <Label className="text-[11px] font-semibold text-slate-700">Comentarios Adicionales</Label>
+                <div className="space-y-1.5 mt-4">
+                  <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
+                    <MessageSquare size={11} className="text-slate-400" /> Comentarios
+                  </Label>
                   <textarea
                     value={formData.comentarios || ""}
                     onChange={(e) => updateField("comentarios", e.target.value)}
-                    placeholder="prueba 2"
-                    className="w-full min-h-[80px] px-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    placeholder="Notas adicionales sobre el lead..."
+                    rows={3}
+                    className="w-full px-4 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -544,7 +675,7 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
           {/* Botones de navegación */}
           <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100">
             {paso > 1 ? (
-              <button type="button" onClick={() => setPaso(paso - 1)} className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+              <button type="button" onClick={() => irAPaso(paso - 1)} className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                 <ChevronLeft size={14} /> Anterior
               </button>
             ) : (
@@ -556,19 +687,13 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
             {paso < 3 ? (
               <button
                 type="button"
-                onClick={() => {
-                  if (paso === 1 && validatePaso1()) {
-                    setPaso(2);
-                  } else {
-                    setPaso(3);
-                  }
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 gradient-primary text-white rounded-xl text-[11px] font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15"
+                onClick={() => irAPaso(paso + 1)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
               >
                 Siguiente <ChevronRight size={14} />
               </button>
             ) : (
-              <button type="submit" className="flex items-center gap-2 px-5 py-2.5 gradient-primary text-white rounded-xl text-[11px] font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15">
+              <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[11px] font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20">
                 <Save size={14} />
                 {lead ? "Guardar Cambios" : "Crear Lead"}
               </button>
