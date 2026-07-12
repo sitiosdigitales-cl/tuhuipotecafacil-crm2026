@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, ShieldCheck, AlertCircle, Check, ChevronDown, Phone, MessageSquare, Info, Percent, Copy, ArrowRight, BarChart3, PieChart as PieIcon, GitCompare, Lightbulb } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -210,18 +210,70 @@ export default function SimuladorPage() {
     </button>
   );
 
-  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint }: any) => (
-    <div className="space-y-1.5">
-      <label className="text-[11px] font-bold text-slate-600">{label}</label>
-      <div className="relative">
-        {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{prefix}</span>}
-        <input type="text" value={value.toLocaleString("es-CL")} onChange={(e) => onChange(Number(e.target.value.replace(/[^0-9]/g, "")))}
-          placeholder={placeholder}
-          className={`w-full ${prefix ? "pl-7" : "pl-3"} pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all`} />
+  const formatCLP = (n: number): string => {
+    if (n === 0) return "";
+    return n.toLocaleString("es-CL");
+  };
+
+  const parseCLP = (s: string): number => {
+    return Number(s.replace(/[^0-9]/g, "")) || 0;
+  };
+
+  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint, suffix }: { label: string; value: number; onChange: (v: number) => void; prefix?: string; placeholder?: string; hint?: string; suffix?: string }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [displayValue, setDisplayValue] = useState(formatCLP(value));
+
+    useEffect(() => {
+      setDisplayValue(formatCLP(value));
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/[^0-9]/g, "");
+      const num = Number(raw) || 0;
+      const formatted = formatCLP(num);
+
+      // Guardar posición del cursor relativa a los dígitos
+      const cursorPos = e.target.selectionStart || 0;
+      const prevDigitsBeforeCursor = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+
+      setDisplayValue(formatted);
+      onChange(num);
+
+      // Reposicionar cursor después del formateo
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        let newPos = 0;
+        let digitCount = 0;
+        for (let i = 0; i < formatted.length; i++) {
+          if (digitCount === prevDigitsBeforeCursor) break;
+          newPos = i + 1;
+          if (/[0-9]/.test(formatted[i])) digitCount++;
+        }
+        input.setSelectionRange(newPos, newPos);
+      });
+    };
+
+    return (
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-bold text-slate-600">{label}</label>
+        <div className="relative">
+          {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{prefix}</span>}
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            value={displayValue}
+            onChange={handleChange}
+            placeholder={placeholder}
+            className={`w-full ${prefix ? "pl-7" : "pl-3"} ${suffix ? "pr-16" : "pr-4"} py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all`}
+          />
+          {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">{suffix}</span>}
+        </div>
+        {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
       </div>
-      {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
@@ -342,12 +394,7 @@ export default function SimuladorPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <div>
                 <label className="text-[11px] font-bold text-slate-600 mb-2 block">Pie</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-                  <input type="text" value={pie.toLocaleString("es-CL")} onChange={(e) => setPie(Number(e.target.value.replace(/[^0-9]/g, "")))}
-                    className="w-full pl-7 pr-16 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">{porcentajePie.toFixed(0)}%</span>
-                </div>
+                <InputField label="" value={pie} onChange={setPie} suffix={`${porcentajePie.toFixed(0)}%`} />
                 <input type="range" min={0} max={valorPropiedad} step={500000} value={pie}
                   onChange={(e) => setPie(Math.min(Number(e.target.value), valorPropiedad))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2 accent-[#0283A7]" />
                 <div className="flex gap-1.5 mt-2">
