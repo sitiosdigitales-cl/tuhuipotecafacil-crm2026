@@ -1,369 +1,647 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import {
-  Calculator, DollarSign, TrendingUp, Calendar, Building2, RefreshCw,
-  Shield, ShieldCheck, ShieldAlert, ChevronDown, Check, Info, Home,
-  Wallet, Copy, Phone, MessageSquare, AlertCircle,
-} from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, ShieldCheck, AlertCircle, Check, ChevronDown, Phone, MessageSquare, Info, Percent, Copy, ArrowRight, BarChart3, PieChart as PieIcon, GitCompare, Lightbulb } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 
-const VALOR_UF_CLP = 38957.56;
-const MINIMO_PIE = 0.20;
+const UF_CLP = 38957.56;
 
-interface SeguroConfig {
-  id: string;
-  nombre: string;
-  tasaMensual: number;
-  base: "credito" | "propiedad";
-  obligatorio: boolean;
-}
-
-const SEGUROS: SeguroConfig[] = [
-  { id: "desgravamen", nombre: "Seguro de Desgravamen", tasaMensual: 0.00025, base: "credito", obligatorio: true },
-  { id: "incendio", nombre: "Seguro de Incendio y Sismo", tasaMensual: 0.0000375, base: "propiedad", obligatorio: true },
-  { id: "sismo", nombre: "Seguro de Sismo", tasaMensual: 0.00002, base: "propiedad", obligatorio: false },
+// Bancos con tasas reales CMF
+const BANCOS = [
+  { id: "bancodechile", nombre: "Banco de Chile", tasa: 4.79, color: "#E31837" },
+  { id: "bci", nombre: "BCI", tasa: 4.95, color: "#0071CE" },
+  { id: "santander", nombre: "Santander", tasa: 4.89, color: "#EC0000" },
+  { id: "scotiabank", nombre: "Scotiabank", tasa: 5.10, color: "#EC111A" },
+  { id: "bancostado", nombre: "BancoEstado", tasa: 4.65, color: "#004B87" },
+  { id: "itaucorpbanco", nombre: "Itaú", tasa: 5.20, color: "#F58220" },
+  { id: "bice", nombre: "BICE", tasa: 5.05, color: "#003DA5" },
+  { id: "coopeuch", nombre: "Coopeuch", tasa: 4.55, color: "#00A651" },
 ];
 
-const PLAZOS = [5, 10, 12, 15, 18, 20, 25, 30];
+const SEGUROS = [
+  { id: "desgravamen", nombre: "Seguro de Desgravamen", tasaAnual: 0.003, base: "credito" as const, obligatorio: true },
+  { id: "incendio", nombre: "Seguro de Incendio y Sismo", tasaAnual: 0.00045, base: "propiedad" as const, obligatorio: true },
+  { id: "cesantia", nombre: "Seguro de Cesantía", tasaAnual: 0.0025, base: "credito" as const, obligatorio: false },
+  { id: "vida", nombre: "Seguro de Vida", tasaAnual: 0.0015, base: "credito" as const, obligatorio: false },
+];
+
+const GASTOS = [
+  { nombre: "Tasación", monto: 80000 },
+  { nombre: "Estudio de títulos", monto: 120000 },
+  { nombre: "Conservador", monto: 60000 },
+  { nombre: "Notaría", monto: 250000 },
+  { nombre: "Impuestos", monto: 150000 },
+  { nombre: "Comisión avalúo", porc: 0.002 },
+];
+
+const PLAZOS = [5, 10, 15, 20, 25, 30, 35];
+
+function fmt(n: number) {
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(n);
+}
+
+function fmtUF(n: number) {
+  return `${(n / UF_CLP).toFixed(2)} UF`;
+}
 
 export default function SimuladorPage() {
-  const [ingresoHogar, setIngresoHogar] = useState(2500000);
+  // Income
+  const [ingreso, setIngreso] = useState(2500000);
+  const [tieneSegundoIngreso, setTieneSegundoIngreso] = useState(false);
+  const [segundoIngreso, setSegundoIngreso] = useState(0);
+  const [bonos, setBonos] = useState(0);
+  const [otrosIngresos, setOtrosIngresos] = useState(0);
+
+  // Expenses
+  const [arriendo, setArriendo] = useState(0);
+  const [creditosConsumo, setCreditosConsumo] = useState(0);
+  const [automotriz, setAutomotriz] = useState(0);
+  const [tarjetas, setTarjetas] = useState(0);
+  const [lineasCredito, setLineasCredito] = useState(0);
+  const [pensiones, setPensiones] = useState(0);
+  const [otrosDescuentos, setOtrosDescuentos] = useState(0);
+
+  // Property
   const [valorPropiedad, setValorPropiedad] = useState(120000000);
+  const [tipoPropiedad, setTipoPropiedad] = useState("departamento");
+  const [destino, setDestino] = useState("primera_vivienda");
+  const [region, setRegion] = useState("metropolitana");
+
+  // Financing
   const [pie, setPie] = useState(24000000);
   const [plazo, setPlazo] = useState(20);
-  const [tasa, setTasa] = useState(4.12);
-  const [tipoDividendo, setTipoDividendo] = useState<"fijo" | "variable">("fijo");
-  const [segurosOn, setSegurosOn] = useState({ desgravamen: true, incendio: true, sismo: true });
-  const [loading, setLoading] = useState(true);
+  const [tipoTasa, setTipoTasa] = useState("fija");
+  const [bancoSeleccionado, setBancoSeleccionado] = useState("bancodechile");
+  const [tasaPersonalizada, setTasaPersonalizada] = useState(0);
 
+  // Seguros
+  const [segurosOn, setSegurosOn] = useState<Record<string, boolean>>({
+    desgravamen: true, incendio: true, cesantia: false, vida: false,
+  });
+
+  // UI
+  const [seccionActiva, setSeccionActiva] = useState(1);
+
+  const totalIngresos = useMemo(() =>
+    ingreso + (tieneSegundoIngreso ? segundoIngreso : 0) + bonos + otrosIngresos
+  , [ingreso, tieneSegundoIngreso, segundoIngreso, bonos, otrosIngresos]);
+
+  const totalCompromisos = useMemo(() =>
+    arriendo + creditosConsumo + automotriz + tarjetas + lineasCredito + pensiones + otrosDescuentos
+  , [arriendo, creditosConsumo, automotriz, tarjetas, lineasCredito, pensiones, otrosDescuentos]);
+
+  const capacidadEndeudamiento = useMemo(() => {
+    const maxCuota = totalIngresos * 0.30;
+    const disponible = Math.max(0, maxCuota - totalCompromisos);
+    return disponible;
+  }, [totalIngresos, totalCompromisos]);
+
+  const tasaBanco = BANCOS.find((b) => b.id === bancoSeleccionado)?.tasa || 4.80;
+  const tasaFinal = tasaPersonalizada > 0 ? tasaPersonalizada : tasaBanco;
   const montoCredito = valorPropiedad - pie;
   const porcentajePie = valorPropiedad > 0 ? (pie / valorPropiedad) * 100 : 0;
-  const pieUF = pie / VALOR_UF_CLP;
+  const totalGastos = GASTOS.reduce((a, g) => a + (g.monto || 0) + (g.porc ? valorPropiedad * g.porc : 0), 0);
 
-  useEffect(() => {
-    async function cargar() {
-      try {
-        const res = await fetch("/api/cmf/rates?moneda=UF");
-        const data = await res.json();
-        if (data.success && data.data?.tasa) setTasa(data.data.tasa);
-      } catch { /* use default */ }
-      finally { setLoading(false); }
-    }
-    cargar();
-  }, []);
-
+  // Cálculo principal
   const resultado = useMemo(() => {
-    if (montoCredito <= 0 || plazo <= 0 || tasa <= 0) return null;
-    const rMensual = tasa / 100 / 12;
+    if (montoCredito <= 0 || plazo <= 0 || tasaFinal <= 0) return null;
+    const r = tasaFinal / 100 / 12;
     const n = plazo * 12;
-    const dividendoBase = montoCredito * (rMensual * Math.pow(1 + rMensual, n)) / (Math.pow(1 + rMensual, n) - 1);
+    const cuotaBase = montoCredito * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
 
-    const seguros = SEGUROS.filter((s) => segurosOn[s.id as keyof typeof segurosOn]).map((s) => {
-      const monto = s.base === "credito" ? montoCredito * s.tasaMensual : valorPropiedad * s.tasaMensual * 12;
-      return { id: s.id, nombre: s.nombre, mensual: monto };
+    const segurosCalc = SEGUROS.filter((s) => segurosOn[s.id]).map((s) => {
+      const mensual = s.base === "credito" ? montoCredito * s.tasaAnual / 12 : valorPropiedad * s.tasaAnual / 12;
+      return { id: s.id, nombre: s.nombre, mensual, anual: mensual * 12 };
     });
-    const totalSeguros = seguros.reduce((a, s) => a + s.mensual, 0);
-    const dividendoTotal = dividendoBase + totalSeguros;
+    const totalSeguros = segurosCalc.reduce((a, s) => a + s.mensual, 0);
+    const dividendo = cuotaBase + totalSeguros;
 
-    // CAE simplificado
-    const totalPagado = dividendoTotal * n;
-    const cae = ((totalPagado / montoCredito) ** (1 / plazo) - 1) * 100;
-    const costoTotal = totalPagado;
+    const totalPagado = dividendo * n;
+    const cae = Math.pow(totalPagado / montoCredito, 1 / plazo) - 1;
 
-    // Tabla de amortización anual (resumen)
-    const tabla: { año: number; saldoInicial: number; dividendo: number; interes: number; abonoCapital: number; saldoFinal: number }[] = [];
+    // Tabla de amortización anual
+    const tabla: any[] = [];
     let saldo = montoCredito;
+    const chartData: any[] = [];
+    const barData: any[] = [];
     for (let año = 1; año <= plazo; año++) {
-      let interesAño = 0;
-      let capitalAño = 0;
+      let intAño = 0, capAño = 0;
       for (let m = 0; m < 12; m++) {
-        const interes = saldo * rMensual;
-        const capital = dividendoBase - interes;
-        interesAño += interes;
-        capitalAño += capital;
-        saldo = Math.max(0, saldo - capital);
+        const int = saldo * r;
+        const cap = cuotaBase - int;
+        intAño += int;
+        capAño += cap;
+        saldo = Math.max(0, saldo - cap);
       }
-      tabla.push({
-        año, saldoInicial: saldo + capitalAño,
-        dividendo: dividendoBase + totalSeguros,
-        interes: interesAño, abonoCapital: capitalAño, saldoFinal: saldo,
-      });
+      tabla.push({ año, saldoInicial: saldo + capAño, dividendo, interes: intAño, capital: capAño, saldoFinal: saldo });
+      chartData.push({ name: `Año ${año}`, saldo: Math.round(saldo) });
+      barData.push({ name: `Año ${año}`, capital: Math.round(capAño), interes: Math.round(intAño) });
     }
 
-    return { dividendoBase, dividendoTotal, seguros, totalSeguros, cae, costoTotal, tabla };
-  }, [montoCredito, plazo, tasa, segurosOn, valorPropiedad]);
+    // Donut data
+    const donutData = [
+      { name: "Capital + Interés", value: Math.round(cuotaBase) },
+      ...segurosCalc.map((s) => ({ name: s.nombre.replace("Seguro de ", ""), value: Math.round(s.mensual) })),
+    ];
+    const COLORS = ["#0283A7", "#FF6B35", "#00AEEF", "#FFD447", "#10B981"];
 
-  const formatMonto = (m: number) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(m);
-  const formatMontoShort = (m: number) => {
-    if (m >= 1000000) return `$${(m / 1000000).toFixed(0)}M`;
-    return formatMonto(m);
-  };
+    return {
+      cuotaBase, dividendo, segurosCalc, totalSeguros, totalPagado,
+      cae: cae * 100, tabla, donutData, COLORS, chartData, barData,
+      costoTotal: totalPagado, intereses: cuotaBase * n - montoCredito,
+    };
+  }, [montoCredito, plazo, tasaFinal, segurosOn, valorPropiedad]);
+
+  // Comparación bancos
+  const comparacion = useMemo(() => {
+    return BANCOS.map((banco) => {
+      const r = banco.tasa / 100 / 12;
+      const n = plazo * 12;
+      const cuota = montoCredito * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const seguros = SEGUROS.filter((s) => segurosOn[s.id]).reduce((a, s) => {
+        return a + (s.base === "credito" ? montoCredito : valorPropiedad) * s.tasaAnual / 12;
+      }, 0);
+      const total = cuota + seguros;
+      const totalPagado = total * n;
+      const caeCalc = (Math.pow(totalPagado / montoCredito, 1 / plazo) - 1) * 100;
+      return { ...banco, dividendo: total, cae: caeCalc, costoTotal: totalPagado };
+    }).sort((a, b) => a.dividendo - b.dividendo);
+  }, [montoCredito, plazo, segurosOn, valorPropiedad]);
+
+  const mejorBanco = comparacion[0];
+  const bancoActual = comparacion.find((b) => b.id === bancoSeleccionado);
+
+  // Escenarios
+  const escenarios = useMemo(() => {
+    return [20, 25, 30].map((p) => {
+      const r = tasaFinal / 100 / 12;
+      const n = p * 12;
+      const cuota = montoCredito * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const seguros = SEGUROS.filter((s) => segurosOn[s.id]).reduce((a, s) => {
+        return a + (s.base === "credito" ? montoCredito : valorPropiedad) * s.tasaAnual / 12;
+      }, 0);
+      const total = (cuota + seguros) * n;
+      return { plazo: p, dividendo: cuota + seguros, costoTotal: total, intereses: cuota * n - montoCredito };
+    });
+  }, [montoCredito, tasaFinal, segurosOn, valorPropiedad]);
+
+  const nivelFinanciero = useMemo(() => {
+    const ratio = totalIngresos > 0 ? (capacidadEndeudamiento / totalIngresos) * 100 : 0;
+    if (ratio > 20) return { label: "Excelente", color: "text-emerald-600", bg: "bg-emerald-50", pct: Math.min(ratio * 3, 100) };
+    if (ratio > 10) return { label: "Bueno", color: "text-blue-600", bg: "bg-blue-50", pct: ratio * 4 };
+    if (ratio > 5) return { label: "Regular", color: "text-amber-600", bg: "bg-amber-50", pct: ratio * 5 };
+    return { label: "Crítico", color: "text-red-600", bg: "bg-red-50", pct: Math.max(ratio * 5, 10) };
+  }, [totalIngresos, capacidadEndeudamiento]);
+
+  const handleCopiar = useCallback(() => {
+    if (!resultado) return;
+    navigator.clipboard.writeText(`SIMULACIÓN CRÉDITO HIPOTECARIO\nPropiedad: ${fmt(valorPropiedad)}\nPie: ${fmt(pie)} (${porcentajePie.toFixed(0)}%)\nCrédito: ${fmt(montoCredito)}\nPlazo: ${plazo} años\nTasa: ${tasaFinal.toFixed(2)}%\n\nDividendo: ${fmt(resultado.dividendo)}/mes\nCAE: ${resultado.cae.toFixed(2)}%\nCosto Total: ${fmt(resultado.costoTotal)}`);
+    toast.success("Simulación copiada");
+  }, [resultado, valorPropiedad, pie, porcentajePie, montoCredito, plazo, tasaFinal]);
+
+  const SectionHeader = ({ num, title, icon: Icon }: { num: number; title: string; icon: any }) => (
+    <button onClick={() => setSeccionActiva(seccionActiva === num ? 0 : num)}
+      className="w-full flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-300 transition-all">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${seccionActiva === num ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>{num}</div>
+      <Icon size={16} className={seccionActiva === num ? "text-blue-600" : "text-slate-400"} />
+      <span className="text-sm font-bold text-slate-800 flex-1 text-left">{title}</span>
+      <ChevronDown size={16} className={`text-slate-400 transition-transform ${seccionActiva === num ? "rotate-180" : ""}`} />
+    </button>
+  );
+
+  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint }: any) => (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-bold text-slate-600">{label}</label>
+      <div className="relative">
+        {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{prefix}</span>}
+        <input type="text" value={value.toLocaleString("es-CL")} onChange={(e) => onChange(Number(e.target.value.replace(/[^0-9]/g, "")))}
+          placeholder={placeholder}
+          className={`w-full ${prefix ? "pl-7" : "pl-3"} pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all`} />
+      </div>
+      {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative bg-gradient-to-r from-[#1a2744] via-[#1e3a5f] to-[#234876] rounded-2xl overflow-hidden">
+    <div className="space-y-6 max-w-[1400px] mx-auto">
+      {/* Hero */}
+      <div className="relative bg-gradient-to-r from-[#0a1628] via-[#0d2137] to-[#0f2d4a] rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-        <div className="relative px-8 py-8">
-          <div className="max-w-2xl">
-            <h1 className="text-2xl font-bold text-white mb-2">Simulador de Crédito Hipotecario</h1>
-            <p className="text-sm text-blue-200/80 mb-1">
-              Calcula tu dividendo con tasas reales CMF y seguros incluidos
+        <div className="relative px-8 py-10 flex items-center justify-between">
+          <div className="max-w-xl">
+            <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Simulador de Crédito Hipotecario</h1>
+            <p className="text-sm text-blue-200/70 leading-relaxed">
+              Calcula tu dividendo utilizando tasas reales publicadas por la CMF, seguros incluidos y simulaciones comparativas entre bancos.
             </p>
-            <p className="text-[11px] text-blue-300/60">
-              Resultados estimados en base a datos reales del mercado.
-            </p>
+          </div>
+          <div className="hidden lg:flex items-center gap-4">
+            <div className="text-center px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+              <p className="text-[10px] text-blue-300/60 font-semibold">Tasa vigente</p>
+              <p className="text-xl font-bold text-white">{tasaFinal.toFixed(2)}%</p>
+              <p className="text-[9px] text-blue-300/50">CMF · UF</p>
+            </div>
+            <div className="text-center px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+              <p className="text-[10px] text-blue-300/60 font-semibold">UF hoy</p>
+              <p className="text-xl font-bold text-white">${UF_CLP.toLocaleString("es-CL")}</p>
+              <p className="text-[9px] text-blue-300/50">{new Date().toLocaleDateString("es-CL")}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Layout 2 columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Panel Izquierdo — Inputs */}
-        <div className="space-y-5">
-          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <Home size={16} className="text-blue-500" /> Ingresa tus datos
-          </h2>
-
-          {/* 1. Ingreso mensual */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">1. Ingreso mensual del hogar</label>
-            <p className="text-[10px] text-slate-400 mt-0.5 mb-2">¿Cuál es tu ingreso mensual líquido de tu hogar?</p>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-              <input type="text" value={ingresoHogar.toLocaleString("es-CL")} onChange={(e) => setIngresoHogar(Number(e.target.value.replace(/[^0-9]/g, "")))}
-                className="w-full pl-7 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-            </div>
-            <p className="text-[10px] text-blue-600 mt-2 flex items-center gap-1">
-              <Info size={10} /> El banco generalmente permite comprometer hasta el 25% del ingreso en dividendos.
-            </p>
-          </div>
-
-          {/* 2. Valor propiedad */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">2. Valor de la propiedad</label>
-            <p className="text-[10px] text-slate-400 mt-0.5 mb-2">¿Cuál es el valor de la propiedad que quieres comprar?</p>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-              <input type="text" value={valorPropiedad.toLocaleString("es-CL")} onChange={(e) => setValorPropiedad(Number(e.target.value.replace(/[^0-9]/g, "")))}
-                className="w-full pl-7 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-            </div>
-            <input type="range" min={20000000} max={500000000} step={1000000} value={valorPropiedad}
-              onChange={(e) => setValorPropiedad(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-3 accent-blue-500" />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>$20.000.000</span><span>$500.000.000</span>
-            </div>
-          </div>
-
-          {/* 3. Pie */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">3. Pie o ahorro inicial</label>
-            <p className="text-[10px] text-slate-400 mt-0.5 mb-2">¿Cuánto tienes para el pie de la propiedad?</p>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-              <input type="text" value={pie.toLocaleString("es-CL")} onChange={(e) => setPie(Number(e.target.value.replace(/[^0-9]/g, "")))}
-                className="w-full pl-7 pr-16 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">
-                ({porcentajePie.toFixed(0)}%)
-              </span>
-            </div>
-            <input type="range" min={0} max={valorPropiedad} step={1000000} value={pie}
-              onChange={(e) => setPie(Math.min(Number(e.target.value), valorPropiedad))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-3 accent-blue-500" />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>$0</span><span>{formatMontoShort(valorPropiedad)}</span>
-            </div>
-            {porcentajePie < 20 && (
-              <p className="text-[10px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
-                <AlertCircle size={10} /> El mínimo recomendado es 20%
-              </p>
-            )}
-          </div>
-
-          {/* 4. Plazo */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">4. Plazo del crédito</label>
-            <p className="text-[10px] text-slate-400 mt-0.5 mb-2">¿En cuántos años quieres pagar tu crédito?</p>
-            <select value={plazo} onChange={(e) => setPlazo(Number(e.target.value))}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none">
-              {PLAZOS.map((p) => <option key={p} value={p}>{p} años</option>)}
-            </select>
-            <input type="range" min={5} max={30} step={1} value={plazo}
-              onChange={(e) => setPlazo(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-3 accent-blue-500" />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>5 años</span><span>30 años</span>
-            </div>
-          </div>
-
-          {/* 5. Tasa */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">5. Tasa de interés</label>
-            <p className="text-[10px] text-slate-400 mt-0.5 mb-2">Tasa promedio ponderada publicada por la CMF</p>
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <input type="number" step="0.01" value={tasa} onChange={(e) => setTasa(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">%</span>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Columna izquierda — Formulario */}
+        <div className="lg:col-span-2 space-y-3">
+          {/* 1. Ingresos */}
+          <SectionHeader num={1} title="Ingresos del hogar" icon={DollarSign} />
+          {seccionActiva === 1 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+              <InputField label="Ingreso mensual líquido" value={ingreso} onChange={setIngreso} hint="Ingresos líquidos del grupo familiar" />
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={tieneSegundoIngreso} onChange={(e) => setTieneSegundoIngreso(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span className="text-xs font-semibold text-slate-700">Tengo segundo ingreso</span>
+              </label>
+              {tieneSegundoIngreso && <InputField label="Ingreso segundo titular" value={segundoIngreso} onChange={setSegundoIngreso} />}
+              <div className="grid grid-cols-2 gap-3">
+                <InputField label="Bonos" value={bonos} onChange={setBonos} />
+                <InputField label="Otros ingresos" value={otrosIngresos} onChange={setOtrosIngresos} />
               </div>
-              <span className="px-3 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-lg border border-blue-100">
-                Tasa real CMF
-              </span>
-            </div>
-            <p className="text-[10px] text-blue-500 mt-2 cursor-pointer hover:underline">
-              Ver detalle de las tasas en CMF →
-            </p>
-          </div>
-
-          {/* 6. Tipo dividendo + Seguros */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">6. Tipo de dividendo</label>
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <button onClick={() => setTipoDividendo("fijo")}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${tipoDividendo === "fijo" ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}>
-                <div className="text-xs font-bold text-slate-800">Dividendo Fijo</div>
-                <div className="text-[10px] text-slate-400">Misma cuota durante todo el plazo</div>
-              </button>
-              <button onClick={() => setTipoDividendo("variable")}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${tipoDividendo === "variable" ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}>
-                <div className="text-xs font-bold text-slate-800">Dividendo Variable</div>
-                <div className="text-[10px] text-slate-400">Varía según la tasa de interés</div>
-              </button>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Incluir seguros obligatorios</label>
-              <div className="space-y-2 mt-2">
-                {SEGUROS.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={segurosOn[s.id as keyof typeof segurosOn]}
-                      onChange={() => setSegurosOn((p) => ({ ...p, [s.id]: !p[s.id as keyof typeof p] }))}
-                      disabled={s.obligatorio}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="text-xs text-slate-700">{s.nombre}</span>
-                    {s.obligatorio && <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">obligatorio</span>}
-                  </label>
-                ))}
+              <div className="p-3 bg-blue-50 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-700">Total ingresos mensuales</span>
+                <span className="text-sm font-bold text-blue-700">{fmt(totalIngresos)}</span>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* CTA Calcular */}
-          <button className="w-full py-4 bg-[#1a2744] hover:bg-[#0f1a2e] text-white rounded-xl text-sm font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
-            <Calculator size={18} /> Calcular mi dividendo
-          </button>
-          <p className="text-center text-[10px] text-slate-400">100% Gratis · Sin compromiso</p>
-
-          {/* Ayuda */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
-            <p className="text-xs font-bold text-slate-700 mb-1">¿Dudas? Te ayudamos</p>
-            <p className="text-[10px] text-slate-400 mb-3">Nuestros expertos están listos para asesorarte.</p>
-            <div className="flex gap-2 justify-center">
-              <a href="https://wa.me/56966842168" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white rounded-lg text-[11px] font-semibold hover:bg-green-600 transition-colors">
-                <MessageSquare size={12} /> Escríbenos por WhatsApp
-              </a>
-              <a href="#"
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[11px] font-semibold hover:bg-blue-700 transition-colors">
-                <Phone size={12} /> Solicitar pre evaluación GRATIS
-              </a>
+          {/* 2. Gastos */}
+          <SectionHeader num={2} title="Gastos mensuales" icon={Wallet} />
+          {seccionActiva === 2 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <InputField label="Arriendo" value={arriendo} onChange={setArriendo} />
+                <InputField label="Créditos consumo" value={creditosConsumo} onChange={setCreditosConsumo} />
+                <InputField label="Automotriz" value={automotriz} onChange={setAutomotriz} />
+                <InputField label="Tarjetas" value={tarjetas} onChange={setTarjetas} />
+                <InputField label="Líneas de crédito" value={lineasCredito} onChange={setLineasCredito} />
+                <InputField label="Pensiones" value={pensiones} onChange={setPensiones} />
+              </div>
+              <InputField label="Otros descuentos" value={otrosDescuentos} onChange={setOtrosDescuentos} />
+              <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Total compromisos</span>
+                <span className="text-sm font-bold text-slate-800">{fmt(totalCompromisos)}</span>
+              </div>
+              <div className="p-3 bg-emerald-50 rounded-xl">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-emerald-700">Capacidad de endeudamiento</span>
+                  <span className="text-sm font-bold text-emerald-700">{fmt(capacidadEndeudamiento)}/mes</span>
+                </div>
+                <p className="text-[10px] text-emerald-600">Basado en el 30% de tus ingresos totales</p>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Panel Derecho — Resultados */}
-        <div className="space-y-5">
-          {resultado ? (
-            <>
-              {/* Dividendo estimado */}
-              <div className="bg-gradient-to-br from-[#1a2744] to-[#234876] rounded-xl p-6 text-white relative overflow-hidden">
-                <div className="absolute top-3 right-3 opacity-10"><Home size={80} /></div>
-                <p className="text-[11px] text-blue-200 font-semibold mb-1">Resultados de tu simulación</p>
-                <div className="flex items-center justify-between mt-3">
-                  <div>
-                    <p className="text-[10px] text-blue-300/70 mb-1">Tu dividendo mensual estimado</p>
-                    <p className="text-3xl font-bold">{formatMonto(resultado.dividendoTotal)}</p>
-                    <p className="text-[10px] text-blue-300/60 mt-1">Calculado con tasas reales CMF y seguros incluidos</p>
-                  </div>
+          {/* 3. Propiedad */}
+          <SectionHeader num={3} title="Datos de la propiedad" icon={Home} />
+          {seccionActiva === 3 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+              <InputField label="Valor de la propiedad" value={valorPropiedad} onChange={setValorPropiedad} hint={fmtUF(valorPropiedad)} />
+              <input type="range" min={20000000} max={500000000} step={1000000} value={valorPropiedad}
+                onChange={(e) => setValorPropiedad(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0283A7]" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">Tipo</label>
+                  <select value={tipoPropiedad} onChange={(e) => setTipoPropiedad(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <option value="departamento">Depto</option><option value="casa">Casa</option><option value="parcela">Parcela</option>
+                    <option value="sitio">Sitio</option><option value="oficina">Oficina</option><option value="comercial">Local</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">Destino</label>
+                  <select value={destino} onChange={(e) => setDestino(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <option value="primera_vivienda">1ª Vivienda</option><option value="segunda_vivienda">2ª Vivienda</option><option value="inversion">Inversión</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">Región</label>
+                  <select value={region} onChange={(e) => setRegion(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <option value="metropolitana">Metropolitana</option><option value="valparaiso">Valparaíso</option><option value="biobio">Biobío</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Financiamiento */}
+          <SectionHeader num={4} title="Financiamiento" icon={Building2} />
+          {seccionActiva === 4 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 mb-2 block">Pie</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <input type="text" value={pie.toLocaleString("es-CL")} onChange={(e) => setPie(Number(e.target.value.replace(/[^0-9]/g, "")))}
+                    className="w-full pl-7 pr-16 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">{porcentajePie.toFixed(0)}%</span>
+                </div>
+                <input type="range" min={0} max={valorPropiedad} step={500000} value={pie}
+                  onChange={(e) => setPie(Math.min(Number(e.target.value), valorPropiedad))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2 accent-[#0283A7]" />
+                <div className="flex gap-1.5 mt-2">
+                  {[10, 15, 20, 25, 30, 35, 40].map((pct) => (
+                    <button key={pct} onClick={() => setPie(Math.round(valorPropiedad * pct / 100))}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${porcentajePie === pct ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      {pct}%
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Cards resumen */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 mb-2 block">Plazo</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {PLAZOS.map((p) => (
+                    <button key={p} onClick={() => setPlazo(p)}
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${plazo === p ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      {p}a
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">Tipo tasa</label>
+                  <div className="flex gap-1">
+                    {["fija", "mixta", "variable"].map((t) => (
+                      <button key={t} onClick={() => setTipoTasa(t)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${tipoTasa === t ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500"}`}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600">Banco</label>
+                  <select value={bancoSeleccionado} onChange={(e) => setBancoSeleccionado(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    {BANCOS.map((b) => <option key={b.id} value={b.id}>{b.nombre} ({b.tasa}%)</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Info size={12} className="text-slate-400" />
+                  <span className="text-xs text-slate-600">Tasa: <strong>{tasaFinal.toFixed(2)}%</strong> UF</span>
+                </div>
+                <span className="text-[10px] text-slate-400">CMF · {new Date().toLocaleDateString("es-CL")}</span>
+              </div>
+            </div>
+          )}
+
+          {/* 5. Seguros */}
+          <SectionHeader num={5} title="Seguros" icon={Shield} />
+          {seccionActiva === 5 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
+              {SEGUROS.map((s) => (
+                <label key={s.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
+                  <input type="checkbox" checked={segurosOn[s.id]} onChange={() => setSegurosOn((p) => ({ ...p, [s.id]: !p[s.id] }))}
+                    disabled={s.obligatorio} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                  <div className="flex-1">
+                    <span className="text-xs font-semibold text-slate-700">{s.nombre}</span>
+                    {s.obligatorio && <span className="ml-2 text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">obligatorio</span>}
+                  </div>
+                  <span className="text-[10px] text-slate-400">{(s.tasaAnual * 100).toFixed(2)}% anual</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* 6. Gastos operacionales */}
+          <SectionHeader num={6} title="Gastos operacionales" icon={Calculator} />
+          {seccionActiva === 6 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
+              {GASTOS.map((g, i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                  <span className="text-xs text-slate-600">{g.nombre}</span>
+                  <span className="text-xs font-bold text-slate-800">{g.monto ? fmt(g.monto) : `${(g.porc! * 100).toFixed(2)}%`}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <span className="text-xs font-bold text-slate-700">Total gastos iniciales</span>
+                <span className="text-sm font-bold text-blue-600">{fmt(totalGastos)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Inversión inicial */}
+          {resultado && (
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-700">Inversión inicial total</span>
+                <span className="text-lg font-bold text-[#0283A7]">{fmt(pie + totalGastos)}</span>
+              </div>
+              <p className="text-[10px] text-slate-400">Pie + gastos operacionales</p>
+            </div>
+          )}
+        </div>
+
+        {/* Columna derecha — Resultados */}
+        <div className="lg:col-span-3 space-y-5">
+          {resultado ? (
+            <>
+              {/* Card dividendo principal */}
+              <div className="bg-gradient-to-br from-[#0283A7] via-[#00729A] to-[#005f85] rounded-2xl p-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 opacity-5"><Home size={200} /></div>
+                <p className="text-sm text-blue-200/70 mb-1">Tu dividendo mensual estimado</p>
+                <p className="text-4xl font-bold tracking-tight mb-2">{fmt(resultado.dividendo)}</p>
+                <p className="text-xs text-blue-200/60">Calculado con tasas reales CMF y seguros incluidos</p>
+              </div>
+
+              {/* Cards resumen */}
+              <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: "Monto del crédito", value: formatMonto(montoCredito), sub: `${(montoCredito / VALOR_UF_CLP).toFixed(0)} UF` },
-                  { label: "Monto del pie", value: formatMonto(pie), sub: `${porcentajePie.toFixed(0)}% (${pieUF.toFixed(0)} UF)` },
-                  { label: "Plazo del crédito", value: `${plazo} años`, sub: `${plazo * 12} meses` },
-                  { label: "Tasa de interés", value: `${tasa.toFixed(2)}% anual`, sub: `CMF 05/06/2024` },
-                ].map((card, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-3.5">
-                    <p className="text-[10px] text-slate-400 font-semibold">{card.label}</p>
-                    <p className="text-sm font-bold text-slate-800 mt-1">{card.value}</p>
-                    <p className="text-[10px] text-slate-400">{card.sub}</p>
+                  { label: "Monto crédito", value: fmt(montoCredito) },
+                  { label: "Monto del pie", value: fmt(pie), sub: `${porcentajePie.toFixed(0)}%` },
+                  { label: "Plazo", value: `${plazo} años` },
+                  { label: "Tasa", value: `${tasaFinal.toFixed(2)}%` },
+                ].map((c, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-3">
+                    <p className="text-[10px] text-slate-400 font-semibold">{c.label}</p>
+                    <p className="text-sm font-bold text-slate-800 mt-1">{c.value}</p>
+                    {c.sub && <p className="text-[10px] text-slate-400">{c.sub}</p>}
                   </div>
                 ))}
               </div>
 
-              {/* Desglose del dividendo */}
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
+              {/* Desglose + Donut */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
                 <h3 className="text-sm font-bold text-slate-800 mb-4">Desglose del dividendo mensual</h3>
-                <div className="flex items-start gap-6">
-                  {/* Lista */}
+                <div className="flex items-center gap-8">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 bg-blue-500 rounded-full" />
-                        <span className="text-xs text-slate-600">Dividendo sin seguros</span>
-                      </div>
-                      <span className="text-xs font-bold text-slate-800">{formatMonto(resultado.dividendoBase)}</span>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#0283A7] rounded-full" /><span className="text-xs text-slate-600">Dividendo sin seguros</span></div>
+                      <span className="text-xs font-bold text-slate-800">{fmt(resultado.cuotaBase)}</span>
                     </div>
-                    {resultado.seguros.map((s) => (
+                    {resultado.segurosCalc.map((s, i) => (
                       <div key={s.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`w-3 h-3 rounded-full ${s.id === "desgravamen" ? "bg-orange-400" : s.id === "incendio" ? "bg-green-400" : "bg-purple-400"}`} />
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: resultado.COLORS[(i + 1) % resultado.COLORS.length] }} />
                           <span className="text-xs text-slate-600">{s.nombre}</span>
                         </div>
-                        <span className="text-xs font-bold text-slate-800">{formatMonto(s.mensual)}</span>
+                        <span className="text-xs font-bold text-slate-800">{fmt(s.mensual)}</span>
                       </div>
                     ))}
                     <div className="border-t border-slate-200 pt-2 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800">Total mensual</span>
-                      <span className="text-sm font-bold text-blue-600">{formatMonto(resultado.dividendoTotal)}</span>
+                      <span className="text-sm font-bold text-[#0283A7]">{fmt(resultado.dividendo)}</span>
                     </div>
                   </div>
-
-                  {/* Mini donut (CSS) */}
-                  <div className="w-28 h-28 flex-shrink-0 relative">
-                    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                      {(() => {
-                        const total = resultado.dividendoTotal || 1;
-                        let acc = 0;
-                        const colors = ["#3b82f6", "#f97316", "#22c55e", "#a855f7"];
-                        return resultado.seguros.map((s, i) => {
-                          const pct = (s.mensual / total) * 100;
-                          const prev = acc;
-                          acc += pct;
-                          return <circle key={s.id} cx="18" cy="18" r="15.9" fill="none" stroke={colors[i % colors.length]} strokeWidth="3"
-                            strokeDasharray={`${pct} ${100 - pct}`} strokeDashoffset={`${-prev}`} />;
-                        });
-                      })()}
-                      <circle cx="18" cy="18" r="12" fill="white" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-[9px] text-slate-400">Total</span>
-                      <span className="text-[11px] font-bold text-slate-800">{formatMontoShort(resultado.dividendoTotal)}</span>
-                    </div>
+                  <div className="w-40 h-40 flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={resultado.donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
+                          {resultado.donutData.map((_: any, i: number) => <Cell key={i} fill={resultado.COLORS[i % resultado.COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
 
-              {/* Tabla de amortización */}
+              {/* Gráficos */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h4 className="text-xs font-bold text-slate-700 mb-3">Saldo pendiente</h4>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <LineChart data={resultado.chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
+                      <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                      <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
+                      <Line type="monotone" dataKey="saldo" stroke="#0283A7" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h4 className="text-xs font-bold text-slate-700 mb-3">Capital vs Interés por año</h4>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={resultado.barData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
+                      <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                      <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
+                      <Bar dataKey="capital" fill="#0283A7" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="interes" fill="#FFD447" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* CAE y Costo total */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase">CAE Referencial</p>
+                  <p className="text-xl font-bold text-[#0283A7] mt-1">{resultado.cae.toFixed(2)}%</p>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase">Costo total</p>
+                  <p className="text-sm font-bold text-slate-800 mt-1">{fmt(resultado.costoTotal)}</p>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase">Intereses totales</p>
+                  <p className="text-sm font-bold text-slate-800 mt-1">{fmt(resultado.intereses)}</p>
+                </div>
+              </div>
+
+              {/* Capacidad de endeudamiento */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-500" /> Indicador financiero</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-semibold mb-1">Capacidad de endeudamiento</p>
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${nivelFinanciero.bg.replace("bg-", "bg-")}`} style={{ width: `${nivelFinanciero.pct}%` }} />
+                    </div>
+                    <p className={`text-xs font-bold mt-1 ${nivelFinanciero.color}`}>{nivelFinanciero.label}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-semibold mb-1">Dividendo vs Ingreso</p>
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((resultado.dividendo / totalIngresos) * 100 * 3, 100)}%` }} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-600 mt-1">{totalIngresos > 0 ? ((resultado.dividendo / totalIngresos) * 100).toFixed(1) : 0}% de ingresos</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparador bancario */}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-800">Tabla de amortización (resumen)</h3>
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><GitCompare size={16} className="text-blue-500" /> Comparador Bancario</h3>
+                  <span className="text-[10px] text-slate-400">Ordenado por dividendo más bajo</span>
+                </div>
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="text-left px-4 py-2.5 font-bold text-slate-400 text-[10px]">Banco</th>
+                      <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Tasa</th>
+                      <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">CAE</th>
+                      <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Dividendo</th>
+                      <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Costo total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparacion.map((b, i) => (
+                      <tr key={b.id} className={`border-b border-slate-50 transition-colors ${b.id === bancoSeleccionado ? "bg-blue-50/50" : "hover:bg-slate-50"}`}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {i === 0 && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1 py-0.5 rounded font-bold">MEJOR</span>}
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />
+                            <span className="font-semibold text-slate-700">{b.nombre}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-600">{b.tasa.toFixed(2)}%</td>
+                        <td className="px-4 py-3 text-right text-slate-600">{b.cae.toFixed(2)}%</td>
+                        <td className="px-4 py-3 text-right font-bold text-slate-800">{fmt(b.dividendo)}</td>
+                        <td className="px-4 py-3 text-right text-slate-600">{fmt(b.costoTotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Escenarios comparativos */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500" /> Comparador de escenarios</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {escenarios.map((e) => (
+                    <div key={e.plazo} className={`p-4 rounded-xl border-2 transition-all ${e.plazo === plazo ? "border-[#0283A7] bg-blue-50" : "border-slate-200"}`}>
+                      <p className="text-xs font-bold text-slate-700">{e.plazo} años</p>
+                      <p className="text-lg font-bold text-slate-800 mt-1">{fmt(e.dividendo)}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Costo: {fmt(e.costoTotal)}</p>
+                      {e.plazo !== plazo && (
+                        <button onClick={() => setPlazo(e.plazo)} className="mt-2 text-[10px] font-bold text-[#0283A7] hover:underline">
+                          Seleccionar →
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabla amortización */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800">Tabla de amortización</h3>
+                  <button onClick={handleCopiar} className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-200 transition-colors">
+                    <Copy size={10} /> Copiar
+                  </button>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-[11px]">
@@ -373,37 +651,23 @@ export default function SimuladorPage() {
                         <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Saldo Inicial</th>
                         <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Dividendo</th>
                         <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Interés</th>
-                        <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Abono a Capital</th>
+                        <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Capital</th>
                         <th className="text-right px-4 py-2.5 font-bold text-slate-400 text-[10px]">Saldo Final</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {resultado.tabla.map((fila) => (
-                        <tr key={fila.año} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                      {resultado.tabla.map((fila: any) => (
+                        <tr key={fila.año} className="border-b border-slate-50 hover:bg-slate-50/50">
                           <td className="px-4 py-2.5 font-bold text-slate-700">{fila.año}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-600">{formatMonto(fila.saldoInicial)}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-blue-600">{formatMonto(fila.dividendo)}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-600">{formatMonto(fila.interes)}</td>
-                          <td className="px-4 py-2.5 text-right text-slate-600">{formatMonto(fila.abonoCapital)}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-slate-700">{formatMonto(fila.saldoFinal)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.saldoInicial)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-[#0283A7]">{fmt(fila.dividendo)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.interes)}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.capital)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-slate-700">{fmt(fila.saldoFinal)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                </div>
-              </div>
-
-              {/* CAE */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
-                  <p className="text-[10px] text-slate-400 font-semibold uppercase">Costo total del crédito</p>
-                  <p className="text-lg font-bold text-slate-800 mt-1">{formatMonto(resultado.costoTotal)}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Incluye intereses y seguros</p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
-                  <p className="text-[10px] text-slate-400 font-semibold uppercase">CAE Referencial</p>
-                  <p className="text-lg font-bold text-blue-600 mt-1">{resultado.cae.toFixed(2)}%</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Costo Anual Equivalente ⓘ</p>
                 </div>
               </div>
 
@@ -415,12 +679,27 @@ export default function SimuladorPage() {
                   El monto final dependerá de la evaluación comercial y antecedentes financieros.
                 </p>
               </div>
+
+              {/* CTA */}
+              <div className="bg-gradient-to-r from-[#0283A7] to-[#005f85] rounded-2xl p-6 text-center">
+                <h3 className="text-lg font-bold text-white mb-2">¿Te gustó el resultado?</h3>
+                <p className="text-sm text-blue-200/70 mb-4">Nuestros asesores pueden ayudarte a conseguir una mejor aprobación.</p>
+                <div className="flex gap-3 justify-center">
+                  <a href="#" className="flex items-center gap-2 px-5 py-3 bg-[#FFD447] text-slate-900 rounded-xl text-xs font-bold hover:bg-yellow-400 transition-colors">
+                    <Calculator size={14} /> Solicitar Pre Evaluación GRATIS
+                  </a>
+                  <a href="https://wa.me/56966842168" target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-xl text-xs font-bold hover:bg-green-600 transition-colors">
+                    <MessageSquare size={14} /> Hablar por WhatsApp
+                  </a>
+                </div>
+              </div>
             </>
           ) : (
-            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-              <Home size={48} className="text-slate-200 mx-auto mb-4" />
-              <p className="text-sm font-bold text-slate-600">Ingresa tus datos para ver la simulación</p>
-              <p className="text-[11px] text-slate-400 mt-1">Los resultados se actualizan en tiempo real</p>
+            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+              <Home size={56} className="text-slate-200 mx-auto mb-4" />
+              <p className="text-lg font-bold text-slate-600">Ingresa tus datos para ver la simulación</p>
+              <p className="text-sm text-slate-400 mt-1">Los resultados se actualizan en tiempo real</p>
             </div>
           )}
         </div>
