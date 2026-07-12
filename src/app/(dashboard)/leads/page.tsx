@@ -80,6 +80,11 @@ export default function LeadsPage() {
   const [paginaActual, setPaginaActual] = useState(1);
   const LEADS_POR_PAGINA = 25;
 
+  // Resetear paginación al cambiar filtros
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, filtroOrigen, filtroEtapa, filtroPrioridad]);
+
   // Tiempo real
   const [nuevosLeads, setNuevosLeads] = useState(0);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(new Date());
@@ -579,7 +584,16 @@ export default function LeadsPage() {
                   Anterior
                 </button>
                 {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => {
-                  const pagina = i + 1;
+                  let pagina: number;
+                  if (totalPaginas <= 5) {
+                    pagina = i + 1;
+                  } else if (paginaActual <= 3) {
+                    pagina = i + 1;
+                  } else if (paginaActual >= totalPaginas - 2) {
+                    pagina = totalPaginas - 4 + i;
+                  } else {
+                    pagina = paginaActual - 2 + i;
+                  }
                   return (
                     <button
                       key={pagina}
