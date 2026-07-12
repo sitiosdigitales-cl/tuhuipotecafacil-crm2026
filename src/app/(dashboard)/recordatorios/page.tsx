@@ -251,9 +251,9 @@ export default function RecordatoriosPage() {
         const json = await res.json();
         if (json.success && json.data) {
           setRecordatorios((prev) => prev.map((r) => r.id === editarRecordatorio.id
-            ? { ...r, ...body, fechaEnvio: new Date(body.fechaEnvio) }
+            ? { ...r, titulo: body.titulo as string, descripcion: body.descripcion as string, tipo: body.tipo as Recordatorio["tipo"], frecuencia: body.frecuencia as Recordatorio["frecuencia"], leadNombre: body.leadNombre as string | undefined, leadId: body.leadId as string | undefined, fechaEnvio: new Date(body.fechaEnvio as string) }
             : r
-          ));
+          ) as Recordatorio[]);
           toast.success("Recordatorio actualizado");
         }
       } else {

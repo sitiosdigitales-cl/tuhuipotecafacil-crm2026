@@ -104,7 +104,7 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       id: "aprobacion-banco",
       nombre: "Aprobación bancaria",
       descripcion: "El crédito debe tener aprobación del banco",
-      verificar: (lead) => lead.etiquetas?.includes("aprobado-banco"),
+      verificar: (lead) => !!lead.etiquetas?.includes("aprobado-banco"),
       obligatoria: true,
     },
   ],

@@ -10,6 +10,7 @@ import {
   X,
   Hash,
   MessageSquare,
+  Reply,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "./Avatar";

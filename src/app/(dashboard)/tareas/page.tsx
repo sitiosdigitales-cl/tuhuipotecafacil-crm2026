@@ -19,7 +19,11 @@ import {
   MoreHorizontal,
   User,
   ClipboardList,
+  Square,
+  CheckSquare,
+  RotateCcw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormularioTarea } from "@/componentes/tareas/FormularioTarea";
@@ -313,32 +317,60 @@ export default function TareasPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {tareasPaginadas.map((tarea) => (
-                  <tr
-                    key={tarea.id}
-                    className="group hover:bg-blue-50/30 transition-colors cursor-pointer"
-                    onClick={() => handleVerTarea(tarea)}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-1.5 h-10 rounded-full flex-shrink-0"
-                          style={{
-                            backgroundColor: ESTADOS_TAREA_CONFIG[tarea.estado].color,
-                          }}
-                        />
-                        <div>
-                          <div className="text-[12px] font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                            {tarea.titulo}
-                          </div>
-                          {tarea.descripcion && (
-                            <div className="text-[10px] text-slate-400 truncate max-w-[250px] mt-0.5">
-                              {tarea.descripcion}
+                {tareasPaginadas.map((tarea) => {
+                  const esVencida = tarea.fechaVencimiento && new Date(tarea.fechaVencimiento) < new Date() && tarea.estado !== "COMPLETADA";
+                  return (
+                    <tr
+                      key={tarea.id}
+                      className={`group hover:bg-blue-50/30 transition-colors cursor-pointer ${esVencida ? "bg-red-50/20" : ""}`}
+                      onClick={() => handleVerTarea(tarea)}
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {/* Quick action checkbox */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (tarea.estado === "COMPLETADA") {
+                                handleMoverTarea(tarea.id, "PENDIENTE");
+                                toast.info("Tarea reabierta");
+                              } else if (tarea.estado === "PENDIENTE") {
+                                handleMoverTarea(tarea.id, "EN_PROGRESO");
+                                toast.info("Tarea iniciada");
+                              } else {
+                                handleMoverTarea(tarea.id, "COMPLETADA");
+                                toast.success("Tarea completada");
+                              }
+                            }}
+                            className="flex-shrink-0"
+                            title={tarea.estado === "COMPLETADA" ? "Reabrir" : tarea.estado === "PENDIENTE" ? "Iniciar" : "Completar"}
+                          >
+                            {tarea.estado === "COMPLETADA" ? (
+                              <CheckSquare size={16} className="text-emerald-500" />
+                            ) : tarea.estado === "EN_PROGRESO" ? (
+                              <div className="w-4 h-4 rounded border-2 border-blue-500 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-sm animate-pulse" />
+                              </div>
+                            ) : (
+                              <Square size={16} className="text-slate-300 hover:text-blue-500 transition-colors" />
+                            )}
+                          </button>
+                          <div
+                            className="w-1.5 h-9 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: ESTADOS_TAREA_CONFIG[tarea.estado].color }}
+                          />
+                          <div>
+                            <div className={`text-[12px] font-semibold transition-colors ${tarea.estado === "COMPLETADA" ? "text-slate-400 line-through" : "text-slate-800 group-hover:text-blue-600"}`}>
+                              {tarea.titulo}
                             </div>
-                          )}
+                            {tarea.descripcion && (
+                              <div className="text-[10px] text-slate-400 truncate max-w-[250px] mt-0.5">
+                                {tarea.descripcion}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
                     <td className="px-4 py-4">
                       {tarea.leadNombre ? (
                         <div className="flex items-center gap-2">
@@ -465,7 +497,8 @@ export default function TareasPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
