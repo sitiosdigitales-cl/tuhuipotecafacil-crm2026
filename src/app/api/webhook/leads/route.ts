@@ -71,7 +71,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Webhook - Lead creado:", data.id);
-    return NextResponse.json({ success: true, data }, { status: 201 });
+    // Elementor espera una respuesta 200 OK con JSON
+    return NextResponse.json({ 
+      success: true, 
+      message: "Lead creado correctamente",
+      data: { id: data.id }
+    }, { status: 200 });
     
   } catch (error) {
     console.error("Webhook - Error:", error);
