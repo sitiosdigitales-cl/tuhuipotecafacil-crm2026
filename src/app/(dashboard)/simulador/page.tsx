@@ -220,46 +220,28 @@ export default function SimuladorPage() {
     return n.toLocaleString("es-CL");
   };
 
-  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint, suffix, sliderMin, sliderMax, sliderStep, sliderFormat }: {
+  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint, suffix }: {
     label: string; value: number; onChange: (v: number) => void;
     prefix?: string; placeholder?: string; hint?: string; suffix?: string;
-    sliderMin?: number; sliderMax?: number; sliderStep?: number; sliderFormat?: (v: number) => string;
   }) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const sliderRef = useRef<HTMLInputElement>(null);
     const [localValue, setLocalValue] = useState(formatCLP(value));
     const isTyping = useRef(false);
 
-    // Solo sincronizar desde padre cuando NO estamos escribiendo
     useEffect(() => {
       if (!isTyping.current) {
         setLocalValue(formatCLP(value));
       }
     }, [value]);
 
-    // Actualizar progreso del slider
-    useEffect(() => {
-      if (sliderRef.current && sliderMin !== undefined && sliderMax !== undefined) {
-        const pct = sliderMax > sliderMin
-          ? ((Math.min(Math.max(value, sliderMin), sliderMax) - sliderMin) / (sliderMax - sliderMin)) * 100
-          : 0;
-        sliderRef.current.style.setProperty("--progress", `${pct}%`);
-      }
-    }, [value, sliderMin, sliderMax]);
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       isTyping.current = true;
       const raw = e.target.value.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
       const formatted = formatCLP(num);
-
-      // Guardar cursor relativo a dígitos
       const cursorPos = e.target.selectionStart || 0;
       const digitsBefore = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-
       setLocalValue(formatted);
-
-      // Reposicionar cursor después del formateo
       requestAnimationFrame(() => {
         const input = inputRef.current;
         if (!input) return;
@@ -275,21 +257,12 @@ export default function SimuladorPage() {
       });
     };
 
-    const handleFocus = () => {
-      isTyping.current = false;
-    };
+    const handleFocus = () => { isTyping.current = false; };
 
     const handleBlur = () => {
       isTyping.current = false;
       const raw = localValue.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
-      setLocalValue(formatCLP(num));
-      onChange(num);
-    };
-
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const num = Number(e.target.value);
-      isTyping.current = false;
       setLocalValue(formatCLP(num));
       onChange(num);
     };
@@ -308,96 +281,17 @@ export default function SimuladorPage() {
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={placeholder}
-            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
+            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-14" : "pr-4"} py-3 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
           />
           {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">{suffix}</span>}
         </div>
-        {sliderMin !== undefined && sliderMax !== undefined && (
-          <div>
-            <input
-              ref={sliderRef}
-              type="range"
-              min={sliderMin}
-              max={sliderMax}
-              step={sliderStep || 1}
-              value={Math.min(Math.max(value, sliderMin), sliderMax)}
-              onChange={handleSliderChange}
-              className="w-full slider-teal"
-            />
-            <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-slate-400 font-medium">{sliderFormat ? sliderFormat(sliderMin) : sliderMin.toLocaleString("es-CL")}</span>
-              <span className="text-[10px] text-slate-400 font-medium">{sliderFormat ? sliderFormat(sliderMax) : sliderMax.toLocaleString("es-CL")}</span>
-            </div>
-          </div>
-        )}
         {hint && <p className="text-[10px] text-slate-400 font-medium">{hint}</p>}
       </div>
     );
   };
 
-  // SliderField ya integrado en InputField
-
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
-      {/* CSS para slider azul fluido */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .slider-teal {
-          -webkit-appearance: none;
-          appearance: none;
-          height: 8px;
-          border-radius: 999px;
-          background: #e2e8f0;
-          outline: none;
-          cursor: grab;
-          touch-action: none;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .slider-teal:active {
-          cursor: grabbing;
-        }
-        .slider-teal::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 26px;
-          height: 26px;
-          border-radius: 50%;
-          background: #2563EB;
-          cursor: grab;
-          border: 4px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-          margin-top: -9px;
-          touch-action: none;
-        }
-        .slider-teal::-webkit-slider-thumb:hover {
-          background: #1E40AF;
-          box-shadow: 0 2px 12px rgba(37,99,235,0.4);
-        }
-        .slider-teal::-webkit-slider-thumb:active {
-          cursor: grabbing;
-          background: #1E40AF;
-          box-shadow: 0 2px 16px rgba(37,99,235,0.5);
-          transform: scale(1.15);
-        }
-        .slider-teal::-moz-range-thumb {
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: #2563EB;
-          cursor: grab;
-          border: 4px solid white;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-          touch-action: none;
-        }
-        .slider-teal::-moz-range-track {
-          height: 8px;
-          border-radius: 999px;
-          background: #e2e8f0;
-        }
-        .slider-teal::-moz-range-progress {
-          background: #2563EB;
-          height: 8px;
-          border-radius: 999px;
-        }
-      `}} />
       {/* Hero */}
       <div className="relative bg-gradient-to-r from-[#1E40AF] via-[#2563EB] to-[#3B82F6] rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
@@ -430,20 +324,16 @@ export default function SimuladorPage() {
           <SectionHeader num={1} title="Ingresos del hogar" icon={DollarSign} />
           {seccionActiva === 1 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-              <InputField label="Ingreso mensual líquido" value={ingreso} onChange={setIngreso} hint="Ingresos líquidos del grupo familiar"
-                sliderMin={0} sliderMax={15000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
+              <InputField label="Ingreso mensual líquido" value={ingreso} onChange={setIngreso} hint="Ingresos líquidos del grupo familiar" />
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={tieneSegundoIngreso} onChange={(e) => setTieneSegundoIngreso(e.target.checked)}
                   className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                 <span className="text-xs font-semibold text-slate-700">Tengo segundo ingreso</span>
               </label>
-              {tieneSegundoIngreso && <InputField label="Ingreso segundo titular" value={segundoIngreso} onChange={setSegundoIngreso}
-                sliderMin={0} sliderMax={10000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />}
+              {tieneSegundoIngreso && <InputField label="Ingreso segundo titular" value={segundoIngreso} onChange={setSegundoIngreso} />}
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Bonos" value={bonos} onChange={setBonos}
-                  sliderMin={0} sliderMax={5000000} sliderStep={100000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Otros ingresos" value={otrosIngresos} onChange={setOtrosIngresos}
-                  sliderMin={0} sliderMax={5000000} sliderStep={100000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
+                <InputField label="Bonos" value={bonos} onChange={setBonos} />
+                <InputField label="Otros ingresos" value={otrosIngresos} onChange={setOtrosIngresos} />
               </div>
               <div className="p-3 bg-blue-50 rounded-xl flex items-center justify-between">
                 <span className="text-xs font-bold text-blue-700">Total ingresos mensuales</span>
@@ -457,21 +347,14 @@ export default function SimuladorPage() {
           {seccionActiva === 2 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Arriendo" value={arriendo} onChange={setArriendo}
-                  sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Créditos consumo" value={creditosConsumo} onChange={setCreditosConsumo}
-                  sliderMin={0} sliderMax={3000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Automotriz" value={automotriz} onChange={setAutomotriz}
-                  sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Tarjetas" value={tarjetas} onChange={setTarjetas}
-                  sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Líneas de crédito" value={lineasCredito} onChange={setLineasCredito}
-                  sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
-                <InputField label="Pensiones" value={pensiones} onChange={setPensiones}
-                  sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
+                <InputField label="Arriendo" value={arriendo} onChange={setArriendo} />
+                <InputField label="Créditos consumo" value={creditosConsumo} onChange={setCreditosConsumo} />
+                <InputField label="Automotriz" value={automotriz} onChange={setAutomotriz} />
+                <InputField label="Tarjetas" value={tarjetas} onChange={setTarjetas} />
+                <InputField label="Líneas de crédito" value={lineasCredito} onChange={setLineasCredito} />
+                <InputField label="Pensiones" value={pensiones} onChange={setPensiones} />
               </div>
-              <InputField label="Otros descuentos" value={otrosDescuentos} onChange={setOtrosDescuentos}
-                sliderMin={0} sliderMax={2000000} sliderStep={50000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(1)}M`} />
+              <InputField label="Otros descuentos" value={otrosDescuentos} onChange={setOtrosDescuentos} />
               <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-600">Total compromisos</span>
                 <span className="text-sm font-bold text-slate-800">{fmt(totalCompromisos)}</span>
@@ -490,8 +373,7 @@ export default function SimuladorPage() {
           <SectionHeader num={3} title="Datos de la propiedad" icon={Home} />
           {seccionActiva === 3 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-              <InputField label="Valor de la propiedad" value={valorPropiedad} onChange={setValorPropiedad} hint={fmtUF(valorPropiedad)}
-                sliderMin={20000000} sliderMax={500000000} sliderStep={1000000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(0)}M`} />
+              <InputField label="Valor de la propiedad" value={valorPropiedad} onChange={setValorPropiedad} hint={fmtUF(valorPropiedad)} />
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-600">Tipo</label>
@@ -525,8 +407,7 @@ export default function SimuladorPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <div>
                 <label className="text-[11px] font-bold text-slate-600 mb-2 block">Pie</label>
-                <InputField label="" value={pie} onChange={setPie} suffix={`${porcentajePie.toFixed(0)}%`}
-                  sliderMin={0} sliderMax={valorPropiedad} sliderStep={500000} sliderFormat={(v) => `$ ${(v / 1000000).toFixed(0)}M`} />
+                <InputField label="" value={pie} onChange={setPie} suffix={`${porcentajePie.toFixed(0)}%`} />
                 <div className="flex gap-1.5 mt-2">
                   {[10, 15, 20, 25, 30, 35, 40].map((pct) => (
                     <button key={pct} onClick={() => setPie(Math.round(valorPropiedad * pct / 100))}
