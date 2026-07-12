@@ -99,6 +99,20 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     });
     if (found) {
       setCliente(found); setError("");
+      // Cargar documentos reales del lead
+      try {
+        const resDocs = await fetch(`/api/documentos?leadId=${found.id}`);
+        const dataDocs = await resDocs.json();
+        if (dataDocs.success && dataDocs.data) {
+          setDocumentos(dataDocs.data.map((d: any) => ({
+            id: d.id || d.id,
+            nombre: d.nombre || d.nombre,
+            estado: d.estado || "PENDIENTE",
+            fecha: d.creadoen || d.creadoEn,
+            tamaño: d.tamanio || d.tamaño || 0,
+          })));
+        }
+      } catch { /* documentos no disponibles */ }
       // Cargar datos del asesor desde la API de usuarios
       if (found.nombreEjecutivo) {
         try {
@@ -151,7 +165,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const pasoActual = PASOS_PROGRESO.find((p) => p.etapa === cliente?.etapa);
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
   const docsConfig = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
-  const docsAprobados = 0; // TODO: conectar con API real de documentos
+  const docsAprobados = documentos.filter(d => d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION").length;
   const docsTotal = docsConfig.length;
 
   const iniciarEdicion = () => {

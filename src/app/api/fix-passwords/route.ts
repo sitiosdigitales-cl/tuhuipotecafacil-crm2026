@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
+import { requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 // Endpoint para actualizar contraseñas de todos los usuarios a "admin123"
-// Solo para setup inicial
-export async function POST() {
+// Solo SUPER_ADMIN
+export async function POST(request: NextRequest) {
+  const user = requireRole(request, ["SUPER_ADMIN"]);
+  if (!user) return forbidden();
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash("admin123", salt);

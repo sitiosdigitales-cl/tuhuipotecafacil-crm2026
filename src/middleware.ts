@@ -4,18 +4,8 @@ const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/ta
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // No bloquear rutas de API - los endpoints públicos no necesitan auth
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
 
-  // No bloquear rutas de archivos estáticos
-  if (pathname.startsWith("/_next/") || pathname.startsWith("/favicon")) {
-    return NextResponse.next();
-  }
-
-  // Verificar si la ruta está protegida
+  // Solo proteger rutas del dashboard (el matcher ya excluye /api/ y /_next/)
   const rutaProtegida = RUTAS_PROTEGIDAS.some(ruta => pathname.startsWith(ruta));
 
   if (!rutaProtegida) {
@@ -26,46 +16,17 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get("crm_token")?.value || request.cookies.get("auth_token")?.value;
 
   if (!authToken) {
-    // Sin token, redirigir a login
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Token existe, permitir (la validación real la hace el AuthContext)
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/pipeline/:path*",
-    "/leads/:path*",
-    "/clientes/:path*",
-    "/tareas/:path*",
-    "/documentos/:path*",
-    "/agenda/:path*",
-    "/conversaciones/:path*",
-    "/reportes/:path*",
-    "/configuracion/:path*",
-    "/usuarios/:path*",
-    "/permisos/:path*",
-    "/auditoria/:path*",
-    "/bancos/:path*",
-    "/cmf/:path*",
-    "/simulador/:path*",
-    "/comisiones/:path*",
-    "/referidos/:path*",
-    "/campanas/:path*",
-    "/landings/:path*",
-    "/biblioteca/:path*",
-    "/flujos/:path*",
-    "/plantillas/:path*",
-    "/triggers/:path*",
-    "/integraciones/:path*",
-    "/portal/:path*",
-    "/recordatorios/:path*",
-    "/resumen/:path*",
-    "/asistente/:path*",
+    // Excluir /api/, /_next/, /favicon, /portal-cliente y /login
+    "/((?!api/|_next/|favicon|portal-cliente|login|register).*)",
   ],
 };

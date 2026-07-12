@@ -118,54 +118,6 @@ export const RENTAS_MENSUALES = [
   "Entre $3.400.000 y $3.600.000",
 ];
 
-export interface KPI {
-  titulo: string;
-  valor: string;
-  valorUF?: string;
-  cambio?: number;
-  cambioLabel?: string;
-  icono: string;
-  color?: string;
-}
-
-export interface Ejecutivo {
-  id: string;
-  nombre: string;
-  avatar?: string;
-  aprobados: number;
-  montoTotal: number;
-}
-
-export interface Banco {
-  nombre: string;
-  montoTotal: number;
-  color: string;
-}
-
-export interface Notificacion {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  tiempo: string;
-  tipo: "documento" | "seguimiento" | "tarea" | "reunion";
-}
-
-export interface Recordatorio {
-  id: string;
-  titulo: string;
-  proximo: string;
-  icono: string;
-}
-
-export interface ActividadTiempoReal {
-  id: string;
-  titulo: string;
-  detalle: string;
-  tiempo: string;
-  icono: string;
-  color: string;
-}
-
 export const ETAPAS_CONFIG: Record<Etapa, { label: string; color: string }> = {
   NUEVO_LEAD: { label: "Nuevo Lead", color: "#3B82F6" },
   CONTACTO_INICIAL: { label: "Contacto Inicial", color: "#6366F1" },
@@ -182,18 +134,6 @@ export const ETAPAS_CONFIG: Record<Etapa, { label: string; color: string }> = {
   NOTARIA: { label: "Notaría", color: "#8B5CF6" },
   CREDITO_PAGADO: { label: "Crédito Pagado", color: "#22C55E" },
   CLIENTE_FINALIZADO: { label: "Finalizado", color: "#64748B" },
-};
-
-export const ORIGEN_COLORS: Record<OrigenLead, string> = {
-  WEB: "#3B82F6",
-  FACEBOOK: "#1877F2",
-  INSTAGRAM: "#E4405F",
-  GOOGLE: "#EA4335",
-  TIKTOK: "#000000",
-  LINKEDIN: "#0A66C2",
-  WHATSAPP: "#25D366",
-  REFERIDO: "#D4AF37",
-  OTRO: "#64748B",
 };
 
 export const ORIGEN_LABELS: Record<OrigenLead, string> = {
@@ -368,26 +308,3 @@ export const ACCIONES_AUDITORIA_CONFIG: Record<TipoAccion, { label: string; colo
   CAMBIO_ROL: { label: "Cambio Rol", color: "bg-purple-100 text-purple-700" },
   CAMBIO_ESTADO: { label: "Cambio Estado", color: "bg-orange-100 text-orange-700" },
 };
-
-// Permisos del sistema
-export interface Permiso {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  modulo: string;
-}
-
-export const MODULOS_SISTEMA = [
-  "CRM Comercial",
-  "Pipeline",
-  "Leads",
-  "Clientes",
-  "Documentos",
-  "Bancos",
-  "Marketing",
-  "Automatizaciones",
-  "Reportes",
-  "Configuración",
-  "Usuarios",
-  "Auditoría",
-];

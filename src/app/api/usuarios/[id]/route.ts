@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { requireRole, forbidden } from "@/lib/api-auth";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,6 +32,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
+  if (!user) return forbidden();
   try {
     const { id } = await params;
     const body = await request.json();
@@ -64,6 +66,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = requireRole(request, ["SUPER_ADMIN"]);
+  if (!user) return forbidden();
   try {
     const { id } = await params;
     // Soft delete: cambiar estado a INACTIVO

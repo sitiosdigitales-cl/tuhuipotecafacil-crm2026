@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
+  const user = requireRole(request, ["SUPER_ADMIN"]);
+  if (!user) return forbidden();
   try {
     const { userId } = await request.json();
 

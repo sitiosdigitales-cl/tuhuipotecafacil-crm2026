@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 // Endpoint para agregar columnas faltantes a la tabla usuarios
-// Solo ejecutar una vez durante setup inicial
-export async function POST() {
+// Solo SUPER_ADMIN
+export async function POST(request: NextRequest) {
+  const user = requireRole(request, ["SUPER_ADMIN"]);
+  if (!user) return forbidden();
   const resultados = [];
 
   const columnas = [
