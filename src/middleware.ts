@@ -27,6 +27,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Excluir /api/, /_next/, /favicon, /portal-cliente y /login
-    "/((?!api/|_next/|favicon|portal-cliente|login|register).*)",
+    "/((?!api/|_next/|favicon|portal-cliente|simulador-publico|login|register).*)",
   ],
 };
