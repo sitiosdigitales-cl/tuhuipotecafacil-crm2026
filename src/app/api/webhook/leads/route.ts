@@ -1,86 +1,100 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+// Service role key para bypass de RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 export async function POST(request: NextRequest) {
+  // Validar secret via query param
+  const secret = request.nextUrl.searchParams.get("secret");
+  const expectedSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
+  
+  if (expectedSecret && secret !== expectedSecret) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const rawBody = await request.text();
     const contentType = request.headers.get("content-type") || "";
     
     let body: Record<string, any> = {};
     
-    // Parsear según el content-type
     if (contentType.includes("application/json")) {
-      try { body = JSON.parse(rawBody); } catch { body = {}; }
+      body = JSON.parse(rawBody);
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const params = new URLSearchParams(rawBody);
       params.forEach((value, key) => { body[key] = value; });
-    } else if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData();
-      formData.forEach((value, key) => { body[key] = value.toString(); });
     } else {
-      // Intentar JSON primero, luego form-urlencoded
       try { body = JSON.parse(rawBody); } catch {
         const params = new URLSearchParams(rawBody);
         params.forEach((value, key) => { body[key] = value; });
       }
     }
 
-    console.log("Webhook - Content-Type:", contentType);
-    console.log("Webhook - Body:", JSON.stringify(body, null, 2));
+    console.log("Webhook Body:", JSON.stringify(body, null, 2));
 
-    // Buscar nombre y apellido con diferentes nombres posibles
-    const nombre = body.Nombre || body.nombre || body.first_name || body["nombre"] || "";
-    const apellido = body.Apellido || body.apellido || body.last_name || body["apellido"] || "";
+    // Normalizar campos de Elementor
+    const rawFields = body.fields ?? body;
+    const normalized: Record<string, any> = {};
     
+    Object.entries(rawFields).forEach(([key, val]: [string, any]) => {
+      if (typeof val === "object" && val?.value !== undefined) {
+        normalized[key] = val.value;
+      } else {
+        normalized[key] = val;
+      }
+    });
+
+    // Mapear campos
+    const nombre = normalized["Nombre"] || normalized["nombre"] || normalized["name"] || "";
+    const apellido = normalized["Apellido"] || normalized["apellido"] || normalized["last_name"] || "";
+    const rut = normalized["Rut"] || normalized["rut"] || "";
+    const email = normalized["Correo Electrónico"] || normalized["email"] || normalized["correo"] || "";
+    const telefono = normalized["Número de Teléfono"] || normalized["telefono"] || normalized["teléfono"] || null;
+    const situacionLaboral = normalized["¿Cuál es tu situación laboral?"] || null;
+    const tipoCredito = normalized["¿Qué tipo de crédito buscas?"] || null;
+    const comentarios = normalized["Comentarios adicionales"] || normalized["mensaje"] || null;
+
     if (!nombre && !apellido) {
-      console.log("Webhook - Error: nombre y apellido requeridos");
-      return NextResponse.json({ 
-        success: false, 
-        error: "Nombre y apellido requeridos",
-        received: body 
-      }, { status: 400 });
+      return NextResponse.json({ error: "Nombre y apellido requeridos" }, { status: 400 });
     }
 
-    const leadId = crypto.randomUUID();
-    const rut = body.Rut || body.rut || body["rut"] || "";
-    const email = body["Correo Electrónico"] || body.email || body["email"] || null;
-    const telefono = body["Número de Teléfono"] || body.telefono || body["telefono"] || null;
+    // Determinar situación laboral
+    let sitLaboral = "DEPENDIENTE";
+    if (situacionLaboral && situacionLaboral.toLowerCase().includes("independiente")) {
+      sitLaboral = "INDEPENDIENTE";
+    }
 
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({
-        id: leadId,
-        nombre: nombre,
-        apellido: apellido,
-        rut: rut,
-        email: email,
-        telefono: telefono,
-        origen: "WEB",
-        etapa: "NUEVO_LEAD",
-        prioridad: "MEDIA",
-        situacionlaboral: "DEPENDIENTE",
-        endicom: false,
-        diasenetapa: 0,
-      })
-      .select()
-      .single();
+    const { error } = await supabaseAdmin.from("leads").insert({
+      nombre,
+      apellido,
+      rut,
+      email,
+      telefono,
+      origen: "elementor_wordpress",
+      etapa: "NUEVO_LEAD",
+      prioridad: "MEDIA",
+      situacionlaboral: sitLaboral,
+      tipocredito: tipoCredito,
+      notas: comentarios,
+      endicom: false,
+      diasenetapa: 0,
+    });
 
     if (error) {
-      console.error("Webhook - Error Supabase:", error);
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      console.error("Error insertando lead:", error);
+      return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
     }
 
-    console.log("Webhook - Lead creado:", data.id);
-    // Elementor espera una respuesta 200 OK con JSON
-    return NextResponse.json({ 
-      success: true, 
-      message: "Lead creado correctamente",
-      data: { id: data.id }
-    }, { status: 200 });
+    console.log("Lead creado:", nombre, apellido);
+    return NextResponse.json({ success: true, message: "Lead creado correctamente" }, { status: 200 });
     
-  } catch (error) {
-    console.error("Webhook - Error:", error);
-    return NextResponse.json({ success: false, error: "Error al procesar" }, { status: 500 });
+  } catch (err) {
+    console.error("Error procesando webhook:", err);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
@@ -89,12 +103,12 @@ export async function OPTIONS() {
     status: 200,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 }
 
 export async function GET() {
-  return NextResponse.json({ status: "ok", timestamp: new Date().toISOString() });
+  return NextResponse.json({ status: "ok", message: "Webhook endpoint activo" });
 }
