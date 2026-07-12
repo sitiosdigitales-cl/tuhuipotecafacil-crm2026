@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, ShieldCheck, AlertCircle, Check, ChevronDown, Phone, MessageSquare, Info, Percent, Copy, ArrowRight, BarChart3, PieChart as PieIcon, GitCompare, Lightbulb } from "lucide-react";
+import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, AlertCircle, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 
@@ -82,6 +82,14 @@ export default function SimuladorPage() {
 
   // UI
   const [seccionActiva, setSeccionActiva] = useState(1);
+  const resultadosRef = useRef<HTMLDivElement>(null);
+
+  const irAResultados = () => {
+    setSeccionActiva(0);
+    setTimeout(() => {
+      resultadosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
 
   const totalIngresos = useMemo(() =>
     ingreso + (tieneSegundoIngreso ? segundoIngreso : 0) + bonos + otrosIngresos
@@ -144,7 +152,7 @@ export default function SimuladorPage() {
       { name: "Capital + Interés", value: Math.round(cuotaBase) },
       ...segurosCalc.map((s) => ({ name: s.nombre.replace("Seguro de ", ""), value: Math.round(s.mensual) })),
     ];
-    const COLORS = ["#0283A7", "#FF6B35", "#00AEEF", "#FFD447", "#10B981"];
+    const COLORS = ["#1E40AF", "#FF6B35", "#00AEEF", "#FFD447", "#10B981"];
 
     return {
       cuotaBase, dividendo, segurosCalc, totalSeguros, totalPagado,
@@ -168,9 +176,6 @@ export default function SimuladorPage() {
       return { ...banco, dividendo: total, cae: caeCalc, costoTotal: totalPagado };
     }).sort((a, b) => a.dividendo - b.dividendo);
   }, [montoCredito, plazo, segurosOn, valorPropiedad]);
-
-  const mejorBanco = comparacion[0];
-  const bancoActual = comparacion.find((b) => b.id === bancoSeleccionado);
 
   // Escenarios
   const escenarios = useMemo(() => {
@@ -528,7 +533,7 @@ export default function SimuladorPage() {
                 <div className="flex gap-1.5 mt-2">
                   {[10, 15, 20, 25, 30, 35, 40].map((pct) => (
                     <button key={pct} onClick={() => setPie(Math.round(valorPropiedad * pct / 100))}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${porcentajePie === pct ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${porcentajePie === pct ? "bg-[#1E40AF] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                       {pct}%
                     </button>
                   ))}
@@ -540,7 +545,7 @@ export default function SimuladorPage() {
                 <div className="flex gap-1.5 flex-wrap">
                   {PLAZOS.map((p) => (
                     <button key={p} onClick={() => setPlazo(p)}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${plazo === p ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${plazo === p ? "bg-[#1E40AF] text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                       {p}a
                     </button>
                   ))}
@@ -553,7 +558,7 @@ export default function SimuladorPage() {
                   <div className="flex gap-1">
                     {["fija", "mixta", "variable"].map((t) => (
                       <button key={t} onClick={() => setTipoTasa(t)}
-                        className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${tipoTasa === t ? "bg-[#0283A7] text-white" : "bg-slate-100 text-slate-500"}`}>
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all ${tipoTasa === t ? "bg-[#1E40AF] text-white" : "bg-slate-100 text-slate-500"}`}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </button>
                     ))}
@@ -618,14 +623,14 @@ export default function SimuladorPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-700">Inversión inicial total</span>
-                <span className="text-lg font-bold text-[#0283A7]">{fmt(pie + totalGastos)}</span>
+                <span className="text-lg font-bold text-[#1E40AF]">{fmt(pie + totalGastos)}</span>
               </div>
               <p className="text-[10px] text-slate-400">Pie + gastos operacionales</p>
             </div>
           )}
 
           {/* CTA Calcular */}
-          <button className="w-full py-4 bg-[#1E40AF] hover:bg-[#1E3A8A] text-white rounded-xl text-sm font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
+          <button onClick={irAResultados} className="w-full py-4 bg-[#1E40AF] hover:bg-[#1E3A8A] text-white rounded-xl text-sm font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
             <Calculator size={18} /> Calcular mi dividendo
           </button>
           <p className="text-center text-[10px] text-slate-400">100% Gratis · Sin compromiso</p>
@@ -648,7 +653,7 @@ export default function SimuladorPage() {
         </div>
 
         {/* Columna derecha — Resultados */}
-        <div className="lg:col-span-3 space-y-5">
+        <div ref={resultadosRef} className="lg:col-span-3 space-y-5">
           {resultado ? (
             <>
               {/* Card dividendo principal */}
@@ -681,7 +686,7 @@ export default function SimuladorPage() {
                 <div className="flex items-center gap-8">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#0283A7] rounded-full" /><span className="text-xs text-slate-600">Dividendo sin seguros</span></div>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 bg-[#1E40AF] rounded-full" /><span className="text-xs text-slate-600">Dividendo sin seguros</span></div>
                       <span className="text-xs font-bold text-slate-800">{fmt(resultado.cuotaBase)}</span>
                     </div>
                     {resultado.segurosCalc.map((s, i) => (
@@ -695,7 +700,7 @@ export default function SimuladorPage() {
                     ))}
                     <div className="border-t border-slate-200 pt-2 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-800">Total mensual</span>
-                      <span className="text-sm font-bold text-[#0283A7]">{fmt(resultado.dividendo)}</span>
+                      <span className="text-sm font-bold text-[#1E40AF]">{fmt(resultado.dividendo)}</span>
                     </div>
                   </div>
                   <div className="w-40 h-40 flex-shrink-0">
@@ -721,7 +726,7 @@ export default function SimuladorPage() {
                       <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
                       <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
                       <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
-                      <Line type="monotone" dataKey="saldo" stroke="#0283A7" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="saldo" stroke="#1E40AF" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -733,7 +738,7 @@ export default function SimuladorPage() {
                       <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
                       <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
                       <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
-                      <Bar dataKey="capital" fill="#0283A7" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="capital" fill="#1E40AF" radius={[3, 3, 0, 0]} />
                       <Bar dataKey="interes" fill="#FFD447" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -744,7 +749,7 @@ export default function SimuladorPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
                   <p className="text-[10px] text-slate-400 font-semibold uppercase">CAE Referencial</p>
-                  <p className="text-xl font-bold text-[#0283A7] mt-1">{resultado.cae.toFixed(2)}%</p>
+                  <p className="text-xl font-bold text-[#1E40AF] mt-1">{resultado.cae.toFixed(2)}%</p>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-4 text-center">
                   <p className="text-[10px] text-slate-400 font-semibold uppercase">Costo total</p>
@@ -818,12 +823,12 @@ export default function SimuladorPage() {
                 <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500" /> Comparador de escenarios</h3>
                 <div className="grid grid-cols-3 gap-3">
                   {escenarios.map((e) => (
-                    <div key={e.plazo} className={`p-4 rounded-xl border-2 transition-all ${e.plazo === plazo ? "border-[#0283A7] bg-blue-50" : "border-slate-200"}`}>
+                    <div key={e.plazo} className={`p-4 rounded-xl border-2 transition-all ${e.plazo === plazo ? "border-[#1E40AF] bg-blue-50" : "border-slate-200"}`}>
                       <p className="text-xs font-bold text-slate-700">{e.plazo} años</p>
                       <p className="text-lg font-bold text-slate-800 mt-1">{fmt(e.dividendo)}</p>
                       <p className="text-[10px] text-slate-400 mt-1">Costo: {fmt(e.costoTotal)}</p>
                       {e.plazo !== plazo && (
-                        <button onClick={() => setPlazo(e.plazo)} className="mt-2 text-[10px] font-bold text-[#0283A7] hover:underline">
+                        <button onClick={() => setPlazo(e.plazo)} className="mt-2 text-[10px] font-bold text-[#1E40AF] hover:underline">
                           Seleccionar →
                         </button>
                       )}
@@ -857,7 +862,7 @@ export default function SimuladorPage() {
                         <tr key={fila.año} className="border-b border-slate-50 hover:bg-slate-50/50">
                           <td className="px-4 py-2.5 font-bold text-slate-700">{fila.año}</td>
                           <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.saldoInicial)}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-[#0283A7]">{fmt(fila.dividendo)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-[#1E40AF]">{fmt(fila.dividendo)}</td>
                           <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.interes)}</td>
                           <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.capital)}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-slate-700">{fmt(fila.saldoFinal)}</td>
