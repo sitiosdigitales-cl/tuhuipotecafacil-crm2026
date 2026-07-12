@@ -227,14 +227,13 @@ export default function SimuladorPage() {
   }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const sliderRef = useRef<HTMLInputElement>(null);
-    const lastParentValue = useRef(value);
-    const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [localValue, setLocalValue] = useState(formatCLP(value));
+    const isTyping = useRef(false);
 
-    // Cuando el padre cambia el valor (por slider u otro input), sincronizar al input DOM
+    // Solo sincronizar desde padre cuando NO estamos escribiendo
     useEffect(() => {
-      if (inputRef.current && inputRef.current !== document.activeElement) {
-        inputRef.current.value = formatCLP(value);
-        lastParentValue.current = value;
+      if (!isTyping.current) {
+        setLocalValue(formatCLP(value));
       }
     }, [value]);
 
@@ -248,54 +247,51 @@ export default function SimuladorPage() {
       }
     }, [value, sliderMin, sliderMax]);
 
-    // Cada tecla: formatear display SIN llamar al padre
-    const handleInput = () => {
-      const input = inputRef.current;
-      if (!input) return;
-      const raw = input.value.replace(/[^0-9]/g, "");
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      isTyping.current = true;
+      const raw = e.target.value.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
       const formatted = formatCLP(num);
-      const cursorPos = input.selectionStart || 0;
-      const digitsBefore = input.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
 
-      // Actualizar display directamente en DOM (sin React re-render)
-      input.value = formatted;
+      // Guardar cursor relativo a dígitos
+      const cursorPos = e.target.selectionStart || 0;
+      const digitsBefore = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+
+      setLocalValue(formatted);
 
       // Reposicionar cursor después del formateo
-      let newPos = 0;
-      let counted = 0;
-      for (let i = 0; i < formatted.length; i++) {
-        if (counted === digitsBefore) break;
-        newPos = i + 1;
-        if (/[0-9]/.test(formatted[i])) counted++;
-      }
-      input.setSelectionRange(newPos, newPos);
-
-      // Debounce: notificar al padre después de 300ms sin typing
-      if (typingTimer.current) clearTimeout(typingTimer.current);
-      typingTimer.current = setTimeout(() => {
-        onChange(num);
-        lastParentValue.current = num;
-      }, 300);
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        let newPos = 0;
+        let counted = 0;
+        for (let i = 0; i < formatted.length; i++) {
+          if (counted === digitsBefore) break;
+          newPos = i + 1;
+          if (/[0-9]/.test(formatted[i])) counted++;
+        }
+        input.setSelectionRange(newPos, newPos);
+        isTyping.current = false;
+      });
     };
 
-    // Al perder foco: sincronizar inmediatamente
+    const handleFocus = () => {
+      isTyping.current = false;
+    };
+
     const handleBlur = () => {
-      if (typingTimer.current) clearTimeout(typingTimer.current);
-      const input = inputRef.current;
-      if (!input) return;
-      const raw = input.value.replace(/[^0-9]/g, "");
+      isTyping.current = false;
+      const raw = localValue.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
-      input.value = formatCLP(num);
+      setLocalValue(formatCLP(num));
       onChange(num);
-      lastParentValue.current = num;
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const num = Number(e.target.value);
-      if (inputRef.current) inputRef.current.value = formatCLP(num);
+      isTyping.current = false;
+      setLocalValue(formatCLP(num));
       onChange(num);
-      lastParentValue.current = num;
     };
 
     return (
@@ -307,8 +303,9 @@ export default function SimuladorPage() {
             ref={inputRef}
             type="text"
             inputMode="numeric"
-            defaultValue={formatCLP(value)}
-            onInput={handleInput}
+            value={localValue}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={placeholder}
             className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
