@@ -599,7 +599,7 @@ export default function LeadsPage() {
       {/* Vista de Tarjetas */}
       {vistaActiva === "tarjetas" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {leadsFiltrados.slice(0, 24).map((lead) => {
+          {leadsPaginados.map((lead) => {
             const config = ETAPAS_CONFIG[lead.etapa];
             return (
               <div
@@ -679,6 +679,54 @@ export default function LeadsPage() {
               </div>
             );
           })}
+          {leadsFiltrados.length > LEADS_POR_PAGINA && (
+            <div className="col-span-full p-4 flex items-center justify-between border-t border-slate-100 mt-2">
+              <span className="text-[11px] text-slate-400">
+                Mostrando {(paginaActual - 1) * LEADS_POR_PAGINA + 1}-{Math.min(paginaActual * LEADS_POR_PAGINA, leadsFiltrados.length)} de {leadsFiltrados.length} leads
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+                  disabled={paginaActual === 1}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Anterior
+                </button>
+                {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => {
+                  let pagina: number;
+                  if (totalPaginas <= 5) {
+                    pagina = i + 1;
+                  } else if (paginaActual <= 3) {
+                    pagina = i + 1;
+                  } else if (paginaActual >= totalPaginas - 2) {
+                    pagina = totalPaginas - 4 + i;
+                  } else {
+                    pagina = paginaActual - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pagina}
+                      onClick={() => setPaginaActual(pagina)}
+                      className={`w-7 h-7 text-[11px] font-semibold rounded-lg ${
+                        paginaActual === pagina
+                          ? "bg-blue-500 text-white"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {pagina}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaActual === totalPaginas}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
