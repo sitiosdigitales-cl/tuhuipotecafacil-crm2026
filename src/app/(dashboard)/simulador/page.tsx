@@ -211,35 +211,27 @@ export default function SimuladorPage() {
   );
 
   const formatCLP = (n: number): string => {
-    if (n === 0) return "";
+    if (n === 0) return "0";
     return n.toLocaleString("es-CL");
-  };
-
-  const parseCLP = (s: string): number => {
-    return Number(s.replace(/[^0-9]/g, "")) || 0;
   };
 
   const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint, suffix }: { label: string; value: number; onChange: (v: number) => void; prefix?: string; placeholder?: string; hint?: string; suffix?: string }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [displayValue, setDisplayValue] = useState(formatCLP(value));
+    const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-      setDisplayValue(formatCLP(value));
-    }, [value]);
+      if (!isFocused) setDisplayValue(formatCLP(value));
+    }, [value, isFocused]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
       const formatted = formatCLP(num);
-
-      // Guardar posición del cursor relativa a los dígitos
       const cursorPos = e.target.selectionStart || 0;
       const prevDigitsBeforeCursor = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-
       setDisplayValue(formatted);
       onChange(num);
-
-      // Reposicionar cursor después del formateo
       requestAnimationFrame(() => {
         const input = inputRef.current;
         if (!input) return;
@@ -254,29 +246,116 @@ export default function SimuladorPage() {
       });
     };
 
+    const handleFocus = () => {
+      setIsFocused(true);
+      setDisplayValue(formatCLP(value));
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      setDisplayValue(formatCLP(value));
+    };
+
     return (
       <div className="space-y-1.5">
-        <label className="text-[11px] font-bold text-slate-600">{label}</label>
+        {label && <label className="text-[11px] font-bold text-slate-500">{label}</label>}
         <div className="relative">
-          {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{prefix}</span>}
+          {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base font-semibold">{prefix}</span>}
           <input
             ref={inputRef}
             type="text"
             inputMode="numeric"
             value={displayValue}
             onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             placeholder={placeholder}
-            className={`w-full ${prefix ? "pl-7" : "pl-3"} ${suffix ? "pr-16" : "pr-4"} py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all`}
+            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none ${
+              isFocused ? "border-[#0283A7] ring-4 ring-[#0283A7]/10" : "border-slate-200 hover:border-slate-300"
+            }`}
           />
-          {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">{suffix}</span>}
+          {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">{suffix}</span>}
         </div>
-        {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
+        {hint && <p className="text-[10px] text-slate-400 font-medium">{hint}</p>}
+      </div>
+    );
+  };
+
+  const SliderField = ({ value, onChange, min, max, step, showValue, formatValue }: { value: number; onChange: (v: number) => void; min: number; max: number; step?: number; showValue?: boolean; formatValue?: (v: number) => string }) => {
+    const sliderRef = useRef<HTMLInputElement>(null);
+    const pct = max > min ? ((Math.min(Math.max(value, min), max) - min) / (max - min)) * 100 : 0;
+
+    useEffect(() => {
+      if (sliderRef.current) {
+        sliderRef.current.style.setProperty("--progress", `${pct}%`);
+      }
+    }, [pct]);
+
+    return (
+      <div className="relative">
+        <input
+          ref={sliderRef}
+          type="range"
+          min={min}
+          max={max}
+          step={step || Math.max(1, Math.floor((max - min) / 100))}
+          value={Math.min(Math.max(value, min), max)}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer slider-teal"
+        />
+        {showValue && (
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[10px] text-slate-400 font-medium">{formatValue ? formatValue(min) : min.toLocaleString("es-CL")}</span>
+            <span className="text-[10px] text-slate-400 font-medium">{formatValue ? formatValue(max) : max.toLocaleString("es-CL")}</span>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
+      {/* CSS para slider teal */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .slider-teal::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #0d9488;
+          cursor: pointer;
+          border: 3px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          transition: transform 0.15s;
+        }
+        .slider-teal::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+        }
+        .slider-teal::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #0d9488;
+          cursor: pointer;
+          border: 3px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .slider-teal::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 999px;
+          background: linear-gradient(to right, #0d9488 0%, #0d9488 var(--progress, 50%), #e2e8f0 var(--progress, 50%), #e2e8f0 100%);
+        }
+        .slider-teal::-moz-range-track {
+          height: 6px;
+          border-radius: 999px;
+          background: #e2e8f0;
+        }
+        .slider-teal::-moz-range-progress {
+          background: #0d9488;
+          height: 6px;
+          border-radius: 999px;
+        }
+      `}} />
       {/* Hero */}
       <div className="relative bg-gradient-to-r from-[#0a1628] via-[#0d2137] to-[#0f2d4a] rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
@@ -359,8 +438,7 @@ export default function SimuladorPage() {
           {seccionActiva === 3 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <InputField label="Valor de la propiedad" value={valorPropiedad} onChange={setValorPropiedad} hint={fmtUF(valorPropiedad)} />
-              <input type="range" min={20000000} max={500000000} step={1000000} value={valorPropiedad}
-                onChange={(e) => setValorPropiedad(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0283A7]" />
+              <SliderField value={valorPropiedad} onChange={setValorPropiedad} min={20000000} max={500000000} step={1000000} showValue formatValue={(v) => `$ ${(v / 1000000).toFixed(0)}M`} />
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-600">Tipo</label>
@@ -395,8 +473,7 @@ export default function SimuladorPage() {
               <div>
                 <label className="text-[11px] font-bold text-slate-600 mb-2 block">Pie</label>
                 <InputField label="" value={pie} onChange={setPie} suffix={`${porcentajePie.toFixed(0)}%`} />
-                <input type="range" min={0} max={valorPropiedad} step={500000} value={pie}
-                  onChange={(e) => setPie(Math.min(Number(e.target.value), valorPropiedad))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2 accent-[#0283A7]" />
+                <SliderField value={pie} onChange={(v) => setPie(Math.min(v, valorPropiedad))} min={0} max={valorPropiedad} step={500000} showValue formatValue={(v) => `$ ${(v / 1000000).toFixed(0)}M`} />
                 <div className="flex gap-1.5 mt-2">
                   {[10, 15, 20, 25, 30, 35, 40].map((pct) => (
                     <button key={pct} onClick={() => setPie(Math.round(valorPropiedad * pct / 100))}
