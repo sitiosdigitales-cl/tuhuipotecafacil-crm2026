@@ -25,7 +25,7 @@ export function WordPressIntegration() {
   const [testTelefono, setTestTelefono] = useState("");
   const [testEnviando, setTestEnviando] = useState(false);
 
-  const webhookUrl = `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/api/webhook/wordpress`;
+  const webhookUrl = `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/api/webhook/leads`;
   const apiUrl = `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/api/leads`;
 
   const copiarAlPortapapeles = (texto: string, id: string) => {
