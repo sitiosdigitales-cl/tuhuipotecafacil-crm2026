@@ -178,7 +178,9 @@ export default function RecordatoriosPage() {
           tipo: nuevoRecordatorio.tipo,
           frecuencia: nuevoRecordatorio.frecuencia,
           leadNombre: nuevoRecordatorio.leadNombre || null,
-          fechaEnvio: nuevoRecordatorio.fechaEnvio || new Date().toISOString(),
+          fechaEnvio: nuevoRecordatorio.fechaEnvio
+            ? `${nuevoRecordatorio.fechaEnvio}T${nuevoRecordatorio.horaEnvio || "09:00"}:00`
+            : new Date().toISOString(),
         }),
       });
       const json = await res.json();
