@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import {
   Search,
   Calendar,
@@ -13,8 +12,6 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  Sun,
-  Moon,
   RefreshCw,
 } from "lucide-react";
 import { useUser } from "@/lib/contexts/UserContext";
@@ -31,7 +28,6 @@ interface BarraSuperiorProps {
 
 export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: BarraSuperiorProps) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const { usuarioActual, cambiarUsuario, esSuperAdmin, usuarios } = useUser();
   const { logout } = useAuth();
   const [mostrarUsuario, setMostrarUsuario] = useState(false);
@@ -110,16 +106,7 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
 
       {/* Sección Derecha */}
       <div className="flex items-center gap-2">
-        {/* Dark Mode */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl flex items-center justify-center transition-colors"
-          title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-
-        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
+        <div className="w-px h-6 bg-slate-200 mx-1" />
 
         {/* Agenda */}
         <button
