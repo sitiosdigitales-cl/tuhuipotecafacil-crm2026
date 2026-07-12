@@ -222,12 +222,19 @@ export default function SimuladorPage() {
   }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const sliderRef = useRef<HTMLInputElement>(null);
-    const [displayValue, setDisplayValue] = useState(formatCLP(value));
-    const [isFocused, setIsFocused] = useState(false);
+    // Valor interno del input (texto crudo sin formatear) — NO causa re-render del padre
+    const internalVal = useRef(formatCLP(value));
+    const isFocused = useRef(false);
+    const justSynced = useRef(false);
 
+    // Cuando el padre cambia el valor Y el input NO tiene foco, sincronizar display
     useEffect(() => {
-      if (!isFocused) setDisplayValue(formatCLP(value));
-    }, [value, isFocused]);
+      if (!isFocused.current && !justSynced.current) {
+        internalVal.current = formatCLP(value);
+        if (inputRef.current) inputRef.current.value = internalVal.current;
+      }
+      justSynced.current = false;
+    }, [value]);
 
     // Actualizar progreso del slider
     useEffect(() => {
@@ -239,31 +246,34 @@ export default function SimuladorPage() {
       }
     }, [value, sliderMin, sliderMax]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value.replace(/[^0-9]/g, "");
+    const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+      const target = e.target as HTMLInputElement;
+      const raw = target.value.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
       const formatted = formatCLP(num);
-      const cursorPos = e.target.selectionStart || 0;
-      const prevDigitsBeforeCursor = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-      setDisplayValue(formatted);
+      const cursorPos = target.selectionStart || 0;
+      const digitsBefore = target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+      internalVal.current = formatted;
+      target.value = formatted;
       onChange(num);
       requestAnimationFrame(() => {
-        const input = inputRef.current;
-        if (!input) return;
+        if (!isFocused.current) return;
         let newPos = 0;
-        let digitCount = 0;
+        let counted = 0;
         for (let i = 0; i < formatted.length; i++) {
-          if (digitCount === prevDigitsBeforeCursor) break;
+          if (counted === digitsBefore) break;
           newPos = i + 1;
-          if (/[0-9]/.test(formatted[i])) digitCount++;
+          if (/[0-9]/.test(formatted[i])) counted++;
         }
-        input.setSelectionRange(newPos, newPos);
+        target.setSelectionRange(newPos, newPos);
       });
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const num = Number(e.target.value);
-      setDisplayValue(formatCLP(num));
+      justSynced.current = true;
+      internalVal.current = formatCLP(num);
+      if (inputRef.current) inputRef.current.value = internalVal.current;
       onChange(num);
     };
 
@@ -276,14 +286,17 @@ export default function SimuladorPage() {
             ref={inputRef}
             type="text"
             inputMode="numeric"
-            value={displayValue}
-            onChange={handleChange}
-            onFocus={() => { setIsFocused(true); }}
-            onBlur={() => { setIsFocused(false); setDisplayValue(formatCLP(value)); }}
+            defaultValue={formatCLP(value)}
+            onInput={handleInput}
+            onFocus={() => { isFocused.current = true; }}
+            onBlur={() => {
+              isFocused.current = false;
+              // Sincronizar con el valor real del padre al perder foco
+              internalVal.current = formatCLP(value);
+              if (inputRef.current) inputRef.current.value = internalVal.current;
+            }}
             placeholder={placeholder}
-            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none ${
-              isFocused ? "border-[#0283A7] ring-4 ring-[#0283A7]/10" : "border-slate-200 hover:border-slate-300"
-            }`}
+            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-[#0283A7] focus:ring-4 focus:ring-[#0283A7]/10`}
           />
           {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">{suffix}</span>}
         </div>
