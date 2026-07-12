@@ -530,13 +530,25 @@ export default function LeadsPage() {
                         >
                           <Pencil size={13} className="text-blue-500" />
                         </button>
-                        <button className="p-2 hover:bg-emerald-100 rounded-lg transition-colors" title="Llamar">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (lead.telefono) window.open(`tel:${lead.telefono}`, "_self"); }}
+                          className="p-2 hover:bg-emerald-100 rounded-lg transition-colors"
+                          title="Llamar"
+                        >
                           <Phone size={13} className="text-emerald-500" />
                         </button>
-                        <button className="p-2 hover:bg-blue-100 rounded-lg transition-colors" title="Email">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (lead.email) window.open(`mailto:${lead.email}`, "_self"); }}
+                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Email"
+                        >
                           <Mail size={13} className="text-blue-500" />
                         </button>
-                        <button className="p-2 hover:bg-green-100 rounded-lg transition-colors" title="WhatsApp">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); const tel = lead.telefono?.replace(/[^0-9]/g, ""); if (tel) window.open(`https://wa.me/56${tel.replace(/^56/, "")}`, "_blank"); }}
+                          className="p-2 hover:bg-green-100 rounded-lg transition-colors"
+                          title="WhatsApp"
+                        >
                           <MessageSquare size={13} className="text-green-500" />
                         </button>
                         <button

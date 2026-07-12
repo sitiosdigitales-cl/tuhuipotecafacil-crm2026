@@ -520,20 +520,34 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h2 className="text-base font-bold text-slate-900 mb-4">Acciones rápidas</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { icon: <Upload size={18} />, label: "Subir documento", color: "bg-blue-50 text-blue-600" },
-                { icon: <FileText size={18} />, label: "Nueva simulación", color: "bg-emerald-50 text-emerald-600" },
-                { icon: <MessageSquare size={18} />, label: "Enviar mensaje", color: "bg-purple-50 text-purple-600" },
-                { icon: <Calendar size={18} />, label: "Agendar reunión", color: "bg-amber-50 text-amber-600" },
-              ].map((accion) => (
-                <button key={accion.label}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
-                  <div className={`w-10 h-10 ${accion.color} rounded-xl flex items-center justify-center`}>
-                    {accion.icon}
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-700">{accion.label}</span>
-                </button>
-              ))}
+              <button onClick={() => setTabActiva("documentos")}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <Upload size={18} />
+                </div>
+                <span className="text-[11px] font-semibold text-slate-700">Subir documento</span>
+              </button>
+              <button onClick={() => window.open("https://www.tuhipotecafacil.cl/simulador", "_blank")}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <FileText size={18} />
+                </div>
+                <span className="text-[11px] font-semibold text-slate-700">Nueva simulación</span>
+              </button>
+              <button onClick={() => { if (asesor?.telefono) window.open(`https://wa.me/56${asesor.telefono.replace(/[^0-9]/g, "").replace(/^56/, "")}`, "_blank"); else toast.info("No hay teléfono de asesor disponible"); }}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                  <MessageSquare size={18} />
+                </div>
+                <span className="text-[11px] font-semibold text-slate-700">Enviar mensaje</span>
+              </button>
+              <button onClick={() => { if (asesor?.email) window.open(`mailto:${asesor.email}?subject=Reunión Hipotecaria`, "_self"); else toast.info("No hay email de asesor disponible"); }}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                  <Calendar size={18} />
+                </div>
+                <span className="text-[11px] font-semibold text-slate-700">Agendar reunión</span>
+              </button>
             </div>
           </div>
             </>

@@ -1,19 +1,16 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import type { Lead, Etapa, OrigenLead, Prioridad } from "@/tipos";
+import type { Lead, Etapa } from "@/tipos";
 
 interface LeadContextType {
   leads: Lead[];
   agregarLead: (lead: Omit<Lead, "id" | "creadoEn">) => Promise<void>;
   actualizarLead: (id: string, datos: Partial<Lead>) => Promise<void>;
   eliminarLead: (id: string) => Promise<void>;
-  obtenerLead: (id: string) => Lead | undefined;
   asignarEjecutivo: (leadId: string, nombreEjecutivo: string) => Promise<void>;
   moverEtapa: (leadId: string, nuevaEtapa: Etapa) => Promise<void>;
-  leadCounts: Record<string, number>;
   cargando: boolean;
-  recargarLeads: () => Promise<void>;
   obtenerCodigoReferido: (usuarioId: string) => string;
   obtenerLeadsPorReferido: (codigoReferido: string) => Lead[];
 }
@@ -129,8 +126,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     }
   }, [leads]);
 
-  const obtenerLead = useCallback((id: string) => leads.find((l) => l.id === id), [leads]);
-
   const asignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
     await actualizarLead(leadId, { nombreEjecutivo });
   }, [actualizarLead]);
@@ -139,14 +134,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     await actualizarLead(leadId, { etapa: nuevaEtapa, diasEnEtapa: 0 });
   }, [actualizarLead]);
 
-  const leadCounts = leads.reduce((acc, lead) => { acc[lead.etapa] = (acc[lead.etapa] || 0) + 1; return acc; }, {} as Record<string, number>);
-
   const obtenerCodigoReferido = useCallback((usuarioId: string) => `REF-${usuarioId.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`, []);
 
   const obtenerLeadsPorReferido = useCallback((codigoReferido: string) => leads.filter((l) => l.notas?.includes(codigoReferido)), [leads]);
 
   return (
-    <LeadContext.Provider value={{ leads, agregarLead, actualizarLead, eliminarLead, obtenerLead, asignarEjecutivo, moverEtapa, leadCounts, cargando, recargarLeads: cargarLeads, obtenerCodigoReferido, obtenerLeadsPorReferido }}>
+    <LeadContext.Provider value={{ leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido }}>
       {children}
     </LeadContext.Provider>
   );
