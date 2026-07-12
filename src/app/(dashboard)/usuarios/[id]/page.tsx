@@ -485,11 +485,11 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${usuario.doisFA ? "bg-emerald-500" : "bg-slate-300"}`} />
+                  <div className={`w-2 h-2 rounded-full ${usuario.dosFA ? "bg-emerald-500" : "bg-slate-300"}`} />
                   <span className="text-[10px] text-slate-600">Autenticación 2FA</span>
                 </div>
-                <span className={`text-[9px] font-semibold ${usuario.doisFA ? "text-emerald-600" : "text-slate-400"}`}>
-                  {usuario.doisFA ? "Activa" : "Inactiva"}
+                <span className={`text-[9px] font-semibold ${usuario.dosFA ? "text-emerald-600" : "text-slate-400"}`}>
+                  {usuario.dosFA ? "Activa" : "Inactiva"}
                 </span>
               </div>
               <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-100 rounded-xl text-[10px] text-slate-600 font-medium hover:bg-slate-200 transition-colors">

@@ -343,7 +343,7 @@ export default function UsuariosPage() {
                   </div>
                 </td>
                 <td className="px-5 py-3.5">
-                  {user.doisFA ? (
+                  {user.dosFA ? (
                     <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
                       <Key size={10} />
                       Activo

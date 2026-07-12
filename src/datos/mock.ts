@@ -1,14 +1,14 @@
 import type { DocumentoLead, RegistroAuditoria, Usuario } from "@/tipos";
 
 export const USUARIOS_MOCK: Usuario[] = [
-  { id: "u1", nombre: "Super", apellido: "Admin", email: "admin@tuhipotecafacil.cl", rol: "SUPER_ADMIN", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 3600000), creadoEn: new Date("2024-01-01"), doisFA: true },
-  { id: "u2", nombre: "Andrés", apellido: "Pérez", email: "andres.perez@tuhipotecafacil.cl", rol: "ADMIN", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 7200000), creadoEn: new Date("2024-02-15"), doisFA: true },
+  { id: "u1", nombre: "Super", apellido: "Admin", email: "admin@tuhipotecafacil.cl", rol: "SUPER_ADMIN", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 3600000), creadoEn: new Date("2024-01-01"), dosFA: true },
+  { id: "u2", nombre: "Andrés", apellido: "Pérez", email: "andres.perez@tuhipotecafacil.cl", rol: "ADMIN", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 7200000), creadoEn: new Date("2024-02-15"), dosFA: true },
   { id: "u3", nombre: "Carolina", apellido: "Muñoz", email: "carolina.munoz@tuhipotecafacil.cl", rol: "GERENTE", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 86400000), creadoEn: new Date("2024-03-10") },
   { id: "u4", nombre: "Diego", apellido: "Silva", email: "diego.silva@tuhipotecafacil.cl", rol: "AGENTE", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 172800000), creadoEn: new Date("2024-04-05") },
   { id: "u5", nombre: "Valentina", apellido: "Torres", email: "valentina.torres@tuhipotecafacil.cl", rol: "AGENTE", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 259200000), creadoEn: new Date("2024-05-20") },
   { id: "u6", nombre: "Javier", apellido: "Morales", email: "javier.morales@tuhipotecafacil.cl", rol: "AGENTE", estado: "SUSPENDIDO", ultimoAcceso: new Date(Date.now() - 604800000), creadoEn: new Date("2024-06-15") },
   { id: "u7", nombre: "Ana", apellido: "Torres", email: "ana.torres@tuhipotecafacil.cl", rol: "AGENTE", estado: "INACTIVO", ultimoAcceso: new Date(Date.now() - 2592000000), creadoEn: new Date("2024-07-01") },
-  { id: "u8", nombre: "Roberto", apellido: "Silva", email: "roberto.silva@tuhipotecafacil.cl", rol: "GERENTE", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 43200000), creadoEn: new Date("2024-08-10"), doisFA: true },
+  { id: "u8", nombre: "Roberto", apellido: "Silva", email: "roberto.silva@tuhipotecafacil.cl", rol: "GERENTE", estado: "ACTIVO", ultimoAcceso: new Date(Date.now() - 43200000), creadoEn: new Date("2024-08-10"), dosFA: true },
 ];
 
 export const RENDIMIENTO_BANCOS = [

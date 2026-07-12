@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { ChevronRight, Building2, TrendingUp, Award, BarChart3 } from "lucide-react";
 import { useLeads } from "@/lib/contexts/LeadContext";
-import { formatoMonedaAbreviado, formatoUF, clpToUf } from "@/lib/utils";
+import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 
 const COLORES_BANCOS: Record<string, string> = {
   "Banco de Chile": "#1A56DB",

@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 const USUARIOS_SEED = [
   { id: "u1", nombre: "Super", apellido: "Admin", email: "admin@tuhipotecafacil.cl", telefono: "+56 9 9999 9999", rol: "SUPER_ADMIN" },
@@ -13,7 +14,9 @@ const USUARIOS_SEED = [
 
 const PASSWORD_DEFAULT = "admin123";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const user = requireRole(request, ["SUPER_ADMIN"]);
+  if (!user) return forbidden();
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD_DEFAULT, salt);

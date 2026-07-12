@@ -242,7 +242,7 @@ export interface Usuario {
   ultimoAcceso?: Date;
   creadoEn: Date;
   creadoPor?: string;
-  doisFA?: boolean;
+  dosFA?: boolean;
   intentosFallidos?: number;
   suspendidoHasta?: Date;
   // Información personal extendida
