@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, AlertCircle, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
+import { PreEvaluacionModal } from "@/componentes/simulador/PreEvaluacionModal";
 
 const UF_CLP = 38957.56;
 
@@ -82,6 +83,7 @@ export default function SimuladorPage() {
 
   // UI
   const [seccionActiva, setSeccionActiva] = useState(1);
+  const [preEvaluacionOpen, setPreEvaluacionOpen] = useState(false);
   const resultadosRef = useRef<HTMLDivElement>(null);
 
   const irAResultados = () => {
@@ -291,6 +293,7 @@ export default function SimuladorPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50">
       {/* Header standalone */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-50">
@@ -547,10 +550,10 @@ export default function SimuladorPage() {
                 className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white rounded-lg text-[11px] font-semibold hover:bg-green-600 transition-colors">
                 <MessageSquare size={12} /> Escríbenos por WhatsApp
               </a>
-              <a href="#"
+              <button onClick={() => setPreEvaluacionOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#1E40AF] text-white rounded-lg text-[11px] font-semibold hover:bg-[#1E3A8A] transition-colors">
                 <Phone size={12} /> Solicitar pre evaluación GRATIS
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -790,9 +793,10 @@ export default function SimuladorPage() {
                 <h3 className="text-lg font-bold text-white mb-2">¿Te gustó el resultado?</h3>
                 <p className="text-sm text-blue-200/70 mb-4">Nuestros asesores pueden ayudarte a conseguir una mejor aprobación.</p>
                 <div className="flex gap-3 justify-center">
-                  <a href="#" className="flex items-center gap-2 px-5 py-3 bg-[#FFD447] text-slate-900 rounded-xl text-xs font-bold hover:bg-yellow-400 transition-colors">
+                  <button onClick={() => setPreEvaluacionOpen(true)}
+                    className="flex items-center gap-2 px-5 py-3 bg-[#FFD447] text-slate-900 rounded-xl text-xs font-bold hover:bg-yellow-400 transition-colors">
                     <Calculator size={14} /> Solicitar Pre Evaluación GRATIS
-                  </a>
+                  </button>
                   <a href="https://wa.me/56966842168" target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-xl text-xs font-bold hover:bg-green-600 transition-colors">
                     <MessageSquare size={14} /> Hablar por WhatsApp
@@ -811,5 +815,20 @@ export default function SimuladorPage() {
       </div>
     </div>
     </div>
+
+    {/* Modal Pre Evaluación */}
+    <PreEvaluacionModal
+      open={preEvaluacionOpen}
+      onClose={() => setPreEvaluacionOpen(false)}
+      datosSimulador={{
+        valorPropiedad,
+        pie,
+        plazo,
+        tasa: tasaFinal,
+        banco: BANCOS.find((b) => b.id === bancoSeleccionado)?.nombre,
+        tipoCredito: "Crédito Hipotecario",
+      }}
+    />
+    </>
   );
 }
