@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    if (!requireAuth(request)) return unauthorized();
     try {
     const body = await request.json();
     if (!body.conversacionId || !body.remitenteId || !body.contenido) {

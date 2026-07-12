@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 import {
   enviarEmail,
@@ -11,6 +12,7 @@ import {
 
 // POST - Enviar email
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const body = await request.json();
     const { tipo } = body;

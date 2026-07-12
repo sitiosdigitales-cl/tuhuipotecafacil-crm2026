@@ -1,9 +1,12 @@
-﻿import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 import { actualizarTasas } from "@/lib/cmf/service";
 
-// POST /api/cmf/update - Forzar actualizaciÃ³n de tasas
-export async function POST() {
+// POST /api/cmf/update - Forzar actualización de tasas (solo ADMIN+)
+export async function POST(request: NextRequest) {
+  const user = requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
+  if (!user) return forbidden();
   try {
     const resultado = await actualizarTasas();
 
