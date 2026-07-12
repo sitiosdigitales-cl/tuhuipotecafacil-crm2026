@@ -29,9 +29,10 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
   const [conversacion, setConversacion] = useState<Conversacion | null>(null);
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const [busquedaChat, setBusquedaChat] = useState("");
+  const [respondiendoA, setRespondiendoA] = useState<Mensaje | null>(null);
   const mensajesRef = useRef<HTMLDivElement>(null);
 
-  const { mensajes, cargando, enviando, enviarMensaje } = useChat({
+  const { mensajes, cargando, enviando, enviarMensaje, eliminarMensaje, reaccionarMensaje } = useChat({
     conversacionId,
     usuarioActualId,
     usuarioActualNombre: `${usuarioActual.nombre} ${usuarioActual.apellido}`,
@@ -95,6 +96,23 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
       return { ...msg, mostrarRemitente, primerDelDia };
     });
   }, [mensajes]);
+
+  const handleEnviarMensaje = (contenido: string) => {
+    const texto = respondiendoA
+      ? `> ${respondiendoA.remitenteNombre}: ${respondiendoA.contenido.split("\n")[0]}\n\n${contenido}`
+      : contenido;
+    enviarMensaje(texto);
+    setRespondiendoA(null);
+  };
+
+  const handleEliminarMensaje = async (mensajeId: string) => {
+    await eliminarMensaje(mensajeId);
+    toast.success("Mensaje eliminado");
+  };
+
+  const handleReaccionar = async (mensajeId: string, emoji: string) => {
+    await reaccionarMensaje(mensajeId, emoji);
+  };
 
   const getNombreConversacion = (): string => {
     if (!conversacion) return "";
@@ -264,13 +282,32 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
                   esPropio={msg.remitenteId === usuarioActualId}
                   mostrarRemitente={msg.mostrarRemitente}
                   esPrimerDelDia={msg.primerDelDia}
+                  onEliminar={handleEliminarMensaje}
+                  onReaccionar={handleReaccionar}
+                  onResponder={(m) => setRespondiendoA(m)}
                 />
               ))
             )}
           </div>
 
+          {/* Barra de respuesta */}
+          {respondiendoA && (
+            <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <Reply size={14} className="text-blue-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold text-blue-700">{respondiendoA.remitenteNombre}</span>
+                  <p className="text-[10px] text-blue-500 truncate">{respondiendoA.contenido}</p>
+                </div>
+              </div>
+              <button onClick={() => setRespondiendoA(null)} className="p-1 hover:bg-blue-100 rounded">
+                <X size={12} className="text-blue-400" />
+              </button>
+            </div>
+          )}
+
           <InputMensaje
-            onEnviar={enviarMensaje}
+            onEnviar={handleEnviarMensaje}
             nombreConversacion={nombreConversacion}
             disabled={enviando}
           />

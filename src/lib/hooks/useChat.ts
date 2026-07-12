@@ -159,10 +159,68 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
     }
   }, [conversacionId, usuarioActualId, usuarioActualNombre]);
 
+  // Eliminar mensaje
+  const eliminarMensaje = useCallback(async (mensajeId: string) => {
+    setMensajes((prev) =>
+      prev.map((m) =>
+        m.id === mensajeId ? { ...m, contenido: "[Mensaje eliminado]", tipo: "SISTEMA" as const } : m
+      )
+    );
+    try {
+      await fetch(`/api/mensajes/${mensajeId}`, { method: "DELETE", credentials: "include" });
+    } catch {
+      // Silently fail — optimistic update already done
+    }
+  }, []);
+
+  // Reaccionar a mensaje
+  const reaccionarMensaje = useCallback(async (mensajeId: string, emoji: string) => {
+    setMensajes((prev) =>
+      prev.map((m) => {
+        if (m.id !== mensajeId) return m;
+        const reacciones = { ...m.reacciones };
+        const usuarios = reacciones[emoji] || [];
+        if (usuarios.includes(usuarioActualId)) {
+          // Quitar reacción
+          reacciones[emoji] = usuarios.filter((u) => u !== usuarioActualId);
+          if (reacciones[emoji].length === 0) delete reacciones[emoji];
+        } else {
+          // Agregar reacción
+          reacciones[emoji] = [...usuarios, usuarioActualId];
+        }
+        return { ...m, reacciones };
+      })
+    );
+    // Guardar en BD
+    const msg = mensajes.find((m) => m.id === mensajeId);
+    if (msg) {
+      const reacciones = { ...msg.reacciones };
+      const usuarios = reacciones[emoji] || [];
+      if (usuarios.includes(usuarioActualId)) {
+        reacciones[emoji] = usuarios.filter((u) => u !== usuarioActualId);
+        if (reacciones[emoji].length === 0) delete reacciones[emoji];
+      } else {
+        reacciones[emoji] = [...usuarios, usuarioActualId];
+      }
+      try {
+        await fetch(`/api/mensajes/${mensajeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ reacciones }),
+        });
+      } catch {
+        // Silently fail
+      }
+    }
+  }, [mensajes, usuarioActualId]);
+
   return {
     mensajes,
     cargando,
     enviando,
     enviarMensaje,
+    eliminarMensaje,
+    reaccionarMensaje,
   };
 }

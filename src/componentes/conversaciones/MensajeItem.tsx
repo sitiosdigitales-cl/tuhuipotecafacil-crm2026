@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  MoreHorizontal,
   Reply,
   Smile,
   Copy,
@@ -16,11 +15,16 @@ import { Avatar } from "./Avatar";
 import { formatMensajeTime, formatFullDate } from "@/datos/conversaciones-mock";
 import type { Mensaje } from "@/tipos/conversaciones";
 
+const EMOJIS_RAPIDOS = ["👍", "❤️", "😂", "🔥", "✅", "😮"];
+
 interface MensajeItemProps {
   mensaje: Mensaje;
   esPropio: boolean;
   mostrarRemitente: boolean;
   esPrimerDelDia: boolean;
+  onEliminar?: (mensajeId: string) => void;
+  onReaccionar?: (mensajeId: string, emoji: string) => void;
+  onResponder?: (mensaje: Mensaje) => void;
 }
 
 const ESTADO_ICON: Record<string, typeof Check> = {
@@ -29,10 +33,23 @@ const ESTADO_ICON: Record<string, typeof Check> = {
   LEIDO: CheckCheck,
 };
 
-export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDia }: MensajeItemProps) {
+export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDia, onEliminar, onReaccionar, onResponder }: MensajeItemProps) {
   const [mostrarAcciones, setMostrarAcciones] = useState(false);
+  const [mostrarEmojis, setMostrarEmojis] = useState(false);
 
   const EstadoIcon = ESTADO_ICON[mensaje.estado] || Check;
+
+  const handleEliminar = async () => {
+    if (!onEliminar) return;
+    onEliminar(mensaje.id);
+    setMostrarAcciones(false);
+  };
+
+  const handleReaccionar = async (emoji: string) => {
+    if (!onReaccionar) return;
+    onReaccionar(mensaje.id, emoji);
+    setMostrarEmojis(false);
+  };
 
   return (
     <div className="group">
@@ -52,7 +69,7 @@ export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDi
           mostrarRemitente ? "mt-3" : "mt-0.5"
         }`}
         onMouseEnter={() => setMostrarAcciones(true)}
-        onMouseLeave={() => setMostrarAcciones(false)}
+        onMouseLeave={() => { setMostrarAcciones(false); setMostrarEmojis(false); }}
       >
         {/* Avatar o espacio */}
         <div className="w-9 flex-shrink-0">
@@ -89,6 +106,7 @@ export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDi
               {Object.entries(mensaje.reacciones).map(([emoji, usuarios]) => (
                 <button
                   key={emoji}
+                  onClick={() => handleReaccionar(emoji)}
                   className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full text-[11px] hover:bg-blue-100 transition-colors"
                 >
                   <span>{emoji}</span>
@@ -102,20 +120,51 @@ export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDi
         {/* Acciones del mensaje */}
         {mostrarAcciones && (
           <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-lg px-1 py-0.5 flex-shrink-0">
-            <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Reacciones">
-              <Smile size={14} className="text-slate-500" />
-            </button>
-            <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Responder">
+            <div className="relative">
+              <button
+                onClick={() => setMostrarEmojis(!mostrarEmojis)}
+                className="p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+                title="Reacciones"
+              >
+                <Smile size={14} className="text-slate-500" />
+              </button>
+              {/* Mini picker de reacciones */}
+              {mostrarEmojis && (
+                <div className="absolute bottom-full right-0 mb-1 flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-lg px-1.5 py-1 z-50">
+                  {EMOJIS_RAPIDOS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReaccionar(emoji)}
+                      className="w-7 h-7 text-sm hover:bg-slate-100 rounded-md transition-colors flex items-center justify-center"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                if (onResponder) onResponder(mensaje);
+                setMostrarAcciones(false);
+              }}
+              className="p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+              title="Responder"
+            >
               <Reply size={14} className="text-slate-500" />
             </button>
-            <button onClick={() => navigator.clipboard.writeText(mensaje.contenido).then(() => toast.success("Mensaje copiado"))} className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Copiar">
+            <button
+              onClick={() => { navigator.clipboard.writeText(mensaje.contenido).then(() => toast.success("Mensaje copiado")); }}
+              className="p-1.5 hover:bg-slate-100 rounded-md transition-colors"
+              title="Copiar"
+            >
               <Copy size={14} className="text-slate-500" />
             </button>
             <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Fijar">
               <Pin size={14} className="text-slate-500" />
             </button>
             {esPropio && (
-              <button onClick={() => toast.info("Función de eliminar próximamente")} className="p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Eliminar">
+              <button onClick={handleEliminar} className="p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Eliminar">
                 <Trash2 size={14} className="text-red-500" />
               </button>
             )}
