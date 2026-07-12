@@ -294,10 +294,10 @@ export default function SimuladorPage() {
               type="range"
               min={sliderMin}
               max={sliderMax}
-              step={sliderStep || Math.max(1, Math.floor((sliderMax - sliderMin) / 100))}
+              step={sliderStep || 1}
               value={Math.min(Math.max(value, sliderMin), sliderMax)}
               onChange={handleSliderChange}
-              className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer slider-teal"
+              className="w-full slider-teal"
             />
             <div className="flex justify-between mt-1">
               <span className="text-[10px] text-slate-400 font-medium">{sliderFormat ? sliderFormat(sliderMin) : sliderMin.toLocaleString("es-CL")}</span>
@@ -314,44 +314,62 @@ export default function SimuladorPage() {
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
-      {/* CSS para slider teal */}
+      {/* CSS para slider teal fluido */}
       <style dangerouslySetInnerHTML={{ __html: `
+        .slider-teal {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 8px;
+          border-radius: 999px;
+          background: #e2e8f0;
+          outline: none;
+          cursor: grab;
+          touch-action: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .slider-teal:active {
+          cursor: grabbing;
+        }
         .slider-teal::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 20px;
-          height: 20px;
+          width: 26px;
+          height: 26px;
           border-radius: 50%;
           background: #0d9488;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          transition: transform 0.15s;
+          cursor: grab;
+          border: 4px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          margin-top: -9px;
+          touch-action: none;
         }
         .slider-teal::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
+          background: #0f766e;
+          box-shadow: 0 2px 12px rgba(13,148,136,0.4);
+        }
+        .slider-teal::-webkit-slider-thumb:active {
+          cursor: grabbing;
+          background: #0f766e;
+          box-shadow: 0 2px 16px rgba(13,148,136,0.5);
+          transform: scale(1.15);
         }
         .slider-teal::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           background: #0d9488;
-          cursor: pointer;
-          border: 3px solid white;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        .slider-teal::-webkit-slider-runnable-track {
-          height: 6px;
-          border-radius: 999px;
-          background: linear-gradient(to right, #0d9488 0%, #0d9488 var(--progress, 50%), #e2e8f0 var(--progress, 50%), #e2e8f0 100%);
+          cursor: grab;
+          border: 4px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          touch-action: none;
         }
         .slider-teal::-moz-range-track {
-          height: 6px;
+          height: 8px;
           border-radius: 999px;
           background: #e2e8f0;
         }
         .slider-teal::-moz-range-progress {
           background: #0d9488;
-          height: 6px;
+          height: 8px;
           border-radius: 999px;
         }
       `}} />
