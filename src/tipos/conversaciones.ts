@@ -1,6 +1,6 @@
 export type TipoConversacion = "DIRECTO" | "GRUPO" | "CANAL";
 
-export type EstadoMensaje = "ENVIADO" | "ENTREGADO" | "LEIDO";
+export type EstadoMensaje = "ENVIADO" | "ENTREGADO" | "LEIDO" | "ERROR";
 
 export interface Mensaje {
   id: string;

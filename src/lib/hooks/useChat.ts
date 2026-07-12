@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import type { Mensaje } from "@/tipos/conversaciones";
 
 interface UseChatOptions {
@@ -49,11 +50,56 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
     cargarMensajes(conversacionId);
   }, [conversacionId, cargarMensajes]);
 
+  // Suscripción Realtime a nuevos mensajes
+  useEffect(() => {
+    if (!conversacionId) return;
+
+    const channel = supabase
+      .channel(`mensajes-${conversacionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "mensajes",
+        },
+        (payload) => {
+          const nuevo = payload.new as Record<string, any>;
+
+          // Solo mensajes de esta conversación
+          if (nuevo.conversacionid !== conversacionId) return;
+
+          const mensajeNuevo: Mensaje = {
+            id: nuevo.id,
+            conversacionId: nuevo.conversacionid,
+            remitenteId: nuevo.remitenteid,
+            remitenteNombre: nuevo.remitentenombre,
+            contenido: nuevo.contenido,
+            tipo: nuevo.tipo || "TEXTO",
+            estado: nuevo.estado || "ENVIADO",
+            archivoUrl: nuevo.archivourl,
+            creadoEn: new Date(nuevo.creadoen),
+          };
+
+          setMensajes((prev) => {
+            // Deduplicar: no agregar si ya existe (el sender lo tiene por optimistic update)
+            if (prev.some((m) => m.id === mensajeNuevo.id)) return prev;
+            return [...prev, mensajeNuevo];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversacionId]);
+
   // Enviar mensaje
   const enviarMensaje = useCallback(async (contenido: string) => {
     if (!conversacionId || !contenido.trim()) return;
 
-    // Crear mensaje local inmediatamente
+    // Crear mensaje local inmediatamente (optimistic update)
     const mensajeLocal: Mensaje = {
       id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       conversacionId,
@@ -65,7 +111,6 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
       creadoEn: new Date(),
     };
 
-    // Agregar al estado inmediatamente
     setMensajes((prev) => [...prev, mensajeLocal]);
     setEnviando(true);
 
@@ -103,12 +148,10 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
           )
         );
       }
-    } catch (error) {
-      console.error("Error al enviar mensaje:", error);
-      // Si hay error, marcar el mensaje como fallido
+    } catch {
       setMensajes((prev) =>
         prev.map((m) =>
-          m.id === mensajeLocal.id ? { ...m, estado: "ERROR" } : m
+          m.id === mensajeLocal.id ? { ...m, estado: "ERROR" as const } : m
         )
       );
     } finally {
