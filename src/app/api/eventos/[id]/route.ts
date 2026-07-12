@@ -19,9 +19,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
+    const camposPermitidos: Record<string, any> = {};
+    if (body.titulo !== undefined) camposPermitidos.titulo = body.titulo;
+    if (body.descripcion !== undefined) camposPermitidos.descripcion = body.descripcion;
+    if (body.fecha !== undefined) camposPermitidos.fecha = body.fecha;
+    if (body.horaInicio !== undefined) camposPermitidos.horaInicio = body.horaInicio;
+    if (body.horaFin !== undefined) camposPermitidos.horaFin = body.horaFin;
+    if (body.tipo !== undefined) camposPermitidos.tipo = body.tipo;
+    if (body.estado !== undefined) camposPermitidos.estado = body.estado;
+    if (body.leadId !== undefined) camposPermitidos.leadId = body.leadId;
+    if (body.leadNombre !== undefined) camposPermitidos.leadNombre = body.leadNombre;
+    if (body.recordatorio !== undefined) camposPermitidos.recordatorio = body.recordatorio;
     const { data, error } = await supabase
       .from("eventos")
-      .update(body)
+      .update(camposPermitidos)
       .eq("id", id)
       .select()
       .single();

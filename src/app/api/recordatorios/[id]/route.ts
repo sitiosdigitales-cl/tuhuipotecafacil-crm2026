@@ -19,9 +19,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
+    const camposPermitidos: Record<string, any> = {};
+    if (body.titulo !== undefined) camposPermitidos.titulo = body.titulo;
+    if (body.descripcion !== undefined) camposPermitidos.descripcion = body.descripcion;
+    if (body.tipo !== undefined) camposPermitidos.tipo = body.tipo;
+    if (body.frecuencia !== undefined) camposPermitidos.frecuencia = body.frecuencia;
+    if (body.fechaEnvio !== undefined) camposPermitidos.fechaEnvio = body.fechaEnvio;
+    if (body.estado !== undefined) camposPermitidos.estado = body.estado;
+    if (body.leadNombre !== undefined) camposPermitidos.leadNombre = body.leadNombre;
+    if (body.leadId !== undefined) camposPermitidos.leadId = body.leadId;
     const { data, error } = await supabase
       .from("recordatorios")
-      .update(body)
+      .update(camposPermitidos)
       .eq("id", id)
       .select()
       .single();

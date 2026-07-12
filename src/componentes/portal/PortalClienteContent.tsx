@@ -895,7 +895,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Documentos</h3>
-              <button className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todos</button>
+              <button onClick={() => setTabActiva("documentos")} className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todos</button>
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -917,7 +917,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Alertas y notificaciones</h3>
-              <button className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todas</button>
+              <button onClick={() => setTabActiva("resumen")} className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todas</button>
             </div>
             <div className="space-y-3">
               {[
@@ -936,7 +936,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 py-2.5 bg-slate-50 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1">
+            <button onClick={() => setTabActiva("resumen")} className="w-full mt-4 py-2.5 bg-slate-50 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1">
               Ver todas las notificaciones <ChevronRight size={14} />
             </button>
           </div>

@@ -11,6 +11,7 @@ import {
   Check,
   CheckCheck,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { formatMensajeTime, formatFullDate } from "@/datos/conversaciones-mock";
 import type { Mensaje } from "@/tipos/conversaciones";
@@ -107,14 +108,14 @@ export function MensajeItem({ mensaje, esPropio, mostrarRemitente, esPrimerDelDi
             <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Responder">
               <Reply size={14} className="text-slate-500" />
             </button>
-            <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Copiar">
+            <button onClick={() => navigator.clipboard.writeText(mensaje.contenido).then(() => toast.success("Mensaje copiado"))} className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Copiar">
               <Copy size={14} className="text-slate-500" />
             </button>
             <button className="p-1.5 hover:bg-slate-100 rounded-md transition-colors" title="Fijar">
               <Pin size={14} className="text-slate-500" />
             </button>
             {esPropio && (
-              <button className="p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Eliminar">
+              <button onClick={() => toast.info("Función de eliminar próximamente")} className="p-1.5 hover:bg-red-50 rounded-md transition-colors" title="Eliminar">
                 <Trash2 size={14} className="text-red-500" />
               </button>
             )}

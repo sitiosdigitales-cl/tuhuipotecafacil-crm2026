@@ -685,7 +685,10 @@ export default function ClientePerfilPage() {
                         <button onClick={() => handlePreview(doc)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Ver">
                           <Eye size={14} className="text-slate-400" />
                         </button>
-                        <button className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Descargar">
+                        <button
+                          onClick={() => { if (doc.archivoUrl) window.open(doc.archivoUrl, "_blank"); else toast.info("Documento sin archivo adjunto"); }}
+                          className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Descargar"
+                        >
                           <Download size={14} className="text-emerald-500" />
                         </button>
                         <button onClick={() => handleEliminar(doc)} className="p-2 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">

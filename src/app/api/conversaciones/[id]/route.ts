@@ -18,9 +18,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
+    const camposPermitidos: Record<string, any> = {};
+    if (body.nombre !== undefined) camposPermitidos.nombre = body.nombre;
+    if (body.descripcion !== undefined) camposPermitidos.descripcion = body.descripcion;
+    if (body.tipo !== undefined) camposPermitidos.tipo = body.tipo;
+    if (body.estado !== undefined) camposPermitidos.estado = body.estado;
+    if (body.participantes !== undefined) camposPermitidos.participantes = body.participantes;
+    if (body.mensajesNoLeidos !== undefined) camposPermitidos.mensajesNoLeidos = body.mensajesNoLeidos;
+    if (body.esFijo !== undefined) camposPermitidos.esFijo = body.esFijo;
     const { data, error } = await supabase
       .from("conversaciones")
-      .update(body)
+      .update(camposPermitidos)
       .eq("id", id)
       .select()
       .single();
