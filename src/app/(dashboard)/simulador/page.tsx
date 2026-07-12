@@ -222,18 +222,15 @@ export default function SimuladorPage() {
   }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const sliderRef = useRef<HTMLInputElement>(null);
-    // Valor interno del input (texto crudo sin formatear) — NO causa re-render del padre
-    const internalVal = useRef(formatCLP(value));
-    const isFocused = useRef(false);
-    const justSynced = useRef(false);
+    const lastParentValue = useRef(value);
+    const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Cuando el padre cambia el valor Y el input NO tiene foco, sincronizar display
+    // Cuando el padre cambia el valor (por slider u otro input), sincronizar al input DOM
     useEffect(() => {
-      if (!isFocused.current && !justSynced.current) {
-        internalVal.current = formatCLP(value);
-        if (inputRef.current) inputRef.current.value = internalVal.current;
+      if (inputRef.current && inputRef.current !== document.activeElement) {
+        inputRef.current.value = formatCLP(value);
+        lastParentValue.current = value;
       }
-      justSynced.current = false;
     }, [value]);
 
     // Actualizar progreso del slider
@@ -246,35 +243,54 @@ export default function SimuladorPage() {
       }
     }, [value, sliderMin, sliderMax]);
 
-    const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-      const target = e.target as HTMLInputElement;
-      const raw = target.value.replace(/[^0-9]/g, "");
+    // Cada tecla: formatear display SIN llamar al padre
+    const handleInput = () => {
+      const input = inputRef.current;
+      if (!input) return;
+      const raw = input.value.replace(/[^0-9]/g, "");
       const num = Number(raw) || 0;
       const formatted = formatCLP(num);
-      const cursorPos = target.selectionStart || 0;
-      const digitsBefore = target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-      internalVal.current = formatted;
-      target.value = formatted;
+      const cursorPos = input.selectionStart || 0;
+      const digitsBefore = input.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
+
+      // Actualizar display directamente en DOM (sin React re-render)
+      input.value = formatted;
+
+      // Reposicionar cursor después del formateo
+      let newPos = 0;
+      let counted = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (counted === digitsBefore) break;
+        newPos = i + 1;
+        if (/[0-9]/.test(formatted[i])) counted++;
+      }
+      input.setSelectionRange(newPos, newPos);
+
+      // Debounce: notificar al padre después de 300ms sin typing
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => {
+        onChange(num);
+        lastParentValue.current = num;
+      }, 300);
+    };
+
+    // Al perder foco: sincronizar inmediatamente
+    const handleBlur = () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      const input = inputRef.current;
+      if (!input) return;
+      const raw = input.value.replace(/[^0-9]/g, "");
+      const num = Number(raw) || 0;
+      input.value = formatCLP(num);
       onChange(num);
-      requestAnimationFrame(() => {
-        if (!isFocused.current) return;
-        let newPos = 0;
-        let counted = 0;
-        for (let i = 0; i < formatted.length; i++) {
-          if (counted === digitsBefore) break;
-          newPos = i + 1;
-          if (/[0-9]/.test(formatted[i])) counted++;
-        }
-        target.setSelectionRange(newPos, newPos);
-      });
+      lastParentValue.current = num;
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const num = Number(e.target.value);
-      justSynced.current = true;
-      internalVal.current = formatCLP(num);
-      if (inputRef.current) inputRef.current.value = internalVal.current;
+      if (inputRef.current) inputRef.current.value = formatCLP(num);
       onChange(num);
+      lastParentValue.current = num;
     };
 
     return (
@@ -288,15 +304,9 @@ export default function SimuladorPage() {
             inputMode="numeric"
             defaultValue={formatCLP(value)}
             onInput={handleInput}
-            onFocus={() => { isFocused.current = true; }}
-            onBlur={() => {
-              isFocused.current = false;
-              // Sincronizar con el valor real del padre al perder foco
-              internalVal.current = formatCLP(value);
-              if (inputRef.current) inputRef.current.value = internalVal.current;
-            }}
+            onBlur={handleBlur}
             placeholder={placeholder}
-            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-[#0283A7] focus:ring-4 focus:ring-[#0283A7]/10`}
+            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-20" : "pr-4"} py-3.5 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
           />
           {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">{suffix}</span>}
         </div>
@@ -327,7 +337,7 @@ export default function SimuladorPage() {
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
-      {/* CSS para slider teal fluido */}
+      {/* CSS para slider azul fluido */}
       <style dangerouslySetInnerHTML={{ __html: `
         .slider-teal {
           -webkit-appearance: none;
@@ -348,7 +358,7 @@ export default function SimuladorPage() {
           width: 26px;
           height: 26px;
           border-radius: 50%;
-          background: #0d9488;
+          background: #2563EB;
           cursor: grab;
           border: 4px solid white;
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
@@ -356,20 +366,20 @@ export default function SimuladorPage() {
           touch-action: none;
         }
         .slider-teal::-webkit-slider-thumb:hover {
-          background: #0f766e;
-          box-shadow: 0 2px 12px rgba(13,148,136,0.4);
+          background: #1E40AF;
+          box-shadow: 0 2px 12px rgba(37,99,235,0.4);
         }
         .slider-teal::-webkit-slider-thumb:active {
           cursor: grabbing;
-          background: #0f766e;
-          box-shadow: 0 2px 16px rgba(13,148,136,0.5);
+          background: #1E40AF;
+          box-shadow: 0 2px 16px rgba(37,99,235,0.5);
           transform: scale(1.15);
         }
         .slider-teal::-moz-range-thumb {
           width: 22px;
           height: 22px;
           border-radius: 50%;
-          background: #0d9488;
+          background: #2563EB;
           cursor: grab;
           border: 4px solid white;
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
@@ -381,31 +391,31 @@ export default function SimuladorPage() {
           background: #e2e8f0;
         }
         .slider-teal::-moz-range-progress {
-          background: #0d9488;
+          background: #2563EB;
           height: 8px;
           border-radius: 999px;
         }
       `}} />
       {/* Hero */}
-      <div className="relative bg-gradient-to-r from-[#0a1628] via-[#0d2137] to-[#0f2d4a] rounded-2xl overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#1E40AF] via-[#2563EB] to-[#3B82F6] rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
         <div className="relative px-8 py-10 flex items-center justify-between">
           <div className="max-w-xl">
             <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Simulador de Crédito Hipotecario</h1>
-            <p className="text-sm text-blue-200/70 leading-relaxed">
+            <p className="text-sm text-blue-100/80 leading-relaxed">
               Calcula tu dividendo utilizando tasas reales publicadas por la CMF, seguros incluidos y simulaciones comparativas entre bancos.
             </p>
           </div>
           <div className="hidden lg:flex items-center gap-4">
-            <div className="text-center px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
-              <p className="text-[10px] text-blue-300/60 font-semibold">Tasa vigente</p>
+            <div className="text-center px-4 py-3 bg-white/15 rounded-xl backdrop-blur-sm border border-white/15">
+              <p className="text-[10px] text-blue-100/60 font-semibold">Tasa vigente</p>
               <p className="text-xl font-bold text-white">{tasaFinal.toFixed(2)}%</p>
-              <p className="text-[9px] text-blue-300/50">CMF · UF</p>
+              <p className="text-[9px] text-blue-100/50">CMF · UF</p>
             </div>
-            <div className="text-center px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
-              <p className="text-[10px] text-blue-300/60 font-semibold">UF hoy</p>
+            <div className="text-center px-4 py-3 bg-white/15 rounded-xl backdrop-blur-sm border border-white/15">
+              <p className="text-[10px] text-blue-100/60 font-semibold">UF hoy</p>
               <p className="text-xl font-bold text-white">${UF_CLP.toLocaleString("es-CL")}</p>
-              <p className="text-[9px] text-blue-300/50">{new Date().toLocaleDateString("es-CL")}</p>
+              <p className="text-[9px] text-blue-100/50">{new Date().toLocaleDateString("es-CL")}</p>
             </div>
           </div>
         </div>
@@ -613,6 +623,28 @@ export default function SimuladorPage() {
               <p className="text-[10px] text-slate-400">Pie + gastos operacionales</p>
             </div>
           )}
+
+          {/* CTA Calcular */}
+          <button className="w-full py-4 bg-[#1E40AF] hover:bg-[#1E3A8A] text-white rounded-xl text-sm font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
+            <Calculator size={18} /> Calcular mi dividendo
+          </button>
+          <p className="text-center text-[10px] text-slate-400">100% Gratis · Sin compromiso</p>
+
+          {/* Ayuda */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center">
+            <p className="text-xs font-bold text-slate-700 mb-1">¿Dudas? Te ayudamos</p>
+            <p className="text-[10px] text-slate-400 mb-3">Nuestros expertos están listos para asesorarte.</p>
+            <div className="flex gap-2 justify-center">
+              <a href="https://wa.me/56966842168" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white rounded-lg text-[11px] font-semibold hover:bg-green-600 transition-colors">
+                <MessageSquare size={12} /> Escríbenos por WhatsApp
+              </a>
+              <a href="#"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#1E40AF] text-white rounded-lg text-[11px] font-semibold hover:bg-[#1E3A8A] transition-colors">
+                <Phone size={12} /> Solicitar pre evaluación GRATIS
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Columna derecha — Resultados */}
@@ -620,7 +652,7 @@ export default function SimuladorPage() {
           {resultado ? (
             <>
               {/* Card dividendo principal */}
-              <div className="bg-gradient-to-br from-[#0283A7] via-[#00729A] to-[#005f85] rounded-2xl p-8 text-white relative overflow-hidden">
+              <div className="bg-gradient-to-br from-[#1E40AF] via-[#2563EB] to-[#3B82F6] rounded-2xl p-8 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 opacity-5"><Home size={200} /></div>
                 <p className="text-sm text-blue-200/70 mb-1">Tu dividendo mensual estimado</p>
                 <p className="text-4xl font-bold tracking-tight mb-2">{fmt(resultado.dividendo)}</p>
@@ -846,7 +878,7 @@ export default function SimuladorPage() {
               </div>
 
               {/* CTA */}
-              <div className="bg-gradient-to-r from-[#0283A7] to-[#005f85] rounded-2xl p-6 text-center">
+              <div className="bg-gradient-to-r from-[#1E40AF] to-[#2563EB] rounded-2xl p-6 text-center">
                 <h3 className="text-lg font-bold text-white mb-2">¿Te gustó el resultado?</h3>
                 <p className="text-sm text-blue-200/70 mb-4">Nuestros asesores pueden ayudarte a conseguir una mejor aprobación.</p>
                 <div className="flex gap-3 justify-center">
