@@ -15,6 +15,9 @@ import {
   List,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
+
+const EMOJIS_COMUNES = ["👍", "❤️", "😊", "😂", "🎉", "🔥", "👏", "💪", "✅", "⭐", "🙏", "💡"];
 
 interface InputMensajeProps {
   onEnviar: (contenido: string) => void;
@@ -25,7 +28,10 @@ interface InputMensajeProps {
 export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMensajeProps) {
   const [mensaje, setMensaje] = useState("");
   const [mostrarFormato, setMostrarFormato] = useState(false);
+  const [mostrarEmojis, setMostrarEmojis] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -38,6 +44,7 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
     if (!mensaje.trim()) return;
     onEnviar(mensaje.trim());
     setMensaje("");
+    setMostrarEmojis(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -75,6 +82,26 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
         : newStart + 4;
       textarea.setSelectionRange(newStart, newEnd);
     }, 0);
+  };
+
+  const insertarEmoji = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const nuevo = mensaje.substring(0, start) + emoji + mensaje.substring(start);
+    setMensaje(nuevo);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+    }, 0);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, tipo: string) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+    const tamanho = (archivo.size / 1024).toFixed(1);
+    setMensaje((prev) => prev + `[${tipo}: ${archivo.name} (${tamanho} KB)]`);
+    e.target.value = "";
   };
 
   return (
@@ -127,6 +154,23 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
         </div>
       )}
 
+      {/* Panel de emojis */}
+      {mostrarEmojis && (
+        <div className="px-4 py-2 border-b border-slate-100 bg-slate-50">
+          <div className="flex items-center gap-1 flex-wrap">
+            {EMOJIS_COMUNES.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => insertarEmoji(emoji)}
+                className="w-8 h-8 text-lg hover:bg-slate-200 rounded-lg transition-colors flex items-center justify-center"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Input area */}
       <div className="p-4">
         <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
@@ -141,12 +185,22 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
             >
               <Bold size={16} />
             </button>
-            <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500" title="Adjuntar archivo">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+              title="Adjuntar archivo"
+            >
               <Paperclip size={16} />
             </button>
-            <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500" title="Enviar imagen">
+            <button
+              onClick={() => imageInputRef.current?.click()}
+              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+              title="Enviar imagen"
+            >
               <Image size={16} />
             </button>
+            <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => handleFileSelect(e, "Archivo")} />
+            <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, "Imagen")} />
           </div>
 
           {/* Textarea */}
@@ -163,13 +217,25 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
 
           {/* Botones derecha */}
           <div className="flex items-center gap-1 pb-0.5">
-            <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500" title="Mencionar">
+            <button
+              onClick={() => { insertarFormato("@", " "); setMostrarEmojis(false); }}
+              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+              title="Mencionar"
+            >
               <AtSign size={16} />
             </button>
-            <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500" title="Emojis">
+            <button
+              onClick={() => { setMostrarEmojis(!mostrarEmojis); setMostrarFormato(false); }}
+              className={`p-1.5 rounded-lg transition-colors ${mostrarEmojis ? "bg-blue-100 text-blue-600" : "hover:bg-slate-200 text-slate-500"}`}
+              title="Emojis"
+            >
               <Smile size={16} />
             </button>
-            <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500" title="Mensaje de voz">
+            <button
+              onClick={() => toast.info("Grabación de voz próximamente")}
+              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+              title="Mensaje de voz"
+            >
               <Mic size={16} />
             </button>
             <div className="w-px h-4 bg-slate-200 mx-1" />

@@ -11,6 +11,7 @@ import {
   Hash,
   MessageSquare,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { MensajeItem } from "./MensajeItem";
 import { InputMensaje } from "./InputMensaje";
@@ -27,6 +28,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
   const { usuarios, usuarioActual } = useUser();
   const [conversacion, setConversacion] = useState<Conversacion | null>(null);
   const [mostrarInfo, setMostrarInfo] = useState(false);
+  const [busquedaChat, setBusquedaChat] = useState("");
   const mensajesRef = useRef<HTMLDivElement>(null);
 
   const { mensajes, cargando, enviando, enviarMensaje } = useChat({
@@ -111,6 +113,18 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
     return `${conversacion.participantes.length} participantes`;
   };
 
+  const mensajesFiltrados = useMemo(() => {
+    if (!busquedaChat.trim()) return mensajesAgrupados;
+    const q = busquedaChat.toLowerCase();
+    return mensajesAgrupados.filter((m) => m.contenido?.toLowerCase().includes(q));
+  }, [mensajesAgrupados, busquedaChat]);
+
+  const getOtroUsuario = () => {
+    if (!conversacion || conversacion.tipo !== "DIRECTO") return null;
+    const otroId = conversacion.participantes.find((p) => p !== usuarioActualId);
+    return otroId ? usuarios.find((u) => u.id === otroId) : null;
+  };
+
   if (!conversacionId || !conversacion) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
@@ -156,14 +170,30 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Buscar">
-            <Search size={16} className="text-slate-500" />
+          <button
+            onClick={() => setBusquedaChat(busquedaChat ? "" : " ")}
+            className={`p-2 rounded-lg transition-colors ${busquedaChat ? "bg-blue-100 text-blue-600" : "hover:bg-slate-100 text-slate-500"}`}
+            title="Buscar en conversación"
+          >
+            <Search size={16} />
           </button>
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Llamar">
-            <Phone size={16} className="text-slate-500" />
+          <button
+            onClick={() => {
+              const otro = getOtroUsuario();
+              if (otro?.telefono) window.open(`tel:${otro.telefono}`, "_self");
+              else toast.info("Sin número de teléfono");
+            }}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+            title="Llamar"
+          >
+            <Phone size={16} />
           </button>
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Videollamada">
-            <Video size={16} className="text-slate-500" />
+          <button
+            onClick={() => toast.info("Videollamada próximamente")}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+            title="Videollamada"
+          >
+            <Video size={16} />
           </button>
           <button
             onClick={() => setMostrarInfo(!mostrarInfo)}
@@ -174,11 +204,34 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
           >
             <Info size={16} />
           </button>
-          <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Más opciones">
-            <MoreHorizontal size={16} className="text-slate-500" />
+          <button
+            onClick={() => toast.info("Opciones de conversación próximamente")}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
+            title="Más opciones"
+          >
+            <MoreHorizontal size={16} />
           </button>
         </div>
       </div>
+
+      {/* Barra de búsqueda */}
+      {busquedaChat && (
+        <div className="px-4 py-2 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+          <Search size={14} className="text-slate-400" />
+          <input
+            autoFocus
+            type="text"
+            value={busquedaChat === " " ? "" : busquedaChat}
+            onChange={(e) => setBusquedaChat(e.target.value || " ")}
+            placeholder="Buscar mensajes..."
+            className="flex-1 bg-transparent text-xs text-slate-600 placeholder:text-slate-400 focus:outline-none"
+          />
+          <span className="text-[10px] text-slate-400">{mensajesFiltrados.length} resultados</span>
+          <button onClick={() => setBusquedaChat("")} className="p-0.5 hover:bg-slate-200 rounded">
+            <X size={12} className="text-slate-400" />
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 flex overflow-hidden">
@@ -190,7 +243,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                 <span className="ml-2 text-xs text-slate-500">Cargando mensajes...</span>
               </div>
-            ) : mensajesAgrupados.length === 0 ? (
+            ) : mensajesFiltrados.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
                   <Hash size={24} className="text-slate-400" />
@@ -204,7 +257,7 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
                 </p>
               </div>
             ) : (
-              mensajesAgrupados.map((msg) => (
+              mensajesFiltrados.map((msg) => (
                 <MensajeItem
                   key={msg.id}
                   mensaje={msg}
