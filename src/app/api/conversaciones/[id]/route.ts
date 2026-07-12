@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, fromSupabaseColumns } from "@/lib/supabase";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

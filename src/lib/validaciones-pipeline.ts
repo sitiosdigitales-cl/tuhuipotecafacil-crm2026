@@ -89,10 +89,11 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
     {
       id: "documentos-completos",
       nombre: "Documentación completa",
-      descripcion: "Todos los documentos obligatorios deben estar aprobados",
+      descripcion: "Todos los documentos obligatorios deben estar cargados antes de avanzar a esta etapa",
       verificar: (lead) => {
-        // En producción esto verificaría contra la BD
-        // Por ahora simulamos que si tiene etiqueta "docs-completos" está listo
+        // Regla: Solo se puede avanzar a Doc. Completas cuando TODOS los documentos estén cargados
+        // Se verifica por etiqueta "docs-completos" o si ya está en esa etapa
+        // Esta validación es OBLIGATORIA - no se puede saltar
         return lead.etiquetas?.includes("docs-completos") || lead.etapa === "DOCS_COMPLETAS";
       },
       obligatoria: true,

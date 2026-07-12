@@ -124,6 +124,7 @@ const prioridadConfig = {
 
 const TABS = [
   { id: "resumen", label: "Resumen", icono: User },
+  { id: "asesor", label: "Asesor", icono: UserCheck },
   { id: "documentos", label: "Documentos", icono: FileText },
   { id: "actividad", label: "Actividad", icono: Activity },
   { id: "financiero", label: "Financiero", icono: DollarSign },
@@ -180,6 +181,34 @@ export default function ClientePerfilPage() {
     return () => { cancelado = true; };
   }, [id]);
 
+  // Cargar datos del asesor asignado
+  useEffect(() => {
+    if (!lead?.asignadoA) {
+      setAsesorAsignado(null);
+      return;
+    }
+    let cancelado = false;
+    async function cargarAsesor() {
+      setCargandoAsesor(true);
+      try {
+        const res = await fetch(`/api/usuarios?id=${lead!.asignadoA}`, { credentials: "include" });
+        if (cancelado) return;
+        const json = await res.json();
+        if (json.success && json.data && json.data.length > 0) {
+          setAsesorAsignado(json.data[0]);
+        } else {
+          setAsesorAsignado(null);
+        }
+      } catch {
+        if (!cancelado) setAsesorAsignado(null);
+      } finally {
+        if (!cancelado) setCargandoAsesor(false);
+      }
+    }
+    cargarAsesor();
+    return () => { cancelado = true; };
+  }, [lead?.asignadoA]);
+
   const [tabActiva, setTabActiva] = useState("resumen");
   const [documentos, setDocumentos] = useState<DocumentoLead[]>(() => lead ? generarDocumentosLead(lead) : []);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -195,6 +224,8 @@ export default function ClientePerfilPage() {
   const [editarOpen, setEditarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
   const [guardandoProgreso, setGuardandoProgreso] = useState(false);
+  const [asesorAsignado, setAsesorAsignado] = useState<{ id: string; nombre: string; apellido: string; email: string; telefono?: string; cargo?: string; rol?: string; avatar?: string } | null>(null);
+  const [cargandoAsesor, setCargandoAsesor] = useState(false);
 
   const etapaActual = lead ? PASOS_PROGRESO.find((p) => p.etapa === lead.etapa)?.paso || 1 : 0;
   const totalPasos = PASOS_PROGRESO.length;
@@ -879,6 +910,88 @@ export default function ClientePerfilPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {tabActiva === "asesor" && (
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+              <UserCheck size={16} className="text-blue-500" />
+              Ejecutivo Asignado
+            </h3>
+
+            {cargandoAsesor ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : asesorAsignado ? (
+              <div className="space-y-4">
+                {/* Card principal del asesor */}
+                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100/60">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-blue-500/20 flex-shrink-0">
+                    {asesorAsignado.nombre?.[0]}{asesorAsignado.apellido?.[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-800 truncate">
+                      {asesorAsignado.nombre} {asesorAsignado.apellido}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      {asesorAsignado.cargo || asesorAsignado.rol || "Ejecutivo Comercial"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información de contacto */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <InfoRow icon={<Mail size={14} />} label="Email" value={asesorAsignado.email || "No registrado"} />
+                  <InfoRow icon={<Phone size={14} />} label="Teléfono" value={asesorAsignado.telefono || "No registrado"} />
+                </div>
+
+                {/* Acciones rápidas */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {asesorAsignado.telefono && (
+                    <a
+                      href={`tel:${asesorAsignado.telefono}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-[11px] font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
+                    >
+                      <Phone size={13} /> Llamar
+                    </a>
+                  )}
+                  {asesorAsignado.email && (
+                    <a
+                      href={`mailto:${asesorAsignado.email}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-[11px] font-semibold rounded-xl hover:bg-blue-600 transition-colors"
+                    >
+                      <Mail size={13} /> Email
+                    </a>
+                  )}
+                  {asesorAsignado.telefono && (
+                    <a
+                      href={`https://wa.me/${asesorAsignado.telefono.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white text-[11px] font-semibold rounded-xl hover:bg-green-600 transition-colors"
+                    >
+                      <MessageSquare size={13} /> WhatsApp
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Sin asesor asignado */
+              <div className="text-center py-10">
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <UserCheck size={24} className="text-slate-300" />
+                </div>
+                <p className="text-sm font-semibold text-slate-600">Sin ejecutivo asignado</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Este lead aún no tiene un ejecutivo asignado.<br />
+                  Puedes asignarlo desde el Pipeline.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -39,10 +39,88 @@ import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { useUser } from "@/lib/contexts/UserContext";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useActivities } from "@/lib/contexts/ActivityContext";
-import { validarAvance, type ResultadoValidacion } from "@/lib/validaciones-pipeline";
+import { validarAvance, type ResultadoValidacion, type ReglaValidacion } from "@/lib/validaciones-pipeline";
 import { AsignarEjecutivo } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
-import type { Lead, Etapa, Prioridad } from "@/tipos";
+import type { Lead, Etapa, Prioridad, SituacionLaboral } from "@/tipos";
+
+// Documentos obligatorios por situación laboral (mismos que en clientes/[id]/page.tsx)
+const DOCUMENTOS_OBLIGATORIOS: Record<SituacionLaboral, string[]> = {
+  DEPENDIENTE: ["liq-sueldo", "afp", "cedula", "antiguedad", "domicilio", "dicom"],
+  INDEPENDIENTE: ["carpeta-trib", "renta", "cedula", "dicom"],
+};
+
+async function verificarDocumentosCompletos(lead: Lead): Promise<{ completo: boolean; faltantes: string[] }> {
+  try {
+    const res = await fetch(`/api/documentos?leadId=${lead.id}`);
+    const json = await res.json();
+    const docs = json.data || [];
+
+    // Documentos que están APROBADOS o RECIBIDO o EN_REVISION (cargados)
+    const docsCargados = docs.filter((d: { estado: string }) =>
+      d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION"
+    );
+
+    const tiposCargados = new Set(docsCargados.map((d: { tipo: string }) => d.tipo));
+
+    const obligatorios = DOCUMENTOS_OBLIGATORIOS[lead.situacionLaboral] || DOCUMENTOS_OBLIGATORIOS.DEPENDIENTE;
+
+    // Mapeo de IDs del pipeline a tipos de la BD
+    const idATipo: Record<string, string> = {
+      "liq-sueldo": "COMPROBANTE_INGRESOS",
+      "afp": "CERTIFICADO_AFP",
+      "cedula": "CEDULA_IDENTIDAD",
+      "antiguedad": "CONTRATO_TRABAJO",
+      "domicilio": "OTRO",
+      "dicom": "OTRO",
+      "carpeta-trib": "DECLARACION_RENTA",
+      "renta": "DECLARACION_RENTA",
+    };
+
+    // Nombres legibles
+    const idANombre: Record<string, string> = {
+      "liq-sueldo": "Liquidaciones de sueldo",
+      "afp": "Certificado cotizaciones AFP",
+      "cedula": "Cédula de identidad",
+      "antiguedad": "Certificado antigüedad laboral",
+      "domicilio": "Comprobante de domicilio",
+      "dicom": "Informe DICOM",
+      "carpeta-trib": "Carpeta tributaria",
+      "renta": "Declaración de renta",
+    };
+
+    const faltantes: string[] = [];
+
+    for (const docId of obligatorios) {
+      const tipoBD = idATipo[docId] || "OTRO";
+
+      // Verificar si hay al menos un documento de este tipo cargado
+      const tieneDoc = docs.some((d: { tipo: string; estado: string }) => {
+        if (d.tipo !== tipoBD) return false;
+        // Si es "OTRO", verificar por nombre en documentos del lead
+        if (tipoBD === "OTRO") {
+          return d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION";
+        }
+        return d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION";
+      });
+
+      // Verificar por nombre también (más confiable)
+      const nombreDoc = idANombre[docId] || docId;
+      const tienePorNombre = docs.some((d: { nombre: string; estado: string }) =>
+        d.nombre?.toLowerCase().includes(nombreDoc.toLowerCase()) &&
+        (d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION")
+      );
+
+      if (!tieneDoc && !tienePorNombre) {
+        faltantes.push(nombreDoc);
+      }
+    }
+
+    return { completo: faltantes.length === 0, faltantes };
+  } catch {
+    return { completo: false, faltantes: ["Error al verificar documentos"] };
+  }
+}
 
 // Etapas por defecto (se cargan desde la API)
 const ETAPAS_POR_DEFECTO: Etapa[] = [
@@ -338,7 +416,7 @@ export default function PipelinePage() {
     setDraggedLeadId(start.draggableId);
   }, []);
 
-  const onDragEnd = useCallback((result: DropResult) => {
+  const onDragEnd = useCallback(async (result: DropResult) => {
     setDraggedLeadId(null);
 
     if (!result.destination) return;
@@ -365,6 +443,37 @@ export default function PipelinePage() {
         etapaDestino,
       });
       return;
+    }
+
+    // REGLA ESPECIAL: Avance a DOCS_COMPLETAS requiere documentos cargados
+    if (etapaDestino === "DOCS_COMPLETAS" && leadMovido.etapa !== "DOCS_COMPLETAS") {
+      const verificacion = await verificarDocumentosCompletos(leadMovido);
+
+      if (!verificacion.completo) {
+        // Crear reglas fallidas específicas para documentos faltantes
+        const reglasDocumentosFaltantes: ReglaValidacion[] = verificacion.faltantes.map((nombre) => ({
+          id: `doc-faltante-${nombre}`,
+          nombre: `Documento faltante: ${nombre}`,
+          descripcion: `El documento "${nombre}" debe estar cargado antes de avanzar a Docs. Completas`,
+          verificar: () => false,
+          obligatoria: true,
+        }));
+
+        const resultadoDoc: ResultadoValidacion = {
+          puedeAvanzar: false,
+          reglasPasadas: resultado.reglasPasadas,
+          reglasFallidas: reglasDocumentosFaltantes,
+          advertencias: resultado.advertencias,
+        };
+
+        setValidacionModal({
+          open: true,
+          resultado: resultadoDoc,
+          lead: leadMovido,
+          etapaDestino,
+        });
+        return;
+      }
     }
 
     // Si pasa la validación, mover el lead usando el contexto
@@ -685,10 +794,13 @@ export default function PipelinePage() {
               <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
                 <AlertCircle size={20} className="text-red-500" />
               </div>
-              No se puede avanzar
+              {validacionModal.etapaDestino === "DOCS_COMPLETAS" ? "Documentos incompletos" : "No se puede avanzar"}
             </DialogTitle>
             <DialogDescription>
-              {validacionModal.lead?.nombre} {validacionModal.lead?.apellido} no cumple las reglas requeridas
+              {validacionModal.etapaDestino === "DOCS_COMPLETAS"
+                ? `${validacionModal.lead?.nombre} ${validacionModal.lead?.apellido} tiene documentos pendientes de carga. Deben estar cargados para avanzar a Docs. Completas.`
+                : `${validacionModal.lead?.nombre} ${validacionModal.lead?.apellido} no cumple las reglas requeridas`
+              }
             </DialogDescription>
           </DialogHeader>
 

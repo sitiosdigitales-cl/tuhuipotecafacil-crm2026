@@ -6,6 +6,7 @@ import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-aut
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
     const rol = searchParams.get("rol");
     const estado = searchParams.get("estado");
     const busqueda = searchParams.get("busqueda");
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
     // Seleccionar solo columnas que sabemos que existen
     let query = supabase.from("usuarios").select("id,nombre,apellido,email,telefono,rol,estado,cargo,creadoen");
 
+    if (id) query = query.eq("id", id);
     if (rol) query = query.eq("rol", rol);
     if (estado) query = query.eq("estado", estado);
     if (busqueda) {
