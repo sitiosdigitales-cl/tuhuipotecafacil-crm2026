@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -32,16 +32,10 @@ import {
   Shield,
   Activity,
   TrendingUp,
-  ChevronRight,
-  ExternalLink,
   AlertTriangle,
-  Info,
-  Copy,
-  Check,
-  Plus,
-  MoreHorizontal,
   MapPin,
   BriefcaseBusiness,
+  Check,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
@@ -98,13 +92,6 @@ function generarDocumentosLead(lead: Lead): DocumentoLead[] {
     estado: "PENDIENTE" as DocumentoLead["estado"],
     creadoEn: new Date(),
   }));
-}
-
-// Generar actividades basadas en el lead (solo la actividad de creación)
-function generarActividadesLead(lead: Lead) {
-  return [
-    { id: "1", tipo: "sistema", titulo: "Lead creado", descripcion: `${lead.nombre} ${lead.apellido} fue agregado al sistema`, fecha: lead.creadoEn, usuario: lead.nombreEjecutivo || "Sistema", icono: ChevronRight, color: "text-slate-500", bg: "bg-slate-50" },
-  ];
 }
 
 const estadoDocConfig: Record<string, { label: string; icono: React.ReactNode; color: string; bg: string; dot: string }> = {
@@ -216,7 +203,6 @@ export default function ClientePerfilPage() {
   const [gestionarOpen, setGestionarOpen] = useState(false);
   const [docSeleccionado, setDocSeleccionado] = useState<DocumentoLead | null>(null);
   const [eliminarOpen, setEliminarOpen] = useState(false);
-  const [copiado, setCopiado] = useState<"telefono" | "email" | "whatsapp" | null>(null);
   const [agendarOpen, setAgendarOpen] = useState(false);
   const [fechaReunion, setFechaReunion] = useState("");
   const [horaReunion, setHoraReunion] = useState("10:00");
@@ -305,12 +291,6 @@ export default function ClientePerfilPage() {
     );
   };
 
-  const copiarAlPortapapeles = (texto: string, tipo: "telefono" | "email" | "whatsapp") => {
-    navigator.clipboard.writeText(texto);
-    setCopiado(tipo);
-    setTimeout(() => setCopiado(null), 2000);
-  };
-
   const abrirWhatsApp = () => {
     const telefono = lead.telefono?.replace(/\s/g, "").replace("+", "");
     window.open(`https://wa.me/56${telefono?.replace(/^56/, "")}`, "_blank");
@@ -346,18 +326,6 @@ export default function ClientePerfilPage() {
       usuario: usuarioActual?.nombre || "Sistema",
       usuarioId: usuarioActual?.id,
     });
-  };
-
-  const formatearFecha = (fecha: Date) => {
-    const ahora = new Date();
-    const diff = ahora.getTime() - fecha.getTime();
-    const horas = Math.floor(diff / 3600000);
-    const dias = Math.floor(diff / 86400000);
-
-    if (horas < 1) return "Hace minutos";
-    if (horas < 24) return `Hace ${horas}h`;
-    if (dias < 7) return `Hace ${dias}d`;
-    return fecha.toLocaleDateString("es-CL");
   };
 
   const situacionConfig = SITUACION_LABORAL_CONFIG[lead.situacionLaboral];

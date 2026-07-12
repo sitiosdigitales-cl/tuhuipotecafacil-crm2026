@@ -34,8 +34,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("Webhook Body:", JSON.stringify(body, null, 2));
-
     // Normalizar campos de Elementor
     const rawFields = body.fields ?? body;
     const normalized: Record<string, any> = {};
@@ -89,7 +87,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
     }
 
-    console.log("Lead creado:", nombre, apellido);
     return NextResponse.json({ success: true, message: "Lead creado correctamente" }, { status: 200 });
     
   } catch (err) {

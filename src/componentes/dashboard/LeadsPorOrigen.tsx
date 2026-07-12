@@ -31,7 +31,7 @@ export function LeadsPorOrigen() {
         nombre,
         valor,
         color: COLORES[nombre] || COLORES.OTRO,
-        tendencia: Math.floor(Math.random() * 20) - 5,
+        tendencia: 0,
       }))
       .sort((a, b) => b.valor - a.valor);
   }, [leads]);

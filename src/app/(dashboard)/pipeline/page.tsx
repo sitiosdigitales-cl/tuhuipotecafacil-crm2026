@@ -5,12 +5,9 @@ import { DragDropContext, Droppable, Draggable, DropResult, DragStart } from "@h
 import { useRouter } from "next/navigation";
 import {
   Search,
-  Filter,
   Phone,
   Mail,
-  MessageSquare,
   MoreHorizontal,
-  Clock,
   DollarSign,
   Plus,
   AlertCircle,
@@ -18,20 +15,16 @@ import {
   TrendingUp,
   Building2,
   Home,
-  PieChart,
   Eye,
   Pencil,
   Trash2,
-  ChevronRight,
   Users,
   Banknote,
   ArrowLeft,
-  Maximize2,
-  Minimize2,
   Layout,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
-import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
+import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -326,7 +319,6 @@ export default function PipelinePage() {
   const [filtroEjecutivo, setFiltroEjecutivo] = useState("todos");
   const [eliminarDialogOpen, setEliminarDialogOpen] = useState(false);
   const [leadAEliminar, setLeadAEliminar] = useState<Lead | null>(null);
-  const [statsExpanded, setStatsExpanded] = useState(true);
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [leadSeleccionado, setLeadSeleccionado] = useState<Lead | null>(null);
   const [validacionModal, setValidacionModal] = useState<{ open: boolean; resultado: ResultadoValidacion | null; lead: Lead | null; etapaDestino: string }>({
@@ -335,9 +327,7 @@ export default function PipelinePage() {
     lead: null,
     etapaDestino: "",
   });
-  const [nuevosLeads, setNuevosLeads] = useState(0);
   const leadsAnteriores = useRef(leads.length);
-  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [etapasPipeline, setEtapasPipeline] = useState<Etapa[]>(ETAPAS_POR_DEFECTO);
 
   // Cargar etapas desde la API
@@ -364,8 +354,6 @@ export default function PipelinePage() {
   // Detectar nuevos leads
   useEffect(() => {
     if (leads.length > leadsAnteriores.current) {
-      const diferencia = leads.length - leadsAnteriores.current;
-      setNuevosLeads((prev) => prev + diferencia);
       toast.info("Nuevo lead en el pipeline", {
         description: `${leads[0]?.nombre} ${leads[0]?.apellido} agregado a Nuevo Lead`,
       });
@@ -408,17 +396,13 @@ export default function PipelinePage() {
     montoTotal: leadsFiltrados.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0),
     valorPropiedad: leadsFiltrados.reduce((acc, l) => acc + (l.valorPropiedad || 0), 0),
     aprobados: leadsFiltrados.filter(l => ['APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
-    enProceso: leadsFiltrados.filter(l => !['CLIENTE_FINALIZADO', 'CREDITO_PAGADO', 'APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
   }), [leadsFiltrados]);
 
   // Capturar el lead al iniciar el arrastre
-  const onDragStart = useCallback((start: DragStart) => {
-    setDraggedLeadId(start.draggableId);
+  const onDragStart = useCallback((_start: DragStart) => {
   }, []);
 
   const onDragEnd = useCallback(async (result: DropResult) => {
-    setDraggedLeadId(null);
-
     if (!result.destination) return;
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;

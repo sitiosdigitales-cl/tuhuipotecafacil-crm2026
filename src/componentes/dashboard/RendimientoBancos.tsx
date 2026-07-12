@@ -32,7 +32,7 @@ export function RendimientoBancos() {
         montoTotal: data.monto,
         creditos: data.cantidad,
         color: COLORES_BANCOS[nombre] || "#6B7280",
-        tendencia: Math.floor(Math.random() * 20) - 5,
+        tendencia: 0,
       }))
       .sort((a, b) => b.montoTotal - a.montoTotal);
   }, [leads]);

@@ -151,7 +151,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const pasoActual = PASOS_PROGRESO.find((p) => p.etapa === cliente?.etapa);
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
   const docsConfig = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
-  const docsAprobados = Math.floor(Math.random() * 3) + 4;
+  const docsAprobados = 0; // TODO: conectar con API real de documentos
   const docsTotal = docsConfig.length;
 
   const iniciarEdicion = () => {

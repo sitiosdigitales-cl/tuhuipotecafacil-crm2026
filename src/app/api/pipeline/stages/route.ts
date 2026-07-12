@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         .insert(nuevaEtapa);
 
       if (error) {
-        console.log("Guardando en memoria (tabla no existe)");
+        // Tabla no existe aún, usar memoria
       }
     } catch {
       // Ignorar errores
@@ -118,10 +118,10 @@ export async function PUT(request: NextRequest) {
         .eq("id", id);
 
       if (error) {
-        console.log("Error updating in DB:", error.message);
+        // Error actualizando en DB
       }
-    } catch (e) {
-      console.log("Error updating in DB:", e);
+    } catch {
+      // Error actualizando en DB
     }
 
     const etapaActualizada = index !== -1 ? etapasEnMemoria[index] : { id, nombre, color, orden, activa };

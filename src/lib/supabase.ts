@@ -67,6 +67,9 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
     fechavencimiento: "fechaVencimiento",
     nombrearchivo: "nombreArchivo",
     archivourl: "archivoUrl",
+    asignadoa: "asignadoA",
+    cuentapie: "cuentaPie",
+    complementarrenta: "complementarRenta",
   };
   for (const [key, value] of Object.entries(obj)) {
     const mapped = keyMap[key] || key;

@@ -29,13 +29,6 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       verificar: (lead) => !!(lead.email || lead.telefono),
       obligatoria: true,
     },
-    {
-      id: "primera-llamada",
-      nombre: "Primer contacto registrado",
-      descripcion: "Debe haber al menos una actividad de llamada",
-      verificar: (lead) => lead.diasEnEtapa >= 1,
-      obligatoria: false,
-    },
   ],
   INTERESADO: [
     {
@@ -91,22 +84,12 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       nombre: "Documentación completa",
       descripcion: "Todos los documentos obligatorios deben estar cargados antes de avanzar a esta etapa",
       verificar: (lead) => {
-        // Regla: Solo se puede avanzar a Doc. Completas cuando TODOS los documentos estén cargados
-        // Se verifica por etiqueta "docs-completos" o si ya está en esa etapa
-        // Esta validación es OBLIGATORIA - no se puede saltar
         return lead.etiquetas?.includes("docs-completos") || lead.etapa === "DOCS_COMPLETAS";
       },
       obligatoria: true,
     },
   ],
   EVALUACION_BANCARIA: [
-    {
-      id: "documentos-verificados",
-      nombre: "Documentos verificados",
-      descripcion: "La documentación debe estar completa y verificada",
-      verificar: (lead) => lead.etiquetas?.includes("docs-verificados") || true,
-      obligatoria: true,
-    },
     {
       id: "monto-validado",
       nombre: "Monto validado",
@@ -121,29 +104,13 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       id: "aprobacion-banco",
       nombre: "Aprobación bancaria",
       descripcion: "El crédito debe tener aprobación del banco",
-      verificar: (lead) => lead.etiquetas?.includes("aprobado-banco") || lead.etapa === "APROBADO",
+      verificar: (lead) => lead.etiquetas?.includes("aprobado-banco"),
       obligatoria: true,
     },
   ],
-  FIRMA_DIGITAL: [
-    {
-      id: "documentos-finales",
-      nombre: "Documentos finales",
-      descripcion: "Todos los documentos para firma deben estar listos",
-      verificar: (lead) => lead.etiquetas?.includes("docs-finales") || true,
-      obligatoria: true,
-    },
-  ],
+  FIRMA_DIGITAL: [],
   NOTARIA: [],
-  CREDITO_PAGADO: [
-    {
-      id: "desembolso",
-      nombre: "Desembolso confirmado",
-      descripcion: "El desembolso debe estar confirmado por el banco",
-      verificar: (lead) => lead.etiquetas?.includes("desembolsado") || true,
-      obligatoria: true,
-    },
-  ],
+  CREDITO_PAGADO: [],
 };
 
 // Resultado de validación
@@ -179,17 +146,4 @@ export function validarAvance(lead: Lead, etapaDestino: string): ResultadoValida
     reglasFallidas,
     advertencias,
   };
-}
-
-// Obtener reglas de una etapa
-export function obtenerReglasEtapa(etapa: string): ReglaValidacion[] {
-  return REGLAS_POR_ETAPA[etapa] || [];
-}
-
-// Verificar si un lead cumple todas las reglas de una etapa
-export function verificarCumplimiento(lead: Lead, etapa: string): boolean {
-  const reglas = REGLAS_POR_ETAPA[etapa] || [];
-  return reglas
-    .filter((r) => r.obligatoria)
-    .every((r) => r.verificar(lead));
 }
