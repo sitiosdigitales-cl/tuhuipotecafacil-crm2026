@@ -8,6 +8,7 @@ import {
   List, LayoutDashboard, Square, CheckSquare, RotateCcw, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { useUser } from "@/lib/contexts/UserContext";
@@ -106,6 +107,44 @@ export default function ActividadesPage() {
       setCargandoRecordatorios(false);
     }
     cargar();
+  }, []);
+
+  // Realtime: tareas
+  useEffect(() => {
+    const channel = supabase
+      .channel("tareas-actividades")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tareas" }, (payload) => {
+        const nueva = { ...payload.new, fechaVencimiento: payload.new.fechaVencimiento ? new Date(payload.new.fechaVencimiento) : undefined, creadoEn: new Date(payload.new.creadoEn || Date.now()) } as Tarea;
+        setTareas((prev) => { if (prev.some((t) => t.id === nueva.id)) return prev; return [nueva, ...prev]; });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tareas" }, (payload) => {
+        const u = payload.new;
+        setTareas((prev) => prev.map((t) => t.id === u.id ? { ...t, ...u, fechaVencimiento: u.fechaVencimiento ? new Date(u.fechaVencimiento) : t.fechaVencimiento } : t));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tareas" }, (payload) => {
+        setTareas((prev) => prev.filter((t) => t.id !== payload.old.id));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // Realtime: recordatorios
+  useEffect(() => {
+    const channel = supabase
+      .channel("recordatorios-actividades")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "recordatorios" }, (payload) => {
+        const nuevo = { ...payload.new, fechaEnvio: new Date(payload.new.fechaEnvio), proximoEnvio: new Date(payload.new.proximoEnvio), creadoEn: new Date(payload.new.creadoEn || Date.now()) } as Recordatorio;
+        setRecordatorios((prev) => { if (prev.some((r) => r.id === nuevo.id)) return prev; return [nuevo, ...prev]; });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "recordatorios" }, (payload) => {
+        const u = payload.new;
+        setRecordatorios((prev) => prev.map((r) => r.id === u.id ? { ...r, ...u, fechaEnvio: new Date(u.fechaEnvio || r.fechaEnvio), proximoEnvio: new Date(u.proximoEnvio || r.proximoEnvio) } : r));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "recordatorios" }, (payload) => {
+        setRecordatorios((prev) => prev.filter((r) => r.id !== payload.old.id));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // Stats combinados
