@@ -34,9 +34,13 @@ export function obtenerTokenDeRequest(request: Request): string | null {
 
   const cookies = request.headers.get("cookie");
   if (cookies) {
-    const tokenCookie = cookies.split(";").find((c) => c.trim().startsWith("auth_token="));
+    // Buscar auth_token o crm_token
+    const tokenCookie = cookies.split(";").find((c) => {
+      const name = c.trim().split("=")[0];
+      return name === "auth_token" || name === "crm_token";
+    });
     if (tokenCookie) {
-      return tokenCookie.split("=")[1]?.trim() || null;
+      return tokenCookie.split("=").slice(1).join("=").trim() || null;
     }
   }
 
