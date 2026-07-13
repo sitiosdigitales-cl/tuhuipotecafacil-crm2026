@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
 import { formatoMoneda } from "@/lib/utils";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import { useUser } from "@/lib/contexts/UserContext";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
@@ -37,8 +36,6 @@ export default function UsuariosPage() {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [eliminarOpen, setEliminarOpen] = useState(false);
-  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
 
   // Formulario nuevo usuario
   const [formNombre, setFormNombre] = useState("");
@@ -106,32 +103,29 @@ export default function UsuariosPage() {
     }
   };
 
-  const handleEliminar = async () => {
-    if (!usuarioAEliminar) return;
+  const handleEliminar = async (user: Usuario) => {
+    const confirmado = window.confirm(`¿Estás seguro de eliminar la cuenta de ${user.nombre} ${user.apellido}?\n\nEl usuario quedará INACTIVO pero sus datos se conservarán.`);
+    if (!confirmado) return;
     try {
-      const res = await fetch(`/api/usuarios/${usuarioAEliminar.id}`, {
+      const res = await fetch(`/api/usuarios/${user.id}`, {
         method: "DELETE",
         credentials: "include",
       });
       if (res.ok) {
         setUsuarios((prev) =>
-          prev.map((u) =>
-            u.id === usuarioAEliminar.id ? { ...u, estado: "INACTIVO" } : u
-          )
+          prev.map((u) => u.id === user.id ? { ...u, estado: "INACTIVO" } : u)
         );
-        toast.success(`${usuarioAEliminar.nombre} ${usuarioAEliminar.apellido} eliminado`);
+        toast.success(`${user.nombre} ${user.apellido} eliminado`);
       } else if (res.status === 403) {
-        toast.error("No tienes permisos. Solo Super Admin puede eliminar usuarios.");
+        toast.error("No tienes permisos. Solo Super Admin puede eliminar.");
       } else if (res.status === 401) {
-        toast.error("Tu sesión ha expirado. Inicia sesión nuevamente.");
+        toast.error("Sesión expirada. Inicia sesión nuevamente.");
       } else {
         toast.error("No se pudo eliminar el usuario");
       }
     } catch {
-      toast.error("Error de conexión al eliminar");
+      toast.error("Error de conexión");
     }
-    setEliminarOpen(false);
-    setUsuarioAEliminar(null);
   };
 
   const getIniciales = (nombre: string, apellido: string) => {
@@ -414,7 +408,7 @@ export default function UsuariosPage() {
                     )}
                     {esSuperAdmin && (
                       <button
-                        onClick={() => { setUsuarioAEliminar(user); setEliminarOpen(true); }}
+                        onClick={() => handleEliminar(user)}
                         className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                         title="Eliminar usuario"
                       >
@@ -574,17 +568,6 @@ export default function UsuariosPage() {
           </div>
         </div>
       )}
-
-      {/* Confirmar Eliminar */}
-      <ConfirmDialog
-        open={eliminarOpen}
-        onOpenChange={setEliminarOpen}
-        title="Eliminar Usuario"
-        description={`¿Estás seguro de eliminar la cuenta de ${usuarioAEliminar?.nombre} ${usuarioAEliminar?.apellido}? El usuario quedará inactivo pero sus datos se conservarán.`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onConfirm={handleEliminar}
-      />
     </div>
   );
 }
