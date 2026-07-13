@@ -306,7 +306,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       <div className={`min-h-[70vh] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl ${className}`}>
         <div className="w-full max-w-lg px-6">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-teal-500/20">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/20">
               <Home size={28} className="text-white" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Portal del Cliente</h1>
@@ -318,9 +318,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               <input type="text" placeholder="12.345.678-9" value={rut}
                 onChange={(e) => { setRut(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                className="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                className="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
               <button onClick={handleBuscar} disabled={buscando}
-                className="h-12 px-6 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl text-sm font-semibold hover:from-teal-600 hover:to-cyan-700 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50 flex items-center gap-2">
+                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2">
                 {buscando ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search size={16} />}
                 Buscar
               </button>
@@ -332,7 +332,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 <div className="grid grid-cols-2 gap-2">
                   {rutsEjemplo.map((e, i) => (
                     <button key={i} onClick={() => { setRut(e.rut); setError(""); }}
-                      className="text-left p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-teal-50 hover:border-teal-200 transition-all">
+                      className="text-left p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-blue-50 hover:border-blue-200 transition-all">
                       <div className="text-[11px] font-bold text-slate-700">{e.rut}</div>
                       <div className="text-[10px] text-slate-400">{e.nombre}</div>
                     </button>
@@ -361,13 +361,13 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               Bienvenido a tu portal. Aquí puedes hacer seguimiento de tu solicitud hipotecaria en tiempo real.
             </p>
           </div>
-          <div className="hidden md:block w-72 bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 relative overflow-hidden">
+          <div className="hidden md:block w-72 bg-gradient-to-br from-blue-500 via-blue-400 to-blue-500 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
               <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                    <Home size={14} className="text-teal-600" />
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Home size={14} className="text-blue-700" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-slate-800">Tu hogar te espera</div>
@@ -391,7 +391,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <button key={tab.id} onClick={() => setTabActiva(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-semibold transition-all ${
                 tabActiva === tab.id
-                  ? "bg-teal-500 text-white shadow-md shadow-teal-500/20"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}>
               {tab.icono} {tab.label}
@@ -409,12 +409,12 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           {/* Estado de la Solicitud */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center">
-                <FileText size={18} className="text-teal-600" />
+              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                <FileText size={18} className="text-blue-700" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900">Progreso de tu Crédito</h2>
-                <p className="text-xs text-teal-600 font-semibold">{configEstado?.label || "En proceso"}</p>
+                <p className="text-xs text-blue-700 font-semibold">{configEstado?.label || "En proceso"}</p>
               </div>
             </div>
 
@@ -424,7 +424,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 {/* Línea conectora de fondo */}
                 <div className="absolute top-6 left-[12%] right-[12%] h-1 bg-slate-100 rounded-full" />
                 {/* Línea de progreso */}
-                <div className="absolute top-6 left-[12%] h-1 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all duration-700"
+                <div className="absolute top-6 left-[12%] h-1 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-700"
                   style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
 
                 {PASOS_PROGRESO.map((paso, i) => {
@@ -433,17 +433,17 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   return (
                     <div key={paso.paso} className="flex flex-col items-center relative z-10 flex-1">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                        completado ? "bg-teal-500 text-white shadow-md shadow-teal-500/30" :
-                        actual ? "bg-teal-500 text-white ring-4 ring-teal-100 shadow-lg shadow-teal-500/30" :
+                        completado ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" :
+                        actual ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg shadow-blue-600/30" :
                         "bg-white text-slate-400 border-2 border-slate-200"
                       }`}>
                         {completado ? <CheckCircle size={20} /> : i + 1}
                       </div>
                       <span className={`text-[11px] font-semibold mt-3 text-center ${
-                        actual ? "text-teal-600" : completado ? "text-teal-600" : "text-slate-400"
+                        actual ? "text-blue-700" : completado ? "text-blue-700" : "text-slate-400"
                       }`}>{paso.label}</span>
                       <span className={`text-[10px] mt-1 ${
-                        completado ? "text-emerald-500 font-semibold" : actual ? "text-teal-500 font-semibold" : "text-slate-300"
+                        completado ? "text-emerald-500 font-semibold" : actual ? "text-blue-600 font-semibold" : "text-slate-300"
                       }`}>
                         {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
                       </span>
@@ -493,8 +493,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               </div>
               <div className="bg-slate-50 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                    <Clock size={14} className="text-teal-600" />
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Clock size={14} className="text-blue-700" />
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400 font-medium">Próximo paso</div>
@@ -509,7 +509,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
             {/* FAQ Link */}
             <div className="mt-4 pt-4 border-t border-slate-100">
-              <button className="flex items-center gap-2 text-xs text-teal-600 hover:text-teal-700 font-semibold">
+              <button className="flex items-center gap-2 text-xs text-blue-700 hover:text-blue-800 font-semibold">
                 <Info size={14} /> ¿Tienes dudas sobre el proceso? Revisa nuestras preguntas frecuentes
                 <ChevronRight size={14} />
               </button>
@@ -521,28 +521,28 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <h2 className="text-base font-bold text-slate-900 mb-4">Acciones rápidas</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <button onClick={() => setTabActiva("documentos")}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all">
                 <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
                   <Upload size={18} />
                 </div>
                 <span className="text-[11px] font-semibold text-slate-700">Subir documento</span>
               </button>
               <button onClick={() => window.open("https://www.tuhipotecafacil.cl/simulador", "_blank")}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all">
                 <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                   <FileText size={18} />
                 </div>
                 <span className="text-[11px] font-semibold text-slate-700">Nueva simulación</span>
               </button>
               <button onClick={() => { if (asesor?.telefono) window.open(`https://wa.me/56${asesor.telefono.replace(/[^0-9]/g, "").replace(/^56/, "")}`, "_blank"); else toast.info("No hay teléfono de asesor disponible"); }}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all">
                 <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
                   <MessageSquare size={18} />
                 </div>
                 <span className="text-[11px] font-semibold text-slate-700">Enviar mensaje</span>
               </button>
               <button onClick={() => { if (asesor?.email) window.open(`mailto:${asesor.email}?subject=Reunión Hipotecaria`, "_self"); else toast.info("No hay email de asesor disponible"); }}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all">
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all">
                 <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                   <Calendar size={18} />
                 </div>
@@ -562,7 +562,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   <p className="text-[11px] text-slate-400">Sube los documentos requeridos para tu solicitud</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-teal-600">{documentos.length}</div>
+                  <div className="text-lg font-bold text-blue-700">{documentos.length}</div>
                   <div className="text-[10px] text-slate-400">documentos</div>
                 </div>
               </div>
@@ -576,8 +576,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 onClick={() => document.getElementById("file-input-portal")?.click()}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-6 ${
                   arrastrando
-                    ? "border-teal-400 bg-teal-50"
-                    : "border-slate-200 hover:border-teal-300 hover:bg-slate-50"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
                 }`}
               >
                 <input
@@ -590,9 +590,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 />
                 <div className="flex flex-col items-center gap-3">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                    arrastrando ? "bg-teal-100" : "bg-slate-100"
+                    arrastrando ? "bg-blue-100" : "bg-slate-100"
                   }`}>
-                    <Upload size={24} className={arrastrando ? "text-teal-500" : "text-slate-400"} />
+                    <Upload size={24} className={arrastrando ? "text-blue-600" : "text-slate-400"} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-slate-700">
@@ -603,8 +603,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                     </p>
                   </div>
                   {subiendo && (
-                    <div className="flex items-center gap-2 text-[11px] text-teal-600">
-                      <div className="w-4 h-4 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
+                    <div className="flex items-center gap-2 text-[11px] text-blue-700">
+                      <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
                       Subiendo...
                     </div>
                   )}
@@ -647,7 +647,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                     {documentos.map((doc) => (
                       <div key={doc.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group">
                         <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center">
-                          <FileCheck size={16} className="text-teal-500" />
+                          <FileCheck size={16} className="text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[11px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
@@ -682,7 +682,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
                 {!editandoPerfil && (
                   <button onClick={iniciarEdicion}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-teal-500 text-white rounded-xl text-[11px] font-semibold hover:bg-teal-600 transition-colors shadow-md shadow-teal-500/20">
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20">
                     <Edit size={12} /> Editar
                   </button>
                 )}
@@ -710,7 +710,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                           {item.type === "select" ? (
                             <select value={(perfilEditado as any)[item.field]}
                               onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
-                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                               <option value="">Seleccionar</option>
                               <option value="Soltero/a">Soltero/a</option>
                               <option value="Casado/a">Casado/a</option>
@@ -721,7 +721,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                           ) : (
                             <input type={item.type} value={(perfilEditado as any)[item.field]}
                               onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
-                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                           )}
                         </div>
                       ))}
@@ -737,14 +737,14 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <input type="text" value={perfilEditado.domicilioParticular}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilioParticular: e.target.value })}
                           placeholder="Dirección completa"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna / Ciudad</label>
                         <input type="text" value={perfilEditado.comunaCiudad}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
                           placeholder="Ej: Las Condes"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -758,14 +758,14 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <input type="text" value={perfilEditado.nombreEmpleador}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, nombreEmpleador: e.target.value })}
                           placeholder="Nombre de la empresa"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Cargo</label>
                         <input type="text" value={perfilEditado.cargo}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, cargo: e.target.value })}
                           placeholder="Ej: Gerente"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Renta Líquida</label>
@@ -774,14 +774,14 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                           <input type="number" value={perfilEditado.rentaLiquida}
                             onChange={(e) => setPerfilEditado({ ...perfilEditado, rentaLiquida: e.target.value })}
                             placeholder="0"
-                            className="w-full h-10 pl-7 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                            className="w-full h-10 pl-7 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                         </div>
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Situación Laboral</label>
                         <select value={perfilEditado.situacionLaboral}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="DEPENDIENTE">Dependiente</option>
                           <option value="INDEPENDIENTE">Independiente</option>
                         </select>
@@ -796,7 +796,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                       Cancelar
                     </button>
                     <button onClick={guardarPerfil} disabled={guardando}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-teal-500 text-white rounded-xl text-[11px] font-semibold hover:bg-teal-600 transition-all shadow-md shadow-teal-500/20 disabled:opacity-50">
+                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50">
                       {guardando ? (
                         <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Guardando...</>
                       ) : (
@@ -850,7 +850,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h3 className="text-sm font-bold text-slate-900 mb-4">Tu asesor</h3>
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
                 {asesor ? `${asesor.nombre[0]}${asesor.apellido[0]}` : "TH"}
               </div>
               <div>
@@ -860,22 +860,22 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             </div>
             <div className="space-y-3">
               <a href={`tel:${asesor?.telefono || "+56988182221"}`}
-                className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
+                className="flex items-center gap-3 text-xs text-slate-600 hover:text-blue-700 transition-colors">
                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
                   <Phone size={14} className="text-slate-400" />
                 </div>
                 <span>{asesor?.telefono || "+56 9 8818 2221"}</span>
               </a>
               <a href={`mailto:${asesor?.email || "asesor@tuhipotecafacil.cl"}`}
-                className="flex items-center gap-3 text-xs text-slate-600 hover:text-teal-600 transition-colors">
+                className="flex items-center gap-3 text-xs text-slate-600 hover:text-blue-700 transition-colors">
                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
                   <Mail size={14} className="text-slate-400" />
                 </div>
                 <span>{asesor?.email || "asesor@tuhipotecafacil.cl"}</span>
               </a>
-              <button className="flex items-center gap-3 text-xs text-teal-600 hover:text-teal-700 font-semibold">
-                <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
-                  <MessageSquare size={14} className="text-teal-600" />
+              <button className="flex items-center gap-3 text-xs text-blue-700 hover:text-blue-800 font-semibold">
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <MessageSquare size={14} className="text-blue-700" />
                 </div>
                 <span>Enviar mensaje</span>
               </button>
@@ -895,19 +895,19 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Documentos</h3>
-              <button onClick={() => setTabActiva("documentos")} className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todos</button>
+              <button onClick={() => setTabActiva("documentos")} className="text-[11px] font-semibold text-blue-700 hover:text-blue-800">Ver todos</button>
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-600">Documentos entregados</span>
-                <span className="text-xs font-bold text-teal-600">{docsAprobados} / {docsTotal}</span>
+                <span className="text-xs font-bold text-blue-700">{docsAprobados} / {docsTotal}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-600">Documentos pendientes</span>
                 <span className="text-xs font-bold text-amber-600">{docsTotal - docsAprobados}</span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all"
+                <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all"
                   style={{ width: `${(docsAprobados / docsTotal) * 100}%` }} />
               </div>
             </div>
@@ -917,7 +917,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Alertas y notificaciones</h3>
-              <button onClick={() => setTabActiva("resumen")} className="text-[11px] font-semibold text-teal-600 hover:text-teal-700">Ver todas</button>
+              <button onClick={() => setTabActiva("resumen")} className="text-[11px] font-semibold text-blue-700 hover:text-blue-800">Ver todas</button>
             </div>
             <div className="space-y-3">
               {[
