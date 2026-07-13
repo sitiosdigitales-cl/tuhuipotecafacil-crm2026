@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
+import { EmailToLead } from "@/componentes/leads/EmailToLead";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/lib/contexts/LeadContext";
@@ -78,6 +79,7 @@ export default function LeadsPage() {
   const [eliminarDialogOpen, setEliminarDialogOpen] = useState(false);
   const [leadAEliminar, setLeadAEliminar] = useState<Lead | null>(null);
   const [paginaActual, setPaginaActual] = useState(1);
+  const [emailToLeadOpen, setEmailToLeadOpen] = useState(false);
   const LEADS_POR_PAGINA = 25;
 
   // Resetear paginación al cambiar filtros
@@ -305,6 +307,12 @@ export default function LeadsPage() {
           </span>
           <button onClick={exportarCSV} className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
             <Download size={14} /> Exportar CSV
+          </button>
+          <button
+            onClick={() => setEmailToLeadOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
+          >
+            <Mail size={14} /> Email a Lead
           </button>
           <button
             onClick={handleNuevoLead}
@@ -774,6 +782,9 @@ export default function LeadsPage() {
         variant="danger"
         onConfirm={handleConfirmarEliminar}
       />
+
+      {/* Email a Lead */}
+      <EmailToLead open={emailToLeadOpen} onClose={() => setEmailToLeadOpen(false)} />
     </div>
   );
 }
