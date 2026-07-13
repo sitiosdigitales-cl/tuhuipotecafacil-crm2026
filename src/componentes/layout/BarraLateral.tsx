@@ -72,8 +72,7 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
       { label: "Portal del Cliente", icon: <Globe size={17} />, href: "/portal" },
       { label: "Documentos", icon: <FileText size={17} />, href: "/documentos" },
       { label: "Agenda", icon: <Calendar size={17} />, href: "/agenda" },
-      { label: "Tareas", icon: <CheckSquare size={17} />, href: "/tareas", badge: 18, badgeColor: "bg-amber-500" },
-      { label: "Recordatorios", icon: <Bell size={17} />, href: "/recordatorios" },
+      { label: "Actividades", icon: <CheckSquare size={17} />, href: "/actividades", badge: 18, badgeColor: "bg-amber-500" },
       { label: "Conversaciones", icon: <MessageSquare size={17} />, href: "/conversaciones" },
       { label: "Reportes", icon: <BarChart3 size={17} />, href: "/reportes", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
     ],
@@ -175,7 +174,7 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
     ...seccion,
     items: seccion.items.map(item => {
       if (item.label === "Leads") return { ...item, badge: badges.leads };
-      if (item.label === "Tareas") return { ...item, badge: badges.tareas };
+      if (item.label === "Actividades") return { ...item, badge: badges.tareas };
       return item;
     })
   }));
