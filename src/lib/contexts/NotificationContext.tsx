@@ -52,9 +52,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         if (data.success && data.data) {
           setNotificaciones(data.data.map((n: any) => ({
-            ...n,
-            fecha: new Date(n.fecha),
+            id: n.id,
+            tipo: n.tipo || "sistema",
+            titulo: n.titulo,
+            descripcion: n.descripcion || "",
+            leida: n.leida || false,
+            fecha: n.fecha ? new Date(n.fecha) : new Date(n.creadoen || Date.now()),
             icono: ICONOS_POR_TIPO[n.tipo] || "🔔",
+            usuarioId: n.usuarioId || n.usuarioid,
+            leadId: n.leadId || n.leadid,
+            accionUrl: n.accionUrl || n.accionurl,
           })));
         }
       } catch {
@@ -64,6 +71,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
     };
     cargarNotificaciones();
+
+    // Refrescar cada 30 segundos como fallback del Realtime
+    const interval = setInterval(cargarNotificaciones, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Suscripción en tiempo real a nuevas notificaciones
