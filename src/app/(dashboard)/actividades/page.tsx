@@ -158,6 +158,10 @@ export default function ActividadesPage() {
       await fetch(`/api/recordatorios/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ estado: "enviado" }) });
       setRecordatorios((prev) => prev.map((r) => r.id === id ? { ...r, estado: "enviado" as const, ultimoEnvio: new Date() } : r));
       toast.success("Marcado como enviado");
+      // Notificación
+      const rec = recordatorios.find((r) => r.id === id);
+      try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ tipo: "exito", titulo: "Recordatorio enviado", descripcion: `${rec?.titulo || "Recordatorio"} (${rec?.tipo}) enviado correctamente` }) }); } catch {}
     } catch { toast.error("Error"); }
   };
 
@@ -165,6 +169,12 @@ export default function ActividadesPage() {
     try {
       await fetch(`/api/tareas/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ estado: nuevoEstado }) });
       setTareas((prev) => prev.map((t) => t.id === id ? { ...t, estado: nuevoEstado as EstadoTarea } : t));
+      // Notificación al completar
+      if (nuevoEstado === "COMPLETADA") {
+        const tarea = tareas.find((t) => t.id === id);
+        try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+          body: JSON.stringify({ tipo: "exito", titulo: "Tarea completada", descripcion: `${tarea?.titulo || "Tarea"} marcada como completada` }) }); } catch {}
+      }
     } catch {}
   };
 
@@ -186,12 +196,18 @@ export default function ActividadesPage() {
       await fetch("/api/tareas", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ titulo: form.titulo, descripcion: form.descripcion, estado: "PENDIENTE", tipo: form.tipoTarea, prioridad: form.prioridad, leadId: form.leadId || null, leadNombre: form.leadNombre || null, fechaVencimiento: form.fechaVencimiento || null }) });
       toast.success("Tarea creada");
+      // Notificación
+      try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ tipo: "tarea", titulo: "Nueva tarea creada", descripcion: `${form.titulo}${form.leadNombre ? ` para ${form.leadNombre}` : ""}` }) }); } catch {}
       const res = await fetch("/api/tareas"); const d = await res.json();
       if (d.success && d.data) setTareas(d.data.map((t: any) => ({ ...t, fechaVencimiento: t.fechaVencimiento ? new Date(t.fechaVencimiento) : undefined, creadoEn: new Date(t.creadoEn || Date.now()) })));
     } else {
       await fetch("/api/recordatorios", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ titulo: form.titulo, descripcion: form.descripcion, tipo: form.canal, frecuencia: form.frecuencia, leadNombre: form.leadNombre || null, fechaEnvio: form.fechaEnvio ? `${form.fechaEnvio}T${form.horaEnvio}:00` : new Date().toISOString() }) });
       toast.success("Recordatorio creado");
+      // Notificación
+      try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ tipo: "documento", titulo: "Nuevo recordatorio", descripcion: `${form.titulo} (${form.canal})` }) }); } catch {}
       const res = await fetch("/api/recordatorios"); const d = await res.json();
       if (d.success && d.data) setRecordatorios(d.data.map((r: any) => ({ ...r, fechaEnvio: new Date(r.fechaEnvio), proximoEnvio: new Date(r.proximoEnvio), creadoEn: new Date(r.creadoEn || Date.now()) })));
     }
