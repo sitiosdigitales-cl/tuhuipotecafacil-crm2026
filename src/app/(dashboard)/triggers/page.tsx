@@ -30,15 +30,11 @@ import {
   BarChart3,
   Target,
   User,
-  Building2,
   DollarSign,
   Tag,
   Workflow,
-  RefreshCw,
   ChevronRight,
   ChevronDown,
-  ExternalLink,
-  Info,
 } from "lucide-react";
 
 // Tipos de triggers disponibles

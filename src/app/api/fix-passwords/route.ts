@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 // Endpoint para actualizar contraseñas de todos los usuarios a "admin123"
 // Solo SUPER_ADMIN

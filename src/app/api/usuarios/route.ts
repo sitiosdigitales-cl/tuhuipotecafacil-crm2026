@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { requireRole, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
   try {

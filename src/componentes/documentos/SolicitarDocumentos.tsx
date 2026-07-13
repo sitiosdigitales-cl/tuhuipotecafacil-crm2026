@@ -203,10 +203,9 @@ export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDoc
 
         const data = await response.json();
         if (!data.success) {
-          console.warn("Email API response:", data);
+          // Error en API de email
         }
       } catch (error) {
-        console.warn("Error al enviar email:", error);
         // Continuar de todas formas
       }
     }

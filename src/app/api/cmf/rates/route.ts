@@ -1,6 +1,6 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-import { obtenerTasaVigente, obtenerHistorico, obtenerEstadoCMF, actualizarTasas } from "@/lib/cmf/service";
+import { obtenerTasaVigente } from "@/lib/cmf/service";
 
 // GET /api/cmf/rates/latest - Obtener tasa vigente
 export async function GET(request: Request) {

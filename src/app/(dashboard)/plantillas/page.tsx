@@ -16,14 +16,9 @@ import {
   CheckCircle,
   Clock,
   GitBranch,
-  Tag,
-  User,
   Variable,
   Image,
   Signature,
-  Palette,
-  Layout,
-  Type,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -40,12 +35,6 @@ import {
   ChevronRight,
   X,
   Save,
-  Undo,
-  Redo,
-  ZoomIn,
-  ZoomOut,
-  Download,
-  Printer,
 } from "lucide-react";
 
 // Variables disponibles para plantillas

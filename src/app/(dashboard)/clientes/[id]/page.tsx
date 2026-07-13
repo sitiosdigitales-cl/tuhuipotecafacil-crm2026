@@ -231,10 +231,9 @@ export default function ClientePerfilPage() {
     }
   };
 
-  // Actividades vacías por ahora (sin dependencia de ActivityContext)
-  const actividades: Actividad[] = [];
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const agregarActividad = async (_data: any) => {};
+  const actividades: any[] = [];
   const getIconoActividad = (_tipo: string) => ({ icono: Clock, color: "text-slate-500", bg: "bg-slate-50" });
   const formatearTiempoRelativo = (fecha: Date) => fecha.toLocaleDateString("es-CL");
 

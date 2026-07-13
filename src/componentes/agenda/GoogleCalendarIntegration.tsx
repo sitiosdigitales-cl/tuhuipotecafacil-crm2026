@@ -44,7 +44,7 @@ export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarInte
         setIsLoaded(true);
         setIsAuthenticated(isGoogleAuthenticated());
       } catch (error) {
-        console.error("Error initializing Google Calendar:", error);
+        // Error initializing Google Calendar
       }
     }
     init();

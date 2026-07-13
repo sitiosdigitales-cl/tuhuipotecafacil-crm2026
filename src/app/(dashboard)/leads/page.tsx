@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  Filter,
   Plus,
   Download,
   Phone,
@@ -16,15 +15,12 @@ import {
   LayoutGrid,
   List,
   ChevronDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
   Building2,
+  Clock,
   DollarSign,
   Users,
   UserPlus,
   TrendingUp,
-  RefreshCw,
   Bell,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";

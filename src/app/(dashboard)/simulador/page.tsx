@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, AlertCircle, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
+import { Calculator, DollarSign, Building2, Home, Wallet, Shield, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 

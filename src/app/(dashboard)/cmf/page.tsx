@@ -81,7 +81,7 @@ export default function CMFPage() {
       if (histData.success) setHistorico(histData.data);
       if (statusData.success) setStatus(statusData.data);
     } catch (error) {
-      console.error("Error cargando datos CMF:", error);
+      // Error al cargar datos CMF
     } finally {
       setLoading(false);
     }
