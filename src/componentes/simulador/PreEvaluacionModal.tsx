@@ -60,7 +60,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
   const handleSubmit = async () => {
     setEnviando(true);
     try {
-      const res = await fetch("/api/leads", {
+      const res = await fetch("/api/pre-evaluacion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
