@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
 import { formatoMoneda } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
 
 export default function UsuariosPage() {
@@ -35,6 +37,8 @@ export default function UsuariosPage() {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
 
   // Formulario nuevo usuario
   const [formNombre, setFormNombre] = useState("");
@@ -100,6 +104,30 @@ export default function UsuariosPage() {
     } catch {
       // Error silencioso
     }
+  };
+
+  const handleEliminar = async () => {
+    if (!usuarioAEliminar) return;
+    try {
+      const res = await fetch(`/api/usuarios/${usuarioAEliminar.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setUsuarios((prev) =>
+          prev.map((u) =>
+            u.id === usuarioAEliminar.id ? { ...u, estado: "INACTIVO" } : u
+          )
+        );
+        toast.success(`${usuarioAEliminar.nombre} ${usuarioAEliminar.apellido} eliminado`);
+      } else {
+        toast.error("No se pudo eliminar el usuario");
+      }
+    } catch {
+      toast.error("Error al eliminar");
+    }
+    setEliminarOpen(false);
+    setUsuarioAEliminar(null);
   };
 
   const getIniciales = (nombre: string, apellido: string) => {
@@ -380,6 +408,13 @@ export default function UsuariosPage() {
                         <UserCheck size={13} className="text-emerald-500" />
                       </button>
                     )}
+                    <button
+                      onClick={() => { setUsuarioAEliminar(user); setEliminarOpen(true); }}
+                      className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Eliminar usuario"
+                    >
+                      <Trash2 size={13} className="text-red-400" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -533,6 +568,17 @@ export default function UsuariosPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmar Eliminar */}
+      <ConfirmDialog
+        open={eliminarOpen}
+        onOpenChange={setEliminarOpen}
+        title="Eliminar Usuario"
+        description={`¿Estás seguro de eliminar la cuenta de ${usuarioAEliminar?.nombre} ${usuarioAEliminar?.apellido}? El usuario quedará inactivo pero sus datos se conservarán.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={handleEliminar}
+      />
     </div>
   );
 }
