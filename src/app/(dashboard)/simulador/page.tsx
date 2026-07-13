@@ -5,7 +5,7 @@ import { Calculator, DollarSign, TrendingUp, Building2, Home, Wallet, Shield, Al
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 
-const UF_CLP = 38957.56;
+const UF_CLP = 40844.79;
 
 // Bancos con tasas reales CMF
 const BANCOS = [

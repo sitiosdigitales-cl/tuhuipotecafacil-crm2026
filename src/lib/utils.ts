@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
  * Valor de la UF en CLP (actualizado julio 2026)
  * Fuente: https://www.mindicador.cl/
  */
-export const VALOR_UF_CLP = 38957.56
+export const VALOR_UF_CLP = 40844.79
 
 /**
  * Convierte CLP a UF
