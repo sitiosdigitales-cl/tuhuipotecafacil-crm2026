@@ -22,10 +22,12 @@ import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
 import { formatoMoneda } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
+import { useUser } from "@/lib/contexts/UserContext";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
 
 export default function UsuariosPage() {
   const router = useRouter();
+  const { esSuperAdmin } = useUser();
   const ahora = useMemo(() => Date.now(), []); // eslint-disable-line react-hooks/purity
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -118,11 +120,15 @@ export default function UsuariosPage() {
           )
         );
         toast.success(`${usuarioAEliminar.nombre} ${usuarioAEliminar.apellido} eliminado`);
+      } else if (res.status === 403) {
+        toast.error("No tienes permisos. Solo Super Admin puede eliminar usuarios.");
+      } else if (res.status === 401) {
+        toast.error("Tu sesión ha expirado. Inicia sesión nuevamente.");
       } else {
         toast.error("No se pudo eliminar el usuario");
       }
     } catch {
-      toast.error("Error al eliminar");
+      toast.error("Error de conexión al eliminar");
     }
     setEliminarOpen(false);
     setUsuarioAEliminar(null);
@@ -406,13 +412,15 @@ export default function UsuariosPage() {
                         <UserCheck size={13} className="text-emerald-500" />
                       </button>
                     )}
-                    <button
-                      onClick={() => { setUsuarioAEliminar(user); setEliminarOpen(true); }}
-                      className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Eliminar usuario"
-                    >
-                      <Trash2 size={13} className="text-red-400" />
-                    </button>
+                    {esSuperAdmin && (
+                      <button
+                        onClick={() => { setUsuarioAEliminar(user); setEliminarOpen(true); }}
+                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar usuario"
+                      >
+                        <Trash2 size={13} className="text-red-400" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
