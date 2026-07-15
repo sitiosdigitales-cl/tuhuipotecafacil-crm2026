@@ -511,29 +511,29 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   // Vista de búsqueda
   if (!cliente) {
     return (
-      <div className={`min-h-[70vh] flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl ${className}`}>
-        <div className="w-full max-w-lg px-6">
+      <div className={`min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/30 rounded-2xl ${className}`}>
+        <div className="w-full max-w-md px-4 sm:px-6">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/20">
-              <Home size={28} className="text-white" />
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-600/25">
+              <Home size={36} className="text-white" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Portal del Cliente</h1>
             <p className="text-sm text-slate-500">Consulta el estado de tu solicitud hipotecaria</p>
           </div>
-          <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">RUT del Titular</label>
-            <div className="flex gap-2">
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-6 sm:p-8">
+            <div className="text-center mb-6"><div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3"><Search size={20} className="text-blue-600" /></div><h2 className="text-sm font-bold text-slate-800">Ingresa tu RUT</h2><p className="text-[11px] text-slate-400 mt-1">El RUT del titular de la solicitud</p></div>
+            <div className="space-y-3">
               <input type="text" placeholder="12.345.678-9" value={rut}
                 onChange={(e) => { setRut(e.target.value); setError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                className="flex-1 h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                className="w-full h-14 px-4 pr-12 bg-slate-50 border-2 border-slate-200 rounded-2xl text-lg font-mono font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
               <button onClick={handleBuscar} disabled={buscando}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-700 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center gap-2">
+                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-sm font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {buscando ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search size={16} />}
                 Buscar
               </button>
             </div>
-            {error && <p className="text-red-500 text-[11px] mt-2 flex items-center gap-1"><AlertCircle size={12} /> {error}</p>}
+            {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl"><AlertCircle size={16} className="text-red-500 flex-shrink-0" /><p className="text-xs text-red-600 font-medium">{error}</p></div>}
 
           </div>
         </div>
