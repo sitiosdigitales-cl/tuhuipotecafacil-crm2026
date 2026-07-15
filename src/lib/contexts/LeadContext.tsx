@@ -185,15 +185,48 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const asignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
     try {
+      // Si se quita la asignación, actualizar directamente
+      if (!nombreEjecutivo) {
+        await actualizarLead(leadId, { nombreEjecutivo: "", asignadoA: "" });
+        return;
+      }
+
+      // Buscar el usuario por nombre para obtener su ID
       const searchUrl = `/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`;
       const response = await fetch(searchUrl);
       const result = await response.json();
-      const usuarioId = result?.data?.[0]?.id || "";
-      await actualizarLead(leadId, { nombreEjecutivo, asignadoA: usuarioId });
+
+      let usuarioId = "";
+      if (result?.success && result?.data?.length > 0) {
+        // Buscar coincidencia exacta nombre + apellido
+        const exactMatch = result.data.find((u: any) =>
+          `${u.nombre} ${u.apellido}`.toLowerCase() === nombreEjecutivo.toLowerCase()
+        );
+        usuarioId = exactMatch?.id || result.data[0]?.id || "";
+      }
+
+      // Actualizar el lead con el nombre del ejecutivo y su ID
+      const updateResponse = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombreEjecutivo, asignadoA: usuarioId }),
+      });
+
+      if (updateResponse.ok) {
+        // Actualizar estado local directamente
+        setLeads((prev) =>
+          prev.map((l) =>
+            l.id === leadId
+              ? { ...l, nombreEjecutivo, asignadoA: usuarioId }
+              : l
+          )
+        );
+      }
     } catch (error) {
       console.error("[AsignarEjecutivo] Error:", error);
     }
-  }, [actualizarLead]);
+  }, []);
 
   const moverEtapa = useCallback(async (leadId: string, nuevaEtapa: Etapa) => {
     await actualizarLead(leadId, { etapa: nuevaEtapa, diasEnEtapa: 0 });
