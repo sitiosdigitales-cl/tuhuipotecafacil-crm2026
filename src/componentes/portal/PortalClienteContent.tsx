@@ -25,7 +25,7 @@ import {
   AlertCircle,
   FileCheck,
   FileClock,
-  Trash2,
+  Trash2, ChevronDown,
   Download,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
@@ -167,6 +167,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number; archivoUrl?: string }[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [mostrarSidebar, setMostrarSidebar] = useState(false);
   const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
 
   // Función para cargar datos del asesor
@@ -511,20 +512,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               </button>
             </div>
             {error && <p className="text-red-500 text-[11px] mt-2 flex items-center gap-1"><AlertCircle size={12} /> {error}</p>}
-            {rutsEjemplo.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 mb-2">RUTs de prueba</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {rutsEjemplo.map((e, i) => (
-                    <button key={i} onClick={() => { setRut(e.rut); setError(""); }}
-                      className="text-left p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-blue-50 hover:border-blue-200 transition-all">
-                      <div className="text-[11px] font-bold text-slate-700">{e.rut}</div>
-                      <div className="text-[10px] text-slate-400">{e.nombre}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>
@@ -566,15 +554,15 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1.5">
-        <div className="flex gap-1">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-1.5 overflow-x-auto">
+        <div className="flex gap-1 min-w-max">
           {[
             { id: "resumen" as const, label: "Resumen", icono: <TrendingUp size={15} /> },
             { id: "documentos" as const, label: "Documentos", icono: <FileText size={15} /> },
             { id: "perfil" as const, label: "Mi Perfil", icono: <User size={15} /> },
           ].map((tab) => (
             <button key={tab.id} onClick={() => setTabActiva(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-[12px] font-semibold transition-all whitespace-nowrap ${
                 tabActiva === tab.id
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -891,13 +879,13 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <input type="text" value={perfilEditado.cargasLegales}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, cargasLegales: e.target.value })}
                           placeholder="Ej: 3 (Caja Compensación)"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Estado Civil</label>
                         <select value={perfilEditado.estadoCivil}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, estadoCivil: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="">Seleccionar</option>
                           <option value="Soltero/a">Soltero/a</option>
                           <option value="Casado/a">Casado/a</option>
@@ -910,7 +898,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Régimen Matrimonial</label>
                         <select value={perfilEditado.regimenMatrimonial}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, regimenMatrimonial: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="">Seleccionar</option>
                           <option value="Separación de Bienes">Separación de Bienes</option>
                           <option value="Sociedad Conyugal">Sociedad Conyugal</option>
@@ -921,55 +909,55 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Nacimiento</label>
                         <input type="date" value={perfilEditado.fechaNacimiento}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaNacimiento: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Estudios</label>
                         <input type="text" value={perfilEditado.estudios}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, estudios: e.target.value })}
                           placeholder="Ej: Universitario"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Profesión</label>
                         <input type="text" value={perfilEditado.profesion}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, profesion: e.target.value })}
                           placeholder="Ej: Ingeniero"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Domicilio Particular</label>
                         <input type="text" value={perfilEditado.domicilioParticular}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilioParticular: e.target.value })}
                           placeholder="Dirección completa"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna - Ciudad</label>
                         <input type="text" value={perfilEditado.comunaCiudad}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
                           placeholder="Ej: Las Condes"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Celular</label>
                         <input type="tel" value={perfilEditado.telefono}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, telefono: e.target.value })}
                           placeholder="+56 9 1234 5678"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Correo Electrónico</label>
                         <input type="email" value={perfilEditado.email}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, email: e.target.value })}
                           placeholder="tu@email.com"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">AFP</label>
                         <select value={perfilEditado.afp}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, afp: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="">Seleccionar</option>
                           <option value="Capital">Capital</option>
                           <option value="Cuprum">Cuprum</option>
@@ -987,27 +975,27 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   {/* Patrimonio */}
                   <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Patrimonio</h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Vehículo (adjuntar padrón)</label>
                         <input type="text" value={perfilEditado.patrimonioVehiculo}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioVehiculo: e.target.value })}
                           placeholder="$0"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Vivienda</label>
                         <input type="text" value={perfilEditado.patrimonioVivienda}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioVivienda: e.target.value })}
                           placeholder="$0"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Otros (especificar)</label>
                         <input type="text" value={perfilEditado.patrimonioOtros}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioOtros: e.target.value })}
                           placeholder="$0"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -1021,27 +1009,27 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <input type="text" value={perfilEditado.nombreEmpleador}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, nombreEmpleador: e.target.value })}
                           placeholder="Nombre empresa"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">RUT Empresa</label>
                         <input type="text" value={perfilEditado.rutEmpresa}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, rutEmpresa: e.target.value })}
                           placeholder="12.345.678-9"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Ingreso</label>
                         <input type="date" value={perfilEditado.fechaIngreso}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaIngreso: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Cargo</label>
                         <input type="text" value={perfilEditado.cargo}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, cargo: e.target.value })}
                           placeholder="Ej: Gerente"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Renta Líquida</label>
@@ -1057,7 +1045,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Banco Abono Renta</label>
                         <select value={perfilEditado.bancoAbonoRenta}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, bancoAbonoRenta: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="">Seleccionar</option>
                           <option value="Banco de Chile">Banco de Chile</option>
                           <option value="Santander">Santander</option>
@@ -1074,7 +1062,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Pago</label>
                         <select value={perfilEditado.fechaPago}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaPago: e.target.value })}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                           <option value="">Seleccionar</option>
                           <option value="1">1</option>
                           <option value="5">5</option>
@@ -1090,35 +1078,35 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         <input type="text" value={perfilEditado.direccionLaboral}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, direccionLaboral: e.target.value })}
                           placeholder="Dirección"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna - Ciudad</label>
                         <input type="text" value={perfilEditado.comunaCiudadLaboral}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudadLaboral: e.target.value })}
                           placeholder="Comuna"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono Laboral FIJO</label>
                         <input type="tel" value={perfilEditado.telefonoLaboralFijo}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, telefonoLaboralFijo: e.target.value })}
                           placeholder="02 2 123 4567"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Correo Electrónico Laboral</label>
                         <input type="email" value={perfilEditado.emailLaboral}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, emailLaboral: e.target.value })}
                           placeholder="empresa@empresa.com"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Otros Ingresos (detallar)</label>
                         <input type="text" value={perfilEditado.otrosIngresos}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, otrosIngresos: e.target.value })}
                           placeholder="Ej: Arriendos $500.000, Freelance $300.000"
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                          className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -1128,7 +1116,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Situación Laboral</h4>
                     <select value={perfilEditado.situacionLaboral}
                       onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
-                      className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                      className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
                       <option value="DEPENDIENTE">Dependiente</option>
                       <option value="INDEPENDIENTE">Independiente (Boleta de Honorarios)</option>
                       <option value="EMPRESA">Empresa</option>
@@ -1219,7 +1207,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                     <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <Home size={14} className="text-emerald-500" /> Patrimonio
                     </h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
                         ["Vehículo", cliente.patrimonioVehiculo || "No especificado"],
                         ["Vivienda", cliente.patrimonioVivienda || "No especificado"],
@@ -1264,8 +1252,16 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           )}
         </div>
 
-        {/* Columna Lateral */}
-        <div className="space-y-5">
+        {/* Columna Lateral - colapsable en mobile */}
+        <div className="space-y-4 sm:space-y-5">
+          {/* Boton toggle sidebar en mobile */}
+          <button onClick={() => setMostrarSidebar(!mostrarSidebar)}
+            className="w-full lg:hidden flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[52px]">
+            <span className="text-sm font-bold text-slate-900">Tu asesor y documentos</span>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform ${mostrarSidebar ? "rotate-180" : ""}`} />
+          </button>
+
+          <div className={`${mostrarSidebar ? "block" : "hidden"} lg:block space-y-4 sm:space-y-5`}>
           {/* Tu Asesor */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h3 className="text-sm font-bold text-slate-900 mb-4">Tu asesor</h3>
@@ -1359,6 +1355,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <button onClick={() => setTabActiva("resumen")} className="w-full mt-4 py-2.5 bg-slate-50 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1">
               Ver todas las notificaciones <ChevronRight size={14} />
             </button>
+          </div>
           </div>
         </div>
       </div>
