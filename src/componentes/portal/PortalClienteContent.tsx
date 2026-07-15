@@ -838,7 +838,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-4">Pasos para completar tu solicitud</h2>
             <div className="space-y-3">
               {[
-                { paso: 1, titulo: "Completa tu perfil", desc: "Actualiza tus datos personales y de empleo", icon: <User size={16} className="text-blue-600" />, color: "bg-blue-50 border-blue-100", completado: !!(cliente.email && cliente.telefono && cliente.estadoCivil) },
+                { paso: 1, titulo: "Completa tu perfil", desc: "Actualiza tus datos personales y de empleo", icon: <User size={16} className="text-blue-600" />, color: "bg-blue-50 border-blue-100", completado: !!(cliente.email && cliente.telefono && cliente.estadoCivil && cliente.profesion && cliente.domicilioParticular && cliente.nombreEmpleador && cliente.cargo && cliente.rentaLiquida) },
                 { paso: 2, titulo: "Sube tus documentos", desc: "Carga los documentos requeridos para tu credito", icon: <FileText size={16} className="text-emerald-600" />, color: "bg-emerald-50 border-emerald-100", completado: documentos.length > 0 },
                 { paso: 3, titulo: "Revisa tu progreso", desc: "Consulta en que etapa va tu solicitud", icon: <TrendingUp size={16} className="text-amber-600" />, color: "bg-amber-50 border-amber-100", completado: progreso > 1 },
               ].map((item) => (
