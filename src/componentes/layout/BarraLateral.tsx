@@ -31,7 +31,6 @@ import {
   Home,
   Bot,
   Sparkles,
-  TrendingUp,
   Calculator,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
@@ -67,7 +66,6 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
       { label: "Leads", icon: <UserPlus size={17} />, href: "/leads", badge: 56, badgeColor: "bg-blue-500" },
       { label: "Clientes", icon: <Users size={17} />, href: "/clientes" },
       { label: "Bancos", icon: <Building2 size={17} />, href: "/bancos", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
-      { label: "Tasas CMF", icon: <TrendingUp size={17} />, href: "/cmf", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
       { label: "Simulador", icon: <Calculator size={17} />, href: "/simulador" },
       { label: "Portal del Cliente", icon: <Globe size={17} />, href: "/portal" },
       { label: "Documentos", icon: <FileText size={17} />, href: "/documentos" },
