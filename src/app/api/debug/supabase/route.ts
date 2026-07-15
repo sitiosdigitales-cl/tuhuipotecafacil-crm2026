@@ -76,7 +76,7 @@ export async function POST() {
   // Quitar asignacion de todos
   const { error: updateError } = await serviceClient
     .from("leads")
-    .update({ nombreejecutivo: null, asignadoa: null })
+    .update({ nombreejecutivo: null })
     .in("id", leads.map((l) => l.id));
 
   if (updateError) {
