@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ROLES_CONFIG } from "@/tipos";
 import {
   UserPlus,
@@ -9,6 +9,7 @@ import {
   X,
   Users,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useUser } from "@/modulos/usuarios";
 
 interface AsignarEjecutivoProps {
@@ -22,9 +23,9 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
   const { usuarios } = useUser();
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [posicion, setPosicion] = useState<"arriba" | "abajo">("arriba");
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const ejecutivos = usuarios
     .filter((u) => u.estado === "ACTIVO")
@@ -38,38 +39,194 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
     `${e.nombre} ${e.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const handleAsignar = (nombre: string) => {
+  const handleAsignar = useCallback((e: React.MouseEvent, nombre: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     onAsignar(nombre);
     setAbierto(false);
     setBusqueda("");
-  };
+  }, [onAsignar]);
 
-  // Cerrar al hacer click fuera y detectar posición
+  // Calcular posición del dropdown al abrir
+  const calcularPosicion = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const espacioArriba = rect.top;
+    const espacioAbajo = window.innerHeight - rect.bottom;
+
+    if (espacioAbajo > 350 || espacioAbajo > espacioArriba) {
+      // Abrir hacia abajo
+      setDropdownPos({
+        top: rect.bottom + 4,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
+      });
+    } else {
+      // Abrir hacia arriba
+      setDropdownPos({
+        top: rect.top - 4,
+        left: Math.max(8, Math.min(rect.left, window.innerWidth - 300)),
+      });
+    }
+  }, []);
+
+  // Cerrar al hacer click fuera
   useEffect(() => {
     if (!abierto) return;
 
-    // Detectar si hay espacio arriba
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const espacioArriba = rect.top;
-      setPosicion(espacioArriba > 300 ? "arriba" : "abajo");
-    }
+    calcularPosicion();
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setAbierto(false);
         setBusqueda("");
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [abierto]);
+
+    // Usar setTimeout para evitar que el mismo click que abre cierre el dropdown
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [abierto, calcularPosicion]);
+
+  const dropdown = abierto ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-fade-in"
+      style={{
+        top: dropdownPos.top,
+        left: dropdownPos.left,
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users size={14} className="text-blue-600 dark:text-blue-400" />
+            <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100">
+              Asignar Ejecutivo
+            </span>
+          </div>
+          <button
+            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); setAbierto(false); setBusqueda(""); }}
+            className="p-1 hover:bg-white/50 dark:hover:bg-slate-700 rounded-md transition-colors"
+          >
+            <X size={12} className="text-slate-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Búsqueda */}
+      <div className="p-2 border-b border-slate-100 dark:border-slate-700">
+        <div className="relative">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar ejecutivo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-lg text-[11px] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
+            autoFocus
+          />
+        </div>
+      </div>
+
+      {/* Lista */}
+      <div className="p-1.5 max-h-[320px] overflow-y-auto">
+        {ejecutivosFiltrados.length === 0 ? (
+          <div className="p-4 text-center">
+            <p className="text-[11px] text-slate-400">No se encontraron ejecutivos</p>
+          </div>
+        ) : (
+          ejecutivosFiltrados.map((user) => {
+            const userRol = ROLES_CONFIG[user.rol];
+            const esActual = `${user.nombre} ${user.apellido}` === ejecutivoActual;
+            const nombreCompleto = `${user.nombre} ${user.apellido}`;
+            const leadsActivos = carga[nombreCompleto] || 0;
+
+            return (
+              <button
+                key={user.id}
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onClick={(e) => handleAsignar(e, nombreCompleto)}
+                className={`w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left ${
+                  esActual
+                    ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
+                    : "hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
+                }`}
+              >
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0"
+                  style={{
+                    background:
+                      user.rol === "SUPER_ADMIN"
+                        ? "linear-gradient(135deg, #9333ea, #7c3aed)"
+                        : user.rol === "ADMIN"
+                        ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
+                        : user.rol === "GERENTE"
+                        ? "linear-gradient(135deg, #d97706, #b45309)"
+                        : "linear-gradient(135deg, #64748b, #475569)",
+                  }}
+                >
+                  {user.nombre[0]}
+                  {user.apellido[0]}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 truncate">
+                    {nombreCompleto}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>
+                      {userRol.label}
+                    </span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      leadsActivos === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
+                      leadsActivos <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                      leadsActivos <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                      "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                      {leadsActivos} lead{leadsActivos !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+                {esActual && <Check size={12} className="text-blue-500 flex-shrink-0" />}
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+        <button
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => handleAsignar(e, "")}
+          className="w-full text-center text-[10px] font-semibold text-red-500 hover:text-red-600 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+          Quitar asignación
+        </button>
+      </div>
+    </div>,
+    document.body
+  ) : null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={containerRef}>
       <button
-        ref={buttonRef}
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           setAbierto(!abierto);
         }}
@@ -87,138 +244,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
           </span>
         )}
       </button>
-
-      {abierto && (
-        <>
-          <div className="fixed inset-0 z-40" />
-          <div
-            className="fixed z-50 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-            style={{
-              ...(posicion === "arriba"
-                ? { bottom: "auto", top: "auto" }
-                : { top: "auto", bottom: "auto" }),
-              ...(buttonRef.current
-                ? {
-                    right: window.innerWidth - buttonRef.current.getBoundingClientRect().right,
-                    ...(posicion === "arriba"
-                      ? { top: buttonRef.current.getBoundingClientRect().top - 4, transform: "translateY(-100%)" }
-                      : { top: buttonRef.current.getBoundingClientRect().bottom + 4 }),
-                  }
-                : { right: 0, top: 0 }),
-            }}
-          >
-            {/* Header */}
-            <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users size={14} className="text-blue-600 dark:text-blue-400" />
-                  <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100">
-                    Asignar Ejecutivo
-                  </span>
-                </div>
-                <button
-                  onClick={() => {
-                    setAbierto(false);
-                    setBusqueda("");
-                  }}
-                  className="p-1 hover:bg-white/50 dark:hover:bg-slate-700 rounded-md transition-colors"
-                >
-                  <X size={12} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-
-            {/* Búsqueda */}
-            <div className="p-2 border-b border-slate-100 dark:border-slate-700">
-              <div className="relative">
-                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar ejecutivo..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-lg text-[11px] text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            {/* Lista */}
-            <div className="p-1.5 max-h-[320px] overflow-y-auto">
-              {ejecutivosFiltrados.length === 0 ? (
-                <div className="p-4 text-center">
-                  <p className="text-[11px] text-slate-400">No se encontraron ejecutivos</p>
-                </div>
-              ) : (
-                ejecutivosFiltrados.map((user) => {
-                  const userRol = ROLES_CONFIG[user.rol];
-                  const esActual = `${user.nombre} ${user.apellido}` === ejecutivoActual;
-                  const nombreCompleto = `${user.nombre} ${user.apellido}`;
-                  const leadsActivos = carga[nombreCompleto] || 0;
-
-                  return (
-                    <button
-                      key={user.id}
-                      onClick={() => handleAsignar(nombreCompleto)}
-                      className={`w-full flex items-center gap-2.5 p-2 rounded-lg transition-all ${
-                        esActual
-                          ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
-                      }`}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0"
-                        style={{
-                          background:
-                            user.rol === "SUPER_ADMIN"
-                              ? "linear-gradient(135deg, #9333ea, #7c3aed)"
-                              : user.rol === "ADMIN"
-                              ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                              : user.rol === "GERENTE"
-                              ? "linear-gradient(135deg, #d97706, #b45309)"
-                              : "linear-gradient(135deg, #64748b, #475569)",
-                        }}
-                      >
-                        {user.nombre[0]}
-                        {user.apellido[0]}
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 truncate">
-                          {nombreCompleto}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>
-                            {userRol.label}
-                          </span>
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                            leadsActivos === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
-                            leadsActivos <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                            leadsActivos <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                            "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                          }`}>
-                            {leadsActivos} lead{leadsActivos !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </div>
-                      {esActual && <Check size={12} className="text-blue-500 flex-shrink-0" />}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
-              <button
-                onClick={() => handleAsignar("")}
-                className="w-full text-center text-[10px] font-semibold text-red-500 hover:text-red-600 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              >
-                Quitar asignación
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {dropdown}
     </div>
   );
 }
