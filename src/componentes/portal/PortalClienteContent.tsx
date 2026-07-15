@@ -25,7 +25,7 @@ import {
   AlertCircle,
   FileCheck,
   FileClock,
-  Trash2, ChevronDown,
+  Trash2, X, ChevronDown,
   Download,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
@@ -168,6 +168,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [mostrarSidebar, setMostrarSidebar] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   // Formatear RUT con puntos y guion automaticamente
   const formatRut = (value: string): string => {
     const cleaned = value.replace(/[^0-9kK]/g, "").toUpperCase();
@@ -240,6 +241,20 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     }
   };
 
+  
+  // Verificar si es la primera vez del cliente
+  const verificarPrimeraVez = (clienteData: Lead) => {
+    const clave = `portal_welcome_${clienteData.id}`;
+    const yaVisto = localStorage.getItem(clave);
+    if (!yaVisto) {
+      const camposIncompletos = !clienteData.email || !clienteData.telefono || !clienteData.estadoCivil || !clienteData.profesion;
+      if (camposIncompletos) {
+        setShowWelcome(true);
+      }
+      localStorage.setItem(clave, "visto");
+    }
+  };
+
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
     rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
   })), [leads]);
@@ -255,6 +270,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     });
     if (found) {
       setCliente(found); setError("");
+      verificarPrimeraVez(found);
       // Cargar documentos reales del lead
       try {
         const resDocs = await fetch(`/api/documentos?leadId=${found.id}`);
@@ -545,7 +561,71 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
   return (
     <div className={`space-y-5 ${className}`}>
-      {/* Banner de Bienvenida */}
+      
+      {/* Modal de Bienvenida */}
+      {showWelcome && cliente && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowWelcome(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-fade-in">
+            <button onClick={() => setShowWelcome(false)} className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-xl transition-colors">
+              <X size={18} className="text-slate-400" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
+                <span className="text-2xl">👋</span>
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-1">Bienvenido, {cliente.nombre}</h2>
+              <p className="text-sm text-slate-500">Tu solicitud hipotecaria esta en proceso</p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <User size={14} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">Completa tu perfil</p>
+                  <p className="text-[11px] text-slate-500">Actualiza tus datos personales y de empleo para agilizar tu solicitud.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText size={14} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">Sube tus documentos</p>
+                  <p className="text-[11px] text-slate-500">Revisa la seccion de documentos y sube los requeridos.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp size={14} className="text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">Sigue tu progreso</p>
+                  <p className="text-[11px] text-slate-500">En el resumen puedes ver en que etapa va tu credito.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowWelcome(false)}
+                className="flex-1 h-11 px-4 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-colors">
+                Despues
+              </button>
+              <button onClick={() => { setShowWelcome(false); setTabActiva("perfil"); }}
+                className="flex-1 h-11 px-4 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20">
+                Completar Perfil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+{/* Banner de Bienvenida */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
