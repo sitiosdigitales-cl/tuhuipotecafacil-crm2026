@@ -22,7 +22,9 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
   const { usuarios } = useUser();
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [posicion, setPosicion] = useState<"arriba" | "abajo">("arriba");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const ejecutivos = usuarios
     .filter((u) => u.estado === "ACTIVO")
@@ -42,9 +44,17 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
     setBusqueda("");
   };
 
-  // Cerrar al hacer click fuera
+  // Cerrar al hacer click fuera y detectar posición
   useEffect(() => {
     if (!abierto) return;
+
+    // Detectar si hay espacio arriba
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const espacioArriba = rect.top;
+      setPosicion(espacioArriba > 300 ? "arriba" : "abajo");
+    }
+
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setAbierto(false);
@@ -58,6 +68,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation();
           setAbierto(!abierto);
@@ -80,8 +91,22 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
       {abierto && (
         <>
           <div className="fixed inset-0 z-40" />
-          <div className="absolute z-50 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-               style={{ bottom: '100%', right: 0, marginBottom: '4px' }}>
+          <div
+            className="fixed z-50 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+            style={{
+              ...(posicion === "arriba"
+                ? { bottom: "auto", top: "auto" }
+                : { top: "auto", bottom: "auto" }),
+              ...(buttonRef.current
+                ? {
+                    right: window.innerWidth - buttonRef.current.getBoundingClientRect().right,
+                    ...(posicion === "arriba"
+                      ? { top: buttonRef.current.getBoundingClientRect().top - 4, transform: "translateY(-100%)" }
+                      : { top: buttonRef.current.getBoundingClientRect().bottom + 4 }),
+                  }
+                : { right: 0, top: 0 }),
+            }}
+          >
             {/* Header */}
             <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
               <div className="flex items-center justify-between">
@@ -119,7 +144,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
             </div>
 
             {/* Lista */}
-            <div className="p-1.5 max-h-[240px] overflow-y-auto">
+            <div className="p-1.5 max-h-[320px] overflow-y-auto">
               {ejecutivosFiltrados.length === 0 ? (
                 <div className="p-4 text-center">
                   <p className="text-[11px] text-slate-400">No se encontraron ejecutivos</p>
