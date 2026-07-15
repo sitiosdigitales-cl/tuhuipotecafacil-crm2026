@@ -50,3 +50,38 @@ export async function GET() {
     serviceInsert: { success: !insertError, error: insertError?.message, data: insertTest },
   });
 }
+
+export async function POST() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  const serviceClient = createClient(url || "", serviceKey || anonKey || "");
+
+  // Obtener leads con ejecutivo asignado
+  const { data: leads, error: fetchError } = await serviceClient
+    .from("leads")
+    .select("id")
+    .not("nombreejecutivo", "is", null)
+    .neq("nombreejecutivo", "");
+
+  if (fetchError) {
+    return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 });
+  }
+
+  if (!leads || leads.length === 0) {
+    return NextResponse.json({ success: true, message: "No hay leads con ejecutivo", updated: 0 });
+  }
+
+  // Quitar asignacion de todos
+  const { error: updateError } = await serviceClient
+    .from("leads")
+    .update({ nombreejecutivo: null, asignadoa: null })
+    .in("id", leads.map((l) => l.id));
+
+  if (updateError) {
+    return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, updated: leads.length });
+}
