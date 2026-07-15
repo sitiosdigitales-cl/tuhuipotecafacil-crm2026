@@ -185,32 +185,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const asignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
     try {
-      // Si se quita la asignación, actualizar directamente
-      if (!nombreEjecutivo) {
-        await actualizarLead(leadId, { nombreEjecutivo: "", asignadoA: "" });
-        return;
-      }
-
-      // Buscar el usuario por nombre para obtener su ID
-      const searchUrl = `/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`;
-      const response = await fetch(searchUrl);
-      const result = await response.json();
-
-      let usuarioId = "";
-      if (result?.success && result?.data?.length > 0) {
-        // Buscar coincidencia exacta nombre + apellido
-        const exactMatch = result.data.find((u: any) =>
-          `${u.nombre} ${u.apellido}`.toLowerCase() === nombreEjecutivo.toLowerCase()
-        );
-        usuarioId = exactMatch?.id || result.data[0]?.id || "";
-      }
-
-      // Actualizar el lead con el nombre del ejecutivo y su ID
+      // Actualizar el lead con el nombre del ejecutivo
       const updateResponse = await fetch(`/api/leads/${leadId}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreEjecutivo, asignadoA: usuarioId }),
+        body: JSON.stringify({ nombreEjecutivo }),
       });
 
       if (updateResponse.ok) {
@@ -218,10 +198,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         setLeads((prev) =>
           prev.map((l) =>
             l.id === leadId
-              ? { ...l, nombreEjecutivo, asignadoA: usuarioId }
+              ? { ...l, nombreEjecutivo }
               : l
           )
         );
+      } else {
+        const errorData = await updateResponse.json();
+        console.error("[AsignarEjecutivo] API error:", errorData);
       }
     } catch (error) {
       console.error("[AsignarEjecutivo] Error:", error);
