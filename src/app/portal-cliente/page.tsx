@@ -1,7 +1,7 @@
 "use client";
 
 import { PortalClienteContent } from "@/componentes/portal/PortalClienteContent";
-import { Home, Phone, MessageSquare } from "lucide-react";
+import { Home, MessageSquare } from "lucide-react";
 
 export default function PortalClientePage() {
   return (
@@ -19,10 +19,7 @@ export default function PortalClientePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <a href="tel:+56983300597" className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-blue-100 hover:bg-white/10 rounded-lg transition-colors">
-              <Phone size={14} />
-              Llamar
-            </a>
+
             <a href="https://wa.me/56983300597" target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
               <MessageSquare size={14} />
