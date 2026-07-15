@@ -168,6 +168,28 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [mostrarSidebar, setMostrarSidebar] = useState(false);
+  // Formatear RUT con puntos y guion automaticamente
+  const formatRut = (value: string): string => {
+    const cleaned = value.replace(/[^0-9kK]/g, "").toUpperCase();
+    if (cleaned.length === 0) return "";
+    const body = cleaned.slice(0, -1);
+    const dv = cleaned.slice(-1);
+    let formatted = "";
+    let i = body.length;
+    while (i > 0) {
+      const chunk = body.slice(Math.max(0, i - 3), i);
+      formatted = chunk + (formatted ? "." + formatted : "");
+      i -= 3;
+    }
+    return formatted + (dv ? "-" + dv : "");
+  };
+
+  const handleRutChange = (value: string) => {
+    const formatted = formatRut(value);
+    setRut(formatted);
+    setError("");
+  };
+
   const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
 
   // Función para cargar datos del asesor
