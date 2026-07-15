@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/contexts/UserContext";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/modulos/usuarios";
+import { useLeads } from "@/modulos/leads";
 import { ORIGEN_LABELS } from "@/tipos";
 import {
   Users,

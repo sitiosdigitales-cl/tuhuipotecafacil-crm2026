@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ChevronRight, Trophy, Medal, Crown } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 
 const COLORES = ["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EC4899"];

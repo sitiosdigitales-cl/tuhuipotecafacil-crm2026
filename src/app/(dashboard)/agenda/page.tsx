@@ -36,7 +36,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ETAPAS_CONFIG } from "@/tipos";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { GoogleCalendarIntegration, CrearEventoGoogle, MeetLinkDisplay } from "@/componentes/agenda/GoogleCalendarIntegration";
 import { createGoogleCalendarEvent, isGoogleAuthenticated } from "@/lib/services/googleCalendar";
 import { toast } from "sonner";

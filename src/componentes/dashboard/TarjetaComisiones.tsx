@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { TrendingUp, DollarSign, Clock, CheckCircle, Wallet, ArrowRight } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { formatoMoneda } from "@/lib/utils";
 
 const COMISION_POR_CREDITO = 500000; // $500.000 por crédito aprobado

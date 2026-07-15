@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pre Evaluación - TuHipotecaFacil.cl</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      background: transparent; 
+      color: #fff; 
+    }
+    body {
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .form-container {
+      max-width: 100%;
+      width: 100%;
+      padding: 20px;
+      background: #0A1B4D;
+      border: 2px solid #2563eb;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(37, 99, 235, 0.25);
+    }
+    
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 24px;
+    }
+    
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 2px solid #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .step.active .step-number {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    }
+    
+    .step-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    
+    .step.active .step-label {
+      color: #fff;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #e2e8f0;
+    }
+    
+    label .required {
+      color: #ef4444;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #111d3e;
+      color: #fff;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+    }
+    
+    input::placeholder, textarea::placeholder {
+      color: #64748b;
+    }
+    
+    select { cursor: pointer; }
+    select option { background: #111d3e; color: #fff; }
+    
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: #fbbf24;
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 4px;
+    }
+    
+    .submit-btn:hover { background: #f59e0b; }
+    .submit-btn:disabled { background: #64748b; cursor: not-allowed; }
+    
+    .error-message {
+      display: none;
+      background: #7f1d1d;
+      border: 1px solid #dc2626;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      color: #fecaca;
+      font-size: 14px;
+    }
+    
+    .error-message.show { display: block; }
+    
+    .radio-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 4px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    
+    .radio-option input[type="radio"] {
+      width: auto;
+      accent-color: #3b82f6;
+    }
+    
+    /* Responsive */
+    @media (max-width: 500px) {
+      .form-container {
+        margin: 0;
+        padding: 16px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      
+      .step-indicator {
+        gap: 20px;
+      }
+      
+      .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+      }
+      
+      .radio-group {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <div class="step-indicator">
+      <div class="step active">
+        <div class="step-number">1</div>
+        <div class="step-label">Datos</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-label">Financiero</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-label">Confirmar</div>
+      </div>
+    </div>
+    
+    <form id="leadForm">
+      <!-- Paso 1: Datos Personales -->
+      <div id="step1">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" name="nombre" placeholder="Nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Apellido <span class="required">*</span></label>
+            <input type="text" name="apellido" placeholder="Apellido" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Rut <span class="required">*</span></label>
+            <input type="text" name="rut" placeholder="12.345.678-9" required>
+          </div>
+          <div class="form-group">
+            <label>Edad <span class="required">*</span></label>
+            <select name="edad" required>
+              <option value="">Seleccionar</option>
+              <option value="18">18 años</option>
+              <option value="19">19 años</option>
+              <option value="20">20 años</option>
+              <option value="21">21 años</option>
+              <option value="22">22 años</option>
+              <option value="23">23 años</option>
+              <option value="24">24 años</option>
+              <option value="25">25 años</option>
+              <option value="26">26 años</option>
+              <option value="27">27 años</option>
+              <option value="28">28 años</option>
+              <option value="29">29 años</option>
+              <option value="30">30 años</option>
+              <option value="31">31 años</option>
+              <option value="32">32 años</option>
+              <option value="33">33 años</option>
+              <option value="34">34 años</option>
+              <option value="35">35 años</option>
+              <option value="36">36 años</option>
+              <option value="37">37 años</option>
+              <option value="38">38 años</option>
+              <option value="39">39 años</option>
+              <option value="40">40 años</option>
+              <option value="41">41 años</option>
+              <option value="42">42 años</option>
+              <option value="43">43 años</option>
+              <option value="44">44 años</option>
+              <option value="45">45 años</option>
+              <option value="46">46 años</option>
+              <option value="47">47 años</option>
+              <option value="48">48 años</option>
+              <option value="49">49 años</option>
+              <option value="50">50 años</option>
+              <option value="51">51 años</option>
+              <option value="52">52 años</option>
+              <option value="53">53 años</option>
+              <option value="54">54 años</option>
+              <option value="55">55 años</option>
+              <option value="56">56 años</option>
+              <option value="57">57 años</option>
+              <option value="58">58 años</option>
+              <option value="59">59 años</option>
+              <option value="60">60 años</option>
+              <option value="61">61 años</option>
+              <option value="62">62 años</option>
+              <option value="63">63 años</option>
+              <option value="64">64 años</option>
+              <option value="65">65 años</option>
+              <option value="66">66 años</option>
+              <option value="67">67 años</option>
+              <option value="68">68 años</option>
+              <option value="69">69 años</option>
+              <option value="70">70 años</option>
+              <option value="71">71 años</option>
+              <option value="72">72 años</option>
+              <option value="73">73 años</option>
+              <option value="74">74 años</option>
+              <option value="75">75 años</option>
+              <option value="76">76 años</option>
+              <option value="77">77 años</option>
+              <option value="78">78 años</option>
+              <option value="79">79 años</option>
+              <option value="80">80 años</option>
+              <option value="81">81 años</option>
+              <option value="82">82 años</option>
+              <option value="83">83 años</option>
+              <option value="84">84 años</option>
+              <option value="85">85 años</option>
+              <option value="86">86 años</option>
+              <option value="87">87 años</option>
+              <option value="88">88 años</option>
+              <option value="89">89 años</option>
+              <option value="90">90 años</option>
+              <option value="91">91 años</option>
+              <option value="92">92 años</option>
+              <option value="93">93 años</option>
+              <option value="94">94 años</option>
+              <option value="95">95 años</option>
+              <option value="96">96 años</option>
+              <option value="97">97 años</option>
+              <option value="98">98 años</option>
+              <option value="99">99 años</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Teléfono <span class="required">*</span></label>
+            <input type="tel" name="telefono" placeholder="+56 9 1234 5678" required>
+          </div>
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" name="email" placeholder="tu@email.com" required>
+          </div>
+        </div>
+        
+        <button type="button" class="submit-btn" onclick="nextStep(2)">SIGUIENTE</button>
+      </div>
+      
+      <!-- Paso 2: Datos Financieros -->
+      <div id="step2" style="display:none;">
+        <div class="form-group">
+          <label>¿Cuál es tu situación laboral? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="situacion_laboral" value="DEPENDIENTE" required> Dependiente
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="situacion_laboral" value="INDEPENDIENTE"> Independiente
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="situacion_laboral" value="EMPRESA"> Empresa
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>¿Estás actualmente en DICOM?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="en_dicom" value="no" checked> No
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="en_dicom" value="si"> Sí
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group" id="dicomDetalleGroup" style="display:none;">
+          <label>Si estás en DICOM, ¿corresponde a deuda?</label>
+          <input type="text" name="dicom_detalle" placeholder="Describe brevemente">
+        </div>
+        
+        <div class="form-group">
+          <label>¿Cuál es tu renta mensual aproximada?</label>
+          <input type="text" name="renta_mensual" placeholder="$1.500.000">
+        </div>
+        
+        <div class="form-group">
+          <label>¿Deseas complementar renta?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="complementar_renta" value="no" checked> No
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="complementar_renta" value="si"> Sí
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>¿Qué tipo de crédito buscas? <span class="required">*</span></label>
+          <select name="tipo_credito" required>
+            <option value="">Seleccionar</option>
+            <option value="Crédito Hipotecario">Crédito Hipotecario</option>
+            <option value="Crédito de Consumo">Crédito de Consumo</option>
+            <option value="Fines Generales">Fines Generales</option>
+            <option value="Capital para Empresas">Capital para Empresas</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>¿Cuentas con pie o ahorro inicial?</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="cuenta_pie" value="no" checked> No
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="cuenta_pie" value="si"> Sí
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Comentarios adicionales</label>
+          <textarea name="comentarios" placeholder="Cuéntanos sobre tu situación..."></textarea>
+        </div>
+        
+        <button type="button" class="submit-btn" onclick="nextStep(3)">SIGUIENTE</button>
+      </div>
+      
+      <!-- Paso 3: Confirmar -->
+      <div id="step3" style="display:none;">
+        <div style="background:#1e293b; border-radius:12px; padding:16px; margin-bottom:16px;">
+          <h3 style="margin-bottom:12px; color:#fbbf24; font-size:15px;">Resumen de tu solicitud</h3>
+          <div id="summary" style="font-size:13px; line-height:1.7; color:#94a3b8;"></div>
+        </div>
+        
+        <button type="submit" class="submit-btn" id="submitBtn">ENVIAR SOLICITUD</button>
+      </div>
+      
+      <div class="error-message" id="errorMsg"></div>
+    </form>
+  </div>
+
+  <script>
+    const WEBHOOK_URL = 'https://tuhuipotecafacil-crm2026.vercel.app/api/webhook/leads';
+    const THANK_YOU_URL = 'https://www.tuhipotecafacil.cl/registro-completo/';
+    
+    // Formatear RUT automáticamente: 12345678-9 → 12.345.678-9
+    function formatRut(value) {
+      let clean = value.replace(/[^0-9kK]/g, '').toUpperCase();
+      if (clean.length === 0) return '';
+      let body = clean.slice(0, -1);
+      let dv = clean.slice(-1);
+      let formatted = '';
+      let count = 0;
+      for (let i = body.length - 1; i >= 0; i--) {
+        formatted = body[i] + formatted;
+        count++;
+        if (count === 3 && i > 0) {
+          formatted = '.' + formatted;
+          count = 0;
+        }
+      }
+      return formatted + '-' + dv;
+    }
+    
+    document.querySelector('input[name="rut"]').addEventListener('input', function(e) {
+      let cursorPos = this.selectionStart;
+      let oldLength = this.value.length;
+      this.value = formatRut(this.value);
+      let newLength = this.value.length;
+      this.setSelectionRange(cursorPos + (newLength - oldLength), cursorPos + (newLength - oldLength));
+    });
+    
+    document.querySelectorAll('input[name="en_dicom"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        document.getElementById('dicomDetalleGroup').style.display = 
+          e.target.value === 'si' ? 'block' : 'none';
+      });
+    });
+    
+    function nextStep(step) {
+      if (step === 2) {
+        const nombre = document.querySelector('input[name="nombre"]').value;
+        const apellido = document.querySelector('input[name="apellido"]').value;
+        const rut = document.querySelector('input[name="rut"]').value;
+        const telefono = document.querySelector('input[name="telefono"]').value;
+        const email = document.querySelector('input[name="email"]').value;
+        
+        if (!nombre || !apellido || !rut || !telefono || !email) {
+          showError('Por favor completa todos los campos obligatorios.');
+          return;
+        }
+      }
+      
+      if (step === 3) {
+        const situacion = document.querySelector('input[name="situacion_laboral"]:checked');
+        const tipoCredito = document.querySelector('select[name="tipo_credito"]').value;
+        
+        if (!situacion || !tipoCredito) {
+          showError('Por favor completa los campos obligatorios.');
+          return;
+        }
+        generateSummary();
+      }
+      
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('step' + step).style.display = 'block';
+      
+      document.querySelectorAll('.step').forEach((s, i) => {
+        s.classList.toggle('active', i < step);
+      });
+      
+      hideError();
+      
+      // Auto-resize iframe después de cambiar de paso
+      setTimeout(() => {
+        const height = document.body.scrollHeight;
+        window.parent.postMessage({ type: 'resize', height: height }, '*');
+      }, 100);
+    }
+    
+    function generateSummary() {
+      const form = document.getElementById('leadForm');
+      const data = new FormData(form);
+      
+      let html = `
+        <p><strong>Nombre:</strong> ${data.get('nombre')} ${data.get('apellido')}</p>
+        <p><strong>Rut:</strong> ${data.get('rut')}</p>
+        <p><strong>Teléfono:</strong> ${data.get('telefono')}</p>
+        <p><strong>Email:</strong> ${data.get('email')}</p>
+        <p><strong>Situación laboral:</strong> ${data.get('situacion_laboral')}</p>
+        <p><strong>Tipo crédito:</strong> ${data.get('tipo_credito')}</p>
+        <p><strong>Edad:</strong> ${data.get('edad')} años</p>
+      `;
+      
+      if (data.get('renta_mensual')) html += `<p><strong>Renta:</strong> ${data.get('renta_mensual')}</p>`;
+      if (data.get('en_dicom') === 'si') html += `<p><strong>DICOM:</strong> Sí - ${data.get('dicom_detalle') || 'Sin detalle'}</p>`;
+      if (data.get('complementar_renta') === 'si') html += `<p><strong>Complementar renta:</strong> Sí</p>`;
+      if (data.get('cuenta_pie') === 'si') html += `<p><strong>Cuenta con pie:</strong> Sí</p>`;
+      if (data.get('comentarios')) html += `<p><strong>Comentarios:</strong> ${data.get('comentarios')}</p>`;
+      
+      document.getElementById('summary').innerHTML = html;
+    }
+    
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+    
+    function hideError() {
+      document.getElementById('errorMsg').classList.remove('show');
+    }
+    
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'ENVIANDO...';
+      
+      const form = e.target;
+      const data = new FormData(form);
+      
+      const payload = {
+        Nombre: data.get('nombre'),
+        Apellido: data.get('apellido'),
+        Rut: data.get('rut'),
+        Edad: data.get('edad'),
+        'Número de Teléfono': data.get('telefono'),
+        'Correo Electrónico': data.get('email'),
+        '¿Cuál es tu situación laboral?': data.get('situacion_laboral'),
+        '¿Estás actualmente en DICOM?': data.get('en_dicom') === 'si' ? 'Sí' : 'No',
+        'Si estás en DICOM, ¿corresponde?': data.get('dicom_detalle') || '',
+        '¿Cuál es tu renta mensual aproximada?': data.get('renta_mensual') || '',
+        '¿Deseas complementar renta?': data.get('complementar_renta') === 'si' ? 'Sí' : 'No',
+        '¿Qué tipo de crédito buscas?': data.get('tipo_credito'),
+        '¿Cuentas con pie o ahorro inicial?': data.get('cuenta_pie') === 'si' ? 'Sí' : 'No',
+        'Comentarios adicionales': data.get('comentarios') || '',
+      };
+      
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          window.location.href = THANK_YOU_URL;
+        } else {
+          showError(result.error || 'Error al enviar. Intenta nuevamente.');
+          btn.disabled = false;
+          btn.textContent = 'ENVIAR SOLICITUD';
+        }
+      } catch (err) {
+        showError('Error de conexión. Intenta nuevamente.');
+        btn.disabled = false;
+        btn.textContent = 'ENVIAR SOLICITUD';
+      }
+    });
+  </script>
+</body>
+</html>

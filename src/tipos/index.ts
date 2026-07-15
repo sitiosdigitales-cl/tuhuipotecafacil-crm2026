@@ -30,7 +30,7 @@ export type Etapa =
 
 export type Prioridad = "BAJA" | "MEDIA" | "ALTA" | "URGENTE";
 
-export type SituacionLaboral = "DEPENDIENTE" | "INDEPENDIENTE";
+export type SituacionLaboral = "DEPENDIENTE" | "INDEPENDIENTE" | "EMPRESA";
 
 export interface Lead {
   id: string;
@@ -93,11 +93,17 @@ export interface Lead {
   telefonoLaboralFijo?: string;
   emailLaboral?: string;
   otrosIngresos?: string;
+
+  // Patrimonio
+  patrimonioVehiculo?: string;
+  patrimonioVivienda?: string;
+  patrimonioOtros?: string;
 }
 
 export const SITUACION_LABORAL_CONFIG: Record<SituacionLaboral, { label: string; icono: string }> = {
   DEPENDIENTE: { label: "Trabajador Dependiente", icono: "👔" },
-  INDEPENDIENTE: { label: "Trabajador Independiente", icono: "💼" },
+  INDEPENDIENTE: { label: "Independiente (Boleta de Honorarios)", icono: "💼" },
+  EMPRESA: { label: "Empresa", icono: "🏢" },
 };
 
 export const RENTAS_MENSUALES = [
@@ -203,7 +209,7 @@ export const TIPOS_TAREA_CONFIG: Record<TipoTarea, { label: string; color: strin
 };
 
 // Tipos para Documentos
-export type TipoDocumento = "CEDULA_IDENTIDAD" | "CONTRATO_TRABAJO" | "COMPROBANTE_INGRESOS" | "CERTIFICADO_AFP" | "DECLARACION_RENTA" | "VALORIZACION" | "CERTIFICADO_PIE" | "OTRO";
+export type TipoDocumento = "CEDULA_IDENTIDAD" | "CONTRATO_TRABAJO" | "COMPROBANTE_INGRESOS" | "CERTIFICADO_AFP" | "DECLARACION_RENTA" | "VALORIZACION" | "CERTIFICADO_PIE" | "LIQUIDACION_SUELDO" | "CERTIFICADO_COTIZACIONES_AFP" | "ANEXO_LABORAL" | "COMPROBANTE_DOMICILIO" | "TITULO_UNIVERSITARIO" | "PADRON_VEHICULO" | "DOMINIO_PROPIEDAD" | "CERTIFICADO_CMF" | "CARTERA_TRIBUTARIA_36" | "BOLETAS_CON_IMPUESTO" | "RESUMEN_MENSUAL_BOLETAS" | "RESUMEN_ANUAL_BOLETAS" | "DECLARACION_RENTA_F22" | "ACEPTACION_RENTA" | "ROL_EMPRESA" | "CERTIFICADO_DEUDA_TGR" | "BALANCE" | "OTRO";
 
 export interface DocumentoLead {
   id: string;
@@ -224,6 +230,23 @@ export const TIPOS_DOCUMENTO_CONFIG: Record<TipoDocumento, { label: string; icon
   DECLARACION_RENTA: { label: "Declaración de Renta", icono: "file-text" },
   VALORIZACION: { label: "Valorización", icono: "home" },
   CERTIFICADO_PIE: { label: "Certificado de Pie", icono: "file-text" },
+  LIQUIDACION_SUELDO: { label: "Liquidaciones de Sueldo", icono: "file-text" },
+  CERTIFICADO_COTIZACIONES_AFP: { label: "Cert. Cotizaciones AFP 24 meses", icono: "file-text" },
+  ANEXO_LABORAL: { label: "Anexo/Permanencia Laboral", icono: "file-text" },
+  COMPROBANTE_DOMICILIO: { label: "Comprobante de Domicilio", icono: "home" },
+  TITULO_UNIVERSITARIO: { label: "Título Universitario", icono: "award" },
+  PADRON_VEHICULO: { label: "Padrón de Vehículo", icono: "car" },
+  DOMINIO_PROPIEDAD: { label: "Dominio de Propiedad", icono: "home" },
+  CERTIFICADO_CMF: { label: "Certificado CMF", icono: "file-text" },
+  CARTERA_TRIBUTARIA_36: { label: "Cartera Tributaria 36 meses", icono: "file-text" },
+  BOLETAS_CON_IMPUESTO: { label: "Boletas con Impuesto", icono: "file-text" },
+  RESUMEN_MENSUAL_BOLETAS: { label: "Resumen Mensual Boletas", icono: "file-text" },
+  RESUMEN_ANUAL_BOLETAS: { label: "Resumen Anual Boletas", icono: "file-text" },
+  DECLARACION_RENTA_F22: { label: "Declaración Renta F22", icono: "file-text" },
+  ACEPTACION_RENTA: { label: "Aceptación de Renta", icono: "file-text" },
+  ROL_EMPRESA: { label: "Rol Empresa", icono: "building" },
+  CERTIFICADO_DEUDA_TGR: { label: "Certificado Deuda TGR", icono: "file-text" },
+  BALANCE: { label: "Balance Firmado", icono: "file-text" },
   OTRO: { label: "Otro", icono: "file" },
 };
 

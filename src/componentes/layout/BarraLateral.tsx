@@ -34,11 +34,11 @@ import {
   TrendingUp,
   Calculator,
 } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 import { CambioRapidoUsuario } from "@/componentes/layout/CambioRapidoUsuario";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { useTareaCount } from "@/lib/hooks/useTareaCount";
+import { useTareaCount } from "@/modulos/tareas";
 import { LogOut } from "lucide-react";
 import type { Rol } from "@/tipos";
 

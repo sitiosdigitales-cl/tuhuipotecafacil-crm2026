@@ -14,7 +14,7 @@ import {
   ChevronDown,
   RefreshCw,
 } from "lucide-react";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { ROLES_CONFIG } from "@/tipos";
 import { CampanaNotificaciones } from "@/componentes/notificaciones/CampanaNotificaciones";

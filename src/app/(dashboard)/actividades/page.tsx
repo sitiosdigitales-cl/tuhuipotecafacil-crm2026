@@ -10,8 +10,8 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { Tarea, EstadoTarea, TipoTarea, Prioridad } from "@/tipos";
 

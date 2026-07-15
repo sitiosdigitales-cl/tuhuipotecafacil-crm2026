@@ -10,7 +10,7 @@ import {
   Download, Calendar, Filter, TrendingUp, TrendingDown, Users, DollarSign,
   CheckCircle, Clock, FileText, Target, Award, Building2, AlertTriangle,
 } from "lucide-react";
-import type { Lead } from "@/tipos";
+import type { Lead, Etapa } from "@/tipos";
 
 const COLORES_BANCOS: Record<string, string> = {
   "Banco de Chile": "#E31837", Santander: "#EC0000", Bci: "#003DA5",
@@ -163,29 +163,67 @@ export default function ReportesPage() {
       .slice(0, 8);
   }, [leadsFiltrados]);
 
-  // Rendimiento por ejecutivo
+  // Rendimiento por ejecutivo (detallado)
   const rendimientoEjecutivos = useMemo(() => {
-    const agrupado: Record<string, { leads: number; aprobados: number; monto: number; conversion: number }> = {};
+    const ETAPAS_ACTIVAS: Etapa[] = ["NUEVO_LEAD", "CONTACTO_INICIAL", "CONTACTADO", "INTERESADO", "CALIFICACION_COMERCIAL", "DOCS_PENDIENTES", "DOCS_PARCIALES", "DOCS_COMPLETAS", "EVALUACION_BANCARIA", "PREAPROBADO"];
+    const ETAPAS_APROBADAS: Etapa[] = ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"];
+
+    const agrupado: Record<string, {
+      leads: number; aprobados: number; monto: number;
+      nuevoLead: number; enProceso: number; docs: number; aprobado: number;
+      estancados: number;
+    }> = {};
+
     leadsFiltrados.forEach((l) => {
       const nombre = l.nombreEjecutivo || "Sin asignar";
-      if (!agrupado[nombre]) agrupado[nombre] = { leads: 0, aprobados: 0, monto: 0, conversion: 0 };
+      if (!agrupado[nombre]) {
+        agrupado[nombre] = { leads: 0, aprobados: 0, monto: 0, nuevoLead: 0, enProceso: 0, docs: 0, aprobado: 0, estancados: 0 };
+      }
       agrupado[nombre].leads++;
       agrupado[nombre].monto += l.montoSolicitado || 0;
-      if (["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)) {
+
+      if (ETAPAS_APROBADAS.includes(l.etapa)) {
         agrupado[nombre].aprobados++;
+        agrupado[nombre].aprobado++;
+      } else if (l.etapa === "NUEVO_LEAD") {
+        agrupado[nombre].nuevoLead++;
+      } else if (["DOCS_PENDIENTES", "DOCS_PARCIALES", "DOCS_COMPLETAS"].includes(l.etapa)) {
+        agrupado[nombre].docs++;
+      } else if (ETAPAS_ACTIVAS.includes(l.etapa)) {
+        agrupado[nombre].enProceso++;
+      }
+
+      if (l.diasEnEtapa > 7 && !ETAPAS_APROBADAS.includes(l.etapa)) {
+        agrupado[nombre].estancados++;
       }
     });
+
     return Object.entries(agrupado)
       .filter(([n]) => n !== "Sin asignar")
       .map(([nombre, data]) => ({
-        nombre: nombre.split(" ")[0] + " " + (nombre.split(" ")[1]?.[0] || ""),
+        nombre,
         leads: data.leads,
         aprobados: data.aprobados,
         monto: data.monto,
+        montoPromedio: data.aprobados > 0 ? Math.round(data.monto / data.aprobados) : 0,
         conversion: data.leads > 0 ? Math.round((data.aprobados / data.leads) * 100) : 0,
+        nuevoLead: data.nuevoLead,
+        enProceso: data.enProceso,
+        docs: data.docs,
+        aprobado: data.aprobado,
+        estancados: data.estancados,
       }))
-      .sort((a, b) => b.aprobados - a.aprobados);
+      .sort((a, b) => b.monto - a.monto);
   }, [leadsFiltrados]);
+
+  // Métricas de ejecutivos
+  const metricasEjecutivos = useMemo(() => {
+    const total = rendimientoEjecutivos.length;
+    const montoTotal = rendimientoEjecutivos.reduce((acc, e) => acc + e.monto, 0);
+    const promedioCarga = total > 0 ? Math.round(rendimientoEjecutivos.reduce((acc, e) => acc + e.leads, 0) / total) : 0;
+    const mejorEjecutivo = rendimientoEjecutivos[0] || null;
+    return { total, montoTotal, promedioCarga, mejorEjecutivo };
+  }, [rendimientoEjecutivos]);
 
   // Leads por origen
   const leadsPorOrigen = useMemo(() => {
@@ -477,53 +515,167 @@ export default function ReportesPage() {
       )}
 
       {reporteActivo === "ejecutivos" && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Rendimiento por Ejecutivo</h3>
-          {rendimientoEjecutivos.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left py-3 px-4 text-[10px] font-bold text-slate-400 uppercase">Ejecutivo</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-bold text-slate-400 uppercase">Leads</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-bold text-slate-400 uppercase">Aprobados</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-bold text-slate-400 uppercase">Conversión</th>
-                    <th className="text-right py-3 px-4 text-[10px] font-bold text-slate-400 uppercase">Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rendimientoEjecutivos.map((ej, i) => (
-                    <tr key={i} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white ${
-                            i === 0 ? "bg-gradient-to-br from-amber-400 to-amber-500" :
-                            i === 1 ? "bg-gradient-to-br from-slate-400 to-slate-500" :
-                            i === 2 ? "bg-gradient-to-br from-amber-600 to-amber-700" :
-                            "bg-slate-200 text-slate-600"
-                          }`}>{i + 1}</div>
-                          <span className="text-xs font-semibold text-slate-700">{ej.nombre}</span>
-                        </div>
-                      </td>
-                      <td className="text-right py-3 px-4 text-xs text-slate-600">{ej.leads}</td>
-                      <td className="text-right py-3 px-4 text-xs font-semibold text-emerald-600">{ej.aprobados}</td>
-                      <td className="text-right py-3 px-4">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          ej.conversion >= 25 ? "bg-emerald-100 text-emerald-700" :
-                          ej.conversion >= 15 ? "bg-amber-100 text-amber-700" :
-                          "bg-red-100 text-red-700"
-                        }`}>{ej.conversion}%</span>
-                      </td>
-                      <td className="text-right py-3 px-4 text-xs font-semibold text-slate-700">{formatoMoneda(ej.monto)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <>
+          {/* Métricas de ejecutivos */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={14} className="text-blue-500" />
+                <span className="text-[11px] text-slate-500 font-medium">Ejecutivos</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{metricasEjecutivos.total}</div>
+              <div className="text-[10px] text-slate-400 mt-1">activos en el periodo</div>
             </div>
-          ) : (
-            <div className="text-center py-12 text-sm text-slate-400">Sin datos de ejecutivos</div>
-          )}
-        </div>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign size={14} className="text-amber-500" />
+                <span className="text-[11px] text-slate-500 font-medium">Monto Equipo</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{formatoMoneda(metricasEjecutivos.montoTotal)}</div>
+              <div className="text-[10px] text-slate-400 mt-1">total creditos solicitados</div>
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+              <div className="flex items-center gap-2 mb-2">
+                <Target size={14} className="text-purple-500" />
+                <span className="text-[11px] text-slate-500 font-medium">Promedio Carga</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{metricasEjecutivos.promedioCarga}</div>
+              <div className="text-[10px] text-slate-400 mt-1">leads por ejecutivo</div>
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+              <div className="flex items-center gap-2 mb-2">
+                <Award size={14} className="text-emerald-500" />
+                <span className="text-[11px] text-slate-500 font-medium">Top Ejecutivo</span>
+              </div>
+              <div className="text-lg font-bold text-slate-900 truncate">{metricasEjecutivos.mejorEjecutivo?.nombre || "-"}</div>
+              <div className="text-[10px] text-slate-400 mt-1">{metricasEjecutivos.mejorEjecutivo ? formatoMoneda(metricasEjecutivos.mejorEjecutivo.monto) : ""}</div>
+            </div>
+          </div>
+
+          {/* Gráfico de montos por ejecutivo */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+            <h3 className="text-sm font-bold text-slate-900 mb-4">Monto Total por Ejecutivo</h3>
+            {rendimientoEjecutivos.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={rendimientoEjecutivos.slice(0, 8)} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
+                    <YAxis type="category" dataKey="nombre" tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} width={80} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #E2E8F0" }} formatter={(value) => [formatoMoneda(Number(value)), "Monto"]} />
+                    <Bar dataKey="monto" fill="#3B82F6" radius={[0, 6, 6, 0]} maxBarSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-sm text-slate-400">Sin datos</div>
+            )}
+          </div>
+
+          {/* Tabla detallada de ejecutivos */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
+            <h3 className="text-sm font-bold text-slate-900 mb-4">Detalle por Ejecutivo</h3>
+            {rendimientoEjecutivos.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left py-3 px-3 text-[10px] font-bold text-slate-400 uppercase">Ejecutivo</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Leads</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Nuevo</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Proceso</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Docs</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Aprob.</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Conv.</th>
+                      <th className="text-right py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Monto Total</th>
+                      <th className="text-right py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Promedio</th>
+                      <th className="text-center py-3 px-2 text-[10px] font-bold text-slate-400 uppercase">Estanc.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rendimientoEjecutivos.map((ej, i) => (
+                      <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shadow-sm ${
+                              i === 0 ? "bg-gradient-to-br from-amber-400 to-amber-500" :
+                              i === 1 ? "bg-gradient-to-br from-slate-400 to-slate-500" :
+                              i === 2 ? "bg-gradient-to-br from-amber-600 to-amber-700" :
+                              "bg-gradient-to-br from-blue-400 to-blue-500"
+                            }`}>
+                              {ej.nombre.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                            </div>
+                            <div>
+                              <div className="text-[11px] font-semibold text-slate-800">{ej.nombre}</div>
+                              <div className="text-[9px] text-slate-400">#{i + 1} ranking</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className="text-[11px] font-bold text-slate-700">{ej.leads}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{ej.nuevoLead}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">{ej.enProceso}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{ej.docs}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{ej.aprobados}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            ej.conversion >= 25 ? "bg-emerald-100 text-emerald-700" :
+                            ej.conversion >= 15 ? "bg-amber-100 text-amber-700" :
+                            "bg-red-100 text-red-700"
+                          }`}>{ej.conversion}%</span>
+                        </td>
+                        <td className="text-right py-3 px-2">
+                          <span className="text-[11px] font-bold text-slate-800">{formatoMoneda(ej.monto)}</span>
+                        </td>
+                        <td className="text-right py-3 px-2">
+                          <span className="text-[10px] text-slate-500">{formatoMoneda(ej.montoPromedio)}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          {ej.estancados > 0 ? (
+                            <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">{ej.estancados}</span>
+                          ) : (
+                            <span className="text-[10px] text-slate-300">0</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-200 bg-slate-50/80">
+                      <td className="py-3 px-3 text-[11px] font-bold text-slate-700">Total Equipo</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-slate-700">{rendimientoEjecutivos.reduce((a, e) => a + e.leads, 0)}</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-blue-600">{rendimientoEjecutivos.reduce((a, e) => a + e.nuevoLead, 0)}</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-purple-600">{rendimientoEjecutivos.reduce((a, e) => a + e.enProceso, 0)}</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-amber-600">{rendimientoEjecutivos.reduce((a, e) => a + e.docs, 0)}</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-emerald-600">{rendimientoEjecutivos.reduce((a, e) => a + e.aprobados, 0)}</td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-slate-700">
+                        {rendimientoEjecutivos.reduce((a, e) => a + e.leads, 0) > 0
+                          ? Math.round((rendimientoEjecutivos.reduce((a, e) => a + e.aprobados, 0) / rendimientoEjecutivos.reduce((a, e) => a + e.leads, 0)) * 100)
+                          : 0}%
+                      </td>
+                      <td className="text-right py-3 px-2 text-[11px] font-bold text-slate-800">{formatoMoneda(rendimientoEjecutivos.reduce((a, e) => a + e.monto, 0))}</td>
+                      <td className="text-right py-3 px-2 text-[10px] text-slate-500">
+                        {rendimientoEjecutivos.length > 0 ? formatoMoneda(Math.round(rendimientoEjecutivos.reduce((a, e) => a + e.monto, 0) / rendimientoEjecutivos.length)) : "-"}
+                      </td>
+                      <td className="text-center py-3 px-2 text-[11px] font-bold text-red-600">{rendimientoEjecutivos.reduce((a, e) => a + e.estancados, 0)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-sm text-slate-400">Sin datos de ejecutivos</div>
+            )}
+          </div>
+        </>
       )}
 
       {reporteActivo === "bancos" && (

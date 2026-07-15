@@ -1,27 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ROLES_CONFIG } from "@/tipos";
 import {
   UserPlus,
   Check,
   Search,
   X,
+  Users,
 } from "lucide-react";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 
 interface AsignarEjecutivoProps {
   ejecutivoActual?: string;
   onAsignar: (nombreEjecutivo: string) => void;
   compact?: boolean;
+  carga?: Record<string, number>;
 }
 
-export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }: AsignarEjecutivoProps) {
+export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, carga = {} }: AsignarEjecutivoProps) {
   const { usuarios } = useUser();
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const ejecutivos = usuarios.filter((u) => u.estado === "ACTIVO");
+  const ejecutivos = usuarios
+    .filter((u) => u.estado === "ACTIVO")
+    .sort((a, b) => {
+      const nombreA = `${a.nombre} ${a.apellido}`;
+      const nombreB = `${b.nombre} ${b.apellido}`;
+      return (carga[nombreA] || 0) - (carga[nombreB] || 0);
+    });
+
   const ejecutivosFiltrados = ejecutivos.filter((e) =>
     `${e.nombre} ${e.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );
@@ -32,8 +42,21 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }
     setBusqueda("");
   };
 
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    if (!abierto) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setAbierto(false);
+        setBusqueda("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [abierto]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -56,20 +79,14 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }
 
       {abierto && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => {
-              setAbierto(false);
-              setBusqueda("");
-            }}
-          />
-          <div className="fixed z-50 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-               style={{ bottom: '60px', right: '16px' }}>
+          <div className="fixed inset-0 z-40" />
+          <div className="absolute z-50 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+               style={{ bottom: '100%', right: 0, marginBottom: '4px' }}>
             {/* Header */}
             <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <UserPlus size={14} className="text-blue-600 dark:text-blue-400" />
+                  <Users size={14} className="text-blue-600 dark:text-blue-400" />
                   <span className="text-[11px] font-bold text-slate-900 dark:text-slate-100">
                     Asignar Ejecutivo
                   </span>
@@ -111,11 +128,13 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }
                 ejecutivosFiltrados.map((user) => {
                   const userRol = ROLES_CONFIG[user.rol];
                   const esActual = `${user.nombre} ${user.apellido}` === ejecutivoActual;
+                  const nombreCompleto = `${user.nombre} ${user.apellido}`;
+                  const leadsActivos = carga[nombreCompleto] || 0;
 
                   return (
                     <button
                       key={user.id}
-                      onClick={() => handleAsignar(`${user.nombre} ${user.apellido}`)}
+                      onClick={() => handleAsignar(nombreCompleto)}
                       className={`w-full flex items-center gap-2.5 p-2 rounded-lg transition-all ${
                         esActual
                           ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
@@ -140,11 +159,19 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false }
                       </div>
                       <div className="flex-1 text-left min-w-0">
                         <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-100 truncate">
-                          {user.nombre} {user.apellido}
+                          {nombreCompleto}
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>
                             {userRol.label}
+                          </span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                            leadsActivos === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
+                            leadsActivos <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                            leadsActivos <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                            "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                          }`}>
+                            {leadsActivos} lead{leadsActivos !== 1 ? "s" : ""}
                           </span>
                         </div>
                       </div>

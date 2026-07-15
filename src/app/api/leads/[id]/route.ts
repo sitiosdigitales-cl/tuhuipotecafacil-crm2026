@@ -60,6 +60,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.telefonoLaboralFijo !== undefined) updateData.telefonolaboralfijo = body.telefonoLaboralFijo;
       if (body.emailLaboral !== undefined) updateData.emaillaboral = body.emailLaboral;
       if (body.otrosIngresos !== undefined) updateData.otrosingresos = body.otrosIngresos;
+      // Patrimonio
+      if (body.patrimonioVehiculo !== undefined) updateData.patrimoniovehiculo = body.patrimonioVehiculo;
+      if (body.patrimonioVivienda !== undefined) updateData.patrimoniovivienda = body.patrimonioVivienda;
+      if (body.patrimonioOtros !== undefined) updateData.patrimoniootros = body.patrimonioOtros;
       // Situación financiera
       if (body.situacionLaboral) updateData.situacionLaboral = body.situacionLaboral;
       if (body.enDicom !== undefined) updateData.enDicom = body.enDicom;
@@ -83,6 +87,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.etapa) updateData.etapa = body.etapa;
       if (body.prioridad) updateData.prioridad = body.prioridad;
       if (body.nombreEjecutivo !== undefined) updateData.nombreEjecutivo = body.nombreEjecutivo;
+      if (body.asignadoA !== undefined) updateData.asignadoa = body.asignadoA;
       if (body.banco !== undefined) updateData.banco = body.banco;
       if (body.tipoCredito !== undefined) updateData.tipoCredito = body.tipoCredito;
       if (body.montoSolicitado !== undefined) updateData.montoSolicitado = body.montoSolicitado;
@@ -119,6 +124,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.rentaMensual !== undefined) updateData.rentaMensual = body.rentaMensual;
       if (body.complementarRenta !== undefined) updateData.complementarRenta = body.complementarRenta;
       if (body.cuentaPie !== undefined) updateData.cuentaPie = body.cuentaPie;
+      // Patrimonio
+      if (body.patrimonioVehiculo !== undefined) updateData.patrimoniovehiculo = body.patrimonioVehiculo;
+      if (body.patrimonioVivienda !== undefined) updateData.patrimoniovivienda = body.patrimonioVivienda;
+      if (body.patrimonioOtros !== undefined) updateData.patrimoniootros = body.patrimonioOtros;
     }
 
     updateData.actualizadoEn = new Date().toISOString();

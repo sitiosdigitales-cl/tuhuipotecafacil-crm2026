@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { enviarEmail } from "@/lib/email";
 
 // Service role key para bypass de RLS (solo server-side)
 const supabaseAdmin = createClient(
@@ -14,13 +15,21 @@ export async function POST(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get("secret");
   const expectedSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
 
+  // LOG: Request recibido
+  console.log("Webhook leads - Secret:", secret ? "provided" : "none", "Expected:", expectedSecret ? "configured" : "not configured");
+
   if (expectedSecret && secret !== expectedSecret) {
+    console.log("Webhook leads - Secret mismatch");
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   try {
     const rawBody = await request.text();
     const contentType = request.headers.get("content-type") || "";
+
+    // LOG: Body received
+    console.log("Webhook leads - Content-Type:", contentType, "Body length:", rawBody.length);
+    console.log("Webhook leads - Body preview:", rawBody.substring(0, 500));
 
     let body: Record<string, any> = {};
 
@@ -55,6 +64,10 @@ export async function POST(request: NextRequest) {
     const tipoCredito = normalized["¿Qué tipo de crédito buscas?"] || normalized["tipo_credito"] || normalized["tipoCredito"] || null;
     const situacionLaboral = normalized["¿Cuál es tu situación laboral?"] || normalized["situacion_laboral"] || null;
     const comentarios = normalized["Comentarios adicionales"] || normalized["mensaje"] || normalized["message"] || normalized["consulta"] || null;
+    const rentaMensual = normalized["¿Cuál es tu renta mensual aproximada?"] || normalized["renta_mensual"] || normalized["rentaMensual"] || null;
+    const complementarRenta = normalized["¿Deseas complementar renta?"] || normalized["complementar_renta"] || null;
+    const enDicom = normalized["¿Estás actualmente en DICOM?"] || normalized["en_dicom"] || null;
+    const dicomDetalle = normalized["Si estás en DICOM, ¿corresponde?"] || normalized["dicom_detalle"] || null;
 
     if (!nombre && !apellido) {
       return NextResponse.json({ error: "Nombre y apellido son requeridos" }, { status: 400 });
@@ -77,29 +90,70 @@ export async function POST(request: NextRequest) {
       id: crypto.randomUUID(),
       nombre,
       apellido,
-      rut,
+      rut: rut || `web-${crypto.randomUUID().substring(0, 8)}`,
       email,
       telefono,
-      monto_solicitado: monto,
-      origen: "elementor_wordpress",
+      montosolicitado: monto,
+      origen: "SITIO WEB",
       etapa: "NUEVO_LEAD",
       prioridad: "MEDIA",
       situacionlaboral: sitLaboral,
       tipocredito: tipoCredito,
+      rentamensual: rentaMensual,
+      complementarrenta: complementarRenta === "Sí" || complementarRenta === "si",
+      endicom: enDicom === "Sí" || enDicom === "si",
+      dicomdetalle: dicomDetalle,
       notas: comentarios,
-      endicom: false,
       diasenetapa: 0,
-      creado_en: new Date().toISOString(),
+      creadoen: new Date().toISOString(),
     });
 
     if (error) {
-      return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
+      console.error("Error guardando lead:", error);
+      return NextResponse.json({ error: "Error al guardar lead", details: error.message }, { status: 500 });
+    }
+
+    // Enviar emails de notificación (no bloquear si falla)
+    try {
+      const asunto = `Nuevo Lead: ${nombre} ${apellido} - ${tipoCredito || "Sin tipo"}`;
+      const htmlNotificacion = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #1E40AF, #2563EB); color: white; padding: 20px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="margin: 0; font-size: 18px;">🏠 Nuevo Lead - TuHipotecaFacil.cl</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0;">
+            <h2 style="color: #1e293b; margin: 0 0 15px;">${nombre} ${apellido}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 8px 0; color: #64748b;">Email:</td><td style="padding: 8px 0; color: #1e293b;">${email || "No informado"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Teléfono:</td><td style="padding: 8px 0; color: #1e293b;">${telefono || "No informado"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Rut:</td><td style="padding: 8px 0; color: #1e293b;">${rut || "No informado"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Tipo crédito:</td><td style="padding: 8px 0; color: #1e293b;">${tipoCredito || "No informado"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Situación laboral:</td><td style="padding: 8px 0; color: #1e293b;">${sitLaboral}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Renta:</td><td style="padding: 8px 0; color: #1e293b;">${normalized["¿Cuál es tu renta mensual aproximada?"] || "No informado"}</td></tr>
+              ${comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;">Comentarios:</td><td style="padding: 8px 0; color: #1e293b;">${comentarios}</td></tr>` : ''}
+            </table>
+            <div style="margin-top: 20px; text-align: center;">
+              <a href="https://tuhuipotecafacil-crm2026.vercel.app/leads" style="background: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver en CRM</a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Enviar a contacto@tuhipotecafacil.cl
+      await enviarEmail({
+        to: ["contacto@tuhipotecafacil.cl", "tuhipotecafacil.cl@gmail.com"],
+        subject: asunto,
+        html: htmlNotificacion,
+      });
+    } catch (emailErr) {
+      console.error("Error enviando email notificación:", emailErr);
     }
 
     return NextResponse.json({ success: true, message: "Lead creado correctamente" }, { status: 200 });
 
-  } catch {
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  } catch (err) {
+    console.error("Error en webhook leads:", err);
+    return NextResponse.json({ error: "Error interno", details: String(err) }, { status: 500 });
   }
 }
 

@@ -28,8 +28,8 @@ import {
 } from "lucide-react";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { Tarea, EstadoTarea, TipoTarea, Prioridad } from "@/tipos";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 
 interface FormularioTareaProps {
   open: boolean;

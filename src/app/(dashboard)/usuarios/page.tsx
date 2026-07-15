@@ -17,27 +17,28 @@ import {
   Eye,
   Download,
   RefreshCw,
+  MoreVertical,
+  Lock,
+  X,
 } from "lucide-react";
 import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
-import { formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
 
 export default function UsuariosPage() {
   const router = useRouter();
   const { esSuperAdmin } = useUser();
-  const ahora = useMemo(() => Date.now(), []); // eslint-disable-line react-hooks/purity
+  const ahora = useMemo(() => Date.now(), []);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroRol, setFiltroRol] = useState<Rol | "todos">("todos");
-  const [filtroEstado, setFiltroEstado] = useState<EstadoUsuario | "todos">("todos");
-  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [guardando, setGuardando] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState<EstadoUsuario | "todos">("ACTIVO");
+  const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
 
-  // Formulario nuevo usuario
+  // Modal nuevo usuario
+  const [modalNuevoOpen, setModalNuevoOpen] = useState(false);
   const [formNombre, setFormNombre] = useState("");
   const [formApellido, setFormApellido] = useState("");
   const [formEmail, setFormEmail] = useState("");
@@ -45,6 +46,23 @@ export default function UsuariosPage() {
   const [formTelefono, setFormTelefono] = useState("");
   const [formRol, setFormRol] = useState<Rol>("AGENTE");
   const [formError, setFormError] = useState("");
+  const [guardando, setGuardando] = useState(false);
+
+  // Modal editar usuario
+  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [editandoUsuario, setEditandoUsuario] = useState<Usuario | null>(null);
+  const [editNombre, setEditNombre] = useState("");
+  const [editApellido, setEditApellido] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editTelefono, setEditTelefono] = useState("");
+  const [editRol, setEditRol] = useState<Rol>("AGENTE");
+  const [editError, setEditError] = useState("");
+
+  // Modal restablecer contraseña
+  const [modalPasswordOpen, setModalPasswordOpen] = useState(false);
+  const [passwordUsuario, setPasswordUsuario] = useState<Usuario | null>(null);
+  const [nuevaPassword, setNuevaPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     async function cargarUsuarios() {
@@ -67,6 +85,14 @@ export default function UsuariosPage() {
     cargarUsuarios();
   }, []);
 
+  // Cerrar menu al hacer click fuera
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const handler = () => setMenuAbierto(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [menuAbierto]);
+
   const usuariosFiltrados = usuarios.filter((user) => {
     const coincideBusqueda =
       !busqueda ||
@@ -85,63 +111,49 @@ export default function UsuariosPage() {
     suspendidos: usuarios.filter((u) => u.estado === "SUSPENDIDO").length,
   };
 
+  // === FUNCIONES ===
+
   const handleCambiarEstado = async (usuarioId: string, nuevoEstado: EstadoUsuario) => {
     try {
-      await fetch(`/api/usuarios/${usuarioId}`, {
+      const res = await fetch(`/api/usuarios/${usuarioId}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
-      setUsuarios((prev) =>
-        prev.map((u) =>
-          u.id === usuarioId ? { ...u, estado: nuevoEstado } : u
-        )
-      );
+      if (res.ok) {
+        setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, estado: nuevoEstado } : u));
+        toast.success(nuevoEstado === "ACTIVO" ? "Usuario activado" : "Usuario suspendido");
+      }
     } catch {
-      // Error silencioso
+      toast.error("Error al cambiar estado");
     }
   };
 
-  const handleEliminar = async (user: Usuario) => {
-    const confirmado = window.confirm(`¿Estás seguro de eliminar la cuenta de ${user.nombre} ${user.apellido}?\n\nEl usuario quedará INACTIVO pero sus datos se conservarán.`);
+  const handleEliminar = async (user: Usuario, hardDelete = false) => {
+    const accion = hardDelete ? "eliminar permanentemente" : "desactivar";
+    const confirmado = window.confirm(`¿Estás seguro de ${accion} la cuenta de ${user.nombre} ${user.apellido}?\n\n${hardDelete ? "Esta acción NO se puede deshacer." : "El usuario quedará INACTIVO."}`);
     if (!confirmado) return;
     try {
-      const res = await fetch(`/api/usuarios/${user.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const url = hardDelete ? `/api/usuarios/${user.id}?hard=true` : `/api/usuarios/${user.id}`;
+      const res = await fetch(url, { method: "DELETE", credentials: "include" });
       if (res.ok) {
-        setUsuarios((prev) =>
-          prev.map((u) => u.id === user.id ? { ...u, estado: "INACTIVO" } : u)
-        );
-        toast.success(`${user.nombre} ${user.apellido} eliminado`);
+        if (hardDelete) {
+          setUsuarios((prev) => prev.filter((u) => u.id !== user.id));
+          toast.success(`${user.nombre} eliminado permanentemente`);
+        } else {
+          setUsuarios((prev) => prev.map((u) => u.id === user.id ? { ...u, estado: "INACTIVO" } : u));
+          toast.success(`${user.nombre} desactivado`);
+        }
       } else if (res.status === 403) {
-        toast.error("No tienes permisos. Solo Super Admin puede eliminar.");
-      } else if (res.status === 401) {
-        toast.error("Sesión expirada. Inicia sesión nuevamente.");
-      } else {
-        toast.error("No se pudo eliminar el usuario");
+        toast.error("Solo Super Admin puede eliminar");
       }
     } catch {
       toast.error("Error de conexión");
     }
   };
 
-  const getIniciales = (nombre: string, apellido: string) => {
-    return `${nombre[0]}${apellido[0]}`;
-  };
-
-  const resetForm = () => {
-    setFormNombre("");
-    setFormApellido("");
-    setFormEmail("");
-    setFormPassword("");
-    setFormTelefono("");
-    setFormRol("AGENTE");
-    setFormError("");
-  };
-
+  // Crear usuario
   const handleCrearUsuario = async () => {
     setFormError("");
     if (!formNombre.trim() || !formApellido.trim() || !formEmail.trim() || !formPassword.trim()) {
@@ -169,9 +181,8 @@ export default function UsuariosPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setModalOpen(false);
+        setModalNuevoOpen(false);
         resetForm();
-        // Recargar usuarios
         const reload = await fetch("/api/usuarios", { credentials: "include" });
         const reloadData = await reload.json();
         if (reloadData.success && reloadData.data) {
@@ -181,6 +192,7 @@ export default function UsuariosPage() {
             creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
           })));
         }
+        toast.success("Usuario creado exitosamente");
       } else {
         setFormError(data.error || "Error al crear usuario");
       }
@@ -191,14 +203,132 @@ export default function UsuariosPage() {
     }
   };
 
+  // Editar usuario
+  const handleEditar = (user: Usuario) => {
+    setEditandoUsuario(user);
+    setEditNombre(user.nombre);
+    setEditApellido(user.apellido);
+    setEditEmail(user.email);
+    setEditTelefono(user.telefono || "");
+    setEditRol(user.rol);
+    setEditError("");
+    setModalEditarOpen(true);
+    setMenuAbierto(null);
+  };
+
+  const handleGuardarEdicion = async () => {
+    if (!editandoUsuario) return;
+    setEditError("");
+    if (!editNombre.trim() || !editApellido.trim() || !editEmail.trim()) {
+      setEditError("Nombre, apellido y email son requeridos");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/usuarios/${editandoUsuario.id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: editNombre.trim(),
+          apellido: editApellido.trim(),
+          email: editEmail.trim(),
+          telefono: editTelefono.trim() || null,
+          rol: editRol,
+        }),
+      });
+      const data = await res.json();
+      if (data.success || res.ok) {
+        setUsuarios((prev) => prev.map((u) =>
+          u.id === editandoUsuario.id
+            ? { ...u, nombre: editNombre.trim(), apellido: editApellido.trim(), email: editEmail.trim(), telefono: editTelefono.trim(), rol: editRol }
+            : u
+        ));
+        setModalEditarOpen(false);
+        toast.success("Usuario actualizado");
+      } else {
+        setEditError(data.error || "Error al actualizar");
+      }
+    } catch {
+      setEditError("Error de conexión");
+    }
+  };
+
+  // Restablecer contraseña
+  const handleAbrirPassword = (user: Usuario) => {
+    setPasswordUsuario(user);
+    setNuevaPassword("");
+    setPasswordError("");
+    setModalPasswordOpen(true);
+    setMenuAbierto(null);
+  };
+
+  const handleRestablecerPassword = async () => {
+    if (!passwordUsuario) return;
+    setPasswordError("");
+    if (nuevaPassword.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/usuarios/${passwordUsuario.id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: nuevaPassword }),
+      });
+      if (res.ok) {
+        setModalPasswordOpen(false);
+        toast.success(`Contraseña de ${passwordUsuario.nombre} actualizada`);
+      } else {
+        setPasswordError("Error al actualizar contraseña");
+      }
+    } catch {
+      setPasswordError("Error de conexión");
+    }
+  };
+
+  // Exportar CSV
+  const handleExportarCSV = () => {
+    const headers = ["Nombre", "Apellido", "Email", "Telefono", "Rol", "Estado", "Ultimo Acceso", "Creado"];
+    const rows = usuariosFiltrados.map((u) => [
+      u.nombre,
+      u.apellido,
+      u.email,
+      u.telefono || "",
+      ROLES_CONFIG[u.rol]?.label || u.rol,
+      ESTADOS_USUARIO_CONFIG[u.estado]?.label || u.estado,
+      u.ultimoAcceso ? new Date(u.ultimoAcceso).toLocaleDateString("es-CL") : "Nunca",
+      u.creadoEn ? new Date(u.creadoEn).toLocaleDateString("es-CL") : "",
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `usuarios-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exportado correctamente");
+  };
+
+  const resetForm = () => {
+    setFormNombre("");
+    setFormApellido("");
+    setFormEmail("");
+    setFormPassword("");
+    setFormTelefono("");
+    setFormRol("AGENTE");
+    setFormError("");
+  };
+
   const getTiempoDesde = (fecha?: Date) => {
     if (!fecha) return "Nunca";
     const diff = ahora - fecha.getTime();
     const horas = Math.floor(diff / 3600000);
     const dias = Math.floor(diff / 86400000);
-    if (horas < 1) return "Hace minutos";
-    if (horas < 24) return `Hace ${horas}h`;
-    return `Hace ${dias}d`;
+    if (horas < 1) return "Ahora";
+    if (horas < 24) return `${horas}h`;
+    return `${dias}d`;
   };
 
   if (cargando) {
@@ -216,18 +346,20 @@ export default function UsuariosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight">Usuarios y Roles</h1>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">{usuarios.length} usuarios registrados</p>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+            {usuariosFiltrados.length} de {usuarios.length} usuarios
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium">
-            <Download size={14} /> Exportar
+          <button
+            onClick={handleExportarCSV}
+            className="flex items-center gap-1.5 px-3 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-colors font-medium"
+          >
+            <Download size={14} /> Exportar CSV
           </button>
           <button
-            onClick={() => {
-              setUsuarioSeleccionado(null);
-              setModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2.5 gradient-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15"
+            onClick={() => { resetForm(); setModalNuevoOpen(true); }}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15"
           >
             <Plus size={14} /> Nuevo Usuario
           </button>
@@ -235,8 +367,8 @@ export default function UsuariosPage() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl p-4 border border-slate-100/80">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl p-4 border border-slate-100/80 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
               <Shield size={14} className="text-blue-600" />
@@ -245,7 +377,7 @@ export default function UsuariosPage() {
           </div>
           <div className="text-xl font-bold text-slate-900">{estadisticas.total}</div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-100/80">
+        <div className="bg-white rounded-xl p-4 border border-slate-100/80 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
               <UserCheck size={14} className="text-emerald-600" />
@@ -254,7 +386,7 @@ export default function UsuariosPage() {
           </div>
           <div className="text-xl font-bold text-emerald-600">{estadisticas.activos}</div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-100/80">
+        <div className="bg-white rounded-xl p-4 border border-slate-100/80 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
               <UserX size={14} className="text-slate-600" />
@@ -263,7 +395,7 @@ export default function UsuariosPage() {
           </div>
           <div className="text-xl font-bold text-slate-600">{estadisticas.inactivos}</div>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-100/80">
+        <div className="bg-white rounded-xl p-4 border border-slate-100/80 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
               <UserX size={14} className="text-red-600" />
@@ -302,126 +434,148 @@ export default function UsuariosPage() {
           onChange={(e) => setFiltroEstado(e.target.value as EstadoUsuario | "todos")}
           className="px-3 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 font-medium"
         >
+          <option value="ACTIVO">Solo activos</option>
           <option value="todos">Todos los estados</option>
-          <option value="ACTIVO">Activo</option>
-          <option value="INACTIVO">Inactivo</option>
-          <option value="SUSPENDIDO">Suspendido</option>
+          <option value="INACTIVO">Inactivos</option>
+          <option value="SUSPENDIDO">Suspendidos</option>
         </select>
       </div>
 
-      {/* Tabla de usuarios */}
-      <div className="bg-white rounded-2xl border border-slate-100/80 overflow-hidden shadow-soft">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-100">
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Usuario</th>
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Contacto</th>
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Rol</th>
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Último Acceso</th>
-              <th className="text-left px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">2FA</th>
-              <th className="text-right px-5 py-3.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuariosFiltrados.map((user) => (
-              <tr key={user.id} className="border-b border-slate-50/80 hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => router.push(`/usuarios/${user.id}`)}>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-[11px] font-bold shadow-sm ${
-                      user.rol === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
-                      user.rol === 'ADMIN' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
-                      user.rol === 'GERENTE' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
-                      'bg-gradient-to-br from-slate-400 to-slate-500'
-                    }`}>
-                      {getIniciales(user.nombre, user.apellido)}
+      {/* Grid de usuarios */}
+      {usuariosFiltrados.length === 0 ? (
+        <div className="bg-white rounded-2xl p-12 border border-slate-100/80 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <UserX size={24} className="text-slate-300" />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">No se encontraron usuarios</h3>
+          <p className="text-xs text-slate-400">Intenta con otros filtros o crea un nuevo usuario</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {usuariosFiltrados.map((user) => (
+            <div
+              key={user.id}
+              className="bg-white rounded-2xl border border-slate-100/80 p-5 hover:shadow-lg transition-all group relative"
+            >
+              {/* Header de card */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm ${
+                    user.rol === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                    user.rol === 'ADMIN' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
+                    user.rol === 'GERENTE' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                    'bg-gradient-to-br from-slate-400 to-slate-500'
+                  }`}>
+                    {user.nombre[0]}{user.apellido[0]}
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-bold text-slate-800">{user.nombre} {user.apellido}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${ROLES_CONFIG[user.rol].color}`}>
+                        {ROLES_CONFIG[user.rol].label}
+                      </span>
+                      <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${ESTADOS_USUARIO_CONFIG[user.estado].color}`}>
+                        {ESTADOS_USUARIO_CONFIG[user.estado].label}
+                      </span>
                     </div>
-                    <div>
-                      <div className="text-[11px] font-semibold text-slate-800">{user.nombre} {user.apellido}</div>
-                      <div className="text-[10px] text-slate-400 font-medium">ID: {user.id}</div>
-                    </div>
                   </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-600 mb-0.5">
-                    <Mail size={10} className="text-slate-400" />
-                    {user.email}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                    <Phone size={10} className="text-slate-400" />
-                    {user.telefono}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${ROLES_CONFIG[user.rol].color}`}>
-                    {ROLES_CONFIG[user.rol].label}
-                  </span>
-                </td>
-                <td className="px-5 py-3.5">
-                  <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${ESTADOS_USUARIO_CONFIG[user.estado].color}`}>
-                    {ESTADOS_USUARIO_CONFIG[user.estado].label}
-                  </span>
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                    <Clock size={10} className="text-slate-400" />
-                    {getTiempoDesde(user.ultimoAcceso)}
-                  </div>
-                </td>
-                <td className="px-5 py-3.5">
-                  {user.dosFA ? (
-                    <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-                      <Key size={10} />
-                      Activo
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-slate-400">No</span>
-                  )}
-                </td>
-                <td className="px-5 py-3.5">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" title="Ver perfil">
-                      <Eye size={13} className="text-slate-400" />
-                    </button>
-                    <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                      <Edit size={13} className="text-blue-500" />
-                    </button>
-                    <button className="p-1.5 hover:bg-amber-50 rounded-lg transition-colors" title="Restablecer contraseña">
-                      <RefreshCw size={13} className="text-amber-500" />
-                    </button>
-                    {user.estado === "ACTIVO" ? (
-                      <button 
-                        onClick={() => handleCambiarEstado(user.id, "SUSPENDIDO")}
-                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors" 
-                        title="Suspender"
-                      >
-                        <UserX size={13} className="text-red-500" />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleCambiarEstado(user.id, "ACTIVO")}
-                        className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors" 
-                        title="Activar"
-                      >
-                        <UserCheck size={13} className="text-emerald-500" />
-                      </button>
-                    )}
-                    {esSuperAdmin && (
+                </div>
+
+                {/* Menu de acciones */}
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuAbierto(menuAbierto === user.id ? null : user.id); }}
+                    className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <MoreVertical size={14} className="text-slate-400" />
+                  </button>
+
+                  {menuAbierto === user.id && (
+                    <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 overflow-hidden">
                       <button
-                        onClick={() => handleEliminar(user)}
-                        className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Eliminar usuario"
+                        onClick={(e) => { e.stopPropagation(); router.push(`/usuarios/${user.id}`); setMenuAbierto(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-600 hover:bg-slate-50 transition-colors"
                       >
-                        <Trash2 size={13} className="text-red-400" />
+                        <Eye size={13} className="text-slate-400" /> Ver perfil
                       </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEditar(user); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <Edit size={13} className="text-blue-500" /> Editar usuario
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAbrirPassword(user); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <Lock size={13} className="text-amber-500" /> Restablecer contraseña
+                      </button>
+                      <div className="border-t border-slate-100 my-1" />
+                      {user.estado === "ACTIVO" ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCambiarEstado(user.id, "SUSPENDIDO"); setMenuAbierto(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <UserX size={13} /> Suspender
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCambiarEstado(user.id, "ACTIVO"); setMenuAbierto(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        >
+                          <UserCheck size={13} /> Activar
+                        </button>
+                      )}
+                      {esSuperAdmin && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEliminar(user, false); setMenuAbierto(null); }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-amber-600 hover:bg-amber-50 transition-colors"
+                          >
+                            <UserX size={13} /> Desactivar
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEliminar(user, true); setMenuAbierto(null); }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={13} /> Eliminar permanently
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info de contacto */}
+              <div className="space-y-1.5 mb-4">
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <Mail size={11} className="text-slate-400 flex-shrink-0" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <Phone size={11} className="text-slate-400 flex-shrink-0" />
+                  <span>{user.telefono || "Sin teléfono"}</span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <Clock size={10} />
+                  <span>Acceso: {getTiempoDesde(user.ultimoAcceso)}</span>
+                </div>
+                <button
+                  onClick={() => router.push(`/usuarios/${user.id}`)}
+                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Ver perfil →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Información de permisos */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-5 text-white">
@@ -434,7 +588,7 @@ export default function UsuariosPage() {
             <p className="text-[10px] text-slate-400">Solo Super Admin puede gestionar usuarios</p>
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Object.entries(ROLES_CONFIG).map(([key, config]) => (
             <div key={key} className="bg-white/10 rounded-xl p-3">
               <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${config.color}`}>
@@ -446,123 +600,184 @@ export default function UsuariosPage() {
         </div>
       </div>
 
+      {/* === MODALES === */}
+
       {/* Modal Nuevo Usuario */}
-      {modalOpen && (
+      {modalNuevoOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setModalOpen(false); resetForm(); }} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setModalNuevoOpen(false); resetForm(); }} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
                   <Plus size={18} className="text-white" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Nuevo Usuario</h3>
-                  <p className="text-[10px] text-slate-400">Crear una nueva cuenta de usuario</p>
+                  <p className="text-[10px] text-slate-400">Crear una nueva cuenta</p>
                 </div>
               </div>
-              <button onClick={() => { setModalOpen(false); resetForm(); }} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-                <span className="text-slate-400 text-lg">×</span>
+              <button onClick={() => { setModalNuevoOpen(false); resetForm(); }} className="p-1.5 hover:bg-slate-100 rounded-lg">
+                <X size={16} className="text-slate-400" />
               </button>
             </div>
-
-            {/* Form */}
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-6 py-5 space-y-3">
               {formError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
-                  {formError}
-                </div>
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">{formError}</div>
               )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Nombre *</label>
-                  <input
-                    type="text"
-                    value={formNombre}
-                    onChange={(e) => setFormNombre(e.target.value)}
-                    placeholder="Ej: Juan"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                  />
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre *</label>
+                  <input type="text" value={formNombre} onChange={(e) => setFormNombre(e.target.value)} placeholder="Juan"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Apellido *</label>
-                  <input
-                    type="text"
-                    value={formApellido}
-                    onChange={(e) => setFormApellido(e.target.value)}
-                    placeholder="Ej: Pérez"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                  />
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Apellido *</label>
+                  <input type="text" value={formApellido} onChange={(e) => setFormApellido(e.target.value)} placeholder="Pérez"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Email *</label>
-                <input
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  placeholder="Ej: juan@tuhipotecafacil.cl"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                />
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Email *</label>
+                <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="juan@tuhipotecafacil.cl"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Contraseña *</label>
-                <input
-                  type="password"
-                  value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                />
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Contraseña *</label>
+                <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Mínimo 6 caracteres"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Teléfono</label>
-                <input
-                  type="tel"
-                  value={formTelefono}
-                  onChange={(e) => setFormTelefono(e.target.value)}
-                  placeholder="Ej: +56 9 1234 5678"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                />
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono</label>
+                <input type="tel" value={formTelefono} onChange={(e) => setFormTelefono(e.target.value)} placeholder="+56 9 1234 5678"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1.5 block">Rol</label>
-                <select
-                  value={formRol}
-                  onChange={(e) => setFormRol(e.target.value as Rol)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium"
-                >
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
+                <select value={formRol} onChange={(e) => setFormRol(e.target.value as Rol)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
                   <option value="AGENTE">Agente</option>
                   <option value="GERENTE">Gerente</option>
                   <option value="ADMIN">Administrador</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
-                  <option value="CLIENTE">Cliente</option>
                 </select>
               </div>
             </div>
-
-            {/* Footer */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
-              <button
-                onClick={() => { setModalOpen(false); resetForm(); }}
-                className="px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cancelar
+              <button onClick={() => { setModalNuevoOpen(false); resetForm(); }}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
+              <button onClick={handleCrearUsuario} disabled={guardando}
+                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15 disabled:opacity-50">
+                {guardando ? "Creando..." : "Crear Usuario"}
               </button>
-              <button
-                onClick={handleCrearUsuario}
-                disabled={guardando}
-                className="px-5 py-2.5 gradient-primary text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {guardando ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                    Creando...
-                  </span>
-                ) : (
-                  "Crear Usuario"
-                )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Usuario */}
+      {modalEditarOpen && editandoUsuario && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalEditarOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center">
+                  <Edit size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Editar Usuario</h3>
+                  <p className="text-[10px] text-slate-400">{editandoUsuario.nombre} {editandoUsuario.apellido}</p>
+                </div>
+              </div>
+              <button onClick={() => setModalEditarOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+                <X size={16} className="text-slate-400" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              {editError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">{editError}</div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre *</label>
+                  <input type="text" value={editNombre} onChange={(e) => setEditNombre(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Apellido *</label>
+                  <input type="text" value={editApellido} onChange={(e) => setEditApellido(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Email *</label>
+                <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono</label>
+                <input type="tel" value={editTelefono} onChange={(e) => setEditTelefono(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as Rol)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
+                  <option value="AGENTE">Agente</option>
+                  <option value="GERENTE">Gerente</option>
+                  <option value="ADMIN">Administrador</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button onClick={() => setModalEditarOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
+              <button onClick={handleGuardarEdicion}
+                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-amber-600/15">
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Restablecer Contraseña */}
+      {modalPasswordOpen && passwordUsuario && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModalPasswordOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                  <Lock size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Restablecer Contraseña</h3>
+                  <p className="text-[10px] text-slate-400">{passwordUsuario.nombre} {passwordUsuario.apellido}</p>
+                </div>
+              </div>
+              <button onClick={() => setModalPasswordOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+                <X size={16} className="text-slate-400" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              {passwordError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">{passwordError}</div>
+              )}
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nueva contraseña *</label>
+                <input type="password" value={nuevaPassword} onChange={(e) => setNuevaPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoFocus
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button onClick={() => setModalPasswordOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
+              <button onClick={handleRestablecerPassword}
+                className="px-5 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-red-600/15">
+                Actualizar Contraseña
               </button>
             </div>
           </div>

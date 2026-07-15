@@ -26,8 +26,9 @@ import {
   FileCheck,
   FileClock,
   Trash2,
+  Download,
 } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { ETAPAS_CONFIG, SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
@@ -43,20 +44,98 @@ const PASOS_PROGRESO = [
 ];
 
 const DOCUMENTOS_CONFIG = {
-  DEPENDIENTE: [
-    { id: "cedula", nombre: "Cédula de Identidad", obligatorio: true },
-    { id: "liq-sueldo", nombre: "Liquidaciones de Sueldo", obligatorio: true },
-    { id: "afp", nombre: "Certificado AFP", obligatorio: true },
-    { id: "antiguedad", nombre: "Certificado Antigüedad", obligatorio: true },
-    { id: "domicilio", nombre: "Comprobante de Domicilio", obligatorio: true },
-    { id: "dicom", nombre: "Informe DICOM", obligatorio: true },
-  ],
-  INDEPENDIENTE: [
-    { id: "cedula", nombre: "Cédula de Identidad", obligatorio: true },
-    { id: "carpeta-trib", nombre: "Carpeta Tributaria", obligatorio: true },
-    { id: "renta", nombre: "Declaración de Renta", obligatorio: true },
-    { id: "dicom", nombre: "Informe DICOM", obligatorio: true },
-  ],
+  DEPENDIENTE: {
+    comun: [
+      { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
+      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+      { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true },
+    ],
+    hipotecario: [
+      { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true },
+      { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true },
+      { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true },
+      { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false },
+    ],
+    consumo: [
+      { id: "liq-sueldo", nombre: "3 Últimas Liquidaciones de Sueldo", obligatorio: true },
+      { id: "afp", nombre: "Certificado de Cotizaciones AFP (12 meses)", obligatorio: true },
+    ],
+    generales: [
+      { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true },
+      { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true },
+      { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true },
+    ],
+    patrimonio: [
+      { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false },
+      { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false },
+    ],
+  },
+  INDEPENDIENTE: {
+    comun: [
+      { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
+      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+      { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true },
+    ],
+    hipotecario: [
+      { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true },
+      { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
+      { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true },
+      { id: "resumen-anual-2025", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true },
+      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
+      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
+      { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
+      { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false },
+    ],
+    consumo: [
+      { id: "boletas", nombre: "3 Últimas Boletas con Impuesto", obligatorio: true },
+      { id: "resumen-mensual", nombre: "3 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
+      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
+    ],
+    generales: [
+      { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true },
+      { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
+      { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true },
+      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
+      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
+      { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
+    ],
+    patrimonio: [
+      { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false },
+      { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false },
+    ],
+  },
+  EMPRESA: {
+    comun: [
+      { id: "cedula-socios", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true },
+      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+      { id: "rol-empresa", nombre: "Rol Empresa", obligatorio: true },
+      { id: "cert-tgr", nombre: "Certificado de Deuda de TGR", obligatorio: true },
+    ],
+    hipotecario: [
+      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
+      { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true },
+      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
+      { id: "balance-2024", nombre: "Balance 2024 firmado por contador", obligatorio: true },
+      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
+      { id: "renta-f22-2025", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true },
+      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
+      { id: "aceptacion-renta-2025", nombre: "Aceptación de Renta 2025", obligatorio: true },
+    ],
+    consumo: [
+      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
+      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
+      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
+      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
+    ],
+    generales: [
+      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
+      { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true },
+      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
+      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
+      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
+    ],
+    patrimonio: [],
+  },
 };
 
 interface PortalClienteContentProps {
@@ -77,12 +156,66 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     estadoCivil: "", fechaNacimiento: "", profesion: "",
     nombreEmpleador: "", cargo: "", rentaLiquida: "",
     situacionLaboral: "" as SituacionLaboral,
+    cargasLegales: "", regimenMatrimonial: "", estudios: "", afp: "",
+    valorArriendo: "", rutEmpresa: "", fechaIngreso: "",
+    bancoAbonoRenta: "", fechaPago: "", direccionLaboral: "",
+    comunaCiudadLaboral: "", telefonoLaboralFijo: "", emailLaboral: "",
+    otrosIngresos: "",
+    patrimonioVehiculo: "", patrimonioVivienda: "", patrimonioOtros: "",
   });
   const [guardando, setGuardando] = useState(false);
-  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number }[]>([]);
+  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number; archivoUrl?: string }[]>([]);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
+
+  // Función para cargar datos del asesor
+  const cargarAsesor = async (asignadoA: string | undefined, nombreEjecutivo: string | undefined) => {
+    if (asignadoA) {
+      try {
+        const res = await fetch(`/api/usuarios?id=${asignadoA}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          const usuario = data.data[0];
+          setAsesor({
+            nombre: usuario.nombre || "",
+            apellido: usuario.apellido || "",
+            email: usuario.email || "",
+            telefono: usuario.telefono || "",
+            cargo: usuario.cargo || "Asesor Hipotecario Senior",
+          });
+          return;
+        }
+      } catch { /* fallback */ }
+    }
+    if (nombreEjecutivo) {
+      try {
+        const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          const usuario = data.data.find((u: any) => {
+            return `${u.nombre} ${u.apellido}`.toLowerCase().includes(nombreEjecutivo.toLowerCase());
+          }) || data.data[0];
+          setAsesor({
+            nombre: usuario.nombre || "",
+            apellido: usuario.apellido || "",
+            email: usuario.email || "",
+            telefono: usuario.telefono || "",
+            cargo: usuario.cargo || "Asesor Hipotecario Senior",
+          });
+          return;
+        }
+      } catch { /* fallback */ }
+      const partes = nombreEjecutivo.split(' ');
+      setAsesor({
+        nombre: partes[0] || "",
+        apellido: partes.slice(1).join(" ") || "",
+        email: "",
+        telefono: "",
+        cargo: "Asesor Hipotecario Senior",
+      });
+    }
+  };
 
   const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
     rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
@@ -113,46 +246,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           })));
         }
       } catch { /* documentos no disponibles */ }
-      // Cargar datos del asesor desde la API de usuarios
-      if (found.nombreEjecutivo) {
-        try {
-          // Buscar por nombre completo separado en partes
-          const partes = found.nombreEjecutivo.split(' ');
-          const nombreBusqueda = partes[0]; // Solo el primer nombre
-          const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(nombreBusqueda)}`);
-          const data = await res.json();
-          if (data.success && data.data && data.data.length > 0) {
-            // Encontrar el que coincida mejor
-            const usuario = data.data.find((u: any) => {
-              const nombreCompleto = `${u.nombre} ${u.apellido}`.toLowerCase();
-              return nombreCompleto.includes(found.nombreEjecutivo?.toLowerCase() || "");
-            }) || data.data[0];
-            setAsesor({
-              nombre: usuario.nombre || "",
-              apellido: usuario.apellido || "",
-              email: usuario.email || "",
-              telefono: usuario.telefono || "",
-              cargo: usuario.cargo || "Asesor Hipotecario Senior",
-            });
-          } else {
-            setAsesor({
-              nombre: found.nombreEjecutivo.split(" ")[0] || "",
-              apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
-              email: "",
-              telefono: "",
-              cargo: "Asesor Hipotecario Senior",
-            });
-          }
-        } catch {
-          setAsesor({
-            nombre: found.nombreEjecutivo.split(" ")[0] || "",
-            apellido: found.nombreEjecutivo.split(" ").slice(1).join(" ") || "",
-            email: "",
-            telefono: "",
-            cargo: "Asesor Hipotecario Senior",
-          });
-        }
-      }
+      // Cargar datos del asesor
+      await cargarAsesor(found.asignadoA, found.nombreEjecutivo);
     } else {
       setError("RUT no encontrado"); setCliente(null);
     }
@@ -164,7 +259,25 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const progreso = Math.max(1, Math.min(etapaActual, totalPasos));
   const pasoActual = PASOS_PROGRESO.find((p) => p.etapa === cliente?.etapa);
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
-  const docsConfig = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
+  const docsConfigBase = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
+  
+  // Combinar documentos según tipo de crédito
+  const tipoCredito = cliente?.tipoCredito || "";
+  let docsConfig: { id: string; nombre: string; obligatorio: boolean }[] = docsConfigBase.comun || [];
+  
+  if (tipoCredito.includes("Hipotecario")) {
+    docsConfig = [...docsConfig, ...(docsConfigBase.hipotecario || [])];
+  } else if (tipoCredito.includes("Consumo")) {
+    docsConfig = [...docsConfig, ...(docsConfigBase.consumo || [])];
+  } else if (tipoCredito.includes("Fines") || tipoCredito.includes("General")) {
+    docsConfig = [...docsConfig, ...(docsConfigBase.generales || [])];
+  } else if (tipoCredito.includes("Empresa") || tipoCredito.includes("Capital")) {
+    docsConfig = [...docsConfig, ...(docsConfigBase.generales || [])];
+  }
+  
+  // Agregar documentos de patrimonio siempre
+  docsConfig = [...docsConfig, ...(docsConfigBase.patrimonio || [])];
+  
   const docsAprobados = documentos.filter(d => d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION").length;
   const docsTotal = docsConfig.length;
 
@@ -182,6 +295,23 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       cargo: cliente.cargo || "",
       rentaLiquida: cliente.rentaLiquida?.toString() || "",
       situacionLaboral: cliente.situacionLaboral || "DEPENDIENTE",
+      cargasLegales: cliente.cargasLegales || "",
+      regimenMatrimonial: cliente.regimenMatrimonial || "",
+      estudios: cliente.estudios || "",
+      afp: cliente.afp || "",
+      valorArriendo: cliente.valorArriendo?.toString() || "",
+      rutEmpresa: cliente.rutEmpresa || "",
+      fechaIngreso: cliente.fechaIngreso || "",
+      bancoAbonoRenta: cliente.bancoAbonoRenta || "",
+      fechaPago: cliente.fechaPago || "",
+      direccionLaboral: cliente.direccionLaboral || "",
+      comunaCiudadLaboral: cliente.comunaCiudadLaboral || "",
+      telefonoLaboralFijo: cliente.telefonoLaboralFijo || "",
+      emailLaboral: cliente.emailLaboral || "",
+      otrosIngresos: cliente.otrosIngresos || "",
+      patrimonioVehiculo: cliente.patrimonioVehiculo || "",
+      patrimonioVivienda: cliente.patrimonioVivienda || "",
+      patrimonioOtros: cliente.patrimonioOtros || "",
     });
     setEditandoPerfil(true);
   };
@@ -205,6 +335,23 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           cargo: perfilEditado.cargo,
           rentaLiquida: perfilEditado.rentaLiquida ? parseFloat(perfilEditado.rentaLiquida) : undefined,
           situacionLaboral: perfilEditado.situacionLaboral,
+          cargasLegales: perfilEditado.cargasLegales,
+          regimenMatrimonial: perfilEditado.regimenMatrimonial,
+          estudios: perfilEditado.estudios,
+          afp: perfilEditado.afp,
+          valorArriendo: perfilEditado.valorArriendo ? parseFloat(perfilEditado.valorArriendo) : undefined,
+          rutEmpresa: perfilEditado.rutEmpresa,
+          fechaIngreso: perfilEditado.fechaIngreso,
+          bancoAbonoRenta: perfilEditado.bancoAbonoRenta,
+          fechaPago: perfilEditado.fechaPago,
+          direccionLaboral: perfilEditado.direccionLaboral,
+          comunaCiudadLaboral: perfilEditado.comunaCiudadLaboral,
+          telefonoLaboralFijo: perfilEditado.telefonoLaboralFijo,
+          emailLaboral: perfilEditado.emailLaboral,
+          otrosIngresos: perfilEditado.otrosIngresos,
+          patrimonioVehiculo: perfilEditado.patrimonioVehiculo,
+          patrimonioVivienda: perfilEditado.patrimonioVivienda,
+          patrimonioOtros: perfilEditado.patrimonioOtros,
         }),
       });
       setCliente({
@@ -222,6 +369,23 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
         cargo: perfilEditado.cargo,
         rentaLiquida: perfilEditado.rentaLiquida ? parseFloat(perfilEditado.rentaLiquida) : undefined,
         situacionLaboral: perfilEditado.situacionLaboral,
+        cargasLegales: perfilEditado.cargasLegales,
+        regimenMatrimonial: perfilEditado.regimenMatrimonial,
+        estudios: perfilEditado.estudios,
+        afp: perfilEditado.afp,
+        valorArriendo: perfilEditado.valorArriendo ? parseFloat(perfilEditado.valorArriendo) : undefined,
+        rutEmpresa: perfilEditado.rutEmpresa,
+        fechaIngreso: perfilEditado.fechaIngreso,
+        bancoAbonoRenta: perfilEditado.bancoAbonoRenta,
+        fechaPago: perfilEditado.fechaPago,
+        direccionLaboral: perfilEditado.direccionLaboral,
+        comunaCiudadLaboral: perfilEditado.comunaCiudadLaboral,
+        telefonoLaboralFijo: perfilEditado.telefonoLaboralFijo,
+        emailLaboral: perfilEditado.emailLaboral,
+        otrosIngresos: perfilEditado.otrosIngresos,
+        patrimonioVehiculo: perfilEditado.patrimonioVehiculo,
+        patrimonioVivienda: perfilEditado.patrimonioVivienda,
+        patrimonioOtros: perfilEditado.patrimonioOtros,
       });
       setEditandoPerfil(false);
       toast.success("Perfil actualizado correctamente");
@@ -257,6 +421,27 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   };
 
   // Funciones de documentos
+  const subirDocumento = async (file: File, nombreDoc: string) => {
+    if (!cliente) return;
+    setSubiendo(true);
+    const nuevoDoc = {
+      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      nombre: nombreDoc,
+      estado: "subido",
+      fecha: new Date().toLocaleDateString("es-CL"),
+      tamaño: file.size,
+      archivoUrl: URL.createObjectURL(file),
+    };
+    setDocumentos((prev) => [...prev, nuevoDoc]);
+    toast.success("Documento subido", { description: nombreDoc });
+    await notificarEjecutivo(
+      "documento",
+      "Documento subido por cliente",
+      `${cliente.nombre} ${cliente.apellido} subió: ${nombreDoc}`
+    );
+    setSubiendo(false);
+  };
+
   const handleSubirDocumento = async (files: FileList | null) => {
     if (!files || !cliente) return;
     setSubiendo(true);
@@ -567,103 +752,100 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
               </div>
 
-              {/* Zona de subida */}
-              <div
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById("file-input-portal")?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all mb-6 ${
-                  arrastrando
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
-                }`}
-              >
-                <input
-                  id="file-input-portal"
-                  type="file"
-                  multiple
-                  onChange={(e) => handleSubirDocumento(e.target.files)}
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                />
-                <div className="flex flex-col items-center gap-3">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                    arrastrando ? "bg-blue-100" : "bg-slate-100"
-                  }`}>
-                    <Upload size={24} className={arrastrando ? "text-blue-600" : "text-slate-400"} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700">
-                      {arrastrando ? "Suelta los archivos aquí" : "Arrastra archivos o haz clic para subir"}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      PDF, JPG, PNG, DOC - Máx. 10MB por archivo
-                    </p>
-                  </div>
-                  {subiendo && (
-                    <div className="flex items-center gap-2 text-[11px] text-blue-700">
-                      <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-                      Subiendo...
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Documentos Requeridos */}
               <div className="mb-6">
                 <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Requeridos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"].map((doc) => {
-                    const subido = documentos.some((d) => d.nombre.toLowerCase().includes(doc.id));
+                <div className="space-y-2">
+                  {docsConfig.map((doc) => {
+                    const docSubido = documentos.find((d) => d.nombre.toLowerCase().includes(doc.id));
+                    const subido = !!docSubido;
                     return (
-                      <div key={doc.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          subido ? "bg-emerald-100" : "bg-white border border-slate-200"
+                      <div key={doc.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                        subido ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"
+                      }`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          subido ? "bg-emerald-100" : "bg-slate-100"
                         }`}>
-                          {subido ? <CheckCircle size={14} className="text-emerald-500" /> : <FileText size={14} className="text-slate-400" />}
+                          {subido ? <CheckCircle size={16} className="text-emerald-500" /> : <FileText size={16} className="text-slate-400" />}
                         </div>
-                        <div className="flex-1">
-                          <div className="text-[11px] font-semibold text-slate-700">{doc.nombre}</div>
-                          {doc.obligatorio && <div className="text-[9px] text-red-500">Obligatorio</div>}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[12px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
+                          <div className="flex items-center gap-2">
+                            {doc.obligatorio && <span className="text-[9px] text-red-500 font-semibold">Obligatorio</span>}
+                            {subido && <span className="text-[9px] text-emerald-600 font-semibold">Subido</span>}
+                          </div>
                         </div>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
-                          subido ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                        }`}>
-                          {subido ? "Subido" : "Pendiente"}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {/* Botón Subir */}
+                          <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
+                            subido 
+                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}>
+                            <Upload size={12} />
+                            {subido ? "Reemplazar" : "Subir"}
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) subirDocumento(file, doc.nombre);
+                              }}
+                            />
+                          </label>
+                          {/* Botón Descargar */}
+                          {subido && docSubido?.archivoUrl && (
+                            <a
+                              href={docSubido.archivoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                              <Download size={12} />
+                              Ver
+                            </a>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Lista de documentos subidos */}
-              {documentos.length > 0 && (
+              {/* Lista de documentos subidos (otros) */}
+              {documentos.filter(d => !docsConfig.some(dc => d.nombre.toLowerCase().includes(dc.id))).length > 0 && (
                 <div>
-                  <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Subidos</h3>
+                  <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Otros Documentos</h3>
                   <div className="space-y-2">
-                    {documentos.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group">
-                        <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center">
+                    {documentos.filter(d => !docsConfig.some(dc => d.nombre.toLowerCase().includes(dc.id))).map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors group">
+                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
                           <FileCheck size={16} className="text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
+                          <div className="text-[12px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
                           <div className="text-[10px] text-slate-400">
                             {doc.tamaño ? formatTamano(doc.tamaño) : ""} {doc.fecha && `• ${doc.fecha}`}
                           </div>
                         </div>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
-                          En revisión
-                        </span>
-                        <button
-                          onClick={() => eliminarDocumento(doc.id)}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 size={12} className="text-red-400" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <a
+                            href={doc.archivoUrl || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                          >
+                            <Download size={12} />
+                            Ver
+                          </a>
+                          <button
+                            onClick={() => eliminarDocumento(doc.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={12} className="text-red-400" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -690,74 +872,168 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
               {editandoPerfil ? (
                 <div className="space-y-5">
-                  {/* Datos Personales */}
+                  {/* Datos del Cliente */}
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos Personales</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: "Nombre", field: "nombre", type: "text", required: true },
-                        { label: "Apellido", field: "apellido", type: "text", required: true },
-                        { label: "Email", field: "email", type: "email", required: false },
-                        { label: "Teléfono", field: "telefono", type: "tel", required: false },
-                        { label: "Fecha Nacimiento", field: "fechaNacimiento", type: "date", required: false },
-                        { label: "Estado Civil", field: "estadoCivil", type: "select", required: false },
-                        { label: "Profesión", field: "profesion", type: "text", required: false },
-                      ].map((item) => (
-                        <div key={item.field}>
-                          <label className="text-[10px] font-semibold text-slate-600 mb-1 block">
-                            {item.label} {item.required && <span className="text-red-500">*</span>}
-                          </label>
-                          {item.type === "select" ? (
-                            <select value={(perfilEditado as any)[item.field]}
-                              onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
-                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
-                              <option value="">Seleccionar</option>
-                              <option value="Soltero/a">Soltero/a</option>
-                              <option value="Casado/a">Casado/a</option>
-                              <option value="Divorciado/a">Divorciado/a</option>
-                              <option value="Viudo/a">Viudo/a</option>
-                              <option value="Unión Civil">Unión Civil</option>
-                            </select>
-                          ) : (
-                            <input type={item.type} value={(perfilEditado as any)[item.field]}
-                              onChange={(e) => setPerfilEditado({ ...perfilEditado, [item.field]: e.target.value })}
-                              className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Domicilio */}
-                  <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Domicilio</h4>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos del Cliente</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="col-span-2">
-                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dirección</label>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre Completo</label>
+                        <input type="text" value={`${perfilEditado.nombre} ${perfilEditado.apellido}`}
+                          className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-[12px] text-slate-500" disabled />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">RUT</label>
+                        <input type="text" value={cliente?.rut || ""} disabled
+                          className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-[12px] text-slate-500" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Cargas Legales</label>
+                        <input type="text" value={perfilEditado.cargasLegales}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, cargasLegales: e.target.value })}
+                          placeholder="Ej: 3 (Caja Compensación)"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Estado Civil</label>
+                        <select value={perfilEditado.estadoCivil}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, estadoCivil: e.target.value })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          <option value="">Seleccionar</option>
+                          <option value="Soltero/a">Soltero/a</option>
+                          <option value="Casado/a">Casado/a</option>
+                          <option value="Divorciado/a">Divorciado/a</option>
+                          <option value="Viudo/a">Viudo/a</option>
+                          <option value="Unión Civil">Unión Civil</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Régimen Matrimonial</label>
+                        <select value={perfilEditado.regimenMatrimonial}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, regimenMatrimonial: e.target.value })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          <option value="">Seleccionar</option>
+                          <option value="Separación de Bienes">Separación de Bienes</option>
+                          <option value="Sociedad Conyugal">Sociedad Conyugal</option>
+                          <option value="No aplica">No aplica</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Nacimiento</label>
+                        <input type="date" value={perfilEditado.fechaNacimiento}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaNacimiento: e.target.value })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Estudios</label>
+                        <input type="text" value={perfilEditado.estudios}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, estudios: e.target.value })}
+                          placeholder="Ej: Universitario"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Profesión</label>
+                        <input type="text" value={perfilEditado.profesion}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, profesion: e.target.value })}
+                          placeholder="Ej: Ingeniero"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Domicilio Particular</label>
                         <input type="text" value={perfilEditado.domicilioParticular}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, domicilioParticular: e.target.value })}
                           placeholder="Dirección completa"
                           className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna / Ciudad</label>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna - Ciudad</label>
                         <input type="text" value={perfilEditado.comunaCiudad}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudad: e.target.value })}
                           placeholder="Ej: Las Condes"
                           className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Celular</label>
+                        <input type="tel" value={perfilEditado.telefono}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, telefono: e.target.value })}
+                          placeholder="+56 9 1234 5678"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Correo Electrónico</label>
+                        <input type="email" value={perfilEditado.email}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, email: e.target.value })}
+                          placeholder="tu@email.com"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">AFP</label>
+                        <select value={perfilEditado.afp}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, afp: e.target.value })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          <option value="">Seleccionar</option>
+                          <option value="Capital">Capital</option>
+                          <option value="Cuprum">Cuprum</option>
+                          <option value="Habitat">Habitat</option>
+                          <option value="Planvital">Planvital</option>
+                          <option value="Provida">Provida</option>
+                          <option value="Rencoret">Rencoret</option>
+                          <option value="Santa Maria">Santa Maria</option>
+                          <option value="Otros">Otros</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Empleador */}
+                  {/* Patrimonio */}
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Patrimonio</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Vehículo (adjuntar padrón)</label>
+                        <input type="text" value={perfilEditado.patrimonioVehiculo}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioVehiculo: e.target.value })}
+                          placeholder="$0"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Vivienda</label>
+                        <input type="text" value={perfilEditado.patrimonioVivienda}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioVivienda: e.target.value })}
+                          placeholder="$0"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Otros (especificar)</label>
+                        <input type="text" value={perfilEditado.patrimonioOtros}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, patrimonioOtros: e.target.value })}
+                          placeholder="$0"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Datos del Empleador */}
                   <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos del Empleador</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre Empresa</label>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre del Empleador</label>
                         <input type="text" value={perfilEditado.nombreEmpleador}
                           onChange={(e) => setPerfilEditado({ ...perfilEditado, nombreEmpleador: e.target.value })}
-                          placeholder="Nombre de la empresa"
+                          placeholder="Nombre empresa"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">RUT Empresa</label>
+                        <input type="text" value={perfilEditado.rutEmpresa}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, rutEmpresa: e.target.value })}
+                          placeholder="12.345.678-9"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Ingreso</label>
+                        <input type="date" value={perfilEditado.fechaIngreso}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaIngreso: e.target.value })}
                           className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
                       </div>
                       <div>
@@ -778,15 +1054,85 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                         </div>
                       </div>
                       <div>
-                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Situación Laboral</label>
-                        <select value={perfilEditado.situacionLaboral}
-                          onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Banco Abono Renta</label>
+                        <select value={perfilEditado.bancoAbonoRenta}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, bancoAbonoRenta: e.target.value })}
                           className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
-                          <option value="DEPENDIENTE">Dependiente</option>
-                          <option value="INDEPENDIENTE">Independiente</option>
+                          <option value="">Seleccionar</option>
+                          <option value="Banco de Chile">Banco de Chile</option>
+                          <option value="Santander">Santander</option>
+                          <option value="Banco Estado">Banco Estado</option>
+                          <option value="BCI">BCI</option>
+                          <option value="Itaú">Itaú</option>
+                          <option value="Scotiabank">Scotiabank</option>
+                          <option value="Falabella">Falabella</option>
+                          <option value="Corpbanca">Corpbanca</option>
+                          <option value="Otros">Otros</option>
                         </select>
                       </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Fecha de Pago</label>
+                        <select value={perfilEditado.fechaPago}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, fechaPago: e.target.value })}
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                          <option value="">Seleccionar</option>
+                          <option value="1">1</option>
+                          <option value="5">5</option>
+                          <option value="10">10</option>
+                          <option value="15">15</option>
+                          <option value="20">20</option>
+                          <option value="25">25</option>
+                          <option value="30">30</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Dirección Laboral</label>
+                        <input type="text" value={perfilEditado.direccionLaboral}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, direccionLaboral: e.target.value })}
+                          placeholder="Dirección"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Comuna - Ciudad</label>
+                        <input type="text" value={perfilEditado.comunaCiudadLaboral}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, comunaCiudadLaboral: e.target.value })}
+                          placeholder="Comuna"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono Laboral FIJO</label>
+                        <input type="tel" value={perfilEditado.telefonoLaboralFijo}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, telefonoLaboralFijo: e.target.value })}
+                          placeholder="02 2 123 4567"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Correo Electrónico Laboral</label>
+                        <input type="email" value={perfilEditado.emailLaboral}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, emailLaboral: e.target.value })}
+                          placeholder="empresa@empresa.com"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Otros Ingresos (detallar)</label>
+                        <input type="text" value={perfilEditado.otrosIngresos}
+                          onChange={(e) => setPerfilEditado({ ...perfilEditado, otrosIngresos: e.target.value })}
+                          placeholder="Ej: Arriendos $500.000, Freelance $300.000"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all" />
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Situación Laboral */}
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Situación Laboral</h4>
+                    <select value={perfilEditado.situacionLaboral}
+                      onChange={(e) => setPerfilEditado({ ...perfilEditado, situacionLaboral: e.target.value as SituacionLaboral })}
+                      className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all">
+                      <option value="DEPENDIENTE">Dependiente</option>
+                      <option value="INDEPENDIENTE">Independiente (Boleta de Honorarios)</option>
+                      <option value="EMPRESA">Empresa</option>
+                    </select>
                   </div>
 
                   {/* Botones */}
@@ -806,37 +1152,111 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      ["Nombre completo", `${cliente.nombre} ${cliente.apellido}`],
-                      ["RUT", cliente.rut],
-                      ["Email", cliente.email || "No registrado"],
-                      ["Teléfono", cliente.telefono || "No registrado"],
-                      ["Estado Civil", cliente.estadoCivil || "No especificado"],
-                      ["Fecha Nacimiento", cliente.fechaNacimiento || "No especificado"],
-                      ["Profesión", cliente.profesion || "No especificado"],
-                      ["Situación Laboral", situacionConfig?.label || "No definida"],
-                    ].map(([label, value]) => (
-                      <div key={label} className="p-3 bg-slate-50 rounded-xl">
-                        <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
-                        <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
-                      </div>
-                    ))}
+                <div className="space-y-5">
+                  {/* Información Personal */}
+                  <div>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <User size={14} className="text-blue-500" /> Información Personal
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        ["Nombre Completo", `${cliente.nombre} ${cliente.apellido}`],
+                        ["RUT", cliente.rut],
+                        ["Teléfono", cliente.telefono || "No registrado"],
+                        ["Email", cliente.email || "No registrado"],
+                        ["Situación Laboral", situacionConfig?.label || "No definida"],
+                        ["En DICOM", cliente.enDicom ? "Sí" : "No"],
+                        ["Renta Mensual", cliente.rentaMensual || "No especificada"],
+                        ["Cargas Legales", cliente.cargasLegales || "No especificado"],
+                        ["Estado Civil", cliente.estadoCivil || "No especificado"],
+                        ["Régimen Matrimonial", cliente.regimenMatrimonial || "No especificado"],
+                        ["Fecha Nacimiento", cliente.fechaNacimiento || "No especificado"],
+                        ["Estudios", cliente.estudios || "No especificado"],
+                        ["Profesión", cliente.profesion || "No especificado"],
+                        ["Domicilio Particular", cliente.domicilioParticular || "No especificado"],
+                        ["Comuna - Ciudad", cliente.comunaCiudad || "No especificado"],
+                        ["Valor Arriendo", cliente.valorArriendo ? `$${cliente.valorArriendo.toLocaleString()}` : "No aplica"],
+                        ["AFP", cliente.afp || "No especificado"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                          <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
+                          <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      ["Domicilio", cliente.domicilioParticular || "No especificado"],
-                      ["Comuna / Ciudad", cliente.comunaCiudad || "No especificado"],
-                      ["Nombre Empleador", cliente.nombreEmpleador || "No especificado"],
-                      ["Cargo", cliente.cargo || "No especificado"],
-                      ["Renta Líquida", cliente.rentaLiquida ? formatoMoneda(cliente.rentaLiquida) : "No especificado"],
-                    ].map(([label, value]) => (
-                      <div key={label} className="p-3 bg-slate-50 rounded-xl">
-                        <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
-                        <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+
+                  {/* Datos del Empleador */}
+                  <div>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Briefcase size={14} className="text-purple-500" /> Datos del Empleador
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        ["Nombre del Empleador", cliente.nombreEmpleador || "No especificado"],
+                        ["RUT Empresa", cliente.rutEmpresa || "No especificado"],
+                        ["Fecha de Ingreso", cliente.fechaIngreso || "No especificado"],
+                        ["Cargo", cliente.cargo || "No especificado"],
+                        ["Renta Líquida", cliente.rentaLiquida ? formatoMoneda(cliente.rentaLiquida) : "No especificado"],
+                        ["Banco Abono Renta", cliente.bancoAbonoRenta || "No especificado"],
+                        ["Fecha de Pago", cliente.fechaPago || "No especificado"],
+                        ["Dirección Laboral", cliente.direccionLaboral || "No especificado"],
+                        ["Comuna - Ciudad", cliente.comunaCiudadLaboral || "No especificado"],
+                        ["Teléfono Laboral FIJO", cliente.telefonoLaboralFijo || "No especificado"],
+                        ["Correo Electrónico Laboral", cliente.emailLaboral || "No especificado"],
+                        ["Otros Ingresos", cliente.otrosIngresos || "No especificado"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                          <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
+                          <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Patrimonio */}
+                  <div>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Home size={14} className="text-emerald-500" /> Patrimonio
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        ["Vehículo", cliente.patrimonioVehiculo || "No especificado"],
+                        ["Vivienda", cliente.patrimonioVivienda || "No especificado"],
+                        ["Otros", cliente.patrimonioOtros || "No especificado"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                          <div className="text-[9px] text-slate-400 font-medium uppercase">{label}</div>
+                          <div className="text-[12px] font-semibold text-slate-700 mt-0.5">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ejecutivo Asignado */}
+                  <div>
+                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <User size={14} className="text-orange-500" /> Ejecutivo Asignado
+                    </h4>
+                    {asesor ? (
+                      <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold">
+                            {asesor.nombre?.[0]}{asesor.apellido?.[0]}
+                          </div>
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-700">{asesor.nombre} {asesor.apellido}</div>
+                            <div className="text-[10px] text-slate-500">{asesor.cargo || "Asesor Hipotecario"}</div>
+                            {asesor.email && <div className="text-[10px] text-slate-500">{asesor.email}</div>}
+                            {asesor.telefono && <div className="text-[10px] text-slate-500">{asesor.telefono}</div>}
+                          </div>
+                        </div>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="p-4 bg-slate-50 rounded-xl text-center">
+                        <div className="text-[11px] text-slate-400">Sin ejecutivo asignado</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

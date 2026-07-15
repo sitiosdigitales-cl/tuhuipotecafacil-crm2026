@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { toSupabaseColumns } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { enviarEmail } from "@/lib/email";
+
+// Service role key para bypass de RLS (solo server-side)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
 // Soporta: SendGrid Inbound Parse, Mailgun Routes, formato JSON genérico
@@ -157,8 +164,8 @@ export async function POST(request: NextRequest) {
 
     const leadId = crypto.randomUUID();
 
-    // Crear lead en Supabase
-    const { data, error } = await supabase
+    // Crear lead en Supabase (usar admin para bypass RLS)
+    const { data, error } = await supabaseAdmin
       .from("leads")
       .insert(toSupabaseColumns({
         id: leadId,
@@ -166,7 +173,7 @@ export async function POST(request: NextRequest) {
         apellido: apellido || "",
         email: email || null,
         telefono: telefono,
-        rut: "",
+        rut: `email-${leadId.substring(0, 8)}`,
         origen: "email_corporativo",
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
@@ -186,9 +193,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
     }
 
-    // Crear notificación en el CRM
+    // Crear notificación en el CRM (usar admin para bypass RLS)
     try {
-      await supabase.from("notificaciones").insert({
+      await supabaseAdmin.from("notificaciones").insert({
         id: crypto.randomUUID(),
         tipo: "lead",
         titulo: "Lead desde email corporativo",

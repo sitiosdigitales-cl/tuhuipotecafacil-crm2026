@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 
 const COLORES_ETAPAS: Record<string, string> = {
   NUEVO_LEAD: "#3B82F6", CONTACTO_INICIAL: "#6366F1", CONTACTADO: "#8B5CF6",

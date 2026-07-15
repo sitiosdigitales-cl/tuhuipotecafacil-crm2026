@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gracias - TuHipotecaFacil.cl</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      background: #0f172a; 
+      color: #fff; 
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .thank-you-container {
+      max-width: 500px;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .check-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      font-size: 40px;
+      animation: scaleIn 0.5s ease;
+    }
+    
+    @keyframes scaleIn {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    p {
+      color: #94a3b8;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    
+    .highlight {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    
+    .steps {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 30px;
+      text-align: left;
+    }
+    
+    .steps h3 {
+      color: #fbbf24;
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+    
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .step-number {
+      width: 24px;
+      height: 24px;
+      background: #3b82f6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .step-text {
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    
+    .contact-info {
+      margin-top: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, #1e3a5f, #1e293b);
+      border-radius: 12px;
+      border: 1px solid #334155;
+    }
+    
+    .contact-info p {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .whatsapp-btn {
+      display: inline-block;
+      background: #25D366;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 16px;
+      transition: background 0.2s;
+    }
+    
+    .whatsapp-btn:hover {
+      background: #128C7E;
+    }
+  </style>
+</head>
+<body>
+  <div class="thank-you-container">
+    <div class="check-icon">✓</div>
+    
+    <h1>¡Solicitud Enviada!</h1>
+    
+    <p>
+      Hemos recibido tu solicitud de <span class="highlight">pre evaluación crediticia</span>.
+    </p>
+    
+    <p>
+      Nuestro equipo se pondrá en contacto contigo en las próximas <span class="highlight">24 horas hábiles</span>.
+    </p>
+    
+    <div class="steps">
+      <h3>Próximos pasos:</h3>
+      <div class="step-item">
+        <div class="step-number">1</div>
+        <div class="step-text">Un ejecutivo especializado te contactará</div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">2</div>
+        <div class="step-text">Analizaremos tu perfil financiero</div>
+      </div>
+      <div class="step-item">
+        <div class="step-number">3</div>
+        <div class="step-text">Te presentaremos las mejores opciones de crédito</div>
+      </div>
+    </div>
+    
+    <div class="contact-info">
+      <p><strong>¿Necesitas ayuda inmediata?</strong></p>
+      <p>Escríbenos por WhatsApp y te atenderemos al instante</p>
+      <a href="https://wa.me/56966842168?text=Hola%2C%20quiero%20información%20sobre%20crédito%20hipotecario" 
+         class="whatsapp-btn" target="_blank">
+        💬 Escribir por WhatsApp
+      </a>
+    </div>
+  </div>
+</body>
+</html>

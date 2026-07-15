@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { TrendingDown } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { ETAPAS_CONFIG } from "@/tipos";
 import type { Etapa } from "@/tipos";
 

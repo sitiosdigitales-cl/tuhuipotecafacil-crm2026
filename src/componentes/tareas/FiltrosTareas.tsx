@@ -5,7 +5,7 @@ import { Search, X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
 import type { EstadoTarea, TipoTarea, Prioridad } from "@/tipos";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 
 export interface FiltrosTareasState {
   busqueda: string;

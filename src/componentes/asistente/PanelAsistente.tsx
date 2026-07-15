@@ -6,8 +6,8 @@ import { Send, Sparkles, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SugerenciasRapidas } from "./SugerenciasRapidas";
 import { MensajeAsistente } from "./MensajeAsistente";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 import { generarEstadisticas, generarResumenLeads, obtenerDatosCMFParaIA } from "@/lib/ai/estadisticas";
 
 export function PanelAsistente() {

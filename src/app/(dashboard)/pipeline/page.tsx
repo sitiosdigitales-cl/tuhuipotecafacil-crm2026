@@ -22,25 +22,29 @@ import {
   Banknote,
   ArrowLeft,
   Layout,
+  LayoutList,
+  LayoutGrid,
+  UserPlus,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
+import { ETAPAS_CONFIG, ORIGEN_LABELS, ROLES_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
-import { useUser } from "@/lib/contexts/UserContext";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/modulos/usuarios";
+import { useLeads } from "@/modulos/leads";
 import { useActivities } from "@/lib/contexts/ActivityContext";
-import { validarAvance, type ResultadoValidacion, type ReglaValidacion } from "@/lib/validaciones-pipeline";
+import { validarAvance, type ResultadoValidacion, type ReglaValidacion } from "@/modulos/leads/validaciones-pipeline";
 import { AsignarEjecutivo } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
 import type { Lead, Etapa, Prioridad, SituacionLaboral } from "@/tipos";
 
 // Documentos obligatorios por situación laboral (mismos que en clientes/[id]/page.tsx)
 const DOCUMENTOS_OBLIGATORIOS: Record<SituacionLaboral, string[]> = {
-  DEPENDIENTE: ["liq-sueldo", "afp", "cedula", "antiguedad", "domicilio", "dicom"],
-  INDEPENDIENTE: ["carpeta-trib", "renta", "cedula", "dicom"],
+  DEPENDIENTE: ["liq-sueldo", "afp", "cedula", "anexo-laboral", "domicilio", "dicom"],
+  INDEPENDIENTE: ["boletas", "resumen-mensual", "resumen-anual-2026", "resumen-anual-2025", "renta-2026", "aceptacion-renta-2026", "cartera-trib", "cedula", "dicom"],
+  EMPRESA: ["cedula-socios", "cartera-trib-36", "cartera-trib-credito", "balance-2025", "balance-2024", "renta-f22-2026", "renta-f22-2025", "aceptacion-renta-2026", "aceptacion-renta-2025", "rol-empresa", "cert-tgr", "dicom"],
 };
 
 async function verificarDocumentosCompletos(lead: Lead): Promise<{ completo: boolean; faltantes: string[] }> {
@@ -146,13 +150,14 @@ const getTiempoEstilo = (dias: number) => {
   return { text: "text-red-700", bg: "bg-red-50 border border-red-100", label: "Crítico" };
 };
 
-function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar }: {
+function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carga }: {
   lead: Lead;
   index: number;
   onVer: () => void;
   onEditar: (e: React.MouseEvent) => void;
   onEliminar: (e: React.MouseEvent) => void;
   onAsignar: (leadId: string, nombreEjecutivo: string) => void;
+  carga: Record<string, number>;
 }) {
   const tiempo = getTiempoEstilo(lead.diasEnEtapa);
   const prioridad = prioridadConfig[lead.prioridad];
@@ -278,17 +283,29 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar }: {
 
             {/* Footer */}
              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
-              <div className="flex items-center gap-2">
-               <div className="w-5 h-5 bg-gradient-to-br from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600 rounded-md flex items-center justify-center text-[7px] font-bold text-white">
-                 {lead.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "?"}
-               </div>
-               <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">{lead.nombreEjecutivo?.split(" ")[0] || "Sin asignar"}</span>
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <div className="relative flex-shrink-0">
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[7px] font-bold text-white ${
+                    lead.nombreEjecutivo
+                      ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                      : "bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700"
+                  }`}>
+                    {lead.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "?"}
+                  </div>
+                  {lead.nombreEjecutivo && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white dark:border-slate-800" />
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate">
+                  {lead.nombreEjecutivo?.split(" ")[0] || "Sin asignar"}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <AsignarEjecutivo
                   ejecutivoActual={lead.nombreEjecutivo}
                   onAsignar={(nombre) => onAsignar(lead.id, nombre)}
                   compact
+                  carga={carga}
                 />
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={onVer} className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Ver detalle">
@@ -312,8 +329,8 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar }: {
 
 export default function PipelinePage() {
   const router = useRouter();
-  const { usuarioActual, esSuperAdmin } = useUser();
-  const { leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa } = useLeads();
+  const { usuarioActual, esSuperAdmin, usuarios } = useUser();
+  const { leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargaPorEjecutivo } = useLeads();
   const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
   const [filtroEjecutivo, setFiltroEjecutivo] = useState("todos");
@@ -329,6 +346,7 @@ export default function PipelinePage() {
   });
   const leadsAnteriores = useRef(leads.length);
   const [etapasPipeline, setEtapasPipeline] = useState<Etapa[]>(ETAPAS_POR_DEFECTO);
+  const [vistaModo, setVistaModo] = useState<"kanban" | "ejecutivos">("kanban");
 
   // Cargar etapas desde la API
   useEffect(() => {
@@ -407,19 +425,50 @@ export default function PipelinePage() {
     const { source, destination } = result;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    // Buscar el lead en la etapa de origen usando el índice correcto
+    const destinoId = destination.droppableId;
+
+    // Detectar si es asignación de ejecutivo (sidebar o vista ejecutivo)
+    const esAsignacionEjecutivo = destinoId.startsWith("ejec-") || destinoId.startsWith("ejec-view-");
+    if (esAsignacionEjecutivo) {
+      // Buscar el lead en la columna de origen
+      let leadMovido: Lead | undefined;
+      if (source.droppableId.startsWith("ejec-view-")) {
+        // Viene de la vista por ejecutivo
+        const nombreOrigen = source.droppableId.replace("ejec-view-", "");
+        const leadsDelOrigen = leadsFiltrados.filter((l) => l.nombreEjecutivo === nombreOrigen);
+        leadMovido = leadsDelOrigen[source.index];
+      } else if (source.droppableId === "ejec-view-Sin asignar") {
+        leadMovido = leadsFiltrados.filter((l) => !l.nombreEjecutivo)[source.index];
+      } else {
+        // Viene de una etapa del kanban
+        leadMovido = leadsFiltrados.filter((l) => l.etapa === source.droppableId)[source.index];
+      }
+      if (!leadMovido) return;
+
+      // Extraer nombre del ejecutivo destino
+      let nombreEjecutivo = "";
+      if (destinoId === "ejec-view-Sin asignar") {
+        nombreEjecutivo = "";
+      } else {
+        nombreEjecutivo = destinoId.replace("ejec-", "").replace("ejec-view-", "");
+      }
+
+      handleAsignarEjecutivo(leadMovido.id, nombreEjecutivo);
+      return;
+    }
+
+    // Flujo normal: mover entre etapas del pipeline
     const etapaOrigen = source.droppableId;
     const leadsEnEtapaOrigen = leadsFiltrados.filter((l) => l.etapa === etapaOrigen);
     const leadMovido = leadsEnEtapaOrigen[source.index];
     if (!leadMovido) return;
 
-    const etapaDestino = destination.droppableId;
+    const etapaDestino = destinoId;
 
     // Validar reglas antes de avanzar
     const resultado = validarAvance(leadMovido, etapaDestino);
 
     if (!resultado.puedeAvanzar) {
-      // Mostrar modal de validación
       setValidacionModal({
         open: true,
         resultado,
@@ -434,7 +483,6 @@ export default function PipelinePage() {
       const verificacion = await verificarDocumentosCompletos(leadMovido);
 
       if (!verificacion.completo) {
-        // Crear reglas fallidas específicas para documentos faltantes
         const reglasDocumentosFaltantes: ReglaValidacion[] = verificacion.faltantes.map((nombre) => ({
           id: `doc-faltante-${nombre}`,
           nombre: `Documento faltante: ${nombre}`,
@@ -658,6 +706,22 @@ export default function PipelinePage() {
                 <option key={ej} value={ej}>{ej}</option>
               ))}
             </select>
+            <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-0.5">
+              <button
+                onClick={() => setVistaModo("kanban")}
+                className={`p-1.5 rounded-md transition-colors ${vistaModo === "kanban" ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                title="Vista Kanban"
+              >
+                <LayoutList size={14} />
+              </button>
+              <button
+                onClick={() => setVistaModo("ejecutivos")}
+                className={`p-1.5 rounded-md transition-colors ${vistaModo === "ejecutivos" ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+                title="Vista por Ejecutivo"
+              >
+                <LayoutGrid size={14} />
+              </button>
+            </div>
             <Button onClick={handleNuevoLead} className="gap-1.5 shadow-lg shadow-blue-600/15 text-[11px] sm:text-sm">
               <Plus size={14} /> <span className="hidden sm:inline">Nuevo Lead</span><span className="sm:hidden">Nuevo</span>
             </Button>
@@ -665,9 +729,13 @@ export default function PipelinePage() {
         </div>
       </div>
 
-      {/* Kanban Board - ocupa todo el espacio restante */}
+      {/* Board - ocupa todo el espacio restante */}
       <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
-        <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-4 pt-3 scroll-smooth">
+        <div className="flex-1 flex overflow-hidden p-2 sm:p-4 pt-3">
+          {vistaModo === "kanban" ? (
+            <>
+              {/* Kanban columns */}
+              <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto scroll-smooth">
           {etapasPipeline.map((etapa) => {
             const config = ETAPAS_CONFIG[etapa];
             const leadsEnEtapa = leadsFiltrados.filter((l) => l.etapa === etapa);
@@ -744,6 +812,7 @@ export default function PipelinePage() {
                             onEditar={(e) => handleEditarLead(lead, e)}
                             onEliminar={(e) => handleEliminarLead(lead, e)}
                             onAsignar={handleAsignarEjecutivo}
+                            carga={cargaPorEjecutivo}
                           />
                         ))
                       )}
@@ -754,6 +823,192 @@ export default function PipelinePage() {
               </div>
             );
           })}
+              </div>
+
+              {/* Sidebar de ejecutivos (droppable) */}
+              <div className="hidden lg:flex flex-col w-[200px] flex-shrink-0 ml-3 border-l border-slate-200 dark:border-slate-700 pl-3">
+                <div className="mb-3">
+                  <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ejecutivos</h3>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500">Arrastra un lead para asignar</p>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user) => {
+                    const nombreCompleto = `${user.nombre} ${user.apellido}`;
+                    const userRol = ROLES_CONFIG[user.rol];
+                    const leadsCount = cargaPorEjecutivo[nombreCompleto] || 0;
+
+                    return (
+                      <Droppable key={user.id} droppableId={`ejec-${nombreCompleto}`}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`p-2 rounded-xl border transition-all ${
+                              snapshot.isDraggingOver
+                                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30 shadow-md scale-[1.02]"
+                                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
+                                style={{
+                                  background:
+                                    user.rol === "ADMIN"
+                                      ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
+                                      : user.rol === "GERENTE"
+                                      ? "linear-gradient(135deg, #d97706, #b45309)"
+                                      : "linear-gradient(135deg, #64748b, #475569)",
+                                }}
+                              >
+                                {user.nombre[0]}{user.apellido[0]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[10px] font-semibold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <span className={`text-[8px] font-semibold px-1 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
+                                </div>
+                              </div>
+                              <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                leadsCount === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
+                                leadsCount <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                                leadsCount <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                                "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              }`}>
+                                {leadsCount}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Droppable>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Vista por Ejecutivo - Swimlanes */
+            <div className="flex-1 flex gap-3 overflow-x-auto scroll-smooth">
+              {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user, idx, arr) => {
+                const nombreCompleto = `${user.nombre} ${user.apellido}`;
+                const userRol = ROLES_CONFIG[user.rol];
+                const leadsDelEjecutivo = leadsFiltrados.filter((l) => l.nombreEjecutivo === nombreCompleto);
+                const leadsSinAsignar = leadsFiltrados.filter((l) => !l.nombreEjecutivo);
+                const esUltimo = idx === arr.length - 1;
+
+                return (
+                  <div key={user.id} className="min-w-[280px] w-[280px] flex-shrink-0 flex flex-col">
+                    {/* Ejecutivo Header */}
+                    <div className="rounded-xl p-3 mb-2 flex-shrink-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
+                          style={{
+                            background:
+                              user.rol === "ADMIN"
+                                ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
+                                : user.rol === "GERENTE"
+                                ? "linear-gradient(135deg, #d97706, #b45309)"
+                                : "linear-gradient(135deg, #64748b, #475569)",
+                          }}
+                        >
+                          {user.nombre[0]}{user.apellido[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
+                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
+                        </div>
+                        <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${
+                          leadsDelEjecutivo.length === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
+                          leadsDelEjecutivo.length <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                          leadsDelEjecutivo.length <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                          "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                        }`}>
+                          {leadsDelEjecutivo.length} leads
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Leads del ejecutivo */}
+                    <Droppable droppableId={`ejec-view-${nombreCompleto}`}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`flex-1 rounded-xl p-2.5 overflow-y-auto transition-all duration-200 min-h-[300px] ${
+                            snapshot.isDraggingOver
+                              ? "bg-blue-50/80 dark:bg-blue-900/20 border-2 border-dashed border-blue-400 shadow-inner"
+                              : "bg-white/60 dark:bg-slate-800/60 border-2 border-transparent"
+                          }`}
+                        >
+                          {leadsDelEjecutivo.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center p-4 min-h-[200px]">
+                              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center mb-3">
+                                <UserPlus size={16} className="text-slate-300 dark:text-slate-500" />
+                              </div>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Sin leads asignados</p>
+                              <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-1">Arrastra leads aquí</p>
+                            </div>
+                          ) : (
+                            leadsDelEjecutivo.map((lead, index) => (
+                              <TarjetaLead
+                                key={lead.id}
+                                lead={lead}
+                                index={index}
+                                onVer={() => router.push(`/clientes/${lead.id}`)}
+                                onEditar={(e) => handleEditarLead(lead, e)}
+                                onEliminar={(e) => handleEliminarLead(lead, e)}
+                                onAsignar={handleAsignarEjecutivo}
+                                carga={cargaPorEjecutivo}
+                              />
+                            ))
+                          )}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+
+                    {/* Leads sin asignar - solo en la última columna */}
+                    {esUltimo && leadsSinAsignar.length > 0 && (
+                      <div className="mt-3">
+                        <Droppable droppableId="ejec-view-Sin asignar">
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className={`rounded-xl p-2.5 transition-all duration-200 ${
+                                snapshot.isDraggingOver
+                                  ? "bg-amber-50/80 dark:bg-amber-900/20 border-2 border-dashed border-amber-400"
+                                  : "bg-slate-50/60 dark:bg-slate-800/40 border-2 border-dashed border-slate-200 dark:border-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-2 px-1">
+                                <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sin asignar ({leadsSinAsignar.length})</span>
+                              </div>
+                              {leadsSinAsignar.map((lead, index) => (
+                                <TarjetaLead
+                                  key={lead.id}
+                                  lead={lead}
+                                  index={index}
+                                  onVer={() => router.push(`/clientes/${lead.id}`)}
+                                  onEditar={(e) => handleEditarLead(lead, e)}
+                                  onEliminar={(e) => handleEliminarLead(lead, e)}
+                                  onAsignar={handleAsignarEjecutivo}
+                                  carga={cargaPorEjecutivo}
+                                />
+                              ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </DragDropContext>
 

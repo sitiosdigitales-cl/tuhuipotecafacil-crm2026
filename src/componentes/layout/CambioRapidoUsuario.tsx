@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 import { ROLES_CONFIG } from "@/tipos";
 import {
   ArrowLeftRight,

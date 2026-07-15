@@ -4,6 +4,9 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from "@/lib/supabase";
 import type { Lead, Etapa } from "@/tipos";
 
+// Etapas que NO cuentan como carga activa
+const ETAPAS_INACTIVAS = new Set(["CIERRE", "PERDIDO"]);
+
 interface LeadContextType {
   leads: Lead[];
   agregarLead: (lead: Omit<Lead, "id" | "creadoEn">) => Promise<void>;
@@ -14,6 +17,7 @@ interface LeadContextType {
   cargando: boolean;
   obtenerCodigoReferido: (usuarioId: string) => string;
   obtenerLeadsPorReferido: (codigoReferido: string) => Lead[];
+  cargaPorEjecutivo: Record<string, number>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -125,11 +129,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [cargarLeads]);
 
   const actualizarLead = useCallback(async (id: string, datos: Partial<Lead>) => {
-    // Guardar estado anterior para rollback
-    const leadsAnteriores = leads;
-
-    // Optimistic update
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...datos } : l)));
+    // Guardar estado anterior para rollback usando functional update
+    let leadsAnteriores: any[] = [];
+    
+    // Optimistic update con functional update para evitar stale closure
+    setLeads((prev) => {
+      leadsAnteriores = prev;
+      return prev.map((l) => (l.id === id ? { ...l, ...datos } : l));
+    });
 
     try {
       const response = await fetch(`/api/leads/${id}`, {
@@ -147,7 +154,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       // Rollback si hay error de red
       setLeads(leadsAnteriores);
     }
-  }, [leads]);
+  }, []);
 
   const eliminarLead = useCallback(async (id: string) => {
     // Guardar estado anterior para rollback
@@ -177,7 +184,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [leads]);
 
   const asignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
-    await actualizarLead(leadId, { nombreEjecutivo });
+    try {
+      const searchUrl = `/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`;
+      const response = await fetch(searchUrl);
+      const result = await response.json();
+      const usuarioId = result?.data?.[0]?.id || "";
+      await actualizarLead(leadId, { nombreEjecutivo, asignadoA: usuarioId });
+    } catch (error) {
+      console.error("[AsignarEjecutivo] Error:", error);
+    }
   }, [actualizarLead]);
 
   const moverEtapa = useCallback(async (leadId: string, nuevaEtapa: Etapa) => {
@@ -188,8 +203,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const obtenerLeadsPorReferido = useCallback((codigoReferido: string) => leads.filter((l) => l.notas?.includes(codigoReferido)), [leads]);
 
+  // Leads activos por ejecutivo (excluye CIERRE y PERDIDO)
+  const cargaPorEjecutivo = leads.reduce((acc, lead) => {
+    if (!lead.nombreEjecutivo || ETAPAS_INACTIVAS.has(lead.etapa)) return acc;
+    acc[lead.nombreEjecutivo] = (acc[lead.nombreEjecutivo] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
-    <LeadContext.Provider value={{ leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido }}>
+    <LeadContext.Provider value={{ leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido, cargaPorEjecutivo }}>
       {children}
     </LeadContext.Provider>
   );

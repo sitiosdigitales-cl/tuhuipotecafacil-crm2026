@@ -40,8 +40,8 @@ import {
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 import { type Actividad } from "@/lib/contexts/ActivityContext";
 import { toast } from "sonner";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
@@ -61,20 +61,43 @@ import type { Lead, DocumentoLead, SituacionLaboral, Etapa } from "@/tipos";
 // Documentos por tipo de trabajador
 const DOCUMENTOS_POR_TIPO: Record<SituacionLaboral, { id: string; nombre: string; obligatorio: boolean; tipo: string }[]> = {
   DEPENDIENTE: [
-    { id: "liq-sueldo", nombre: "Últimas 6 liquidaciones de sueldo", obligatorio: true, tipo: "COMPROBANTE_INGRESOS" },
-    { id: "afp", nombre: "Certificado cotizaciones AFP", obligatorio: true, tipo: "CERTIFICADO_AFP" },
-    { id: "cedula", nombre: "Cédula de identidad", obligatorio: true, tipo: "CEDULA_IDENTIDAD" },
-    { id: "antiguedad", nombre: "Certificado antigüedad laboral", obligatorio: true, tipo: "CONTRATO_TRABAJO" },
-    { id: "domicilio", nombre: "Comprobante de domicilio", obligatorio: true, tipo: "OTRO" },
-    { id: "titulo", nombre: "Certificado título profesional", obligatorio: false, tipo: "OTRO" },
-    { id: "dicom", nombre: "Informe DICOM", obligatorio: true, tipo: "OTRO" },
+    { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, tipo: "CEDULA_IDENTIDAD" },
+    { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true, tipo: "LIQUIDACION_SUELDO" },
+    { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true, tipo: "CERTIFICADO_COTIZACIONES_AFP" },
+    { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true, tipo: "ANEXO_LABORAL" },
+    { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true, tipo: "COMPROBANTE_DOMICILIO" },
+    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true, tipo: "CERTIFICADO_CMF" },
+    { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false, tipo: "TITULO_UNIVERSITARIO" },
+    { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false, tipo: "PADRON_VEHICULO" },
+    { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false, tipo: "DOMINIO_PROPIEDAD" },
   ],
   INDEPENDIENTE: [
-    { id: "carpeta-trib", nombre: "Carpeta tributaria", obligatorio: true, tipo: "DECLARACION_RENTA" },
-    { id: "iva", nombre: "Últimas 12 declaraciones IVA", obligatorio: false, tipo: "DECLARACION_RENTA" },
-    { id: "renta", nombre: "Última declaración de renta", obligatorio: true, tipo: "DECLARACION_RENTA" },
-    { id: "cedula", nombre: "Cédula de identidad", obligatorio: true, tipo: "CEDULA_IDENTIDAD" },
-    { id: "dicom", nombre: "Informe DICOM", obligatorio: true, tipo: "OTRO" },
+    { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, tipo: "CEDULA_IDENTIDAD" },
+    { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true, tipo: "BOLETAS_CON_IMPUESTO" },
+    { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true, tipo: "RESUMEN_MENSUAL_BOLETAS" },
+    { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true, tipo: "RESUMEN_ANUAL_BOLETAS" },
+    { id: "resumen-anual-2025", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true, tipo: "RESUMEN_ANUAL_BOLETAS" },
+    { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true, tipo: "DECLARACION_RENTA" },
+    { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true, tipo: "ACEPTACION_RENTA" },
+    { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, tipo: "CARTERA_TRIBUTARIA_36" },
+    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true, tipo: "CERTIFICADO_CMF" },
+    { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false, tipo: "TITULO_UNIVERSITARIO" },
+    { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false, tipo: "PADRON_VEHICULO" },
+    { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false, tipo: "DOMINIO_PROPIEDAD" },
+  ],
+  EMPRESA: [
+    { id: "cedula-socios", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true, tipo: "CEDULA_IDENTIDAD" },
+    { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, tipo: "CARTERA_TRIBUTARIA_36" },
+    { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true, tipo: "CARTERA_TRIBUTARIA_36" },
+    { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true, tipo: "BALANCE" },
+    { id: "balance-2024", nombre: "Balance 2024 firmado por contador", obligatorio: true, tipo: "BALANCE" },
+    { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true, tipo: "DECLARACION_RENTA_F22" },
+    { id: "renta-f22-2025", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true, tipo: "DECLARACION_RENTA_F22" },
+    { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true, tipo: "ACEPTACION_RENTA" },
+    { id: "aceptacion-renta-2025", nombre: "Aceptación de Renta 2025", obligatorio: true, tipo: "ACEPTACION_RENTA" },
+    { id: "rol-empresa", nombre: "Rol Empresa", obligatorio: true, tipo: "ROL_EMPRESA" },
+    { id: "cert-tgr", nombre: "Certificado de Deuda de TGR", obligatorio: true, tipo: "CERTIFICADO_DEUDA_TGR" },
+    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true, tipo: "CERTIFICADO_CMF" },
   ],
 };
 
@@ -282,6 +305,21 @@ export default function ClientePerfilPage() {
       creadoEn: new Date(),
     };
     setDocumentos((prev) => [doc, ...prev]);
+  };
+
+  const handleSubirDocumento = (file: File, nombreDoc: string, tipo: string) => {
+    const doc: DocumentoLead = {
+      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      leadId: lead.id,
+      leadNombre: `${lead.nombre} ${lead.apellido}`,
+      nombre: nombreDoc,
+      tipo: tipo as DocumentoLead["tipo"],
+      estado: "EN_REVISION",
+      archivoUrl: URL.createObjectURL(file),
+      creadoEn: new Date(),
+    };
+    setDocumentos((prev) => [doc, ...prev]);
+    toast.success("Documento subido", { description: nombreDoc });
   };
 
   const handleCambiarEstado = (docId: string, nuevoEstado: DocumentoLead["estado"]) => {
@@ -628,78 +666,86 @@ export default function ClientePerfilPage() {
             </div>
           </div>
 
-          {/* Tabla documentos */}
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="text-left px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Documento</th>
-                <th className="text-left px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo</th>
-                <th className="text-left px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
-                <th className="text-left px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fecha</th>
-                <th className="text-right px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {documentos.map((doc) => {
-                const docConfig = estadoDocConfig[doc.estado];
-                return (
-                  <tr key={doc.id} className="hover:bg-blue-50/20 transition-colors group">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                          <FileText size={16} className="text-slate-500" />
-                        </div>
-                        <div>
-                          <div className="text-[12px] font-semibold text-slate-800">{doc.nombre}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-[10px] font-semibold text-slate-500">{doc.tipo.replace(/_/g, " ")}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="relative">
-                        <select
-                          value={doc.estado}
-                          onChange={(e) => handleCambiarEstado(doc.id, e.target.value as DocumentoLead["estado"])}
-                          className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg border-0 cursor-pointer appearance-none pr-6 bg-no-repeat bg-[right_6px_center] bg-[length:10px] ${docConfig.bg} ${docConfig.color} hover:opacity-80 transition-opacity`}
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`
-                          }}
-                        >
-                          <option value="PENDIENTE">Pendiente</option>
-                          <option value="EN_REVISION">En Revisión</option>
-                          <option value="APROBADO">Aprobado</option>
-                          <option value="RECHAZADO">Rechazado</option>
-                        </select>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-[11px] text-slate-500 font-medium">
-                        {doc.creadoEn.toLocaleDateString("es-CL")}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handlePreview(doc)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Ver">
-                          <Eye size={14} className="text-slate-400" />
-                        </button>
-                        <button
-                          onClick={() => { if (doc.archivoUrl) window.open(doc.archivoUrl, "_blank"); else toast.info("Documento sin archivo adjunto"); }}
-                          className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Descargar"
-                        >
-                          <Download size={14} className="text-emerald-500" />
-                        </button>
-                        <button onClick={() => handleEliminar(doc)} className="p-2 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar">
-                          <Trash2 size={14} className="text-red-500" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {/* Lista de documentos */}
+          <div className="p-5 space-y-2">
+            {(DOCUMENTOS_POR_TIPO[lead.situacionLaboral] || DOCUMENTOS_POR_TIPO.DEPENDIENTE).map((docConfig) => {
+              const doc = documentos.find((d) => d.tipo === docConfig.tipo);
+              const subido = !!doc;
+              return (
+                <div key={docConfig.tipo} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  subido ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"
+                }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    subido ? "bg-emerald-100" : "bg-slate-100"
+                  }`}>
+                    {subido ? <CheckCircle size={16} className="text-emerald-500" /> : <FileText size={16} className="text-slate-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-semibold text-slate-700 truncate">{docConfig.nombre}</div>
+                    <div className="flex items-center gap-2">
+                      {docConfig.obligatorio && <span className="text-[9px] text-red-500 font-semibold">Obligatorio</span>}
+                      {subido && (
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
+                          doc?.estado === "APROBADO" ? "bg-emerald-100 text-emerald-700" :
+                          doc?.estado === "RECHAZADO" ? "bg-red-100 text-red-700" :
+                          "bg-amber-100 text-amber-700"
+                        }`}>
+                          {doc?.estado === "APROBADO" ? "Aprobado" : doc?.estado === "RECHAZADO" ? "Rechazado" : "En Revisión"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {/* Botón Subir/Reemplazar */}
+                    <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
+                      subido 
+                        ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}>
+                      <Upload size={12} />
+                      {subido ? "Reemplazar" : "Subir"}
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleSubirDocumento(file, docConfig.nombre, docConfig.tipo);
+                          }
+                        }}
+                      />
+                    </label>
+                    {/* Botón Descargar/Ver */}
+                    {subido && doc?.archivoUrl && (
+                      <a
+                        href={doc.archivoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                      >
+                        <Download size={12} />
+                        Ver
+                      </a>
+                    )}
+                    {/* Select de estado */}
+                    {subido && (
+                      <select
+                        value={doc?.estado || "PENDIENTE"}
+                        onChange={(e) => handleCambiarEstado(doc!.id, e.target.value as DocumentoLead["estado"])}
+                        className="text-[10px] font-semibold px-2 py-1.5 rounded-lg border border-slate-200 bg-white cursor-pointer"
+                      >
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_REVISION">En Revisión</option>
+                        <option value="APROBADO">Aprobado</option>
+                        <option value="RECHAZADO">Rechazado</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

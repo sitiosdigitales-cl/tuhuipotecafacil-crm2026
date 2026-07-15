@@ -46,7 +46,7 @@ import {
 } from "lucide-react";
 import { ETAPAS_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 
 // Datos detallados de bancos
 const BANCOS_DETALLE = [

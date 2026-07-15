@@ -70,12 +70,21 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!user) return forbidden();
   try {
     const { id } = await params;
-    // Soft delete: cambiar estado a INACTIVO
-    const { error } = await supabase
-      .from("usuarios")
-      .update(toSupabaseColumns({ estado: "INACTIVO" }))
-      .eq("id", id);
-    if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+    const { searchParams } = new URL(request.url);
+    const hardDelete = searchParams.get("hard") === "true";
+
+    if (hardDelete) {
+      // Eliminación real de la base de datos
+      const { error } = await supabase.from("usuarios").delete().eq("id", id);
+      if (error) return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
+    } else {
+      // Soft delete: cambiar estado a INACTIVO
+      const { error } = await supabase
+        .from("usuarios")
+        .update(toSupabaseColumns({ estado: "INACTIVO" }))
+        .eq("id", id);
+      if (error) return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
+    }
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false, error: "Error" }, { status: 500 });

@@ -27,8 +27,8 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import { useNotificaciones, type Notificacion } from "@/lib/contexts/NotificationContext";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 
 const iconoRecordatorio = (icono: string) => {
   const clases = "w-8 h-8 rounded-xl flex items-center justify-center";

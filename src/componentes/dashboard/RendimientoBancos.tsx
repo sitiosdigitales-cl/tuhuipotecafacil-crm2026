@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { ChevronRight, Building2, TrendingUp, Award, BarChart3 } from "lucide-react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 
 const COLORES_BANCOS: Record<string, string> = {

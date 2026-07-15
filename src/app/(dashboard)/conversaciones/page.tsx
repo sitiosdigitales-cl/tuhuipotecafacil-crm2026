@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ListaConversaciones } from "@/componentes/conversaciones/ListaConversaciones";
 import { AreaChat } from "@/componentes/conversaciones/AreaChat";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useUser } from "@/modulos/usuarios";
 
 export default function ConversacionesPage() {
   const { usuarioActual } = useUser();

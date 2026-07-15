@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { Target, Calendar } from "lucide-react";
 
 const META_MENSUAL = 180;

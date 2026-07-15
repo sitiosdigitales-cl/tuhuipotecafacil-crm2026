@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useLeads } from "@/modulos/leads";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 import {
   Send,
@@ -40,13 +40,15 @@ interface SolicitarDocumentosProps {
 }
 
 const DOCUMENTOS_POR_DEFECTO: { tipo: TipoDocumento; nombre: string }[] = [
-  { tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad" },
-  { tipo: "CONTRATO_TRABAJO", nombre: "Contrato de Trabajo" },
-  { tipo: "COMPROBANTE_INGRESOS", nombre: "Comprobante de Ingresos" },
-  { tipo: "CERTIFICADO_AFP", nombre: "Certificado AFP" },
-  { tipo: "DECLARACION_RENTA", nombre: "Declaración de Renta" },
-  { tipo: "VALORIZACION", nombre: "Valorización" },
-  { tipo: "CERTIFICADO_PIE", nombre: "Certificado de Pie" },
+  { tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad (ambos lados, vigente)" },
+  { tipo: "LIQUIDACION_SUELDO", nombre: "6 Últimas Liquidaciones de Sueldo" },
+  { tipo: "CERTIFICADO_COTIZACIONES_AFP", nombre: "Certificado de Cotizaciones AFP (24 meses)" },
+  { tipo: "ANEXO_LABORAL", nombre: "Anexo o Permanencia Laboral" },
+  { tipo: "COMPROBANTE_DOMICILIO", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)" },
+  { tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF" },
+  { tipo: "TITULO_UNIVERSITARIO", nombre: "Título Universitario o Certificado de Título" },
+  { tipo: "PADRON_VEHICULO", nombre: "Padrón de Vehículo" },
+  { tipo: "DOMINIO_PROPIEDAD", nombre: "Dominio Vigente de Propiedad" },
 ];
 
 export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDocumentosProps) {

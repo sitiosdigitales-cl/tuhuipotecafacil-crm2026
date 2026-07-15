@@ -35,8 +35,8 @@ import {
   QrCode,
   UserPlus,
 } from "lucide-react";
-import { useUser } from "@/lib/contexts/UserContext";
-import { useLeads } from "@/lib/contexts/LeadContext";
+import { useUser } from "@/modulos/usuarios";
+import { useLeads } from "@/modulos/leads";
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 
 // Programa de recompensas

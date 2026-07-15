@@ -28,8 +28,8 @@ import {
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS, SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { useUser } from "@/lib/contexts/UserContext";
+import { useLeads } from "@/modulos/leads";
+import { useUser } from "@/modulos/usuarios";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { toast } from "sonner";
 import type { Lead, SituacionLaboral } from "@/tipos";
