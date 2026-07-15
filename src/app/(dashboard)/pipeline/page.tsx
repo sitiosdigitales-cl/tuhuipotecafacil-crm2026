@@ -607,15 +607,36 @@ export default function PipelinePage() {
     setFormularioOpen(true);
   };
 
-  const handleAsignarEjecutivo = (leadId: string, nombreEjecutivo: string) => {
-    asignarEjecutivo(leadId, nombreEjecutivo);
+  const handleAsignarEjecutivo = async (leadId: string, nombreEjecutivo: string) => {
     const lead = leads.find(l => l.id === leadId);
-    if (lead) {
-      toast.success("Ejecutivo asignado", {
-        description: nombreEjecutivo
-          ? `${lead.nombre} ${lead.apellido} asignado a ${nombreEjecutivo}`
-          : `${lead.nombre} ${lead.apellido} sin asignar`,
+    try {
+      const updateResponse = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombreEjecutivo: nombreEjecutivo || null }),
       });
+
+      if (updateResponse.ok) {
+        // Actualizar estado local
+        setLeads((prev) =>
+          prev.map((l) =>
+            l.id === leadId ? { ...l, nombreEjecutivo: nombreEjecutivo || undefined } : l
+          )
+        );
+        if (lead) {
+          toast.success("Ejecutivo asignado", {
+            description: nombreEjecutivo
+              ? `${lead.nombre} ${lead.apellido} asignado a ${nombreEjecutivo}`
+              : `${lead.nombre} ${lead.apellido} sin asignar`,
+          });
+        }
+      } else {
+        const err = await updateResponse.json().catch(() => ({}));
+        toast.error("Error al asignar", { description: err.error || "Intenta de nuevo" });
+      }
+    } catch {
+      toast.error("Error de conexion");
     }
   };
 
