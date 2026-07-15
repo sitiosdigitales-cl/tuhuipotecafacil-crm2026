@@ -616,58 +616,81 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             {/* Progreso - Vertical en mobile, Horizontal en desktop */}
             <div className="mb-6">
               {/* Mobile: Vertical stepper */}
-              <div className="md:hidden px-2">
+              <div className="md:hidden px-2 space-y-0">
                 {PASOS_PROGRESO.map((paso, i) => {
                   const completado = progreso > i + 1;
                   const actual = progreso === i + 1;
                   return (
-                    <div key={paso.paso} className="flex items-start gap-3">
+                    <div key={paso.paso} className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 `}>
-                          {completado ? <CheckCircle size={16} /> : i + 1}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all flex-shrink-0 ${completado ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" : actual ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg shadow-blue-600/30 scale-110" : "bg-slate-100 text-slate-400 border-2 border-slate-200"}`}>
+                          {completado ? <CheckCircle size={18} /> : i + 1}
                         </div>
                         {i < PASOS_PROGRESO.length - 1 && (
-                          <div className={`w-0.5 h-10 `} />
+                          <div className={`w-0.5 h-12 ${completado ? "bg-blue-600" : actual ? "bg-gradient-to-b from-blue-600 to-slate-200" : "bg-slate-200"}`} />
                         )}
                       </div>
-                      <div className="pb-6 pt-1">
-                        <div className={`text-[13px] font-bold `}>
-                          {paso.label}
-                        </div>
-                        <div className={`text-[11px] font-medium mt-0.5 `}>
+                      <div className="pb-6 pt-1.5 flex-1">
+                        <div className={`text-sm font-bold ${actual ? "text-blue-700" : completado ? "text-blue-700" : "text-slate-400"}`}>{paso.label}</div>
+                        <div className={`text-[11px] font-medium mt-0.5 ${completado ? "text-emerald-500" : actual ? "text-blue-600" : "text-slate-300"}`}>
                           {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
                         </div>
+                        {actual && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-100">
+                            <p className="text-[11px] text-blue-700">{paso.label === "Documentacion" ? "Sube los documentos requeridos para avanzar" : "Te notificaremos cuando avances"}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Desktop: Horizontal stepper */}
-              <div className="hidden md:block relative px-4">
-                <div className="flex items-center justify-between relative">
-                  <div className="absolute top-5 left-[12%] right-[12%] h-1 bg-slate-100 rounded-full" />
-                  <div className="absolute top-5 left-[12%] h-1 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-700" style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
-                  {PASOS_PROGRESO.map((paso, i) => {
-                    const completado = progreso > i + 1;
-                    const actual = progreso === i + 1;
-                    return (
-                      <div key={paso.paso} className="flex flex-col items-center relative z-10 flex-1">
-                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-xs lg:text-sm font-bold transition-all `}>
-                          {completado ? <CheckCircle size={16} /> : i + 1}
+              {/* Desktop: Banner de etapa + stepper horizontal mejorado */}
+              <div className="hidden md:block">
+                {/* Banner de etapa actual */}
+                <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 rounded-2xl p-5 mb-5 text-white relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-200 text-[10px] font-medium uppercase tracking-wider mb-1">Etapa actual</p>
+                      <h3 className="text-xl font-bold">{configEstado?.label || "En proceso"}</h3>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold">{progreso}<span className="text-blue-300 text-lg">/{totalPasos}</span></div>
+                      <p className="text-[10px] text-blue-200">pasos completados</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2.5 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-white via-blue-100 to-white rounded-full transition-all duration-1000" style={{ width: `${Math.max(5, (progreso / totalPasos) * 100)}%` }} />
+                  </div>
+                </div>
+
+                {/* Stepper horizontal */}
+                <div className="relative px-4">
+                  <div className="flex items-start justify-between relative">
+                    <div className="absolute top-5 left-[8%] right-[8%] h-1 bg-slate-100 rounded-full" />
+                    <div className="absolute top-5 left-[8%] h-1 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-1000" style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 84)}%` }} />
+                    {PASOS_PROGRESO.map((paso, i) => {
+                      const completado = progreso > i + 1;
+                      const actual = progreso === i + 1;
+                      return (
+                        <div key={paso.paso} className="flex flex-col items-center relative z-10 flex-1">
+                          <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-xs lg:text-sm font-bold transition-all ${completado ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" : actual ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg shadow-blue-600/30 scale-110" : "bg-white text-slate-400 border-2 border-slate-200"}`}>
+                            {completado ? <CheckCircle size={18} /> : i + 1}
+                          </div>
+                          <span className={`text-[11px] lg:text-xs font-bold mt-2 text-center ${actual ? "text-blue-700" : completado ? "text-blue-700" : "text-slate-400"}`}>{paso.label}</span>
+                          <span className={`text-[9px] lg:text-[10px] mt-1 ${completado ? "text-emerald-500 font-semibold" : actual ? "text-blue-600 font-semibold" : "text-slate-300"}`}>
+                            {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
+                          </span>
                         </div>
-                        <span className={`text-[10px] lg:text-[11px] font-semibold mt-2 text-center `}>{paso.label}</span>
-                        <span className={`text-[9px] lg:text-[10px] mt-1 `}>
-                          {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Mensaje Informativo */}
+            </div>{/* Mensaje Informativo */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Info size={16} className="text-blue-500 flex-shrink-0" />
