@@ -594,50 +594,48 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             {/* Progreso - Vertical en mobile, Horizontal en desktop */}
             <div className="mb-6">
               {/* Mobile: Vertical stepper */}
-              <div className="md:hidden px-2 space-y-0">
+              <div className="md:hidden px-2">
                 {PASOS_PROGRESO.map((paso, i) => {
                   const completado = progreso > i + 1;
                   const actual = progreso === i + 1;
                   return (
-                    <div key={paso.paso} className="flex items-start gap-4">
+                    <div key={paso.paso} className="flex items-start gap-3">
                       <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all flex-shrink-0 ${completado ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" : actual ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg shadow-blue-600/30 scale-110" : "bg-slate-100 text-slate-400 border-2 border-slate-200"}`}>
-                          {completado ? <CheckCircle size={18} /> : i + 1}
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 `}>
+                          {completado ? <CheckCircle size={16} /> : i + 1}
                         </div>
                         {i < PASOS_PROGRESO.length - 1 && (
-                          <div className={`w-0.5 h-12 ${completado ? "bg-blue-600" : actual ? "bg-gradient-to-b from-blue-600 to-slate-200" : "bg-slate-200"}`} />
+                          <div className={`w-0.5 h-10 `} />
                         )}
                       </div>
-                      <div className="pb-6 pt-1.5 flex-1">
-                        <div className={`text-sm font-bold ${actual ? "text-blue-700" : completado ? "text-blue-700" : "text-slate-400"}`}>{paso.label}</div>
-                        <div className={`text-[11px] font-medium mt-0.5 ${completado ? "text-emerald-500" : actual ? "text-blue-600" : "text-slate-300"}`}>
+                      <div className="pb-6 pt-1">
+                        <div className={`text-[13px] font-bold `}>
+                          {paso.label}
+                        </div>
+                        <div className={`text-[11px] font-medium mt-0.5 `}>
                           {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
                         </div>
-                        {actual && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-100">
-                            <p className="text-[11px] text-blue-700">{paso.label === "Documentacion" ? "Sube los documentos requeridos para avanzar" : "Te notificaremos cuando avances"}</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
+
               {/* Desktop: Horizontal stepper */}
               <div className="hidden md:block relative px-4">
                 <div className="flex items-center justify-between relative">
                   <div className="absolute top-5 left-[12%] right-[12%] h-1 bg-slate-100 rounded-full" />
-                  <div className="absolute top-5 left-[12%] h-1 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-1000" style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
+                  <div className="absolute top-5 left-[12%] h-1 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-700" style={{ width: `${Math.max(0, ((progreso - 1) / (totalPasos - 1)) * 76)}%` }} />
                   {PASOS_PROGRESO.map((paso, i) => {
                     const completado = progreso > i + 1;
                     const actual = progreso === i + 1;
                     return (
                       <div key={paso.paso} className="flex flex-col items-center relative z-10 flex-1">
-                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-xs lg:text-sm font-bold transition-all ${completado ? "bg-blue-600 text-white shadow-md shadow-blue-600/30" : actual ? "bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg shadow-blue-600/30 scale-110" : "bg-white text-slate-400 border-2 border-slate-200"}`}>
+                        <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-xs lg:text-sm font-bold transition-all `}>
                           {completado ? <CheckCircle size={16} /> : i + 1}
                         </div>
-                        <span className={`text-[10px] lg:text-[11px] font-semibold mt-2 text-center ${actual ? "text-blue-700" : completado ? "text-blue-700" : "text-slate-400"}`}>{paso.label}</span>
-                        <span className={`text-[9px] lg:text-[10px] mt-1 ${completado ? "text-emerald-500 font-semibold" : actual ? "text-blue-600 font-semibold" : "text-slate-300"}`}>
+                        <span className={`text-[10px] lg:text-[11px] font-semibold mt-2 text-center `}>{paso.label}</span>
+                        <span className={`text-[9px] lg:text-[10px] mt-1 `}>
                           {completado ? "Completado" : actual ? "En progreso" : "Pendiente"}
                         </span>
                       </div>
@@ -646,6 +644,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
               </div>
             </div>
+
+            {/* Mensaje Informativo */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Info size={16} className="text-blue-500 flex-shrink-0" />
@@ -882,8 +882,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   {/* Datos del Cliente */}
                   <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos del Cliente</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="sm:col-span-2">
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre Completo</label>
                         <input type="text" value={`${perfilEditado.nombre} ${perfilEditado.apellido}`}
                           className="w-full h-10 px-3 bg-slate-100 border border-slate-200 rounded-xl text-[12px] text-slate-500" disabled />
@@ -1022,7 +1022,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                   {/* Datos del Empleador */}
                   <div>
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Datos del Empleador</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre del Empleador</label>
                         <input type="text" value={perfilEditado.nombreEmpleador}
@@ -1165,7 +1165,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                     <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <User size={14} className="text-blue-500" /> Información Personal
                     </h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
                         ["Nombre Completo", `${cliente.nombre} ${cliente.apellido}`],
                         ["RUT", cliente.rut],
