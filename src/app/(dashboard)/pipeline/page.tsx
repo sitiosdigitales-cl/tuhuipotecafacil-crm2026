@@ -282,44 +282,59 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carg
              </div>
 
             {/* Footer */}
-             <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
-              <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <div className="relative flex-shrink-0">
-                  <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[7px] font-bold text-white ${
-                    lead.nombreEjecutivo
-                      ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                      : "bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700"
-                  }`}>
-                    {lead.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "?"}
-                  </div>
-                  {lead.nombreEjecutivo && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white dark:border-slate-800" />
-                  )}
-                </div>
-                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate">
-                  {lead.nombreEjecutivo?.split(" ")[0] || "Sin asignar"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <AsignarEjecutivo
-                  ejecutivoActual={lead.nombreEjecutivo}
-                  onAsignar={(nombre) => onAsignar(lead.id, nombre)}
-                  compact
-                  carga={carga}
-                />
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={onVer} className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Ver detalle">
-                    <Eye size={11} className="text-blue-500 dark:text-blue-400" />
-                  </button>
-                  <button onClick={onEditar} className="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors" title="Editar">
-                    <Pencil size={11} className="text-amber-500 dark:text-amber-400" />
-                  </button>
-                  <button onClick={onEliminar} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
-                    <Trash2 size={11} className="text-red-500 dark:text-red-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
+             <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-700">
+               <Droppable droppableId={`lead-drop-${lead.id}`}>
+                 {(provided, snapshot) => (
+                   <div
+                     ref={provided.innerRef}
+                     {...provided.droppableProps}
+                     className={`flex items-center justify-between rounded-lg p-1.5 transition-all ${
+                       snapshot.isDraggingOver
+                         ? "bg-blue-50 dark:bg-blue-900/30 border-2 border-dashed border-blue-400"
+                         : ""
+                     }`}
+                   >
+                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                       <div className="relative flex-shrink-0">
+                         <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[7px] font-bold text-white ${
+                           lead.nombreEjecutivo
+                             ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                             : "bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700"
+                         }`}>
+                           {lead.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "?"}
+                         </div>
+                         {lead.nombreEjecutivo && (
+                           <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white dark:border-slate-800" />
+                         )}
+                       </div>
+                       <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate">
+                         {lead.nombreEjecutivo?.split(" ")[0] || (snapshot.isDraggingOver ? "Soltar aqui" : "Sin asignar")}
+                       </span>
+                     </div>
+                     <div className="flex items-center gap-0.5">
+                       <AsignarEjecutivo
+                         ejecutivoActual={lead.nombreEjecutivo}
+                         onAsignar={(nombre) => onAsignar(lead.id, nombre)}
+                         compact
+                         carga={carga}
+                       />
+                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onClick={onVer} className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Ver detalle">
+                           <Eye size={11} className="text-blue-500 dark:text-blue-400" />
+                         </button>
+                         <button onClick={onEditar} className="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors" title="Editar">
+                           <Pencil size={11} className="text-amber-500 dark:text-amber-400" />
+                         </button>
+                         <button onClick={onEliminar} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
+                           <Trash2 size={11} className="text-red-500 dark:text-red-400" />
+                         </button>
+                       </div>
+                     </div>
+                     {provided.placeholder}
+                   </div>
+                 )}
+               </Droppable>
+             </div>
           </div>
         </div>
       )}
@@ -426,8 +441,20 @@ export default function PipelinePage() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const destinoId = destination.droppableId;
+    const origenId = source.droppableId;
 
-    // Detectar si es asignación de ejecutivo (sidebar o vista ejecutivo)
+    // Detectar si es un ejecutivo siendo arrastrado hacia un lead
+    if (origenId.startsWith("ejec-drag-")) {
+      const nombreEjecutivo = origenId.replace("ejec-drag-", "");
+      // Verificar si el destino es un lead
+      if (destinoId.startsWith("lead-drop-")) {
+        const leadId = destinoId.replace("lead-drop-", "");
+        handleAsignarEjecutivo(leadId, nombreEjecutivo);
+        return;
+      }
+    }
+
+    // Detectar si es asignación de ejecutivo (sidebar o vista ejecutivo) - flujo antiguo
     const esAsignacionEjecutivo = destinoId.startsWith("ejec-") || destinoId.startsWith("ejec-view-");
     if (esAsignacionEjecutivo) {
       // Buscar el lead en la columna de origen
@@ -825,65 +852,75 @@ export default function PipelinePage() {
           })}
               </div>
 
-              {/* Sidebar de ejecutivos (droppable) */}
+              {/* Sidebar de ejecutivos */}
               <div className="hidden lg:flex flex-col w-[200px] flex-shrink-0 ml-3 border-l border-slate-200 dark:border-slate-700 pl-3">
                 <div className="mb-3">
                   <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ejecutivos</h3>
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500">Arrastra un lead para asignar</p>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500">Arrastra un ejecutivo a un lead para asignar</p>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-2">
-                  {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user) => {
-                    const nombreCompleto = `${user.nombre} ${user.apellido}`;
-                    const userRol = ROLES_CONFIG[user.rol];
-                    const leadsCount = cargaPorEjecutivo[nombreCompleto] || 0;
+                <Droppable droppableId="ejec-sidebar" direction="vertical">
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="flex-1 overflow-y-auto space-y-2"
+                    >
+                      {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user, index) => {
+                        const nombreCompleto = `${user.nombre} ${user.apellido}`;
+                        const userRol = ROLES_CONFIG[user.rol];
+                        const leadsCount = cargaPorEjecutivo[nombreCompleto] || 0;
 
-                    return (
-                      <Droppable key={user.id} droppableId={`ejec-${nombreCompleto}`}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className={`p-2 rounded-xl border transition-all ${
-                              snapshot.isDraggingOver
-                                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30 shadow-md scale-[1.02]"
-                                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
+                        return (
+                          <Draggable key={user.id} draggableId={`ejec-drag-${nombreCompleto}`} index={index}>
+                            {(provided, snapshot) => (
                               <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
-                                style={{
-                                  background:
-                                    user.rol === "ADMIN"
-                                      ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                                      : user.rol === "GERENTE"
-                                      ? "linear-gradient(135deg, #d97706, #b45309)"
-                                      : "linear-gradient(135deg, #64748b, #475569)",
-                                }}
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-2 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+                                  snapshot.isDragging
+                                    ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30 shadow-lg scale-[1.03] rotate-[2deg] z-50"
+                                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md"
+                                }`}
                               >
-                                {user.nombre[0]}{user.apellido[0]}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[10px] font-semibold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <span className={`text-[8px] font-semibold px-1 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
+                                    style={{
+                                      background:
+                                        user.rol === "ADMIN"
+                                          ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
+                                          : user.rol === "GERENTE"
+                                          ? "linear-gradient(135deg, #d97706, #b45309)"
+                                          : "linear-gradient(135deg, #64748b, #475569)",
+                                    }}
+                                  >
+                                    {user.nombre[0]}{user.apellido[0]}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[10px] font-semibold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                      <span className={`text-[8px] font-semibold px-1 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
+                                    </div>
+                                  </div>
+                                  <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    leadsCount === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
+                                    leadsCount <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                                    leadsCount <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                                    "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                                  }`}>
+                                    {leadsCount}
+                                  </div>
                                 </div>
                               </div>
-                              <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                leadsCount === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
-                                leadsCount <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                                leadsCount <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                                "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                              }`}>
-                                {leadsCount}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Droppable>
-                    );
-                  })}
-                </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
               </div>
             </>
           ) : (
