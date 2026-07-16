@@ -85,8 +85,9 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
       });
       const json = await res.json();
       if (json.success) {
-        setEnviado(true);
         toast.success("¡Solicitud enviada correctamente!");
+        window.open("https://www.tuhipotecafacil.cl/registro-completo/", "_blank");
+        onClose();
       } else {
         toast.error("Error al enviar. Intenta nuevamente.");
       }

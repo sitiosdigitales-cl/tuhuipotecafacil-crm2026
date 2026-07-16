@@ -381,7 +381,37 @@
         
         <div class="form-group">
           <label>¿Cuál es tu renta mensual aproximada?</label>
-          <input type="text" name="renta_mensual" placeholder="$1.500.000">
+          <select name="renta_mensual">
+            <option value="">Seleccionar</option>
+            <option value="Menos de $800.000">Menos de $800.000</option>
+            <option value="Entre $800.000 y $999.999">Entre $800.000 y $999.999</option>
+            <option value="Entre $1.000.000 y $1.199.999">Entre $1.000.000 y $1.199.999</option>
+            <option value="Entre $1.200.000 y $1.399.999">Entre $1.200.000 y $1.399.999</option>
+            <option value="Entre $1.400.000 y $1.599.999">Entre $1.400.000 y $1.599.999</option>
+            <option value="Entre $1.600.000 y $1.799.999">Entre $1.600.000 y $1.799.999</option>
+            <option value="Entre $1.800.000 y $1.999.999">Entre $1.800.000 y $1.999.999</option>
+            <option value="Entre $2.000.000 y $2.199.999">Entre $2.000.000 y $2.199.999</option>
+            <option value="Entre $2.200.000 y $2.399.999">Entre $2.200.000 y $2.399.999</option>
+            <option value="Entre $2.400.000 y $2.599.999">Entre $2.400.000 y $2.599.999</option>
+            <option value="Entre $2.600.000 y $2.799.999">Entre $2.600.000 y $2.799.999</option>
+            <option value="Entre $2.800.000 y $2.999.999">Entre $2.800.000 y $2.999.999</option>
+            <option value="Entre $3.000.000 y $3.199.999">Entre $3.000.000 y $3.199.999</option>
+            <option value="Entre $3.200.000 y $3.399.999">Entre $3.200.000 y $3.399.999</option>
+            <option value="Entre $3.400.000 y $3.599.999">Entre $3.400.000 y $3.599.999</option>
+            <option value="Entre $3.600.000 y $3.799.999">Entre $3.600.000 y $3.799.999</option>
+            <option value="Entre $3.800.000 y $3.999.999">Entre $3.800.000 y $3.999.999</option>
+            <option value="Entre $4.000.000 y $4.199.999">Entre $4.000.000 y $4.199.999</option>
+            <option value="Entre $4.200.000 y $4.399.999">Entre $4.200.000 y $4.399.999</option>
+            <option value="Entre $4.400.000 y $4.599.999">Entre $4.400.000 y $4.599.999</option>
+            <option value="Entre $4.600.000 y $4.799.999">Entre $4.600.000 y $4.799.999</option>
+            <option value="Entre $4.800.000 y $4.999.999">Entre $4.800.000 y $4.999.999</option>
+            <option value="Entre $5.000.000 y $5.199.999">Entre $5.000.000 y $5.199.999</option>
+            <option value="Entre $5.200.000 y $5.399.999">Entre $5.200.000 y $5.399.999</option>
+            <option value="Entre $5.400.000 y $5.599.999">Entre $5.400.000 y $5.599.999</option>
+            <option value="Entre $5.600.000 y $5.799.999">Entre $5.600.000 y $5.799.999</option>
+            <option value="Entre $5.800.000 y $5.999.999">Entre $5.800.000 y $5.999.999</option>
+            <option value="$6.000.000 o más">$6.000.000 o más</option>
+          </select>
         </div>
         
         <div class="form-group">
@@ -417,11 +447,6 @@
               <input type="radio" name="cuenta_pie" value="si"> Sí
             </label>
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label>Comentarios adicionales</label>
-          <textarea name="comentarios" placeholder="Cuéntanos sobre tu situación..."></textarea>
         </div>
         
         <button type="button" class="submit-btn" onclick="nextStep(3)">SIGUIENTE</button>
@@ -540,7 +565,6 @@
       if (data.get('en_dicom') === 'si') html += `<p><strong>DICOM:</strong> Sí - ${data.get('dicom_detalle') || 'Sin detalle'}</p>`;
       if (data.get('complementar_renta') === 'si') html += `<p><strong>Complementar renta:</strong> Sí</p>`;
       if (data.get('cuenta_pie') === 'si') html += `<p><strong>Cuenta con pie:</strong> Sí</p>`;
-      if (data.get('comentarios')) html += `<p><strong>Comentarios:</strong> ${data.get('comentarios')}</p>`;
       
       document.getElementById('summary').innerHTML = html;
     }
@@ -579,7 +603,6 @@
         '¿Deseas complementar renta?': data.get('complementar_renta') === 'si' ? 'Sí' : 'No',
         '¿Qué tipo de crédito buscas?': data.get('tipo_credito'),
         '¿Cuentas con pie o ahorro inicial?': data.get('cuenta_pie') === 'si' ? 'Sí' : 'No',
-        'Comentarios adicionales': data.get('comentarios') || '',
       };
       
       try {
