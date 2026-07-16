@@ -1425,12 +1425,13 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
                 <span>{asesor?.email || "asesor@tuhipotecafacil.cl"}</span>
               </a>
-              <button className="flex items-center gap-3 text-xs text-blue-700 hover:text-blue-800 font-semibold">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <MessageSquare size={14} className="text-blue-700" />
+              <a href={`https://wa.me/56${(asesor?.telefono || "983300597").replace(/[^0-9]/g, "").replace(/^56/, "")}`} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 text-xs text-green-600 hover:text-green-700 font-semibold transition-colors">
+                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                  <MessageSquare size={14} className="text-green-600" />
                 </div>
-                <span>Enviar mensaje</span>
-              </button>
+                <span>Enviar WhatsApp</span>
+              </a>
             </div>
             <div className="mt-5 pt-4 border-t border-slate-100">
               <div className="bg-slate-50 rounded-xl p-3">
