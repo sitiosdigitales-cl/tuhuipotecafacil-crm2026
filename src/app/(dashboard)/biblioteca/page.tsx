@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  BookOpen,
   FileText,
   Image,
   Video,
@@ -10,214 +9,12 @@ import {
   Download,
   Upload,
   Search,
-  Plus,
   Eye,
   Star,
-  Clock,
-  User,
-  Tag,
   Grid,
   List,
-  Calendar,
-  CheckCircle,
   MoreHorizontal,
 } from "lucide-react";
-
-// Datos mock de documentos de la biblioteca
-const BIBLIOTECA_MOCK = [
-  {
-    id: "b1",
-    nombre: "Propuesta Comercial Hipotecario 2024",
-    descripcion: "Presentación completa del producto hipotecario con tasas y beneficios",
-    tipo: "PRESENTACION",
-    categoria: "VENTAS",
-    formato: "PDF",
-    tamano: "2.5 MB",
-    autor: "Andrés Pérez",
-    fechaSubida: new Date(2026, 5, 29),
-    vistas: 234,
-    descargas: 89,
-    favorito: true,
-    tags: ["propuesta", "hipotecario", "ventas"],
-    icono: "📊",
-  },
-  {
-    id: "b2",
-    nombre: "Manual de Procesos Hipotecarios",
-    descripcion: "Guía completa de procesos para créditos hipotecarios",
-    tipo: "DOCUMENTO",
-    categoria: "PROCESOS",
-    formato: "PDF",
-    tamano: "5.2 MB",
-    autor: "Carolina Muñoz",
-    fechaSubida: new Date(2026, 5, 19),
-    vistas: 567,
-    descargas: 234,
-    favorito: true,
-    tags: ["manual", "procesos", "guía"],
-    icono: "📋",
-  },
-  {
-    id: "b3",
-    nombre: "Video: Cómo Solicitar tu Crédito",
-    descripcion: "Tutorial en video del proceso de solicitud de crédito",
-    tipo: "VIDEO",
-    categoria: "CAPACITACION",
-    formato: "MP4",
-    tamano: "125 MB",
-    autor: "Diego Silva",
-    fechaSubida: new Date(2026, 5, 24),
-    vistas: 892,
-    descargas: 0,
-    favorito: false,
-    tags: ["video", "tutorial", "crédito"],
-    icono: "🎥",
-  },
-  {
-    id: "b4",
-    nombre: "Infografía: Beneficios del Crédito Hipotecario",
-    descripcion: "Infografía visual con los principales beneficios",
-    tipo: "IMAGEN",
-    categoria: "MARKETING",
-    formato: "PNG",
-    tamano: "1.8 MB",
-    autor: "Valentina Torres",
-    fechaSubida: new Date(2026, 5, 26),
-    vistas: 456,
-    descargas: 178,
-    favorito: true,
-    tags: ["infografía", "beneficios", "marketing"],
-    icono: "🖼️",
-  },
-  {
-    id: "b5",
-    nombre: "Presentación Black Friday 2024",
-    descripcion: "Materiales de venta para la campaña Black Friday",
-    tipo: "PRESENTACION",
-    categoria: "CAMPAÑAS",
-    formato: "PPTX",
-    tamano: "8.3 MB",
-    autor: "Javier Morales",
-    fechaSubida: new Date(2026, 5, 14),
-    vistas: 345,
-    descargas: 156,
-    favorito: false,
-    tags: ["black friday", "campaña", "promoción"],
-    icono: "📈",
-  },
-  {
-    id: "b6",
-    nombre: "Checklist: Documentos para Crédito",
-    descripcion: "Lista de verificación de documentos requeridos por tipo de crédito",
-    tipo: "DOCUMENTO",
-    categoria: "PROCESOS",
-    formato: "PDF",
-    tamano: "450 KB",
-    autor: "Andrés Pérez",
-    fechaSubida: new Date(2026, 6, 1),
-    vistas: 789,
-    descargas: 456,
-    favorito: true,
-    tags: ["checklist", "documentos", "crédito"],
-    icono: "✅",
-  },
-  {
-    id: "b7",
-    nombre: "Video: Testimonios de Clientes",
-    descripcion: "Compilación de testimonios de clientes satisfechos",
-    tipo: "VIDEO",
-    categoria: "MARKETING",
-    formato: "MP4",
-    tamano: "250 MB",
-    autor: "Carolina Muñoz",
-    fechaSubida: new Date(2026, 5, 22),
-    vistas: 1234,
-    descargas: 0,
-    favorito: true,
-    tags: ["testimonios", "clientes", "marketing"],
-    icono: "🎥",
-  },
-  {
-    id: "b8",
-    nombre: "Guía de Tasas Hipotecarias",
-    descripcion: "Comparativo de tasas de los principales bancos chilenos",
-    tipo: "DOCUMENTO",
-    categoria: "VENTAS",
-    formato: "PDF",
-    tamano: "1.2 MB",
-    autor: "Diego Silva",
-    fechaSubida: new Date(2026, 5, 27),
-    vistas: 678,
-    descargas: 345,
-    favorito: false,
-    tags: ["tasas", "bancos", "comparativo"],
-    icono: "📊",
-  },
-  {
-    id: "b9",
-    nombre: "Plantilla: Contrato Promesa Compraventa",
-    descripcion: "Modelo de contrato para operaciones hipotecarias",
-    tipo: "DOCUMENTO",
-    categoria: "LEGALES",
-    formato: "DOCX",
-    tamano: "320 KB",
-    autor: "Valentina Torres",
-    fechaSubida: new Date(2026, 5, 9),
-    vistas: 456,
-    descargas: 234,
-    favorito: false,
-    tags: ["contrato", "legal", "plantilla"],
-    icono: "📝",
-  },
-  {
-    id: "b10",
-    nombre: "Video: Presentación Empresa",
-    descripcion: "Video institucional de TuHipotecaFacil",
-    tipo: "VIDEO",
-    categoria: "CORPORATIVO",
-    formato: "MP4",
-    tamano: "180 MB",
-    autor: "Andrés Pérez",
-    fechaSubida: new Date(2026, 5, 4),
-    vistas: 2345,
-    descargas: 0,
-    favorito: true,
-    tags: ["empresa", "institucional", "video"],
-    icono: "🎥",
-  },
-  {
-    id: "b11",
-    nombre: "Infografía: Proceso de Crédito Paso a Paso",
-    descripcion: "Guía visual del proceso completo de solicitud",
-    tipo: "IMAGEN",
-    categoria: "CAPACITACION",
-    formato: "PNG",
-    tamano: "2.1 MB",
-    autor: "Diego Silva",
-    fechaSubida: new Date(2026, 5, 16),
-    vistas: 890,
-    descargas: 567,
-    favorito: false,
-    tags: ["proceso", "infografía", "paso a paso"],
-    icono: "🖼️",
-  },
-  {
-    id: "b12",
-    nombre: "Presentación: Programa de Referidos",
-    descripcion: "Materiales para promocionar el programa de referidos",
-    tipo: "PRESENTACION",
-    categoria: "VENTAS",
-    formato: "PDF",
-    tamano: "3.8 MB",
-    autor: "Javier Morales",
-    fechaSubida: new Date(2026, 5, 20),
-    vistas: 567,
-    descargas: 234,
-    favorito: false,
-    tags: ["referidos", "programa", "ventas"],
-    icono: "📊",
-  },
-];
 
 const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: React.ElementType }> = {
   DOCUMENTO: { label: "Documento", color: "text-blue-600", bg: "bg-blue-50", icono: FileText },
@@ -247,7 +44,6 @@ export default function BibliotecaPage() {
   const [filtroCategoria, setFiltroCategoria] = useState("todos");
   const [vistaActiva, setVistaActiva] = useState<"grid" | "lista">("grid");
   const [modalSubir, setModalSubir] = useState(false);
-  const [modalDetalle, setModalDetalle] = useState<string | null>(null);
   // eslint-disable-next-line react-hooks/purity -- Timestamp estable, calculado una vez
   const hace7Dias = useMemo(() => new Date(Date.now() - 7 * 86400000), []);
 
@@ -280,8 +76,6 @@ export default function BibliotecaPage() {
       return coincideTab && coincideBusqueda && coincideTipo && coincideCategoria;
     });
   }, [tabActiva, busqueda, filtroTipo, filtroCategoria, documentos]);
-
-  const documentoDetalle = documentos.find((doc) => doc.id === modalDetalle);
 
   const stats = useMemo(() => ({
     total: documentos.length,
@@ -470,8 +264,6 @@ export default function BibliotecaPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {documentosFiltrados.map((doc) => {
             const configTipo = TIPO_CONFIG[doc.tipo];
-            const configCategoria = CATEGORIA_CONFIG[doc.categoria];
-            const IconoTipo = configTipo?.icono;
 
             return (
               <div

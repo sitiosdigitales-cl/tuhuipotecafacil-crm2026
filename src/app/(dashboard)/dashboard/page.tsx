@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { TarjetasKPI } from "@/componentes/dashboard/TarjetasKPI";
 import { GraficoEmbudo } from "@/componentes/dashboard/GraficoEmbudo";
 import { GraficoConversion } from "@/componentes/dashboard/GraficoConversion";
@@ -12,7 +11,7 @@ import { TarjetaComisiones } from "@/componentes/dashboard/TarjetaComisiones";
 import { ActividadTiempoReal } from "@/componentes/dashboard/ActividadTiempoReal";
 import { useUserData } from "@/lib/hooks/useUserData";
 import { formatoMonedaAbreviado } from "@/lib/utils";
-import { Users, CheckCircle, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { Users, CheckCircle, DollarSign, TrendingUp } from "lucide-react";
 
 export default function DashboardPage() {
   const { usuarioActual, esSuperAdmin, stats, kpis } = useUserData();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function POST(request: NextRequest) {
     if (!requireAuth(request)) return unauthorized();
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Subir archivo a Supabase Storage
     const docId = crypto.randomUUID();
     const extension = archivo.name.split(".").pop() || "bin";
-    const filePath = `${leadId}/${docId}.${extension}`;
+    const filePath = leadId + "/" + docId + "." + extension;
 
     const { error: uploadError } = await supabase.storage
       .from("documentos")
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error al subir archivo" }, { status: 500 });
     }
 
-    // Obtener URL pública
+    // Obtener URL publica
     const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(filePath);
 
     // Guardar referencia en la tabla documentos
@@ -61,6 +62,15 @@ export async function POST(request: NextRequest) {
     if (dbError) {
       console.error("Error guardando referencia:", dbError);
     }
+
+    // Notificacion de documento subido via dispatcher
+    despacharNotificacion({
+      evento: "documento_subido",
+      leadId,
+      titulo: "Documento recibido",
+      descripcion: "Archivo " + archivo.name + " subido correctamente",
+      accionUrl: "/documentos",
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

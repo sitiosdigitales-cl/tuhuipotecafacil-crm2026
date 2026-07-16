@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
     try {
@@ -36,13 +37,13 @@ export async function POST(request: NextRequest) {
       .single();
     if (error) return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
 
-    // Notificación automática
+    // NotificaciÃ³n automÃ¡tica
     try {
       await supabase.from("notificaciones").insert({
         id: crypto.randomUUID(),
         tipo: "documento",
         titulo: "Documento recibido",
-        descripcion: `${body.leadNombre || "Cliente"} subió: ${body.nombre}`,
+        descripcion: `${body.leadNombre || "Cliente"} subiÃ³: ${body.nombre}`,
         leida: false,
         leadid: body.leadId,
         accionurl: `/documentos`,
@@ -55,3 +56,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
   }
 }
+

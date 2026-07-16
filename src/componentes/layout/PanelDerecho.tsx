@@ -10,9 +10,7 @@ import {
   Settings,
   Check,
   Trash2,
-  ExternalLink,
   FileText,
-  Eye,
   Clock,
   Calendar,
   RefreshCw,
@@ -26,7 +24,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
-import { useNotificaciones, type Notificacion } from "@/lib/contexts/NotificationContext";
+import { useNotificaciones } from "@/lib/contexts/NotificationContext";
 import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";
 
@@ -95,7 +93,7 @@ interface PanelDerechoProps {
   onToggleColapsado?: () => void;
 }
 
-export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: PanelDerechoProps) {
+export function PanelDerecho({ _onClose, colapsado = false, onToggleColapsado }: PanelDerechoProps) {
   const { notificaciones, noLeidas, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion } = useNotificaciones();
   const { leads } = useLeads();
   const { usuarios } = useUser();

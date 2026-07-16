@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Bot, User, Loader2 } from "lucide-react";
+import { Send, Sparkles, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SugerenciasRapidas } from "./SugerenciasRapidas";
 import { MensajeAsistente } from "./MensajeAsistente";

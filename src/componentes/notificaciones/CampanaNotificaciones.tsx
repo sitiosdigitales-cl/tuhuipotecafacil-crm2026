@@ -12,7 +12,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
-import { useNotificaciones, type Notificacion } from "@/lib/contexts/NotificationContext";
+import { useNotificaciones } from "@/lib/contexts/NotificationContext";
 
 export function CampanaNotificaciones() {
   const { notificaciones, noLeidas, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion } = useNotificaciones();

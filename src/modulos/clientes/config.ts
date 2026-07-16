@@ -69,7 +69,7 @@ export const CLIENTES_DOCUMENTOS_EMPRESA = [
 // ─── Función para obtener documentos según situación laboral y crédito ───
 export function obtenerDocumentosRequeridos(
   situacionLaboral: string,
-  tipoCredito?: string
+  _tipoCredito?: string
 ) {
   let docsBase: readonly { id: string; nombre: string; obligatorio: boolean }[] = [];
   

@@ -13,7 +13,6 @@ import {
   XCircle,
   MessageSquare,
   AlertTriangle,
-  Send,
 } from "lucide-react";
 import type { DocumentoLead } from "@/tipos";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";

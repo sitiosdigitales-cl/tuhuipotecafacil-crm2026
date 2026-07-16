@@ -12,8 +12,6 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  Maximize2,
-  X,
   Image,
   File,
 } from "lucide-react";

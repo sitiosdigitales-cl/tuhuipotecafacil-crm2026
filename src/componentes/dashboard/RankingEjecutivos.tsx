@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ChevronRight, Trophy, Medal, Crown } from "lucide-react";
+import { ChevronRight, Medal, Crown } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 
@@ -45,8 +45,6 @@ export function RankingEjecutivos() {
       </div>
     );
   }
-
-  const montoMaximo = Math.max(...ejecutivos.map(e => e.montoTotal));
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100/80">

@@ -14,14 +14,11 @@ import {
   CheckCircle,
   AlertTriangle,
   Plus,
-  Filter,
   Search,
   CalendarDays,
-  Users,
   ChevronRight,
 } from "lucide-react";
-import { useUser } from "@/modulos/usuarios";
-import { useLeads } from "@/modulos/leads";
+
 import { toast } from "sonner";
 
 const ICONOS_TIPO: Record<string, any> = {
@@ -53,8 +50,6 @@ const ESTADO_CONFIG: Record<string, { label: string; icono: any; color: string }
 };
 
 export default function CentroActividadPage() {
-  const { usuarioActual } = useUser();
-  const { leads } = useLeads();
   const [actividades, setActividades] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");

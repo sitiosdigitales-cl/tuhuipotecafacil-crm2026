@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ChevronRight, Building2, TrendingUp, Award, BarChart3 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 

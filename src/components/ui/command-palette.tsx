@@ -15,7 +15,6 @@ import {
   BarChart3,
   Settings,
   MessageSquare,
-  Bell,
   Moon,
   Sun,
 } from "lucide-react";

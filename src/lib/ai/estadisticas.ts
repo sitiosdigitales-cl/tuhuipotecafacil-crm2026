@@ -1,4 +1,4 @@
-import type { Lead, Etapa } from "@/tipos";
+import type { Lead } from "@/tipos";
 
 export interface EstadisticasPipeline {
   totalLeads: number;
@@ -189,7 +189,7 @@ HISTÓRICO (últimos ${historico.length} meses):
 
     cmfInfo += "\n========================\n";
     return cmfInfo;
-  } catch (error) {
+  } catch {
     return "\n=== DATOS CMF: No disponibles ===\n";
   }
 }

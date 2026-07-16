@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Search, Plus, Zap } from "lucide-react";
 import { StatsBar, KPIGrid } from "@/componentes/flujos/StatsBar";
 import { FlujoCard } from "@/componentes/flujos/FlujoCard";
 import { FlujoEditorPanel } from "@/componentes/flujos/FlujoEditorPanel";
 import { FlujoDetalleModal } from "@/componentes/flujos/FlujoDetalleModal";
 import { useFlujos } from "@/modulos/automatizacion/hooks";
-import { TRIGGERS_TIPOS, TRIGGER_CATEGORIAS } from "@/modulos/automatizacion/config";
 import { toast } from "sonner";
 
 type TabFlujo = "todos" | "activos" | "pausados" | "borrador";

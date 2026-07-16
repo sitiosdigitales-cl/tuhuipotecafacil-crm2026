@@ -9,12 +9,10 @@ import {
   Phone,
   Mail,
   MessageSquare,
-  Eye,
   Pencil,
   Trash2,
   LayoutGrid,
   List,
-  ChevronDown,
   Building2,
   Clock,
   DollarSign,
@@ -32,7 +30,7 @@ import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";
 import { useActivities } from "@/lib/contexts/ActivityContext";
 import { toast } from "sonner";
-import type { Lead, Etapa, Prioridad } from "@/tipos";
+import type { Lead, Prioridad } from "@/tipos";
 
 const prioridadConfig: Record<Prioridad, { label: string; class: string; dot: string }> = {
   BAJA: { label: "Baja", class: "bg-slate-100 text-slate-600", dot: "bg-slate-400" },

@@ -11,7 +11,6 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle,
   Upload,
   Download,
   Edit,
@@ -20,11 +19,6 @@ import {
   DollarSign,
   User,
   Send,
-  Eye,
-  Trash2,
-  FileCheck,
-  FileX,
-  FileClock,
   Briefcase,
   UserCheck,
   CreditCard,
@@ -42,7 +36,6 @@ import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";
-import { type Actividad } from "@/lib/contexts/ActivityContext";
 import { toast } from "sonner";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
@@ -116,14 +109,6 @@ function generarDocumentosLead(lead: Lead): DocumentoLead[] {
     creadoEn: new Date(),
   }));
 }
-
-const estadoDocConfig: Record<string, { label: string; icono: React.ReactNode; color: string; bg: string; dot: string }> = {
-  APROBADO: { label: "Aprobado", icono: <CheckCircle size={12} />, color: "text-emerald-600", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-  EN_REVISION: { label: "En Revisión", icono: <FileClock size={12} />, color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
-  RECIBIDO: { label: "Recibido", icono: <FileCheck size={12} />, color: "text-blue-600", bg: "bg-blue-50", dot: "bg-blue-500" },
-  RECHAZADO: { label: "Rechazado", icono: <FileX size={12} />, color: "text-red-600", bg: "bg-red-50", dot: "bg-red-500" },
-  PENDIENTE: { label: "Pendiente", icono: <AlertCircle size={12} />, color: "text-slate-400", bg: "bg-slate-50", dot: "bg-slate-400" },
-};
 
 const prioridadConfig = {
   BAJA: { label: "Baja", class: "bg-slate-100 text-slate-600" },
@@ -275,21 +260,6 @@ export default function ClientePerfilPage() {
   const docsAprobados = documentos.filter((d) => d.estado === "APROBADO").length;
   const docsTotal = documentos.length;
   const porcentajeDocs = docsTotal > 0 ? Math.round((docsAprobados / docsTotal) * 100) : 0;
-
-  const handlePreview = (doc: DocumentoLead) => {
-    setDocSeleccionado(doc);
-    setPreviewOpen(true);
-  };
-
-  const handleGestionar = (doc: DocumentoLead) => {
-    setDocSeleccionado(doc);
-    setGestionarOpen(true);
-  };
-
-  const handleEliminar = (doc: DocumentoLead) => {
-    setDocSeleccionado(doc);
-    setEliminarOpen(true);
-  };
 
   const handleConfirmarEliminar = () => {
     if (docSeleccionado) {
@@ -1286,7 +1256,7 @@ function EditarClienteForm({ lead, onClose }: { lead: Lead; onClose: () => void 
       setTimeout(() => {
         onClose();
       }, 1500);
-    } catch (error) {
+    } catch {
       setGuardando(false);
       alert("Error al guardar los datos. Intenta nuevamente.");
     }

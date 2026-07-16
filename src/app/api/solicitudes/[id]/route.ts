@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
 
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: "Error interno" }, { status: 500 });
   }
 }

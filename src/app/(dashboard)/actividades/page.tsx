@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  Plus, Search, Bell, Clock, CheckCircle, AlertTriangle, Calendar,
-  Mail, MessageSquare, Phone, Trash2, Edit, Eye, Play, Send,
-  Zap, Repeat, Timer, Users, ClipboardList, Columns3, CalendarDays,
-  List, LayoutDashboard, Square, CheckSquare, RotateCcw, ToggleLeft, ToggleRight,
+  Search, Bell,
+  Mail, MessageSquare, Phone, Trash2, Send,
+  Zap, ClipboardList, Columns3, CalendarDays,
+  List, Square, CheckSquare, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -61,7 +61,7 @@ const CANAL_CONFIG: Record<string, { label: string; icono: typeof Mail; color: s
 
 export default function ActividadesPage() {
   const { leads } = useLeads();
-  const { usuarios } = useUser();
+  useUser();
 
   // State
   const [vista, setVista] = useState<VistaActiva>("lista");
@@ -80,7 +80,6 @@ export default function ActividadesPage() {
 
   // Modales
   const [crearTipo, setCrearTipo] = useState<TipoActividad | null>(null);
-  const [editarItem, setEditarItem] = useState<Tarea | Recordatorio | null>(null);
   const [eliminarItem, setEliminarItem] = useState<{ id: string; tipo: TipoActividad } | null>(null);
 
   // Formulario
@@ -380,7 +379,6 @@ export default function ActividadesPage() {
               <tbody className="divide-y divide-slate-50">
                 {itemsFiltrados.map((item) => {
                   const tc = TIPO_CONFIG[item.tipo];
-                  const Icon = tc.icono;
                   const isTarea = item.tipo === "tarea";
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">

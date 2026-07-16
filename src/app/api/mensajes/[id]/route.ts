@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 // PUT /api/mensajes/[id] — Actualizar mensaje (contenido, reacciones, respondiendoA)

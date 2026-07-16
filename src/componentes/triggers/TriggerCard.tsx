@@ -10,7 +10,6 @@ import {
   TRIGGER_CATEGORIAS,
   ACCIONES_TIPOS,
   TRIGGERS_TIPOS,
-  type obtenerCategoriaTrigger,
 } from "@/modulos/automatizacion/config";
 
 const ICON_MAP: Record<string, any> = {
@@ -37,7 +36,6 @@ export function TriggerCard({
 }: TriggerCardProps) {
   const triggerConfig = TRIGGERS_TIPOS.find((t) => t.id === trigger.trigger);
   const categoria = TRIGGER_CATEGORIAS.find((c) => c.id === (trigger.categoria || triggerConfig?.categoria)) || TRIGGER_CATEGORIAS[0];
-  const TriggerIcon = ICON_MAP[triggerConfig?.icono || "Zap"] || Zap;
 
   const exitosas = trigger.exitosas || 0;
   const fallidas = trigger.fallidas || 0;

@@ -168,6 +168,23 @@ export const EMAIL_TEMPLATES: Record<string, (data: Record<string, string>) => E
       </div>
     `,
   }),
+  notificacionDocumento: (data) => ({
+    nombre: "Notificacion de Documento",
+    asunto: data.evento + " - TuHipotecaFacil",
+    contenido: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #6366F1, #4F46E5); padding: 30px; text-align: center;"><h1 style="color: white; margin: 0;">Notificacion de Documento</h1></div><div style="padding: 30px; background: #F8FAFC;"><h2 style="color: #1E293B;">Hola ' + data.nombre + ',</h2><p style="color: #475569; line-height: 1.6;">' + data.descripcion + '</p>' + (data.url ? '<div style="text-align: center; margin: 20px 0;"><a href="' + data.url + '" style="background: #6366F1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ver Documento</a></div>' : '') + '</div><div style="background: #1E293B; padding: 20px; text-align: center;"><p style="color: #94A3B8; margin: 0; font-size: 12px;">© 2026 Tu Hipoteca Facil - Todos los derechos reservados</p></div></div>',
+  }),
+
+  notificacionLead: (data) => ({
+    nombre: "Notificacion de Lead",
+    asunto: data.evento + " - TuHipotecaFacil",
+    contenido: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #3B82F6, #2563EB); padding: 30px; text-align: center;"><h1 style="color: white; margin: 0;">Notificacion de Lead</h1></div><div style="padding: 30px; background: #F8FAFC;"><h2 style="color: #1E293B;">Hola ' + data.nombre + ',</h2><p style="color: #475569; line-height: 1.6;">' + data.descripcion + '</p>' + (data.url ? '<div style="text-align: center; margin: 20px 0;"><a href="' + data.url + '" style="background: #3B82F6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ver Lead</a></div>' : '') + '</div><div style="background: #1E293B; padding: 20px; text-align: center;"><p style="color: #94A3B8; margin: 0; font-size: 12px;">© 2026 Tu Hipoteca Facil - Todos los derechos reservados</p></div></div>',
+  }),
+
+  notificacionTarea: (data) => ({
+    nombre: "Notificacion de Tarea",
+    asunto: data.evento + " - TuHipotecaFacil",
+    contenido: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #F59E0B, #D97706); padding: 30px; text-align: center;"><h1 style="color: white; margin: 0;">Notificacion de Tarea</h1></div><div style="padding: 30px; background: #F8FAFC;"><h2 style="color: #1E293B;">Hola ' + data.nombre + ',</h2><p style="color: #475569; line-height: 1.6;">' + data.descripcion + '</p>' + (data.url ? '<div style="text-align: center; margin: 20px 0;"><a href="' + data.url + '" style="background: #F59E0B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Ver Tarea</a></div>' : '') + '</div><div style="background: #1E293B; padding: 20px; text-align: center;"><p style="color: #94A3B8; margin: 0; font-size: 12px;">© 2026 Tu Hipoteca Facil - Todos los derechos reservados</p></div></div>',
+  }),
 };
 
 // Enviar email

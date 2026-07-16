@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { obtenerEstadoCMF } from "@/lib/cmf/service";
 
@@ -12,7 +12,7 @@ export async function GET() {
       data: estado,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Error al obtener estado" },
       { status: 500 }

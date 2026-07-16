@@ -11,7 +11,6 @@ import {
   FileText,
   Calendar,
   CheckSquare,
-  Bell,
   MessageSquare,
   BarChart3,
   Share2,
@@ -27,11 +26,10 @@ import {
   Shield,
   ClipboardList,
   ChevronDown,
-  ChevronRight,
   Home,
-  Bot,
   Sparkles,
   Calculator,
+  Database,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";
@@ -99,12 +97,13 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
   },
   {
     titulo: "ADMINISTRACIÓN",
-    roles: ["SUPER_ADMIN"], // Solo Super Admin ve administración
+    roles: ["SUPER_ADMIN", "ADMIN"], // Super Admin y Admin ven administración
     items: [
-      { label: "Usuarios y Roles", icon: <Users size={17} />, href: "/usuarios" },
+      { label: "Usuarios y Roles", icon: <Users size={17} />, href: "/usuarios", roles: ["SUPER_ADMIN"] },
       { label: "Configuración", icon: <Settings size={17} />, href: "/configuracion" },
-      { label: "Permisos", icon: <Shield size={17} />, href: "/permisos" },
+      { label: "Permisos", icon: <Shield size={17} />, href: "/permisos", roles: ["SUPER_ADMIN"] },
       { label: "Auditoría del Sistema", icon: <ClipboardList size={17} />, href: "/auditoria" },
+      { label: "Respaldo de Datos", icon: <Database size={17} />, href: "/backups" },
     ],
   },
 ];

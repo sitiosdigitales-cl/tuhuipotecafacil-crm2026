@@ -22,7 +22,7 @@ export function useEtapaConfig(etapa: string) {
  * @param nuevaEtapa - Etapa destino
  * @returns true si puede avanzar, false si no
  */
-export function usePuedeAvanzarEtapa(leadId: string, nuevaEtapa: string): boolean {
+export function usePuedeAvanzarEtapa(_leadId: string, _nuevaEtapa: string): boolean {
   // Lógica de validación de avance de etapa
   // Se puede expandir con reglas más complejas
   return true;

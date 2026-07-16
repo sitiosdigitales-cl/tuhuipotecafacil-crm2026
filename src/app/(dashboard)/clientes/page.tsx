@@ -5,28 +5,23 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   Plus,
-  Download,
-  Eye,
   Phone,
   Mail,
   MessageSquare,
   Building2,
   Users,
   DollarSign,
-  Home,
   ChevronRight,
   CheckCircle,
-  Clock,
   AlertTriangle,
   LayoutGrid,
   List,
-  UserCheck,
   Edit,
   CreditCard,
   Check,
   User,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS, SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
+import { ETAPAS_CONFIG, RENTAS_MENSUALES } from "@/tipos";
 import { formatoMoneda, formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";

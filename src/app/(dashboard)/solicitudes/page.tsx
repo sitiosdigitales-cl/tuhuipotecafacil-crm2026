@@ -8,18 +8,11 @@ import {
   Eye,
   Building2,
   DollarSign,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
   FileText,
-  Filter,
   LayoutGrid,
   List,
 } from "lucide-react";
-import { useUser } from "@/modulos/usuarios";
 import { formatoMonedaAbreviado } from "@/lib/utils";
-import { toast } from "sonner";
-
 const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   EN_REVISION: { label: "En Revisión", color: "#F59E0B", bgColor: "bg-amber-50 text-amber-700" },
   ENVIADO_BANCO: { label: "Enviado al Banco", color: "#3B82F6", bgColor: "bg-blue-50 text-blue-700" },
@@ -36,7 +29,6 @@ const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: st
 
 export default function SolicitudesPage() {
   const router = useRouter();
-  const { usuarioActual } = useUser();
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");

@@ -1,0 +1,19 @@
+﻿
+> tuhuipotecafacil-crm@0.1.0 dev
+> next dev
+
+Ôû▓ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.138.246.126:3000
+- Environments: .env.local, .env
+Ô£ô Ready in 403ms
+node.exe : ÔÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: 
+https://nextjs.org/docs/messages/middleware-to-proxy
+En C:\Program Files\nodejs\npm.ps1: 30 Carácter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ÔÜá The "middle...leware-to-proxy:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ GET / 200 in 294ms (next.js: 129ms, proxy.ts: 40ms, application-code: 124ms)

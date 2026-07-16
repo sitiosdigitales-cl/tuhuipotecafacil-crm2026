@@ -10,18 +10,13 @@ import {
   FileText,
   CheckCircle,
   Clock,
-  AlertTriangle,
   Phone,
   Mail,
   MessageSquare,
   Calendar,
-  DollarSign,
-  TrendingUp,
   Bell,
   ArrowRight,
   Filter,
-  Eye,
-  X,
 } from "lucide-react";
 import type { Lead } from "@/tipos";
 
@@ -137,7 +132,7 @@ function formatearTiempo(fecha: Date): string {
 
 export function ActividadTiempoReal() {
   const router = useRouter();
-  const { usuarioActual, esSuperAdmin } = useUser();
+  useUser();
   const { leads } = useLeads();
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");

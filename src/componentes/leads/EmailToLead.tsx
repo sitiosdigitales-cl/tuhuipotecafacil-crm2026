@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Send, User, Phone, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Send, FileText, X, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmailToLeadProps {

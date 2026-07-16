@@ -3,12 +3,9 @@
 import { useMemo } from "react";
 import {
   ClipboardList,
-  Clock,
   Play,
   CheckCircle,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   User,
   Target,
@@ -175,7 +172,7 @@ export function DashboardTareas({ tareas }: DashboardTareasProps) {
           </div>
           <div className="space-y-3">
             {(["PENDIENTE", "EN_PROGRESO", "COMPLETADA", "VENCIDA"] as EstadoTarea[]).map(
-              (estado, idx) => {
+              (estado) => {
                 const count = stats[
                   estado === "PENDIENTE"
                     ? "pendientes"

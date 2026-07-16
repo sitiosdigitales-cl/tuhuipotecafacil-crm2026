@@ -216,7 +216,6 @@ const TASAS_MOCK: CMFTasa[] = [
 ];
 
 // Cache en memoria
-let tasasCache: CMFTasa[] = [...TASAS_MOCK];
 let ultimoCache: Date = new Date();
 
 // Función para obtener tasas de la API CMF
@@ -226,7 +225,7 @@ export async function fetchTasasCMF(): Promise<CMFTasa[]> {
 }
 
 // Obtener tasas por banco
-export async function obtenerTasasPorBanco(moneda: string = "UF", monto?: number): Promise<TasaBanco[]> {
+export async function obtenerTasasPorBanco(_moneda: string = "UF", monto?: number): Promise<TasaBanco[]> {
   await new Promise(resolve => setTimeout(resolve, 50));
   
   let bancos = [...TASAS_POR_BANCO];
@@ -264,7 +263,7 @@ export async function obtenerTasaVigente(tipoOperacion?: string, moneda?: string
 }
 
 // Obtener histórico
-export async function obtenerHistorico(meses: number = 12): Promise<CMFHistorico[]> {
+export async function obtenerHistorico(_meses: number = 12): Promise<CMFHistorico[]> {
   const tasas = await fetchTasasCMF();
   
   const porMes: Record<string, number[]> = {};
@@ -321,7 +320,7 @@ export function calcularDividendo(
   monto: number,
   tasaAnual: number,
   plazoAnos: number,
-  moneda: "CLP" | "UF" = "UF"
+  _moneda: "CLP" | "UF" = "UF"
 ): {
   dividendo: number;
   cae: number;

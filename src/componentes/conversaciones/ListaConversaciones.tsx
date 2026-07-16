@@ -43,7 +43,7 @@ export function ListaConversaciones({
   usuarioActualId,
 }: ListaConversacionesProps) {
   const { usuarios } = useUser();
-  const { conversaciones, cargando, crearConversacion, recargar } = useConversaciones({ usuarioActualId });
+  const { conversaciones, cargando, crearConversacion } = useConversaciones({ usuarioActualId });
   const [busqueda, setBusqueda] = useState("");
   const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<TipoConversacion, boolean>>({
     CANAL: true,

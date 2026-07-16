@@ -13,8 +13,6 @@ import {
   Copy,
   Trash2,
   Upload,
-  CheckCircle,
-  Clock,
   GitBranch,
   Variable,
   Image,
@@ -30,7 +28,6 @@ import {
   Link,
   Code,
   Quote,
-  Minus,
   ChevronDown,
   ChevronRight,
   X,
@@ -71,197 +68,6 @@ const IMAGENES_EJEMPLO = [
   { id: "img6", nombre: "Ícono WhatsApp", tipo: "icono", url: "/whatsapp.png", preview: "https://via.placeholder.com/50x50/25D366/FFFFFF?text=WA" },
 ];
 
-// Plantillas mock mejoradas
-const PLANTILLAS_MOCK = [
-  {
-    id: "p1",
-    nombre: "Bienvenida Nuevo Lead",
-    tipo: "EMAIL",
-    categoria: "BIEVENIDA",
-    asunto: "¡Bienvenido a TuHipotecaFacil, {{nombre}}!",
-    contenido: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3B82F6, #8B5CF6); border-radius: 10px 10px 0 0;">
-    {{logo_empresa}}
-    <h1 style="margin: 10px 0 5px; font-size: 24px;">¡Bienvenido!</h1>
-    <p style="margin: 0; opacity: 0.9;">TuHipotecaFacil</p>
-  </div>
-  
-  <div style="padding: 30px; background: #fff;">
-    <p style="font-size: 16px; color: #333;">Estimado/a <strong>{{nombre}} {{apellido}}</strong>,</p>
-    
-    <p style="font-size: 14px; color: #555; line-height: 1.6;">
-      ¡Gracias por contactarnos! Soy <strong>{{ejecutivo}}</strong>, tu asesor hipotecario en TuHipotecaFacil.
-    </p>
-    
-    <div style="background: #f8fafc; border-left: 4px solid #3B82F6; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0; font-size: 14px; color: #333;">
-        <strong>Tu solicitud:</strong><br>
-        • Crédito: {{tipo_credito}}<br>
-        • Monto: {{monto_credito}}<br>
-        • Banco: {{banco}}
-      </p>
-    </div>
-    
-    <p style="font-size: 14px; color: #555; line-height: 1.6;">
-      En los próximos días nos pondremos en contacto contigo para avanzar con el proceso.
-    </p>
-    
-    <div style="margin: 30px 0; padding: 20px; background: #f8fafc; border-radius: 8px;">
-      {{firma_ejecutivo}}
-      <p style="margin: 10px 0 0; font-size: 14px; color: #333;"><strong>{{ejecutivo}}</strong></p>
-      <p style="margin: 2px 0 0; font-size: 12px; color: #666;">Asesor Hipotecario</p>
-      <p style="margin: 2px 0 0; font-size: 12px; color: #666;">{{telefono_ejecutivo}}</p>
-    </div>
-  </div>
-  
-  <div style="text-align: center; padding: 15px; background: #f8fafc; border-radius: 0 0 10px 10px; border-top: 1px solid #e2e8f0;">
-    {{logo_empresa}}
-    <p style="margin: 5px 0 0; font-size: 11px; color: #94a3b8;">
-      © 2026 TuHipotecaFacil.cl - Todos los derechos reservados
-    </p>
-  </div>
-</div>`,
-    activa: true,
-    uso: 1247,
-    creadoEn: new Date(2026, 5, 4),
-    flujos: ["Bienvenida Nuevo Lead"],
-    imagenes: ["img1", "img2"],
-  },
-  {
-    id: "p2",
-    nombre: "Recordatorio Documentos Pendientes",
-    tipo: "EMAIL",
-    categoria: "SEGUIMIENTO",
-    asunto: "Recordatorio: Documentos pendientes - {{nombre}} {{apellido}}",
-    contenido: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="padding: 20px; background: #fff; border-radius: 10px;">
-    {{logo_empresa}}
-    
-    <h2 style="color: #1e293b; margin: 20px 0 10px;">Documentos Pendientes</h2>
-    
-    <p style="font-size: 14px; color: #555;">Estimado/a <strong>{{nombre}}</strong>,</p>
-    
-    <p style="font-size: 14px; color: #555; line-height: 1.6;">
-      Te recordamos que aún tenemos documentos pendientes para avanzar con tu solicitud de crédito:
-    </p>
-    
-    <div style="margin: 20px 0;">
-      <div style="display: flex; align-items: center; padding: 12px; background: #fef3c7; border-radius: 8px; margin-bottom: 8px;">
-        <span style="margin-right: 10px;">📋</span>
-        <span style="font-size: 14px; color: #92400e;">Certificado de AFP</span>
-      </div>
-      <div style="display: flex; align-items: center; padding: 12px; background: #fef3c7; border-radius: 8px; margin-bottom: 8px;">
-        <span style="margin-right: 10px;">📄</span>
-        <span style="font-size: 14px; color: #92400e;">Comprobante de domicilio</span>
-      </div>
-      <div style="display: flex; align-items: center; padding: 12px; background: #fef3c7; border-radius: 8px;">
-        <span style="margin-right: 10px;">📊</span>
-        <span style="font-size: 14px; color: #92400e;">Última declaración de renta</span>
-      </div>
-    </div>
-    
-    <p style="font-size: 14px; color: #555; line-height: 1.6;">
-      Por favor, envíalos a la brevedad para poder continuar con el proceso.
-    </p>
-    
-    <div style="margin: 30px 0; padding: 20px; background: #f8fafc; border-radius: 8px;">
-      {{firma_ejecutivo}}
-      <p style="margin: 10px 0 0; font-size: 14px; color: #333;"><strong>{{ejecutivo}}</strong></p>
-      <p style="margin: 2px 0 0; font-size: 12px; color: #666;">{{telefono_ejecutivo}}</p>
-    </div>
-  </div>
-</div>`,
-    activa: true,
-    uso: 856,
-    creadoEn: new Date(2026, 5, 9),
-    flujos: ["Recordatorio Documentos Pendientes"],
-    imagenes: ["img1", "img2"],
-  },
-  {
-    id: "p5",
-    nombre: "Saludo WhatsApp",
-    tipo: "WHATSAPP",
-    categoria: "BIEVENIDA",
-    contenido: `Hola {{nombre}} 👋
-
-Soy {{ejecutivo}} de TuHipotecaFacil.
-
-Vi que estuviste interesado en un crédito {{tipo_credito}}. ¿Tienes alguna consulta?
-
-Estoy aquí para ayudarte. 🏠
-
-{{logo_empresa}}`,
-    activa: true,
-    uso: 2156,
-    creadoEn: new Date(2026, 5, 6),
-    flujos: ["Bienvenida Nuevo Lead", "Seguimiento Post Llamada"],
-    imagenes: ["img1", "img6"],
-  },
-  {
-    id: "p9",
-    nombre: "Contrato Promesa Compraventa",
-    tipo: "DOCUMENTO",
-    categoria: "LEGAL",
-    descripcion: "Modelo de contrato de promesa de compraventa para crédito hipotecario",
-    contenido: `<div style="font-family: 'Times New Roman', serif; max-width: 700px; margin: 0 auto; padding: 40px;">
-  <div style="text-align: center; margin-bottom: 30px;">
-    {{logo_empresa}}
-    <h1 style="font-size: 18px; margin: 15px 0 5px; color: #1e293b;">CONTRATO DE PROMESA DE COMPRAVENTA</h1>
-    <p style="font-size: 12px; color: #64748b;">Crédito Hipotecario</p>
-  </div>
-  
-  <div style="font-size: 12px; line-height: 1.8; color: #334155;">
-    <p>En la ciudad de Santiago, a los ___ días del mes de ___ de 2026,</p>
-    
-    <p><strong>ENTRE:</strong></p>
-    
-    <p><strong>EL/LA COMPRADOR(A):</strong><br>
-    Nombre: {{nombre}} {{apellido}}<br>
-    RUT: {{rut}}<br>
-    Email: {{email}}<br>
-    Teléfono: {{telefono}}</p>
-    
-    <p><strong>EL/LA VENDEDOR(A):</strong><br>
-    [Datos del vendedor]</p>
-    
-    <p><strong>PRECIO DE VENTA:</strong> {{monto_credito}}</p>
-    
-    <p><strong>PROPIEDAD:</strong> [Dirección de la propiedad]</p>
-    
-    <div style="margin: 30px 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <p style="font-size: 11px; color: #64748b; text-align: center;">
-        Firmas de las partes
-      </p>
-      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
-        <div style="text-align: center;">
-          {{firma_empresa}}
-          <p style="font-size: 10px; color: #64748b; margin-top: 5px;">Comprador(a)</p>
-          <p style="font-size: 10px; color: #334155;">{{nombre}} {{apellido}}</p>
-        </div>
-        <div style="text-align: center;">
-          {{firma_empresa}}
-          <p style="font-size: 10px; color: #64748b; margin-top: 5px;">Vendedor(a)</p>
-          <p style="font-size: 10px; color: #334155;">[Nombre Vendedor]</p>
-        </div>
-      </div>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px;">
-      {{firma_empresa}}
-      <p style="font-size: 10px; color: #94a3b8; margin-top: 10px;">
-        TuHipotecaFacil.cl - {{empresa}}
-      </p>
-    </div>
-  </div>
-</div>`,
-    activa: true,
-    uso: 156,
-    creadoEn: new Date(2026, 4, 5),
-    flujos: [],
-    imagenes: ["img1"],
-  },
-];
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: any }> = {
   EMAIL: { label: "Email", color: "text-blue-600", bg: "bg-blue-50", icono: Mail },
@@ -287,11 +93,9 @@ export default function PlantillasPage() {
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<string | null>(null);
-  const [modalDetalle, setModalDetalle] = useState<string | null>(null);
   const [modalPreview, setModalPreview] = useState<string | null>(null);
   const [modalVariables, setModalVariables] = useState(false);
   const [modalImagenes, setModalImagenes] = useState(false);
-  const [imagenSeleccionada, setImagenSeleccionada] = useState<string | null>(null);
 
   useEffect(() => {
     async function cargar() {

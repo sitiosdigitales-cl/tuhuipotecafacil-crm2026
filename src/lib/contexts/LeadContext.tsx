@@ -158,7 +158,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const eliminarLead = useCallback(async (id: string) => {
     // Guardar estado anterior para rollback
-    const leadsAnteriores = leads;
     const leadEliminado = leads.find((l) => l.id === id);
 
     // Optimistic update

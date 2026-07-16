@@ -7,7 +7,6 @@ import {
   Clock,
   Play,
   CheckCircle,
-  AlertTriangle,
   Calendar,
   User,
   FileText,
@@ -28,13 +27,6 @@ const prioridadStyles: Record<string, { label: string; class: string }> = {
   MEDIA: { label: "Media", class: "bg-blue-50 text-blue-600 border border-blue-100" },
   ALTA: { label: "Alta", class: "bg-orange-50 text-orange-600 border border-orange-100" },
   URGENTE: { label: "Urgente", class: "bg-red-50 text-red-600 border border-red-100" },
-};
-
-const estadoIcono: Record<EstadoTarea, React.ReactNode> = {
-  PENDIENTE: <Clock size={14} className="text-amber-500" />,
-  EN_PROGRESO: <Play size={14} className="text-blue-500" />,
-  COMPLETADA: <CheckCircle size={14} className="text-emerald-500" />,
-  VENCIDA: <AlertTriangle size={14} className="text-red-500" />,
 };
 
 export default function TareaDetallePage({

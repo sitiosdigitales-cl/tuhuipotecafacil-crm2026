@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   Calendar,
-  Bell,
   Command,
   Menu,
   User,
@@ -26,9 +25,9 @@ interface BarraSuperiorProps {
   panelColapsado?: boolean;
 }
 
-export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: BarraSuperiorProps) {
+export function BarraSuperior({ onMenuClick, _onPanelClick, _panelColapsado }: BarraSuperiorProps) {
   const router = useRouter();
-  const { usuarioActual, cambiarUsuario, esSuperAdmin, usuarios } = useUser();
+  const { usuarioActual, esSuperAdmin } = useUser();
   const { logout } = useAuth();
   const [mostrarUsuario, setMostrarUsuario] = useState(false);
   const [actualizando, setActualizando] = useState(false);

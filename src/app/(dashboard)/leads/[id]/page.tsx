@@ -10,7 +10,6 @@ import {
   Calendar,
   Clock,
   FileText,
-  DollarSign,
   Building2,
   Home,
   Edit,
@@ -28,7 +27,6 @@ import {
   FileCheck,
   FileX,
   FileClock,
-  ExternalLink,
   Eye,
   Trash2,
   Activity,
@@ -71,23 +69,6 @@ const DOCUMENTOS_POR_TIPO: Record<TipoTrabajador, { id: string; nombre: string; 
     { id: "constitucion", nombre: "Constitución de sociedad", obligatorio: false, descripcion: "Si aplica" },
     { id: "socios", nombre: "Antecedentes comerciales socios", obligatorio: true, descripcion: "De todos los socios" },
   ],
-};
-
-// Mock de documentos del lead (simulados)
-const DOCUMENTOS_LEAD_MOCK: Record<string, { estado: "RECIBIDO" | "EN_REVISION" | "APROBADO" | "RECHAZADO" | "PENDIENTE"; fecha?: Date; archivoUrl?: string }> = {
-  "cedula": { estado: "APROBADO", fecha: new Date(Date.now() - 864000000) },
-  "afp": { estado: "APROBADO", fecha: new Date(Date.now() - 604800000) },
-  "liq-sueldo": { estado: "EN_REVISION", fecha: new Date(Date.now() - 259200000) },
-  "domicilio": { estado: "RECIBIDO", fecha: new Date(Date.now() - 172800000) },
-  "dicom": { estado: "PENDIENTE" },
-  "antiguedad": { estado: "PENDIENTE" },
-  "titulo": { estado: "PENDIENTE" },
-  "carpeta-trib": { estado: "PENDIENTE" },
-  "iva": { estado: "PENDIENTE" },
-  "renta": { estado: "PENDIENTE" },
-  "balance": { estado: "PENDIENTE" },
-  "constitucion": { estado: "PENDIENTE" },
-  "socios": { estado: "PENDIENTE" },
 };
 
 const estadoConfig: Record<string, { label: string; icono: React.ReactNode; color: string; bg: string }> = {
@@ -183,7 +164,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const [documentos, setDocumentos] = useState<Record<string, { estado: "RECIBIDO" | "EN_REVISION" | "APROBADO" | "RECHAZADO" | "PENDIENTE"; fecha?: Date; archivoUrl?: string }>>({});
   const [docsSubidos, setDocsSubidos] = useState<DocumentoLead[]>([]);
   const [actividades, setActividades] = useState<ActividadLead[]>([]);
-  const [plantillaOpen, setPlantillaOpen] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [cargandoDocs, setCargandoDocs] = useState(true);
 
@@ -270,7 +250,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     router.push("/leads");
   };
 
-  const handleSubmitLead = (data: Partial<Lead>) => {
+  const handleSubmitLead = (_data: Partial<Lead>) => {
     setFormularioOpen(false);
   };
 
@@ -373,7 +353,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  const handleCambiarEstadoDoc = async (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
+  const handleCambiarEstadoDoc = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
     try {
       await fetch(`/api/documentos/${docId}`, {
         method: "PUT",

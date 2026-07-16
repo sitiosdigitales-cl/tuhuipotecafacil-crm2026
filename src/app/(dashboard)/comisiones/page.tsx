@@ -7,13 +7,9 @@ import {
   Users,
   CheckCircle,
   Clock,
-  AlertTriangle,
   CreditCard,
   Wallet,
   BarChart3,
-  Calendar,
-  Search,
-  Download,
   Edit,
   Target,
   FileText,
@@ -22,100 +18,6 @@ import {
 } from "lucide-react";
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 import { toast } from "sonner";
-
-// Datos mock de comisiones por ejecutivo
-const COMISIONES_INICIALES = [
-  {
-    id: "e1",
-    nombre: "Andrés Pérez",
-    avatar: "AP",
-    rol: "Admin",
-    ventas: 45,
-    montoTotal: 6750000000,
-    porcentajeCobroCliente: 7,
-    porcentajeComisionAgente: 15,
-    comisionTotal: 33750000,
-    comisionPagada: 25000000,
-    comisionPendiente: 8750000,
-    tasaConversion: 32.5,
-    ticketPromedio: 150000000,
-    meta: 50,
-    metaMonto: 7500000000,
-    color: "#3B82F6",
-  },
-  {
-    id: "e2",
-    nombre: "Carolina Muñoz",
-    avatar: "CM",
-    rol: "Gerente",
-    ventas: 38,
-    montoTotal: 5700000000,
-    porcentajeCobroCliente: 7,
-    porcentajeComisionAgente: 15,
-    comisionTotal: 28500000,
-    comisionPagada: 22000000,
-    comisionPendiente: 6500000,
-    tasaConversion: 28.3,
-    ticketPromedio: 150000000,
-    meta: 40,
-    metaMonto: 6000000000,
-    color: "#8B5CF6",
-  },
-  {
-    id: "e3",
-    nombre: "Diego Silva",
-    avatar: "DS",
-    rol: "Agente",
-    ventas: 32,
-    montoTotal: 4800000000,
-    porcentajeCobroCliente: 7,
-    porcentajeComisionAgente: 15,
-    comisionTotal: 24000000,
-    comisionPagada: 18000000,
-    comisionPendiente: 6000000,
-    tasaConversion: 25.6,
-    ticketPromedio: 150000000,
-    meta: 35,
-    metaMonto: 5250000000,
-    color: "#10B981",
-  },
-  {
-    id: "e4",
-    nombre: "Valentina Torres",
-    avatar: "VT",
-    rol: "Agente",
-    ventas: 28,
-    montoTotal: 4200000000,
-    porcentajeCobroCliente: 7,
-    porcentajeComisionAgente: 15,
-    comisionTotal: 21000000,
-    comisionPagada: 15000000,
-    comisionPendiente: 6000000,
-    tasaConversion: 22.4,
-    ticketPromedio: 150000000,
-    meta: 30,
-    metaMonto: 4500000000,
-    color: "#F59E0B",
-  },
-  {
-    id: "e5",
-    nombre: "Javier Morales",
-    avatar: "JM",
-    rol: "Agente",
-    ventas: 18,
-    montoTotal: 2700000000,
-    porcentajeCobroCliente: 7,
-    porcentajeComisionAgente: 15,
-    comisionTotal: 13500000,
-    comisionPagada: 10000000,
-    comisionPendiente: 3500000,
-    tasaConversion: 18.2,
-    ticketPromedio: 150000000,
-    meta: 25,
-    metaMonto: 3750000000,
-    color: "#EC4899",
-  },
-];
 
 // Historial de pagos
 const HISTORIAL_PAGOS = [
@@ -138,23 +40,9 @@ const CREDITOS_APROBADOS = [
   { id: "c8", cliente: "Fernanda Rojas", rut: "17.654.321-K", montoCredito: 65000000, banco: "Bci", tasa: 4.95, plazo: 15, dividendo: 512340, ejecutivo: "Valentina Torres", fechaAprobacion: new Date(Date.now() - 22 * 86400000), comision: 325000, estado: "EN_PROCESO" },
 ];
 
-// Datos mensuales para gráfico
-const COMISIONES_MENSUALES = [
-  { mes: "Jul", comisiones: 18000000, pagadas: 15000000 },
-  { mes: "Ago", comisiones: 22000000, pagadas: 20000000 },
-  { mes: "Sep", comisiones: 25000000, pagadas: 22000000 },
-  { mes: "Oct", comisiones: 28000000, pagadas: 25000000 },
-  { mes: "Nov", comisiones: 32000000, pagadas: 28000000 },
-  { mes: "Dic", comisiones: 28500000, pagadas: 22000000 },
-];
-
 export default function ComisionesPage() {
   const [comisiones, setComisiones] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState<"resumen" | "ejecutivos" | "creditos" | "pagos" | "historial">("resumen");
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [mesSeleccionado, setMesSeleccionado] = useState("dic-2026");
   const [modalEditar, setModalEditar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -164,7 +52,7 @@ export default function ComisionesPage() {
         const json = await res.json();
         if (json.success && json.data) setComisiones(json.data);
       } catch { setComisiones([]); }
-      finally { setCargando(false); }
+      finally { /* loaded */ }
     }
     cargar();
   }, []);
@@ -176,10 +64,6 @@ export default function ComisionesPage() {
     totalVentas: comisiones.reduce((sum: number, e: any) => sum + (e.ventas || 0), 0),
     promedioConversion: comisiones.length > 0 ? Math.round(comisiones.reduce((sum: number, e: any) => sum + (e.tasaConversion || 0), 0) / comisiones.length) : 0,
   }), [comisiones]);
-
-  const ejecutivoTop = comisiones.length > 0 ? comisiones.reduce((prev: any, curr: any) =>
-    curr.comisionTotal > prev.comisionTotal ? curr : prev
-  ) : null;
 
   const ejecutivoEditar = comisiones.find((e) => e.id === modalEditar);
 

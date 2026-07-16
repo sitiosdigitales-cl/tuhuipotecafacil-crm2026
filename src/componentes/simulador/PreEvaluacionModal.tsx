@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Send, CheckCircle, AlertCircle, User, Phone, Mail, FileText, Briefcase, Home } from "lucide-react";
+import { X, Send, CheckCircle, User, Phone, Mail, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 interface PreEvaluacionModalProps {

@@ -2,13 +2,13 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Area, AreaChart,
 } from "recharts";
 import {
-  Download, Calendar, Filter, TrendingUp, TrendingDown, Users, DollarSign,
-  CheckCircle, Clock, FileText, Target, Award, Building2, AlertTriangle,
+  Download, Filter, TrendingUp, Users, DollarSign,
+  CheckCircle, Target, Award, Building2,
 } from "lucide-react";
 import type { Lead, Etapa } from "@/tipos";
 
@@ -245,17 +245,6 @@ export default function ReportesPage() {
         porcentaje: Math.round((count / total) * 100),
         color: colores[key] || "#64748B",
       }))
-      .sort((a, b) => b.valor - a.valor);
-  }, [leadsFiltrados]);
-
-  // Distribución por prioridad
-  const prioridadData = useMemo(() => {
-    const colores: Record<string, string> = { URGENTE: "#EF4444", ALTA: "#F97316", MEDIA: "#3B82F6", BAJA: "#94A3B8" };
-    const labels: Record<string, string> = { URGENTE: "Urgente", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
-    const agrupado: Record<string, number> = {};
-    leadsFiltrados.forEach((l) => { agrupado[l.prioridad] = (agrupado[l.prioridad] || 0) + 1; });
-    return Object.entries(agrupado)
-      .map(([key, valor]) => ({ nombre: labels[key] || key, valor, color: colores[key] || "#64748B" }))
       .sort((a, b) => b.valor - a.valor);
   }, [leadsFiltrados]);
 

@@ -6,7 +6,7 @@ async function setup() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(url, key);
 
-  const { data: testData, error: testError } = await supabase.from("bancos").select("id").limit(1);
+  const { error: testError } = await supabase.from("bancos").select("id").limit(1);
   
   if (testError && testError.message.includes("does not exist")) {
     console.log("Table does not exist. Please create it in Supabase dashboard:");

@@ -2,15 +2,12 @@
 
 import { useMemo, useState } from "react";
 import {
-  Building2, TrendingUp, DollarSign, Users, CheckCircle, Clock, AlertCircle,
-  Phone, Mail, Globe, User, MessageSquare, Star, Eye, Pencil, Plus, Search, ChevronRight,
-  Percent, FileText, Target, Award, ExternalLink, X, MapPin, Briefcase,
-  Calendar, Home, ArrowRight,
+  Building2, DollarSign, Users, CheckCircle, Clock,
+  Phone, Mail, MessageSquare, Eye, Search, ChevronRight,
+  FileText, Target, X,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { useBancos } from "@/modulos/bancos";
-import { formatoMonedaAbreviado } from "@/lib/utils";
-import { toast } from "sonner";
 import type { Banco } from "@/modulos/bancos";
 
 export default function BancosPage() {

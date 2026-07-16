@@ -1,7 +1,11 @@
 /**
  * Helper para crear notificaciones desde cualquier parte del sistema.
- * Usa la API REST directamente (no necesita React context).
+ * Usa el dispatcher centralizado que resuelve el dueño del lead
+ * y envía por los canales habilitados.
  */
+
+import { despacharNotificacionClient } from "./dispatcher-notificaciones";
+import type { EventoNotificacion } from "./dispatcher-notificaciones";
 
 export async function crearNotificacion(opts: {
   tipo: string;
@@ -12,10 +16,13 @@ export async function crearNotificacion(opts: {
   accionUrl?: string;
 }) {
   try {
-    await fetch("/api/notificaciones", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(opts),
+    await despacharNotificacionClient({
+      evento: (opts.tipo as EventoNotificacion) || "sistema",
+      leadId: opts.leadId,
+      titulo: opts.titulo,
+      descripcion: opts.descripcion,
+      usuarioIdDirecto: opts.usuarioId,
+      accionUrl: opts.accionUrl,
     });
   } catch {
     // Silenciar errores
@@ -25,70 +32,70 @@ export async function crearNotificacion(opts: {
 // Notificaciones predefinidas para eventos comunes del CRM
 export const Notificaciones = {
   nuevoLead: (leadNombre: string, leadId: string) =>
-    crearNotificacion({
-      tipo: "lead",
-      titulo: "Nuevo lead registrado",
-      descripcion: `${leadNombre} completó el formulario web`,
+    despacharNotificacionClient({
+      evento: "lead_nuevo",
       leadId,
-      accionUrl: `/leads/${leadId}`,
+      titulo: "Nuevo lead registrado",
+      descripcion: leadNombre + " completo el formulario web",
+      accionUrl: "/leads/" + leadId,
     }),
 
   leadAvanzoEtapa: (leadNombre: string, etapa: string, leadId: string) =>
-    crearNotificacion({
-      tipo: "info",
-      titulo: "Lead avanzó de etapa",
-      descripcion: `${leadNombre} pasó a ${etapa}`,
+    despacharNotificacionClient({
+      evento: "lead_etapa",
       leadId,
-      accionUrl: `/leads/${leadId}`,
+      titulo: "Lead avanzo de etapa",
+      descripcion: leadNombre + " paso a " + etapa,
+      accionUrl: "/leads/" + leadId,
     }),
 
   tareaAsignada: (titulo: string, tareaId: string) =>
-    crearNotificacion({
-      tipo: "tarea",
+    despacharNotificacionClient({
+      evento: "tarea_asignada",
       titulo: "Tarea asignada",
       descripcion: titulo,
-      accionUrl: `/tareas/${tareaId}`,
+      accionUrl: "/tareas/" + tareaId,
     }),
 
   tareaVencida: (titulo: string, tareaId: string) =>
-    crearNotificacion({
-      tipo: "advertencia",
+    despacharNotificacionClient({
+      evento: "tarea_vencida",
       titulo: "Tarea vencida",
-      descripcion: `"${titulo}" ha vencido`,
-      accionUrl: `/tareas/${tareaId}`,
+      descripcion: titulo + " ha vencido",
+      accionUrl: "/tareas/" + tareaId,
     }),
 
   documentoRecibido: (nombre: string, leadNombre: string, leadId: string) =>
-    crearNotificacion({
-      tipo: "documento",
-      titulo: "Documento recibido",
-      descripcion: `${leadNombre} subió: ${nombre}`,
+    despacharNotificacionClient({
+      evento: "documento_subido",
       leadId,
-      accionUrl: `/documentos`,
+      titulo: "Documento recibido",
+      descripcion: leadNombre + " subio: " + nombre,
+      accionUrl: "/documentos",
     }),
 
   documentoAprobado: (nombre: string, leadId: string) =>
-    crearNotificacion({
-      tipo: "exito",
-      titulo: "Documento aprobado",
-      descripcion: `${nombre} fue aprobado`,
+    despacharNotificacionClient({
+      evento: "documento_estado",
       leadId,
-      accionUrl: `/documentos`,
+      titulo: "Documento aprobado",
+      descripcion: nombre + " fue aprobado",
+      accionUrl: "/documentos",
     }),
 
-  nuevoMensaje: (remitente: string, conversacionId: string) =>
-    crearNotificacion({
-      tipo: "mensaje",
+  nuevoMensaje: (remitente: string, _conversacionId: string) =>
+    despacharNotificacionClient({
+      evento: "mensaje",
       titulo: "Nuevo mensaje",
-      descripcion: `${remitente} te envió un mensaje`,
-      accionUrl: `/conversaciones`,
+      descripcion: remitente + " te envio un mensaje",
+      accionUrl: "/conversaciones",
     }),
 
   recordatorioPendiente: (titulo: string) =>
-    crearNotificacion({
-      tipo: "sistema",
+    despacharNotificacionClient({
+      evento: "sistema",
       titulo: "Recordatorio pendiente",
       descripcion: titulo,
-      accionUrl: `/recordatorios`,
+      accionUrl: "/recordatorios",
     }),
 };

@@ -6,19 +6,15 @@ import {
   signInWithGoogle,
   signOutGoogle,
   isGoogleAuthenticated,
-  createGoogleCalendarEvent,
-  generateMeetLink,
 } from "@/lib/services/googleCalendar";
 import {
   Calendar,
   Video,
   Check,
   Loader2,
-  LogIn,
   LogOut,
   ExternalLink,
   Copy,
-  Settings,
   AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,11 +27,10 @@ interface GoogleCalendarIntegrationProps {
   }) => void;
 }
 
-export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarIntegrationProps) {
+export function GoogleCalendarIntegration({ _onEventCreated }: GoogleCalendarIntegrationProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -43,7 +38,7 @@ export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarInte
         await initGoogleCalendar();
         setIsLoaded(true);
         setIsAuthenticated(isGoogleAuthenticated());
-      } catch (error) {
+      } catch {
         // Error initializing Google Calendar
       }
     }
@@ -60,7 +55,7 @@ export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarInte
           description: "Ahora puedes crear eventos y reuniones con Google Meet",
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al conectar con Google");
     } finally {
       setIsLoading(false);

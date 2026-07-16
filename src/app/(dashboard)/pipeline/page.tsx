@@ -53,13 +53,6 @@ async function verificarDocumentosCompletos(lead: Lead): Promise<{ completo: boo
     const json = await res.json();
     const docs = json.data || [];
 
-    // Documentos que están APROBADOS o RECIBIDO o EN_REVISION (cargados)
-    const docsCargados = docs.filter((d: { estado: string }) =>
-      d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION"
-    );
-
-    const tiposCargados = new Set(docsCargados.map((d: { tipo: string }) => d.tipo));
-
     const obligatorios = DOCUMENTOS_OBLIGATORIOS[lead.situacionLaboral] || DOCUMENTOS_OBLIGATORIOS.DEPENDIENTE;
 
     // Mapeo de IDs del pipeline a tipos de la BD
@@ -330,7 +323,7 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carg
 export default function PipelinePage() {
   const router = useRouter();
   const { usuarioActual, esSuperAdmin, usuarios } = useUser();
-  const { leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargaPorEjecutivo } = useLeads();
+  const { leads, agregarLead, actualizarLead, eliminarLead, moverEtapa, cargaPorEjecutivo } = useLeads();
   const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
   const [filtroEjecutivo, setFiltroEjecutivo] = useState("todos");

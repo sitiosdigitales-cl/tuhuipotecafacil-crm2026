@@ -325,7 +325,6 @@ export async function deleteGoogleCalendarEvent(eventId: string): Promise<boolea
 
 // Generar link de Google Meet directo
 export function generateMeetLink(): string {
-  const requestId = `meet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   return `https://meet.google.com/new`;
 }
 

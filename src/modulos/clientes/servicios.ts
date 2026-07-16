@@ -60,7 +60,7 @@ export async function subirDocumento(leadId: string, archivo: File, nombre: stri
 }
 
 // ─── Solicitar documentos ───
-export async function solicitarDocumentos(leadId: string, documentos: string[], metodo: string) {
+export async function solicitarDocumentos(leadId: string, documentos: string[], _metodo: string) {
   return apiRequest<{ success: boolean }>("/api/email/send", {
     method: "POST",
     body: JSON.stringify({

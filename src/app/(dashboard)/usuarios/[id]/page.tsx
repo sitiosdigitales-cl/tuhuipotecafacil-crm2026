@@ -17,48 +17,31 @@ import {
   Area,
 } from "recharts";
 import {
-  ArrowLeft,
   Phone,
   Mail,
   MessageSquare,
   Calendar,
   Clock,
-  CheckCircle,
-  AlertCircle,
-  Edit,
   Shield,
   Users,
-  DollarSign,
-  TrendingUp,
-  Target,
-  Award,
   FileText,
-  Building2,
-  Home,
-  Eye,
-  ChevronRight,
   Activity,
-  BarChart3,
-  Star,
   Key,
-  Settings,
-  Bell,
-  Download,
   X,
   Save,
   Lock,
   Percent,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
-import { ROLES_CONFIG, ESTADOS_USUARIO_CONFIG } from "@/tipos";
-import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
+import { ETAPAS_CONFIG } from "@/tipos";
+import { ROLES_CONFIG } from "@/tipos";
+import { formatoMonedaAbreviado, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Usuario, Lead, Etapa } from "@/tipos";
+import type { Usuario } from "@/tipos";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { PerfilProfesional } from "@/componentes/usuarios/PerfilProfesional";
 
 // Actividad mock del usuario
-function generarActividadUsuario(nombreUsuario: string) {
+function generarActividadUsuario(_nombreUsuario: string) {
   const hoy = new Date();
   return [
     { id: "a1", tipo: "llamada", titulo: "Llamada de seguimiento", descripcion: `Contacto con cliente sobre documentos`, fecha: new Date(hoy.getTime() - 3600000), icono: Phone, color: "text-emerald-500", bg: "bg-emerald-50" },
@@ -130,17 +113,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
     VISOR: { cobroCliente: 0, comisionAgente: 0 },
   });
 
-  // Abrir modal de editar perfil
-  const abrirEditarPerfil = () => {
-    if (!usuario) return;
-    setEditarNombre(usuario.nombre);
-    setEditarApellido(usuario.apellido);
-    setEditarEmail(usuario.email);
-    setEditarTelefono(usuario.telefono || "");
-    setEditarRol(usuario.rol);
-    setEditarPerfilOpen(true);
-  };
-
   // Guardar perfil
   const guardarPerfil = () => {
     toast.success("Perfil actualizado", {
@@ -195,7 +167,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
 
   const actividad = useMemo(() => generarActividadUsuario(`${usuario?.nombre} ${usuario?.apellido}`), [usuario]);
   const rolConfig = ROLES_CONFIG[usuario?.rol || "AGENTE"];
-  const estadoConfig = ESTADOS_USUARIO_CONFIG[usuario?.estado || "ACTIVO"];
 
   // Datos para gráficos
   const datosEtapa = useMemo(() => {

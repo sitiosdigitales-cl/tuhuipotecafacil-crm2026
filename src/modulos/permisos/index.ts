@@ -5,7 +5,6 @@
  * Permite definir qué puede hacer cada usuario en cada módulo.
  */
 
-import { z } from "zod";
 import type { Rol } from "@/tipos";
 
 // ─── Tipos ───

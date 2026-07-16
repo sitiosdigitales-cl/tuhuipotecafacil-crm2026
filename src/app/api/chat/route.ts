@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 
 import { streamText } from "ai";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 const systemPromptBase = `Eres el asistente IA de TuHipotecaFacil.cl, un CRM hipotecario inteligente para el mercado chileno.

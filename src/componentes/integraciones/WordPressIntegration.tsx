@@ -5,9 +5,7 @@ import {
   Globe,
   Copy,
   Check,
-  ExternalLink,
   Code,
-  AlertCircle,
   Settings,
   RefreshCw,
   TestTube,
@@ -65,7 +63,7 @@ export function WordPressIntegration() {
       } else {
         toast.error("Error al enviar lead de prueba");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error de conexión");
     } finally {
       setTestEnviando(false);

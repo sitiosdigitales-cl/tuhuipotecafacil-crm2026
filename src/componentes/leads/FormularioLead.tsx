@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
@@ -17,18 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Lead, ETAPAS_CONFIG, ORIGEN_LABELS, RENTAS_MENSUALES, SITUACION_LABORAL_CONFIG } from "@/tipos";
-import type { SituacionLaboral } from "@/tipos";
-import { formatoMoneda, formatoUF } from "@/lib/utils";
+import { Lead, RENTAS_MENSUALES } from "@/tipos";
 import {
   User,
   Mail,
   Phone,
-  CreditCard,
   Building2,
-  FileText,
   DollarSign,
-  Home,
   PieChart,
   MessageSquare,
   AlertCircle,
@@ -240,9 +234,6 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     }
     setPaso(nuevoPaso);
   }, [paso]);
-
-  const camposPaso1 = [formData.nombre, formData.apellido, formData.rut].filter(Boolean).length;
-  const progresoPaso1 = Math.round((camposPaso1 / 3) * 100);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

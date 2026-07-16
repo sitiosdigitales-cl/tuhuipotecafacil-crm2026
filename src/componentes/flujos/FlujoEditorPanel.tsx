@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, GripVertical, Zap } from "lucide-react";
-import { TRIGGERS_TIPOS, TRIGGER_CATEGORIAS, CONDICION_OPERADORES, CAMPOS_POR_CATEGORIA, ACCIONES_TIPOS } from "@/modulos/automatizacion/config";
-import { PasoFlujo } from "./PasoFlujo";
+import { X, Plus } from "lucide-react";
+import { TRIGGERS_TIPOS, TRIGGER_CATEGORIAS, CONDICION_OPERADORES, CAMPOS_POR_CATEGORIA } from "@/modulos/automatizacion/config";
 import { SelectorAccion } from "./SelectorAccion";
 import { ConfigAccion } from "./ConfigAccion";
 import { toast } from "sonner";
@@ -60,13 +59,6 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
     }));
   };
 
-  const eliminarAccion = (idx: number) => {
-    setForm((p) => ({
-      ...p,
-      acciones: p.acciones.filter((_: any, i: number) => i !== idx).map((a: any, i: number) => ({ ...a, orden: i + 1 })),
-    }));
-  };
-
   const actualizarAccion = (idx: number, campo: string, valor: any) => {
     setForm((p) => ({
       ...p,
@@ -76,21 +68,6 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
         return { ...a, [campo]: valor };
       }),
     }));
-  };
-
-  // Mover accion (drag-and-drop simplificado)
-  const moverAccion = (idx: number, direccion: "arriba" | "abajo") => {
-    const nuevoIdx = direccion === "arriba" ? idx - 1 : idx + 1;
-    if (nuevoIdx < 0 || nuevoIdx >= form.acciones.length) return;
-
-    const nuevasAcciones = [...form.acciones];
-    const temp = nuevasAcciones[idx];
-    nuevasAcciones[idx] = nuevasAcciones[nuevoIdx];
-    nuevasAcciones[nuevoIdx] = temp;
-
-    // Actualizar orden
-    nuevasAcciones.forEach((a: any, i: number) => a.orden = i + 1);
-    setForm((p) => ({ ...p, acciones: nuevasAcciones }));
   };
 
   const handleSubmit = () => {

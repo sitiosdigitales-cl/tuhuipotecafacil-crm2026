@@ -8,16 +8,13 @@ import {
   Eye,
   Pencil,
   Calendar,
-  User,
-  Timer,
   LayoutGrid,
   Rows3,
   Sun,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";
-import type { Tarea, EstadoTarea, TipoTarea } from "@/tipos";
+import { ESTADOS_TAREA_CONFIG } from "@/tipos";
+import type { Tarea, EstadoTarea } from "@/tipos";
 
 interface VistaCalendarioProps {
   tareas: Tarea[];
@@ -140,11 +137,6 @@ export function VistaCalendario({
     fecha.getMonth() === hoy.getMonth() &&
     fecha.getFullYear() === hoy.getFullYear();
 
-  const esMismaFecha = (a: Date, b: Date) =>
-    a.getDate() === b.getDate() &&
-    a.getMonth() === b.getMonth() &&
-    a.getFullYear() === b.getFullYear();
-
   const tituloVista = () => {
     if (vistaActiva === "mes") {
       return `${MESES[fechaActual.getMonth()]} ${fechaActual.getFullYear()}`;
@@ -247,7 +239,6 @@ export function VistaCalendario({
         {vistaActiva === "mes" && (
           <VistaMes
             fechaActual={fechaActual}
-            tareasPorDia={tareasPorDia}
             getTareasDelDia={getTareasDelDia}
             esHoy={esHoy}
             onDiaClick={(fecha) => {
@@ -256,7 +247,6 @@ export function VistaCalendario({
               setVistaActiva("dia");
             }}
             onVerTarea={onVerTarea}
-            onEditarTarea={onEditarTarea}
           />
         )}
 
@@ -266,8 +256,6 @@ export function VistaCalendario({
             diasSemana={diasSemana}
             getTareasDelDia={getTareasDelDia}
             esHoy={esHoy}
-            esMismaFecha={esMismaFecha}
-            fechaActual={fechaActual}
             horaActual={horaActual}
            getPosicionHora={getPosicionHora}
             onDiaClick={(fecha) => {
@@ -276,7 +264,6 @@ export function VistaCalendario({
               setVistaActiva("dia");
             }}
             onVerTarea={onVerTarea}
-            onEditarTarea={onEditarTarea}
           />
         )}
 
@@ -286,7 +273,6 @@ export function VistaCalendario({
             fecha={diaSeleccionado || fechaActual}
             getTareasDelDia={getTareasDelDia}
             esHoy={esHoy}
-            horaActual={horaActual}
            getPosicionHora={getPosicionHora}
             onVerTarea={onVerTarea}
             onEditarTarea={onEditarTarea}
@@ -321,20 +307,16 @@ export function VistaCalendario({
 // ==================== VISTA MES ====================
 function VistaMes({
   fechaActual,
-  tareasPorDia,
   getTareasDelDia,
   esHoy,
   onDiaClick,
   onVerTarea,
-  onEditarTarea,
 }: {
   fechaActual: Date;
-  tareasPorDia: Record<string, Tarea[]>;
   getTareasDelDia: (fecha: Date) => Tarea[];
   esHoy: (fecha: Date) => boolean;
   onDiaClick: (fecha: Date) => void;
   onVerTarea: (tarea: Tarea) => void;
-  onEditarTarea: (tarea: Tarea) => void;
 }) {
   const diasDelMes = useMemo(() => {
     const primerDia = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
@@ -435,24 +417,18 @@ function VistaSemana({
   diasSemana,
   getTareasDelDia,
   esHoy,
-  esMismaFecha,
-  fechaActual,
   horaActual,
   getPosicionHora,
   onDiaClick,
   onVerTarea,
-  onEditarTarea,
 }: {
   diasSemana: Date[];
   getTareasDelDia: (fecha: Date) => Tarea[];
   esHoy: (fecha: Date) => boolean;
-  esMismaFecha: (a: Date, b: Date) => boolean;
-  fechaActual: Date;
   horaActual: Date;
   getPosicionHora: () => number;
   onDiaClick: (fecha: Date) => void;
   onVerTarea: (tarea: Tarea) => void;
-  onEditarTarea: (tarea: Tarea) => void;
 }) {
   const mostrarLineaHora = esHoy(horaActual);
 
@@ -581,7 +557,6 @@ function VistaDia({
   fecha,
   getTareasDelDia,
   esHoy,
-  horaActual,
   getPosicionHora,
   onVerTarea,
   onEditarTarea,
@@ -589,7 +564,6 @@ function VistaDia({
   fecha: Date;
   getTareasDelDia: (fecha: Date) => Tarea[];
   esHoy: (fecha: Date) => boolean;
-  horaActual: Date;
   getPosicionHora: () => number;
   onVerTarea: (tarea: Tarea) => void;
   onEditarTarea: (tarea: Tarea) => void;

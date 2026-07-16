@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case "credito_aprobado":
-        // CrÃ©dito aprobado
+        // Credito aprobado
         if (!body.email || !body.nombre || !body.monto || !body.banco) {
           return NextResponse.json(
             { success: false, error: "email, nombre, monto y banco son requeridos" },
@@ -109,9 +109,25 @@ export async function POST(request: NextRequest) {
         );
         break;
 
+      case "test":
+        // Email de prueba para verificar configuracion SMTP
+        if (!body.to) {
+          return NextResponse.json(
+            { success: false, error: "to es requerido" },
+            { status: 400 }
+          );
+        }
+        const fechaPrueba = new Date().toLocaleString("es-CL");
+        resultado = await enviarEmail({
+          to: body.to,
+          subject: "Prueba de configuracion - TuHipotecaFacil",
+          html: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><div style="background: linear-gradient(135deg, #10B981, #059669); padding: 30px; text-align: center;"><h1 style="color: white; margin: 0;">Email de Prueba Exitoso</h1></div><div style="padding: 30px; background: #F8FAFC;"><h2 style="color: #1E293B;">Configuracion SMTP Funcionando</h2><p style="color: #475569; line-height: 1.6;">La configuracion de email de TuHipotecaFacil esta funcionando correctamente.</p><div style="background: white; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #E2E8F0;"><p style="color: #64748B; margin: 0;"><strong>Fecha:</strong> ' + fechaPrueba + '</p></div><p style="color: #10B981; font-weight: bold;">Si recibes este email, todo esta configurado correctamente.</p></div><div style="background: #1E293B; padding: 20px; text-align: center;"><p style="color: #94A3B8; margin: 0; font-size: 12px;">© 2026 Tu Hipoteca Facil - Todos los derechos reservados</p></div></div>',
+        });
+        break;
+
       default:
         return NextResponse.json(
-          { success: false, error: `Tipo de email no vÃ¡lido: ${tipo}` },
+          { success: false, error: "Tipo de email no valido: " + tipo },
           { status: 400 }
         );
     }
@@ -144,8 +160,9 @@ export async function GET() {
     templates: [
       { id: "bienvenida", nombre: "Bienvenida", descripcion: "Email de bienvenida a nuevos clientes" },
       { id: "documentos", nombre: "Solicitud de Documentos", descripcion: "Solicitar documentos pendientes" },
-      { id: "credito_aprobado", nombre: "CrÃ©dito Aprobado", descripcion: "Notificar aprobaciÃ³n de crÃ©dito" },
-      { id: "recordatorio", nombre: "Recordatorio", descripcion: "Enviar recordatorio genÃ©rico" },
+      { id: "credito_aprobado", nombre: "Credito Aprobado", descripcion: "Notificar aprobacion de credito" },
+      { id: "recordatorio", nombre: "Recordatorio", descripcion: "Enviar recordatorio generico" },
+      { id: "test", nombre: "Prueba SMTP", descripcion: "Enviar email de prueba para verificar configuracion" },
     ],
   });
 }

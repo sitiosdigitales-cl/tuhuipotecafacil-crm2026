@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { obtenerHistorico } from "@/lib/cmf/service";
 
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       total: historico.length,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Error al obtener histÃ³rico" },
       { status: 500 }

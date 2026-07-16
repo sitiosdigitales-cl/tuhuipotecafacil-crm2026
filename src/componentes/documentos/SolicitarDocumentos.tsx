@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useLeads } from "@/modulos/leads";
-import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 import {
   Send,
   Link2,
@@ -10,14 +9,10 @@ import {
   Copy,
   MessageSquare,
   Mail,
-  Phone,
   FileText,
-  ExternalLink,
-  Clock,
   Users,
   X,
   CheckCircle,
-  AlertCircle,
   Plus,
   Trash2,
   Edit2,
@@ -207,7 +202,7 @@ export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDoc
         if (!data.success) {
           // Error en API de email
         }
-      } catch (error) {
+      } catch {
         // Continuar de todas formas
       }
     }

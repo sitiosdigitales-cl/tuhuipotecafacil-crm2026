@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       password: PASSWORD_DEFAULT,
       resultados,
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: "Error al ejecutar seed" },
       { status: 500 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { TrendingUp, DollarSign, Clock, CheckCircle, Wallet, ArrowRight } from "lucide-react";
+import { TrendingUp, DollarSign, Clock, CheckCircle, ArrowRight } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { formatoMoneda } from "@/lib/utils";
 
@@ -15,13 +15,6 @@ export function TarjetaComisiones() {
     const aprobados = leads.filter((l) =>
       ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)
     );
-    const enEvaluacion = leads.filter((l) =>
-      ["EVALUACION_BANCARIA", "PREAPROBADO"].includes(l.etapa)
-    );
-    const enPipeline = leads.filter((l) =>
-      !["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO", "EVALUACION_BANCARIA", "PREAPROBADO"].includes(l.etapa)
-    );
-
     const total = aprobados.length * COMISION_POR_CREDITO;
     const pagadas = leads.filter((l) =>
       ["CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)

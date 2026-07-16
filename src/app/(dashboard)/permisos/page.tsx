@@ -4,17 +4,10 @@ import { useState, useMemo } from "react";
 import {
   Shield,
   Users,
-  Lock,
-  Unlock,
   Check,
   X,
-  Eye,
-  EyeOff,
-  Edit,
-  Trash2,
   Plus,
   Search,
-  Filter,
   ChevronDown,
   ChevronRight,
   Settings,
@@ -22,20 +15,13 @@ import {
   BarChart3,
   DollarSign,
   Calendar,
-  MessageSquare,
-  Bell,
   Database,
-  Globe,
   Mail,
-  Phone,
-  Building2,
   UserCheck,
-  AlertTriangle,
   Save,
-  Copy,
   ArrowRight,
 } from "lucide-react";
-import { ROLES_CONFIG } from "@/tipos";
+
 
 // Módulos del sistema
 const MODULOS = [

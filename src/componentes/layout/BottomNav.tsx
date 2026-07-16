@@ -7,7 +7,6 @@ import {
   GitBranch,
   Users,
   CheckSquare,
-  MessageSquare,
   MoreHorizontal,
 } from "lucide-react";
 

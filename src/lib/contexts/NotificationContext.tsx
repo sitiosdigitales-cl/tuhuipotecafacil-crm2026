@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "./AuthContext";
 
 export interface Notificacion {
   id: string;
@@ -38,17 +39,33 @@ const ICONOS_POR_TIPO: Record<string, string> = {
   tarea: "📋",
   documento: "📄",
   mensaje: "💬",
+  documento_subido: "📄",
+  documento_estado: "📄",
+  documento_version: "📄",
+  lead_nuevo: "👤",
+  lead_etapa: "👤",
+  lead_asignado: "👤",
+  tarea_asignada: "📋",
+  tarea_vencida: "📋",
+  tarea_completada: "📋",
 };
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { usuario } = useAuth();
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  // Cargar notificaciones desde la API
+  // Cargar notificaciones desde la API (filtradas por usuario actual)
   useEffect(() => {
     const cargarNotificaciones = async () => {
       try {
-        const response = await fetch("/api/notificaciones?limit=50");
+        // Filtrar por usuario actual si hay sesion
+        const params = new URLSearchParams({ limit: "50" });
+        if (usuario?.id) {
+          params.set("usuarioId", usuario.id);
+        }
+
+        const response = await fetch("/api/notificaciones?" + params.toString());
         const data = await response.json();
         if (data.success && data.data) {
           setNotificaciones(data.data.map((n: any) => ({
@@ -70,14 +87,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setCargando(false);
       }
     };
-    cargarNotificaciones();
+
+    if (usuario?.id) {
+      cargarNotificaciones();
+    }
 
     // Refrescar cada 30 segundos como fallback del Realtime
     const interval = setInterval(cargarNotificaciones, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [usuario?.id]);
 
-  // Suscripción en tiempo real a nuevas notificaciones
+  // Suscripcion en tiempo real a nuevas notificaciones
   useEffect(() => {
     const channel = supabase
       .channel("notificaciones-realtime")
@@ -89,6 +109,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           table: "notificaciones",
         },
         (payload) => {
+          // Solo mostrar notificaciones del usuario actual o globales
+          const notifUserId = payload.new.usuarioid;
+          if (notifUserId && notifUserId !== usuario?.id) return;
+
           const nuevaNotif: Notificacion = {
             id: payload.new.id,
             tipo: payload.new.tipo,
@@ -130,7 +154,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [usuario?.id]);
 
   const crearNotificacion = useCallback(async (notif: Omit<Notificacion, "id" | "fecha" | "leida">) => {
     try {
@@ -185,7 +209,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotificaciones((prev) => prev.filter((n) => n.id !== id));
 
     try {
-      await fetch(`/api/notificaciones?id=${id}`, { method: "DELETE" });
+      await fetch("/api/notificaciones?id=" + id, { method: "DELETE" });
     } catch {
       // Error silencioso
     }

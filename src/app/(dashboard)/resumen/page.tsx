@@ -12,46 +12,21 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  Legend,
 } from "recharts";
 import {
-  TrendingUp,
-  TrendingDown,
   Users,
   DollarSign,
   CheckCircle,
-  Clock,
   Target,
   Award,
-  Building2,
   Calendar,
   Download,
-  Filter,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Layers,
-  Zap,
-  Phone,
-  Mail,
-  MessageSquare,
-  XCircle,
-  AlertCircle,
-  FileText,
-  Home,
-  ChevronRight,
   User,
-  Star,
-  Briefcase,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
-import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
+import { formatoMonedaAbreviado } from "@/lib/utils";
 import { useUserData } from "@/lib/hooks/useUserData";
 import type { Etapa, Lead } from "@/tipos";
 
@@ -714,7 +689,7 @@ export default function ResumenPage() {
         <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
           <h3 className="text-sm font-bold text-slate-900 mb-4">Embudo de Conversión</h3>
           <div className="space-y-2">
-            {embudoData.slice(0, 8).map((etapa, i) => {
+            {embudoData.slice(0, 8).map((etapa) => {
               const maxLeads = embudoData[0].leads || 1;
               const porcentaje = (etapa.leads / maxLeads) * 100;
               return (

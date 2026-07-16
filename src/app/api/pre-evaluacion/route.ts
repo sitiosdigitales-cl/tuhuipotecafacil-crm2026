@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear lead en Supabase
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("leads")
       .insert(toSupabaseColumns({
         id: leadId,

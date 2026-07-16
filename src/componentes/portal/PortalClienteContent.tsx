@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Search,
   FileText,
@@ -24,7 +24,6 @@ import {
   Briefcase,
   AlertCircle,
   FileCheck,
-  FileClock,
   Trash2, X, ChevronDown,
   Download,
 } from "lucide-react";
@@ -165,31 +164,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   });
   const [guardando, setGuardando] = useState(false);
   const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number; archivoUrl?: string }[]>([]);
-  const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [mostrarSidebar, setMostrarSidebar] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  // Formatear RUT con puntos y guion automaticamente
-  const formatRut = (value: string): string => {
-    const cleaned = value.replace(/[^0-9kK]/g, "").toUpperCase();
-    if (cleaned.length === 0) return "";
-    const body = cleaned.slice(0, -1);
-    const dv = cleaned.slice(-1);
-    let formatted = "";
-    let i = body.length;
-    while (i > 0) {
-      const chunk = body.slice(Math.max(0, i - 3), i);
-      formatted = chunk + (formatted ? "." + formatted : "");
-      i -= 3;
-    }
-    return formatted + (dv ? "-" + dv : "");
-  };
-
-  const handleRutChange = (value: string) => {
-    const formatted = formatRut(value);
-    setRut(formatted);
-    setError("");
-  };
 
   const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
 
@@ -254,10 +231,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       localStorage.setItem(clave, "visto");
     }
   };
-
-  const rutsEjemplo = useMemo(() => leads.slice(0, 4).map((l) => ({
-    rut: l.rut, nombre: `${l.nombre} ${l.apellido}`,
-  })), [leads]);
 
   const handleBuscar = async () => {
     if (!rut.trim()) { setError("Ingresa un RUT"); return; }
@@ -479,38 +452,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       `${cliente.nombre} ${cliente.apellido} subió: ${nombreDoc}`
     );
     setSubiendo(false);
-  };
-
-  const handleSubirDocumento = async (files: FileList | null) => {
-    if (!files || !cliente) return;
-    setSubiendo(true);
-    for (const file of Array.from(files)) {
-      const nuevoDoc = {
-        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        nombre: file.name,
-        estado: "subido",
-        fecha: new Date().toLocaleDateString("es-CL"),
-        tamaño: file.size,
-      };
-      setDocumentos((prev) => [...prev, nuevoDoc]);
-      toast.success("Documento subido", { description: file.name });
-
-      // Notificar al ejecutivo
-      await notificarEjecutivo(
-        "documento",
-        "Documento subido por cliente",
-        `${cliente.nombre} ${cliente.apellido} subió el documento: ${file.name}`
-      );
-    }
-    setSubiendo(false);
-  };
-
-  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setArrastrando(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setArrastrando(false); };
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setArrastrando(false);
-    handleSubirDocumento(e.dataTransfer.files);
   };
 
   const eliminarDocumento = (id: string) => {

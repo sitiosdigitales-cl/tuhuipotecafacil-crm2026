@@ -48,6 +48,4 @@ dev.db
 dev.db-journal
 dev.log
 capacitor.config.ts
-
-.vercel
-.env*
+lint-output.txt

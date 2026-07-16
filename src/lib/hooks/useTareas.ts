@@ -38,7 +38,7 @@ export function useTareas() {
         }));
         setTareas(tareasFormateadas);
       }
-    } catch (e) {
+    } catch {
       setError("Error al cargar tareas");
     } finally {
       setCargando(false);

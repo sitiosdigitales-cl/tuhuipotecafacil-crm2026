@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       message: "Contraseñas actualizadas a: admin123",
       resultados,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: "Error al actualizar contraseñas" },
       { status: 500 }

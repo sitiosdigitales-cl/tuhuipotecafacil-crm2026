@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useLeads } from "@/modulos/leads";
 import { GoogleCalendarIntegration, CrearEventoGoogle, MeetLinkDisplay } from "@/componentes/agenda/GoogleCalendarIntegration";
-import { createGoogleCalendarEvent, isGoogleAuthenticated } from "@/lib/services/googleCalendar";
 import { toast } from "sonner";
-import type { Lead } from "@/tipos";
 
 interface Evento {
   id: string;

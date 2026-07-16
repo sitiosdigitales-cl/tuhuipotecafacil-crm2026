@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     const leadId = crypto.randomUUID();
 
     // Crear lead en Supabase (usar admin para bypass RLS)
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("leads")
       .insert(toSupabaseColumns({
         id: leadId,

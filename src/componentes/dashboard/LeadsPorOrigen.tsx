@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useLeads } from "@/modulos/leads";
-import { TrendingUp, TrendingDown } from "lucide-react";
 
 const COLORES: Record<string, string> = {
   WEB: "#3B82F6",

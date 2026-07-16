@@ -15,11 +15,8 @@ import {
   X,
   Link,
   Award,
-  Star,
   Clock,
-  CheckCircle,
   FileText,
-  MessageSquare,
   Camera,
 } from "lucide-react";
 import { ROLES_CONFIG, ESTADOS_USUARIO_CONFIG } from "@/tipos";

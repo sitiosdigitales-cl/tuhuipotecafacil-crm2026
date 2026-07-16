@@ -1,5 +1,4 @@
-import { ETAPAS_CONFIG, ORIGEN_LABELS, ROLES_CONFIG } from "@/tipos";
-import type { Rol, Etapa, Prioridad, SituacionLaboral } from "@/tipos";
+import type { Rol, Etapa, Prioridad } from "@/tipos";
 
 /**
  * Configuración del módulo Leads

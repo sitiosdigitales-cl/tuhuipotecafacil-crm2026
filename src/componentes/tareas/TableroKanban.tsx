@@ -13,11 +13,9 @@ import {
   CheckCircle,
   AlertTriangle,
   Calendar,
-  User,
   Eye,
   Pencil,
   MessageSquare,
-  Paperclip,
   Timer,
 } from "lucide-react";
 import { ESTADOS_TAREA_CONFIG, TIPOS_TAREA_CONFIG } from "@/tipos";

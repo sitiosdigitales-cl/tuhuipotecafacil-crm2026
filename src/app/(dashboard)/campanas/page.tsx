@@ -4,50 +4,24 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Mail,
   MessageSquare,
-  Phone,
   Send,
   Users,
   User,
   Eye,
   MousePointerClick,
-  TrendingUp,
-  TrendingDown,
   DollarSign,
   Calendar,
   Clock,
   CheckCircle,
-  AlertTriangle,
   Pause,
   Play,
   Plus,
   Search,
-  Filter,
   Download,
-  BarChart3,
-  PieChart,
   Target,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  ExternalLink,
-  Copy,
-  RefreshCw,
-  Settings,
-  Trash2,
   Edit,
-  EyeOff,
-  Percent,
   FileText,
-  Image,
-  Video,
-  Globe,
   Smartphone,
-  Bell,
-  Star,
-  Award,
-  Trophy,
-  Medal,
-  Crown,
 } from "lucide-react";
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 
@@ -203,23 +177,6 @@ const STATS_GLOBALES = {
   totalClics: 3612,
   totalConversiones: 360,
 };
-
-// Datos para gráficos
-const RENDIMIENTO_MENSUAL = [
-  { mes: "Jul", enviados: 12000, abiertos: 7200, clics: 2400 },
-  { mes: "Ago", enviados: 15000, abiertos: 9000, clics: 3000 },
-  { mes: "Sep", enviados: 18000, abiertos: 10800, clics: 3600 },
-  { mes: "Oct", enviados: 22000, abiertos: 13200, clics: 4400 },
-  { mes: "Nov", enviados: 25000, abiertos: 15000, clics: 5000 },
-  { mes: "Dic", enviados: 18900, abiertos: 11420, clics: 3612 },
-];
-
-const TOP_SEGMENTOS = [
-  { nombre: "Leads fríos", leads: 4500, conversion: 8.5, color: "#3B82F6" },
-  { nombre: "Clientes existentes", leads: 2800, conversion: 12.3, color: "#10B981" },
-  { nombre: "Referidos", leads: 1200, conversion: 15.8, color: "#8B5CF6" },
-  { nombre: "Sin contacto 90+ días", leads: 3200, conversion: 6.2, color: "#F59E0B" },
-];
 
 type TabCampana = "todas" | "activas" | "programadas" | "finalizadas";
 
@@ -476,11 +433,6 @@ export default function CampanasPage() {
             campana.abiertos > 0
               ? Math.round((campana.clics / campana.abiertos) * 100)
               : 0;
-          const tasaConversion =
-            campana.clics > 0
-              ? Math.round((campana.conversiones / campana.clics) * 100)
-              : 0;
-
           return (
             <div
               key={campana.id}

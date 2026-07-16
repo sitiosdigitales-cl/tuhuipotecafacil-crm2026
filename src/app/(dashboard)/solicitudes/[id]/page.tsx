@@ -13,12 +13,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Calendar,
-  User,
-  Phone,
-  Mail,
 } from "lucide-react";
 import { formatoMonedaAbreviado, formatoMoneda } from "@/lib/utils";
-import { toast } from "sonner";
 
 const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icono: any }> = {
   EN_REVISION: { label: "En Revisión", color: "#F59E0B", bgColor: "bg-amber-50 text-amber-700", icono: Clock },
@@ -70,7 +66,6 @@ export default function SolicitudDetallePage() {
   }
 
   const config = ESTADOS_CONFIG[solicitud.estado] || ESTADOS_CONFIG.EN_REVISION;
-  const EstadoIcono = config.icono;
   const progreso = solicitud.documentosRequeridos > 0 
     ? Math.round((solicitud.documentosCompletos / solicitud.documentosRequeridos) * 100) 
     : 0;

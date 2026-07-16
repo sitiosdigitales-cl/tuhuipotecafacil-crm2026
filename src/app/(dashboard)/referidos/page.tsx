@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Users,
   Gift,
@@ -10,34 +10,23 @@ import {
   Check,
   Share2,
   Mail,
-  Phone,
   MessageSquare,
-  Star,
   Award,
-  Target,
   BarChart3,
-  Plus,
   Search,
-  Filter,
-  ExternalLink,
   Clock,
   CheckCircle,
-  AlertCircle,
-  ArrowUpRight,
   Zap,
   Percent,
-  CreditCard,
-  Wallet,
   Trophy,
   Medal,
   Crown,
   LinkIcon,
-  QrCode,
   UserPlus,
 } from "lucide-react";
 import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
-import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
+import { formatoMonedaAbreviado } from "@/lib/utils";
 
 // Programa de recompensas
 const RECOMPENSAS = [
@@ -51,13 +40,11 @@ type TabActiva = "resumen" | "referidos" | "programa";
 
 export default function ReferidosPage() {
   const { usuarioActual } = useUser();
-  const { leads, obtenerCodigoReferido, obtenerLeadsPorReferido } = useLeads();
+  const { leads, obtenerCodigoReferido } = useLeads();
 
   const [tabActiva, setTabActiva] = useState<TabActiva>("resumen");
   const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
   const [copiado, setCopiado] = useState(false);
-  const [modalNuevoReferido, setModalNuevoReferido] = useState(false);
 
   // Obtener código único del usuario actual
   const codigoReferido = obtenerCodigoReferido(usuarioActual.id);
@@ -277,7 +264,7 @@ export default function ReferidosPage() {
               Tu Progreso
             </h3>
             <div className="flex items-center gap-4">
-              {RECOMPENSAS.map((nivel, idx) => {
+              {RECOMPENSAS.map((nivel) => {
                 const IconoNivel = nivel.icono;
                 const alcanzado = stats.completados >= nivel.referidos;
                 const progreso = Math.min(100, (stats.completados / nivel.referidos) * 100);

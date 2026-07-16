@@ -16,14 +16,8 @@ import {
   MessageSquare,
   Grid,
   List,
-  Building2,
   Calendar,
-  User,
-  Filter,
   FolderOpen,
-  FileCheck,
-  FileX,
-  FileClock,
   ExternalLink,
   ChevronRight,
   Send,
@@ -298,7 +292,7 @@ export default function DocumentosPage() {
     }
   };
 
-  const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], comentario?: string) => {
+  const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
     try {
       await fetch(`/api/documentos/${docId}`, {
         method: "PUT",
