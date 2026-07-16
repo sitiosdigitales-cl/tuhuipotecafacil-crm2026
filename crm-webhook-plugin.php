@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit;
 
 class CRM_Webhook_Connector {
     
-    private $webhook_url = 'https://tuhuipotecafacil-crm2026.vercel.app/api/webhook/leads';
+    private $webhook_url = 'https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/api/webhook/leads';
     
     public function __construct() {
         add_action('elementor_pro/forms/actions/submission', array($this, 'handle_elementor_form'), 10, 2);

@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
                 ${body.comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Comentarios:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.comentarios}</td></tr>` : ""}
               </table>
               <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <a href="https://tuhuipotecafacil-crm2026.vercel.app/leads/${leadId}" style="display: inline-block; background: #1E40AF; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">Ver Lead en el CRM</a>
+                <a href="https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/leads/${leadId}" style="display: inline-block; background: #1E40AF; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">Ver Lead en el CRM</a>
               </div>
             </div>
           </div>
