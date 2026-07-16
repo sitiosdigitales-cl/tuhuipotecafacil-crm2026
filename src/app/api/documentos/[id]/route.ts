@@ -55,6 +55,23 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
+    
+    // Obtener el documento para saber la URL del archivo
+    const { data: doc } = await supabase
+      .from("documentos")
+      .select("archivourl")
+      .eq("id", id)
+      .single();
+    
+    // Eliminar archivo de Storage si existe
+    if (doc?.archivourl) {
+      const filePath = doc.archivourl.split("/documentos/")[1];
+      if (filePath) {
+        await supabase.storage.from("documentos").remove([filePath]);
+      }
+    }
+    
+    // Eliminar el registro de la DB
     const { error } = await supabase.from("documentos").delete().eq("id", id);
     if (error) return NextResponse.json({ success: false, error: "Error al eliminar" }, { status: 500 });
     return NextResponse.json({ success: true });

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -436,21 +436,38 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const subirDocumento = async (file: File, nombreDoc: string) => {
     if (!cliente) return;
     setSubiendo(true);
-    const nuevoDoc = {
-      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      nombre: nombreDoc,
-      estado: "subido",
-      fecha: new Date().toLocaleDateString("es-CL"),
-      tamaño: file.size,
-      archivoUrl: URL.createObjectURL(file),
-    };
-    setDocumentos((prev) => [...prev, nuevoDoc]);
-    toast.success("Documento subido", { description: nombreDoc });
-    await notificarEjecutivo(
-      "documento",
-      "Documento subido por cliente",
-      `${cliente.nombre} ${cliente.apellido} subió: ${nombreDoc}`
-    );
+    try {
+      const formData = new FormData();
+      formData.append("archivo", file);
+      formData.append("leadId", cliente.id);
+      formData.append("tipo", nombreDoc);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.success) {
+        const docRes = await fetch("/api/documentos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leadId: cliente.id,
+            leadNombre: `${cliente.nombre} ${cliente.apellido || ""}`.trim(),
+            nombre: nombreDoc,
+            tipo: nombreDoc,
+            estado: "PENDIENTE",
+            archivoUrl: uploadData.archivoUrl,
+          }),
+        });
+        const docData = await docRes.json();
+        if (docData.success) {
+          setDocumentos((prev) => [...prev, { ...docData.data, fecha: new Date().toLocaleDateString("es-CL") }]);
+        }
+        toast.success("Documento subido", { description: nombreDoc });
+      } else {
+        toast.error("Error al subir documento", { description: uploadData.error || "Error" });
+      }
+    } catch {
+      toast.error("Error al conectar con el servidor");
+    }
+    await notificarEjecutivo("documento", "Documento subido por cliente", `${cliente.nombre} ${cliente.apellido} subió: ${nombreDoc}`);
     setSubiendo(false);
   };
 

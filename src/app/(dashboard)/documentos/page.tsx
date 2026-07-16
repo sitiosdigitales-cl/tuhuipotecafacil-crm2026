@@ -277,19 +277,12 @@ export default function DocumentosPage() {
   };
 
   const handleUpload = async (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
-    try {
-      const res = await fetch("/api/documentos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevoDoc),
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setDocumentos((prev) => [{ ...json.data, creadoEn: new Date(json.data.creadoEn) }, ...prev]);
-      }
-    } catch {
-      // Error silencioso
-    }
+    // /api/upload ya creo el registro en la DB, solo agregar al estado local
+    setDocumentos((prev) => [{
+      id: crypto.randomUUID(),
+      ...nuevoDoc,
+      creadoEn: new Date(),
+    }, ...prev]);
   };
 
   const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
@@ -722,7 +715,21 @@ export default function DocumentosPage() {
                         >
                           <MessageSquare size={14} className="text-blue-500" />
                         </button>
-                        <button className="p-2 hover:bg-emerald-50 rounded-lg transition-colors" title="Descargar">
+                        <button
+                          onClick={() => {
+                            if (doc.archivoUrl) {
+                              const link = document.createElement("a");
+                              link.href = doc.archivoUrl;
+                              link.download = doc.nombre || "documento";
+                              link.target = "_blank";
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }
+                          }}
+                          className="p-2 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Descargar"
+                        >
                           <Download size={14} className="text-emerald-500" />
                         </button>
                         <button
@@ -806,6 +813,23 @@ export default function DocumentosPage() {
                       className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                       <Eye size={12} className="text-slate-400" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (doc.archivoUrl) {
+                          const link = document.createElement("a");
+                          link.href = doc.archivoUrl;
+                          link.download = doc.nombre || "documento";
+                          link.target = "_blank";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                      className="p-1.5 hover:bg-emerald-50 rounded-lg transition-colors"
+                      title="Descargar"
+                    >
+                      <Download size={12} className="text-emerald-500" />
                     </button>
                     <button
                       onClick={() => handleEliminar(doc)}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Dialog,
@@ -27,7 +27,7 @@ interface VistaPreviaDocumentoProps {
 
 const estadoConfig: Record<string, { label: string; color: string; bg: string }> = {
   PENDIENTE: { label: "Pendiente", color: "text-slate-600", bg: "bg-slate-100" },
-  EN_REVISION: { label: "En Revisión", color: "text-amber-600", bg: "bg-amber-100" },
+  EN_REVISION: { label: "En Revisio&#241;n", color: "text-amber-600", bg: "bg-amber-100" },
   APROBADO: { label: "Aprobado", color: "text-emerald-600", bg: "bg-emerald-100" },
   RECHAZADO: { label: "Rechazado", color: "text-red-600", bg: "bg-red-100" },
 };
@@ -49,6 +49,22 @@ export function VistaPreviaDocumento({
   const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 50));
   const handleRotar = () => setRotacion((r) => r + 90);
 
+  const handleDownload = () => {
+    if (documento.archivoUrl) {
+      const link = document.createElement("a");
+      link.href = documento.archivoUrl;
+      link.download = documento.nombre || "documento";
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  // Detectar tipo de archivo
+  const esPDF = documento.archivoUrl?.toLowerCase().endsWith(".pdf");
+  const esImagen = /\.(jpg|jpeg|png|gif|webp)$/i.test(documento.archivoUrl || "");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[85vh] p-0 gap-0 overflow-hidden">
@@ -64,40 +80,48 @@ export function VistaPreviaDocumento({
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px] text-slate-400">{configTipo?.label}</span>
-                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${configEstado?.bg} ${configEstado?.color}`}>
+                  <span className={	ext-[9px] font-semibold px-2 py-0.5 rounded-full  }>
                     {configEstado?.label}
                   </span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button
-                onClick={handleZoomOut}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Reducir"
-              >
-                <ZoomOut size={16} className="text-slate-500" />
-              </button>
-              <span className="text-[10px] font-semibold text-slate-600 min-w-[40px] text-center">
-                {zoom}%
-              </span>
-              <button
-                onClick={handleZoomIn}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Ampliar"
-              >
-                <ZoomIn size={16} className="text-slate-500" />
-              </button>
-              <button
-                onClick={handleRotar}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                title="Rotar"
-              >
-                <RotateCw size={16} className="text-slate-500" />
-              </button>
+              {!esPDF && (
+                <>
+                  <button
+                    onClick={handleZoomOut}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    title="Reducir"
+                  >
+                    <ZoomOut size={16} className="text-slate-500" />
+                  </button>
+                  <span className="text-[10px] font-semibold text-slate-600 min-w-[40px] text-center">
+                    {zoom}%
+                  </span>
+                  <button
+                    onClick={handleZoomIn}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    title="Ampliar"
+                  >
+                    <ZoomIn size={16} className="text-slate-500" />
+                  </button>
+                  <button
+                    onClick={handleRotar}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    title="Rotar"
+                  >
+                    <RotateCw size={16} className="text-slate-500" />
+                  </button>
+                </>
+              )}
               <div className="w-px h-5 bg-slate-200 mx-1" />
-              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Descargar">
-                <Download size={16} className="text-slate-500" />
+              <button
+                onClick={handleDownload}
+                className="p-2 hover:bg-emerald-50 rounded-lg transition-colors"
+                title="Descargar"
+              >
+                <Download size={16} className="text-emerald-500" />
               </button>
             </div>
           </div>
@@ -108,17 +132,35 @@ export function VistaPreviaDocumento({
           <div
             className="bg-white rounded-xl shadow-lg overflow-hidden transition-transform"
             style={{
-              transform: `scale(${zoom / 100}) rotate(${rotacion}deg)`,
+              transform: scale() rotate(deg),
               maxWidth: "100%",
               maxHeight: "100%",
             }}
           >
             {documento.archivoUrl ? (
-              <img
-                src={documento.archivoUrl}
-                alt={documento.nombre}
-                className="max-w-full max-h-[500px] object-contain"
-              />
+              esPDF ? (
+                <iframe
+                  src={documento.archivoUrl}
+                  className="w-full min-h-[500px] border-0"
+                  title="Vista previa del documento"
+                />
+              ) : esImagen ? (
+                <img
+                  src={documento.archivoUrl}
+                  alt={documento.nombre}
+                  className="max-w-full max-h-[500px] object-contain"
+                />
+              ) : (
+                <div className="w-[400px] h-[300px] flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                  <div className="w-20 h-20 bg-slate-200 rounded-2xl flex items-center justify-center mb-4">
+                    <File size={32} className="text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-600">Vista previa no disponible</p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Haz clic en descargar para abrir el archivo
+                  </p>
+                </div>
+              )
             ) : (
               <div className="w-[400px] h-[500px] flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
                 <div className="w-20 h-20 bg-slate-200 rounded-2xl flex items-center justify-center mb-4">
@@ -126,7 +168,7 @@ export function VistaPreviaDocumento({
                 </div>
                 <p className="text-sm font-semibold text-slate-600">Vista previa no disponible</p>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  El archivo aún no ha sido subido al sistema
+                  El archivo aun no ha sido subido al sistema
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[10px] text-slate-500">
                   <Image size={14} />
@@ -137,7 +179,7 @@ export function VistaPreviaDocumento({
           </div>
         </div>
 
-        {/* Información del documento */}
+        {/* Informacion del documento */}
         <div className="p-4 border-t border-slate-100 bg-white">
           <div className="grid grid-cols-3 gap-4">
             <div>
