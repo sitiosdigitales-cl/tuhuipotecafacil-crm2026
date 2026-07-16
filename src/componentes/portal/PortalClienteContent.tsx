@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -441,25 +441,18 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       formData.append("archivo", file);
       formData.append("leadId", cliente.id);
       formData.append("tipo", nombreDoc);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      const uploadRes = await fetch("/api/portal/upload", { method: "POST", body: formData });
       const uploadData = await uploadRes.json();
       if (uploadData.success) {
-        const docRes = await fetch("/api/documentos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            leadId: cliente.id,
-            leadNombre: `${cliente.nombre} ${cliente.apellido || ""}`.trim(),
-            nombre: nombreDoc,
-            tipo: nombreDoc,
-            estado: "PENDIENTE",
-            archivoUrl: uploadData.archivoUrl,
-          }),
-        });
-        const docData = await docRes.json();
-        if (docData.success) {
-          setDocumentos((prev) => [...prev, { ...docData.data, fecha: new Date().toLocaleDateString("es-CL") }]);
-        }
+        // El endpoint ya creo el registro en la DB, solo agregar al estado local
+        setDocumentos((prev) => [...prev, {
+          id: uploadData.data.id,
+          nombre: nombreDoc,
+          tipo: nombreDoc,
+          estado: "PENDIENTE",
+          archivoUrl: uploadData.data.archivoUrl,
+          fecha: new Date().toLocaleDateString("es-CL"),
+        }]);
         toast.success("Documento subido", { description: nombreDoc });
       } else {
         toast.error("Error al subir documento", { description: uploadData.error || "Error" });
