@@ -12,7 +12,7 @@ export const supabase = createClient(
   supabaseKey || "placeholder-key"
 );
 
-// Convertir camelCase → minúsculas para columnas Supabase
+// Convertir camelCase â†’ minÃºsculas para columnas Supabase
 export function toSupabaseColumns(obj: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
@@ -21,7 +21,7 @@ export function toSupabaseColumns(obj: Record<string, any>): Record<string, any>
   return result;
 }
 
-// Convertir minúsculas → camelCase para respuesta Supabase
+// Convertir minÃºsculas â†’ camelCase para respuesta Supabase
 export function fromSupabaseColumns(obj: Record<string, any>): Record<string, any> {
   if (!obj) return obj;
   const result: Record<string, any> = {};
@@ -70,6 +70,19 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
     asignadoa: "asignadoA",
     cuentapie: "cuentaPie",
     complementarrenta: "complementarRenta",
+    trigger_id: "triggerId",
+    lead_nombre: "leadNombre",
+    lead_email: "leadEmail",
+    estado: "estado",
+    acciones_ejecutadas: "accionesEjecutadas",
+    duracion_total_ms: "duracionTotalMs",
+    error_mensaje: "errorMensaje",
+    ejecutado_en: "ejecutadoEn",
+    creado_en: "creadoEn",
+    logica_condiciones: "logica_condiciones",
+    ultimo_ejecucion: "ultimoEjecucion",
+    exitosos: "exitosos",
+    fallidos: "fallidos",
   };
   for (const [key, value] of Object.entries(obj)) {
     const mapped = keyMap[key] || key;

@@ -127,12 +127,12 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">Pre Evaluación Gratuita</h2>
-                  <p className="text-[10px] text-blue-100">Paso {paso} de 3 — {paso === 1 ? "Datos personales" : paso === 2 ? "Situacion laboral" : "Confirmar"}</p>
+                  <p className="text-[10px] text-blue-100">Paso {paso} de 2 — {paso === 1 ? "Datos personales" : "Situación financiera"}</p>
                 </div>
               </div>
               {/* Progress bar */}
               <div className="mt-3 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${(paso / 3) * 100}%` }} />
+                <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${(paso / 2) * 100}%` }} />
               </div>
             </>
           )}
@@ -161,7 +161,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">Nombre <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">Nombre *</label>
                   <div className="relative">
                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" value={form.nombre} onChange={(e) => updateField("nombre", e.target.value)}
@@ -171,7 +171,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
                   {errores.nombre && <p className="text-[10px] text-red-500 mt-0.5">{errores.nombre}</p>}
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">Apellido <span className="text-red-500">*</span></label>
+                  <label className="text-[11px] font-bold text-slate-600 mb-1 block">Apellido *</label>
                   <div className="relative">
                     <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" value={form.apellido} onChange={(e) => updateField("apellido", e.target.value)}
@@ -183,7 +183,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 mb-1 block">RUT <span className="text-red-500">*</span></label>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">RUT *</label>
                 <input type="text" value={form.rut} onChange={(e) => updateField("rut", formatRUT(e.target.value))}
                   placeholder="12.345.678-9" maxLength={12}
                   className={`w-full px-3 py-2.5 bg-slate-50 border-2 rounded-xl text-sm font-medium font-mono tracking-wider focus:outline-none transition-all ${errores.rut ? "border-red-400 bg-red-50/50" : "border-slate-200 focus:border-blue-500"}`} />
@@ -226,10 +226,10 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
               </button>
             </div>
           ) : (
-            /* Paso 2: Situacion laboral y financiera */
+            /* Paso 2: Situación financiera */
             <div className="space-y-4">
               <div>
-                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Cual es tu situacion laboral? <span className="text-red-500">*</span></label>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Cuál es tu situación laboral? *</label>
                 <div className="grid grid-cols-3 gap-2">
                   {SITUACION_LABORAL.map((s) => (
                     <button key={s} onClick={() => updateField("situacionLaboral", s)}
@@ -243,7 +243,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Estas en DICOM?</label>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Estás en DICOM?</label>
                 <div className="grid grid-cols-2 gap-2">
                   {["No", "Sí"].map((v) => (
                     <button key={v} onClick={() => updateField("dicom", v)}
@@ -259,7 +259,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Que tipo de credito buscas? <span className="text-red-500">*</span></label>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Qué tipo de crédito buscas? *</label>
                 <div className="grid grid-cols-2 gap-2">
                   {TIPOS_CREDITO.map((t) => (
                     <button key={t} onClick={() => updateField("tipoCredito", t)}
@@ -273,7 +273,7 @@ export function PreEvaluacionModal({ open, onClose, datosSimulador }: PreEvaluac
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Complementar renta?</label>
+                <label className="text-[11px] font-bold text-slate-600 mb-1 block">¿Deseas complementar renta?</label>
                 <div className="grid grid-cols-2 gap-2">
                   {["No", "Sí"].map((v) => (
                     <button key={v} onClick={() => updateField("complementarRenta", v)}

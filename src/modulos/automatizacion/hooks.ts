@@ -2,7 +2,7 @@
  * Hooks del módulo Automatización
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { obtenerFlujos, obtenerTriggers, obtenerPlantillas } from "./servicios";
 
 export function useFlujos() {
@@ -69,4 +69,56 @@ export function usePlantillas() {
   }, []);
 
   return { plantillas, setPlantillas, cargando };
+}
+
+export function useTriggerHistorial(triggerId: string | null) {
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    total: number;
+    exitosas: number;
+    fallidas: number;
+    parciales: number;
+    tasaExito: number;
+  } | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const cargar = useCallback(async () => {
+    if (!triggerId) {
+      setHistorial([]);
+      setStats(null);
+      setCargando(false);
+      return;
+    }
+
+    try {
+      setCargando(true);
+      const res = await fetch(`/api/triggers/${triggerId}/historial?page=${pagina}&limit=20`);
+      const json = await res.json();
+      if (json.success) {
+        setHistorial(json.data);
+        setStats(json.stats);
+        setTotal(json.total);
+      }
+    } catch (err) {
+      console.error("Error cargando historial:", err);
+    } finally {
+      setCargando(false);
+    }
+  }, [triggerId, pagina]);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  return {
+    historial,
+    stats,
+    cargando,
+    pagina,
+    setPagina,
+    total,
+    recargar: cargar,
+  };
 }

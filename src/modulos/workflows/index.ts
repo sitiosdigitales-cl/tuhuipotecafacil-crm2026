@@ -1,17 +1,17 @@
 /**
- * Módulo Workflows
+ * MÃ³dulo Workflows
  * 
- * Motor de automatización simple basado en reglas.
- * Permite crear flujos automáticos que se ejecutan cuando ocurre un evento.
+ * Motor de automatizaciÃ³n simple basado en reglas.
+ * Permite crear flujos automÃ¡ticos que se ejecutan cuando ocurre un evento.
  * 
  * Ejemplo:
- *   LeadCreated → Asignar ejecutivo → Enviar email → Crear tarea
+ *   LeadCreated â†’ Asignar ejecutivo â†’ Enviar email â†’ Crear tarea
  */
 
 import { z } from "zod";
 import { eventBus, EVENTOS } from "@/modulos/eventos";
 
-// ─── Tipos ───
+// â”€â”€â”€ Tipos â”€â”€â”€
 export type TipoTrigger = 
   | "lead:created"
   | "lead:updated"
@@ -58,7 +58,7 @@ export interface Accion {
   orden: number;
 }
 
-// ─── Configuración ───
+// â”€â”€â”€ ConfiguraciÃ³n â”€â”€â”€
 export const WORKFLOWS_CONFIG = {
   nombre: "Workflows",
   ruta: "/workflows",
@@ -85,16 +85,16 @@ export const TRIGGERS_DISPONIBLES: { id: TipoTrigger; label: string; descripcion
 
 export const ACCIONES_DISPONIBLES: { id: TipoAccion; label: string; descripcion: string; campos: string[] }[] = [
   { id: "asignar_ejecutivo", label: "Asignar Ejecutivo", descripcion: "Asigna un ejecutivo al lead", campos: ["ejecutivoId"] },
-  { id: "enviar_email", label: "Enviar Email", descripcion: "Envía un email al lead", campos: ["asunto", "plantilla"] },
-  { id: "crear_tarea", label: "Crear Tarea", descripcion: "Crea una tarea automática", campos: ["titulo", "asignadoA", "diasPlazo"] },
+  { id: "enviar_email", label: "Enviar Email", descripcion: "EnvÃ­a un email al lead", campos: ["asunto", "plantilla"] },
+  { id: "crear_tarea", label: "Crear Tarea", descripcion: "Crea una tarea automÃ¡tica", campos: ["titulo", "asignadoA", "diasPlazo"] },
   { id: "mover_pipeline", label: "Mover Pipeline", descripcion: "Mueve el lead a otra etapa", campos: ["etapaDestino"] },
-  { id: "enviar_whatsapp", label: "Enviar WhatsApp", descripcion: "Envía un mensaje por WhatsApp", campos: ["mensaje", "telefono"] },
+  { id: "enviar_whatsapp", label: "Enviar WhatsApp", descripcion: "EnvÃ­a un mensaje por WhatsApp", campos: ["mensaje", "telefono"] },
   { id: "crear_recordatorio", label: "Crear Recordatorio", descripcion: "Crea un recordatorio", campos: ["titulo", "fecha", "hora"] },
-  { id: "notificar_ejecutivo", label: "Notificar Ejecutivo", descripcion: "Envía notificación al ejecutivo", campos: ["mensaje"] },
+  { id: "notificar_ejecutivo", label: "Notificar Ejecutivo", descripcion: "EnvÃ­a notificaciÃ³n al ejecutivo", campos: ["mensaje"] },
   { id: "actualizar_estado", label: "Actualizar Estado", descripcion: "Cambia el estado de una entidad", campos: ["entidad", "campo", "valor"] },
 ];
 
-// ─── Validación ───
+// â”€â”€â”€ ValidaciÃ³n â”€â”€â”€
 export const WorkflowSchema = z.object({
   nombre: z.string().min(1, "Nombre requerido"),
   descripcion: z.string().optional(),
@@ -105,7 +105,7 @@ export const WorkflowSchema = z.object({
 
 export type CrearWorkflowInput = z.infer<typeof WorkflowSchema>;
 
-// ─── Servicios ───
+// â”€â”€â”€ Servicios â”€â”€â”€
 export async function obtenerWorkflows() {
   return fetch("/api/flujos", { credentials: "include" }).then(r => r.json());
 }
@@ -141,16 +141,16 @@ export async function eliminarWorkflow(id: string) {
   }).then(r => r.json());
 }
 
-// ─── Motor de ejecución ───
+// â”€â”€â”€ Motor de ejecuciÃ³n â”€â”€â”€
 export async function ejecutarWorkflow(workflow: Workflow, contexto: Record<string, any>) {
   console.log(`[Workflow] Ejecutando: ${workflow.nombre}`);
 
   for (const accion of workflow.acciones.sort((a, b) => a.orden - b.orden)) {
     try {
       await ejecutarAccion(accion, contexto);
-      console.log(`[Workflow] Acción completada: ${accion.tipo}`);
+      console.log(`[Workflow] AcciÃ³n completada: ${accion.tipo}`);
     } catch (err) {
-      console.error(`[Workflow] Error en acción ${accion.tipo}:`, err);
+      console.error(`[Workflow] Error en acciÃ³n ${accion.tipo}:`, err);
     }
   }
 
@@ -180,7 +180,7 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titulo: accion.configuracion.titulo || "Tarea automática",
+          titulo: accion.configuracion.titulo || "Tarea automÃ¡tica",
           leadId: contexto.leadId,
           asignadoA: accion.configuracion.asignadoA,
           fechavencimiento: accion.configuracion.diasPlazo
@@ -198,8 +198,8 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
         body: JSON.stringify({
           tipo: "custom",
           to: contexto.email,
-          subject: accion.configuracion.asunto || "Notificación",
-          html: accion.configuracion.mensaje || "Tienes una nueva notificación",
+          subject: accion.configuracion.asunto || "NotificaciÃ³n",
+          html: accion.configuracion.mensaje || "Tienes una nueva notificaciÃ³n",
         }),
       });
       break;
@@ -216,19 +216,19 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
       break;
 
     case "notificar_ejecutivo":
-      // Emitir evento para notificación
+      // Emitir evento para notificaciÃ³n
       eventBus.emit(EVENTOS.NOTIFICATION_CREATED, {
-        titulo: accion.configuracion.mensaje || "Notificación",
+        titulo: accion.configuracion.mensaje || "NotificaciÃ³n",
         leadId: contexto.leadId,
       });
       break;
 
     default:
-      console.log(`[Workflow] Acción no implementada: ${accion.tipo}`);
+      console.log(`[Workflow] AcciÃ³n no implementada: ${accion.tipo}`);
   }
 }
 
-// ─── Suscripción a eventos ───
+// â”€â”€â”€ SuscripciÃ³n a eventos â”€â”€â”€
 export function iniciarMotorWorkflows() {
   // Escuchar todos los eventos y ejecutar workflows correspondientes
   Object.values(EVENTOS).forEach((evento) => {

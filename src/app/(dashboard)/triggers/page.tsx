@@ -1,344 +1,111 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import {
-  Zap,
-  Play,
-  Pause,
-  Plus,
-  Search,
-  Filter,
-  Edit,
-  Eye,
-  Trash2,
-  Copy,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Users,
-  FileText,
-  Calendar,
-  Mail,
-  MessageSquare,
-  Phone,
-  Bell,
-  GitBranch,
-  ArrowRight,
-  Settings,
-  Activity,
-  TrendingUp,
-  BarChart3,
-  Target,
-  User,
-  DollarSign,
-  Tag,
-  Workflow,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { Search, Plus, Zap } from "lucide-react";
+import { StatsBar, KPIGrid } from "@/componentes/triggers/StatsBar";
+import { TriggerCard } from "@/componentes/triggers/TriggerCard";
+import { useTriggers, useTriggerHistorial } from "@/modulos/automatizacion/hooks";
+import { TRIGGERS_TIPOS, ACCIONES_TIPOS, CONDICION_OPERADORES, TRIGGER_CATEGORIAS, CAMPOS_POR_CATEGORIA } from "@/modulos/automatizacion/config";
+import { toast } from "sonner";
 
-// Tipos de triggers disponibles
-const TIPOS_TRIGGER = [
-  { id: "lead_creado", nombre: "Lead Creado", icono: Users, color: "#3B82F6", categoria: "lead" },
-  { id: "lead_cambio_etapa", nombre: "Cambio de Etapa", icono: ArrowRight, color: "#8B5CF6", categoria: "lead" },
-  { id: "lead_inactivo", nombre: "Lead Inactivo", icono: Clock, color: "#F59E0B", categoria: "lead" },
-  { id: "lead_calificado", nombre: "Lead Calificado", icono: Target, color: "#10B981", categoria: "lead" },
-  { id: "doc_subido", nombre: "Documento Subido", icono: FileText, color: "#8B5CF6", categoria: "documento" },
-  { id: "doc_aprobado", nombre: "Documento Aprobado", icono: CheckCircle, color: "#10B981", categoria: "documento" },
-  { id: "doc_rechazado", nombre: "Documento Rechazado", icono: XCircle, color: "#EF4444", categoria: "documento" },
-  { id: "tarea_creada", nombre: "Tarea Creada", icono: CheckCircle, color: "#14B8A6", categoria: "tarea" },
-  { id: "tarea_vencida", nombre: "Tarea Vencida", icono: AlertTriangle, color: "#EF4444", categoria: "tarea" },
-  { id: "tarea_completada", nombre: "Tarea Completada", icono: CheckCircle, color: "#10B981", categoria: "tarea" },
-  { id: "credito_aprobado", nombre: "Crédito Aprobado", icono: DollarSign, color: "#10B981", categoria: "credito" },
-  { id: "credito_rechazado", nombre: "Crédito Rechazado", icono: XCircle, color: "#EF4444", categoria: "credito" },
-  { id: "llamada_registrada", nombre: "Llamada Registrada", icono: Phone, color: "#10B981", categoria: "comunicacion" },
-  { id: "email_recibido", nombre: "Email Recibido", icono: Mail, color: "#3B82F6", categoria: "comunicacion" },
-  { id: "whatsapp_recibido", nombre: "WhatsApp Recibido", icono: MessageSquare, color: "#22C55E", categoria: "comunicacion" },
-];
-
-// Acciones disponibles
-const ACCIONES_DISPONIBLES = [
-  { id: "enviar_email", nombre: "Enviar Email", icono: Mail, color: "#3B82F6" },
-  { id: "enviar_whatsapp", nombre: "Enviar WhatsApp", icono: MessageSquare, color: "#22C55E" },
-  { id: "enviar_sms", nombre: "Enviar SMS", icono: Phone, color: "#8B5CF6" },
-  { id: "crear_tarea", nombre: "Crear Tarea", icono: CheckCircle, color: "#14B8A6" },
-  { id: "asignar_ejecutivo", nombre: "Asignar Ejecutivo", icono: User, color: "#8B5CF6" },
-  { id: "cambiar_etapa", nombre: "Cambiar Etapa", icono: ArrowRight, color: "#F59E0B" },
-  { id: "agregar_etiqueta", nombre: "Agregar Etiqueta", icono: Tag, color: "#EC4899" },
-  { id: "notificar_equipo", nombre: "Notificar Equipo", icono: Bell, color: "#F59E0B" },
-  { id: "agendar_reunion", nombre: "Agendar Reunión", icono: Calendar, color: "#8B5CF6" },
-  { id: "iniciar_flujo", nombre: "Iniciar Flujo", icono: Workflow, color: "#6366F1" },
-];
-
-// Triggers mock
-const TRIGGERS_MOCK = [
-  {
-    id: "t1",
-    nombre: "Bienvenida Nuevo Lead",
-    descripcion: "Enviar email y WhatsApp de bienvenida cuando se registra un nuevo lead",
-    trigger: "lead_creado",
-    condiciones: [
-      { campo: "origen", operador: "es", valor: "WEB" },
-    ],
-    acciones: [
-      { tipo: "enviar_email", plantilla: "Bienvenida Nuevo Lead", delay: 0 },
-      { tipo: "enviar_whatsapp", plantilla: "Saludo WhatsApp", delay: 30 },
-    ],
-    estado: "ACTIVO",
-    ejecuciones: 1247,
-    exitosas: 1180,
-    fallidas: 67,
-    ultimoDisparo: new Date(2026, 6, 4, 9, 0),
-    creadoEn: new Date(2026, 5, 4),
-    creadoPor: "Andrés Pérez",
-  },
-  {
-    id: "t2",
-    nombre: "Reactivación Lead Inactivo",
-    descripcion: "Cuando un lead lleva 30 días sin actividad, enviar serie de reactivación",
-    trigger: "lead_inactivo",
-    condiciones: [
-      { campo: "dias_sin_contacto", operador: ">=", valor: "30" },
-      { campo: "etapa", operador: "no es", valor: "CLIENTE_FINALIZADO" },
-    ],
-    acciones: [
-      { tipo: "enviar_email", plantilla: "Reactivación Lead", delay: 0 },
-      { tipo: "agregar_etiqueta", valor: "reactivacion-iniciada", delay: 0 },
-      { tipo: "crear_tarea", valor: "Seguimiento post reactivación", delay: 720 },
-    ],
-    estado: "ACTIVO",
-    ejecuciones: 534,
-    exitosas: 489,
-    fallidas: 45,
-    ultimoDisparo: new Date(2026, 6, 4, 6, 0),
-    creadoEn: new Date(2026, 5, 9),
-    creadoPor: "Diego Silva",
-  },
-  {
-    id: "t3",
-    nombre: "Alerta Documentos Pendientes",
-    descripcion: "Enviar recordatorio cada 3 días mientras haya documentos pendientes",
-    trigger: "doc_subido",
-    condiciones: [
-      { campo: "documentos_pendientes", operador: ">", valor: "0" },
-    ],
-    acciones: [
-      { tipo: "enviar_whatsapp", plantilla: "Recordatorio Documentos WhatsApp", delay: 4320 },
-      { tipo: "crear_tarea", valor: "Verificar documentos del cliente", delay: 4320 },
-    ],
-    estado: "ACTIVO",
-    ejecuciones: 423,
-    exitosas: 410,
-    fallidas: 13,
-    ultimoDisparo: new Date(2026, 6, 3, 23, 0),
-    creadoEn: new Date(2026, 5, 14),
-    creadoPor: "Valentina Torres",
-  },
-  {
-    id: "t4",
-    nombre: "Felicitación Crédito Aprobado",
-    descripcion: "Enviar felicitación al cliente y notificar al equipo cuando se aprueba un crédito",
-    trigger: "credito_aprobado",
-    condiciones: [],
-    acciones: [
-      { tipo: "enviar_whatsapp", plantilla: "Felicitación WhatsApp", delay: 0 },
-      { tipo: "enviar_email", plantilla: "Felicitación Crédito Aprobado", delay: 0 },
-      { tipo: "notificar_equipo", valor: "¡Crédito aprobado!", delay: 0 },
-      { tipo: "cambiar_etapa", valor: "FIRMA_DIGITAL", delay: 1440 },
-    ],
-    estado: "ACTIVO",
-    ejecuciones: 189,
-    exitosas: 189,
-    fallidas: 0,
-    ultimoDisparo: new Date(2026, 6, 4, 3, 0),
-    creadoEn: new Date(2026, 4, 20),
-    creadoPor: "Javier Morales",
-  },
-  {
-    id: "t5",
-    nombre: "Asignación Automática Lead",
-    descripcion: "Asignar lead al ejecutivo con menos carga cuando se registra por teléfono",
-    trigger: "lead_creado",
-    condiciones: [
-      { campo: "origen", operador: "es", valor: "TELEFONO" },
-    ],
-    acciones: [
-      { tipo: "asignar_ejecutivo", valor: "menor_carga", delay: 0 },
-      { tipo: "agregar_etiqueta", valor: "auto-asignado", delay: 0 },
-    ],
-    estado: "ACTIVO",
-    ejecuciones: 312,
-    exitosas: 308,
-    fallidas: 4,
-    ultimoDisparo: new Date(2026, 6, 4, 8, 0),
-    creadoEn: new Date(2026, 5, 19),
-    creadoPor: "Andrés Pérez",
-  },
-  {
-    id: "t6",
-    nombre: "Tarea Vencida - Notificar Gerente",
-    descripcion: "Cuando una tarea está vencida, notificar al gerente del equipo",
-    trigger: "tarea_vencida",
-    condiciones: [],
-    acciones: [
-      { tipo: "notificar_equipo", valor: "Tarea vencida requiere atención", delay: 0 },
-      { tipo: "enviar_email", plantilla: "Alerta Tarea Vencida", delay: 60 },
-    ],
-    estado: "PAUSADO",
-    ejecuciones: 245,
-    exitosas: 245,
-    fallidas: 0,
-    ultimoDisparo: new Date(2026, 6, 3, 11, 0),
-    creadoEn: new Date(2026, 4, 5),
-    creadoPor: "Carolina Muñoz",
-  },
-];
-
-const CATEGORIA_COLORS: Record<string, string> = {
-  lead: "text-blue-600",
-  documento: "text-purple-600",
-  tarea: "text-emerald-600",
-  credito: "text-amber-600",
-  comunicacion: "text-green-600",
-};
-
-type TabTrigger = "todos" | "activos" | "pausados";
+type TabTrigger = "todos" | "activos" | "pausados" | "borrador";
 
 export default function TriggersPage() {
-  const [triggers, setTriggers] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const { triggers, setTriggers, cargando } = useTriggers();
   const [tabActiva, setTabActiva] = useState<TabTrigger>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function cargar() {
-      try {
-        const res = await fetch("/api/triggers");
-        const json = await res.json();
-        if (json.success && json.data) setTriggers(json.data);
-      } catch { setTriggers([]); }
-      finally { setCargando(false); }
-    }
-    cargar();
-  }, []);
+  const [triggerEditando, setTriggerEditando] = useState<any>(null);
 
   const triggersFiltrados = useMemo(() => {
     return triggers.filter((t) => {
       const coincideTab =
         tabActiva === "todos" ||
         (tabActiva === "activos" && t.estado === "ACTIVO") ||
-        (tabActiva === "pausados" && t.estado === "PAUSADO");
+        (tabActiva === "pausados" && t.estado === "PAUSADO") ||
+        (tabActiva === "borrador" && t.estado === "BORRADOR");
       const coincideBusqueda =
         !busqueda ||
-        t.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        t.descripcion.toLowerCase().includes(busqueda.toLowerCase());
+        t.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        t.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
       return coincideTab && coincideBusqueda;
     });
   }, [tabActiva, busqueda, triggers]);
-
-  const triggerDetalle = triggers.find((t) => t.id === modalDetalle);
-
-  const toggleEstado = (triggerId: string) => {
-    setTriggers((prev) =>
-      prev.map((t) =>
-        t.id === triggerId
-          ? { ...t, estado: t.estado === "ACTIVO" ? "PAUSADO" : "ACTIVO" }
-          : t
-      )
-    );
-  };
 
   const stats = useMemo(() => ({
     total: triggers.length,
     activos: triggers.filter((t) => t.estado === "ACTIVO").length,
     pausados: triggers.filter((t) => t.estado === "PAUSADO").length,
-    ejecuciones: triggers.reduce((sum, t) => sum + t.ejecuciones, 0),
-    exitosas: triggers.reduce((sum, t) => sum + t.exitosas, 0),
-    fallidas: triggers.reduce((sum, t) => sum + t.fallidas, 0),
+    borrador: triggers.filter((t) => t.estado === "BORRADOR").length,
+    ejecuciones: triggers.reduce((sum, t) => sum + (t.ejecuciones || 0), 0),
+    exitosas: triggers.reduce((sum, t) => sum + (t.exitosas || 0), 0),
+    fallidas: triggers.reduce((sum, t) => sum + (t.fallidas || 0), 0),
   }), [triggers]);
+
+  const tasaExito = stats.ejecuciones > 0 ? Math.round((stats.exitosas / stats.ejecuciones) * 100) : 0;
+
+  const toggleEstado = async (triggerId: string) => {
+    const trigger = triggers.find((t) => t.id === triggerId);
+    if (!trigger) return;
+    const nuevoEstado = trigger.estado === "ACTIVO" ? "PAUSADO" : "ACTIVO";
+    try {
+      const res = await fetch(`/api/triggers/${triggerId}`, {
+        method: "PUT", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (res.ok) {
+        setTriggers((prev) => prev.map((t) => t.id === triggerId ? { ...t, estado: nuevoEstado } : t));
+        toast.success(`Trigger ${nuevoEstado === "ACTIVO" ? "activado" : "pausado"}`);
+      }
+    } catch { toast.error("Error al cambiar estado"); }
+  };
+
+  const eliminarTrigger = async (triggerId: string) => {
+    if (!confirm("Ã‚Â¿EstÃƒÂ¡s seguro de eliminar este trigger?")) return;
+    try {
+      const res = await fetch(`/api/triggers/${triggerId}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) {
+        setTriggers((prev) => prev.filter((t) => t.id !== triggerId));
+        toast.success("Trigger eliminado");
+      }
+    } catch { toast.error("Error al eliminar"); }
+  };
+
+  const abrirEditor = (trigger?: any) => {
+    setTriggerEditando(trigger || null);
+    setModalCrear(true);
+  };
+
+  const guardarTrigger = async (data: any) => {
+    try {
+      const url = triggerEditando ? `/api/triggers/${triggerEditando.id}` : "/api/triggers";
+      const method = triggerEditando ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method, credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (triggerEditando) {
+          setTriggers((prev) => prev.map((t) => t.id === triggerEditando.id ? { ...t, ...data } : t));
+          toast.success("Trigger actualizado");
+        } else {
+          setTriggers((prev) => [json.data || { ...data, id: crypto.randomUUID() }, ...prev]);
+          toast.success("Trigger creado");
+        }
+        setModalCrear(false);
+        setTriggerEditando(null);
+      }
+    } catch { toast.error("Error al guardar"); }
+  };
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight mb-1">
-              Triggers Automáticos
-            </h1>
-            <p className="text-amber-200 text-[11px] font-medium">
-              Reglas que se activan según condiciones específicas del sistema
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-[10px] text-amber-200">Total</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-300">{stats.activos}</div>
-              <div className="text-[10px] text-amber-200">Activos</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-300">{stats.ejecuciones.toLocaleString()}</div>
-              <div className="text-[10px] text-amber-200">Ejecuciones</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-              <Zap size={18} className="text-amber-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Ejecuciones</span>
-          </div>
-          <div className="text-xl font-bold text-slate-900">{stats.ejecuciones.toLocaleString()}</div>
-          <div className="text-[10px] text-slate-400 mt-1">Total procesadas</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <CheckCircle size={18} className="text-emerald-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Exitosas</span>
-          </div>
-          <div className="text-xl font-bold text-emerald-600">{stats.exitosas.toLocaleString()}</div>
-          <div className="text-[10px] text-emerald-500 mt-1">
-            {stats.ejecuciones > 0 ? Math.round((stats.exitosas / stats.ejecuciones) * 100) : 0}% éxito
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-              <AlertTriangle size={18} className="text-red-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Fallidas</span>
-          </div>
-          <div className="text-xl font-bold text-red-600">{stats.fallidas.toLocaleString()}</div>
-          <div className="text-[10px] text-red-500 mt-1">Requieren revisión</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Activity size={18} className="text-blue-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Activos</span>
-          </div>
-          <div className="text-xl font-bold text-blue-600">{stats.activos}</div>
-          <div className="text-[10px] text-blue-500 mt-1">de {stats.total} totales</div>
-        </div>
-      </div>
-
-      {/* Filtros y Tabs */}
+      <StatsBar total={stats.total} activos={stats.activos} ejecuciones={stats.ejecuciones} tasaExito={tasaExito} />
+      <KPIGrid stats={stats} />
       <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5">
@@ -346,475 +113,249 @@ export default function TriggersPage() {
               { id: "todos", label: "Todos", count: stats.total },
               { id: "activos", label: "Activos", count: stats.activos },
               { id: "pausados", label: "Pausados", count: stats.pausados },
+              { id: "borrador", label: "Borrador", count: stats.borrador },
             ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setTabActiva(tab.id as TabTrigger)}
+              <button key={tab.id} onClick={() => setTabActiva(tab.id as TabTrigger)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-semibold transition-all ${
-                  tabActiva === tab.id
-                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                }`}
-              >
-                {tab.label}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                  tabActiva === tab.id ? "bg-white/20" : "bg-slate-200"
+                  tabActiva === tab.id ? "bg-amber-500 text-white shadow-md shadow-amber-500/20" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                 }`}>
-                  {tab.count}
-                </span>
+                {tab.label}
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${tabActiva === tab.id ? "bg-white/20" : "bg-slate-200"}`}>{tab.count}</span>
               </button>
             ))}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar trigger..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-48 pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/60 rounded-xl text-[11px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 transition-all"
-              />
+              <input type="text" placeholder="Buscar trigger..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+                className="w-48 pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/60 rounded-xl text-[11px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 transition-all" />
             </div>
-            <button
-              onClick={() => setModalCrear(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl text-[11px] font-semibold hover:bg-amber-600 transition-colors shadow-md shadow-amber-500/20"
-            >
+            <button onClick={() => abrirEditor()}
+              className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl text-[11px] font-semibold hover:bg-amber-600 transition-colors shadow-md shadow-amber-500/20">
               <Plus size={14} /> Nuevo Trigger
             </button>
           </div>
         </div>
       </div>
-
-      {/* Lista de triggers */}
-      <div className="space-y-4">
-        {triggersFiltrados.map((trigger) => {
-          const tipoTrigger = TIPOS_TRIGGER.find((t) => t.id === trigger.trigger);
-
-          return (
-            <div
-              key={trigger.id}
-              className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft hover:shadow-md transition-all"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${tipoTrigger?.color || "#F59E0B"}15` }}
-                  >
-                    <Zap size={20} style={{ color: tipoTrigger?.color || "#F59E0B" }} />
-                  </div>
-                  <div>
-                    <h4 className="text-[13px] font-bold text-slate-800">{trigger.nombre}</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{trigger.descripcion}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                          trigger.estado === "ACTIVO"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-amber-50 text-amber-600"
-                        }`}
-                      >
-                        {trigger.estado === "ACTIVO" ? "● Activo" : "● Pausado"}
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        Trigger: {tipoTrigger?.nombre}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleEstado(trigger.id)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      trigger.estado === "ACTIVO"
-                        ? "bg-emerald-100 text-emerald-600 hover:bg-emerald-200"
-                        : "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                    }`}
-                    title={trigger.estado === "ACTIVO" ? "Pausar" : "Activar"}
-                  >
-                    {trigger.estado === "ACTIVO" ? <Pause size={14} /> : <Play size={14} />}
-                  </button>
-                  <button
-                    onClick={() => setModalDetalle(trigger.id)}
-                    className="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                    title="Ver detalle"
-                  >
-                    <Eye size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Condiciones */}
-              <div className="mb-4">
-                <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Condiciones
-                </h5>
-                <div className="flex flex-wrap gap-2">
-                  {trigger.condiciones.length === 0 ? (
-                    <span className="text-[10px] text-slate-400 italic">Sin condiciones (siempre se ejecuta)</span>
-                  ) : (
-                    (trigger.condiciones || []).map((cond: any, idx: number) => (
-                      <span
-                        key={idx}
-                        className="text-[11px] font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg"
-                      >
-                        {cond.campo} {cond.operador} {cond.valor}
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Acciones */}
-              <div className="mb-4">
-                <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Acciones ({trigger.acciones.length})
-                </h5>
-                <div className="flex flex-wrap gap-2">
-                  {(trigger.acciones || []).map((accion: any, idx: number) => {
-                    const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-200/60"
-                      >
-                        {accionConfig && (
-                          <span style={{ color: accionConfig.color }}>
-                            <accionConfig.icono size={10} />
-                          </span>
-                        )}
-                        <span className="text-[11px] font-semibold text-slate-600">
-                          {accionConfig?.nombre}
-                        </span>
-                        {accion.delay > 0 && (
-                          <span className="text-[10px] text-slate-400">
-                            +{accion.delay >= 60 ? `${Math.round(accion.delay / 60)}h` : `${accion.delay}m`}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Métricas */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div className="flex items-center gap-4 text-[10px] text-slate-400">
-                  <span>
-                    <span className="font-semibold text-slate-600">{trigger.ejecuciones.toLocaleString()}</span> ejecuciones
-                  </span>
-                  <span>
-                    <span className="font-semibold text-emerald-600">{trigger.exitosas}</span> éxitos
-                  </span>
-                  <span>
-                    <span className="font-semibold text-red-600">{trigger.fallidas}</span> fallos
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  Último: {trigger.ultimoDisparo.toLocaleDateString("es-CL")}
-                </span>
-              </div>
+      {cargando ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft animate-pulse">
+              <div className="flex items-start gap-4"><div className="w-12 h-12 bg-slate-200 rounded-xl" /><div className="flex-1 space-y-2"><div className="h-4 bg-slate-200 rounded w-1/3" /><div className="h-3 bg-slate-200 rounded w-2/3" /></div></div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+      ) : triggersFiltrados.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-100/80 p-12 shadow-soft text-center">
+          <Zap size={48} className="mx-auto text-slate-300 mb-4" />
+          <h3 className="text-sm font-bold text-slate-600 mb-2">No hay triggers</h3>
+          <p className="text-[11px] text-slate-400 mb-4">{busqueda ? "No se encontraron triggers" : "Crea tu primer trigger para automatizar tareas"}</p>
+          {!busqueda && <button onClick={() => abrirEditor()} className="px-4 py-2 bg-amber-500 text-white rounded-xl text-[11px] font-semibold hover:bg-amber-600 transition-colors"><Plus size={14} className="inline mr-1" /> Crear Trigger</button>}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {triggersFiltrados.map((trigger) => (
+            <TriggerCard key={trigger.id} trigger={trigger} onToggleEstado={toggleEstado} onVerDetalle={setModalDetalle} onEditar={abrirEditor} onEliminar={eliminarTrigger} />
+          ))}
+        </div>
+      )}
+      {modalCrear && <TriggerEditorModal trigger={triggerEditando} onGuardar={guardarTrigger} onCerrar={() => { setModalCrear(false); setTriggerEditando(null); }} />}
+      {modalDetalle && <TriggerDetalleModal triggerId={modalDetalle} onCerrar={() => setModalDetalle(null)} onEditar={(t) => { setModalDetalle(null); abrirEditor(t); }} />}
+    </div>
+  );
+}
+// --- Modal Editor de Trigger ---
+function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; onGuardar: (data: any) => void; onCerrar: () => void }) {
+  const [paso, setPaso] = useState(1);
+  const [form, setForm] = useState({
+    nombre: trigger?.nombre || "", descripcion: trigger?.descripcion || "",
+    trigger: trigger?.trigger || TRIGGERS_TIPOS[0].id, categoria: trigger?.categoria || "lead",
+    condiciones: trigger?.condiciones || [], logica_condiciones: trigger?.logica_condiciones || "AND",
+    acciones: trigger?.acciones || [], estado: trigger?.estado || "BORRADOR",
+  });
+  const camposDisponibles = CAMPOS_POR_CATEGORIA[form.categoria] || [];
+  const agregarCondicion = () => setForm((p) => ({ ...p, condiciones: [...p.condiciones, { campo: camposDisponibles[0]?.id || "", operador: "igual", valor: "" }] }));
+  const eliminarCondicion = (idx: number) => setForm((p) => ({ ...p, condiciones: p.condiciones.filter((_: any, i: number) => i !== idx) }));
+  const actualizarCondicion = (idx: number, campo: string, valor: any) => setForm((p) => ({ ...p, condiciones: p.condiciones.map((c: any, i: number) => i === idx ? { ...c, [campo]: valor } : c) }));
+  const agregarAccion = (tipo: string) => setForm((p) => ({ ...p, acciones: [...p.acciones, { tipo, configuracion: {}, delay: 0, orden: p.acciones.length + 1 }] }));
+  const eliminarAccion = (idx: number) => setForm((p) => ({ ...p, acciones: p.acciones.filter((_: any, i: number) => i !== idx).map((a: any, i: number) => ({ ...a, orden: i + 1 })) }));
+  const handleSubmit = () => { if (!form.nombre || !form.trigger || form.acciones.length === 0) { toast.error("Completa todos los campos obligatorios"); return; } onGuardar(form); };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div><h3 className="text-base font-bold text-slate-800">{trigger ? "Editar Trigger" : "Nuevo Trigger"}</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">Paso {paso} de 3: {paso === 1 ? "Configuracion" : paso === 2 ? "Condiciones" : "Acciones"}</p></div>
+            <button onClick={onCerrar} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span className="text-slate-400">?</span></button>
+          </div>
+          <div className="flex gap-2 mt-4">{[1, 2, 3].map((p) => <div key={p} className={`h-1 flex-1 rounded-full transition-colors ${p <= paso ? "bg-amber-500" : "bg-slate-200"}`} />)}</div>
+        </div>
+        <div className="p-6">
+          {paso === 1 && (
+            <div className="space-y-5">
+              <div className="space-y-1.5"><label className="text-[11px] font-semibold text-slate-700">Nombre del Trigger *</label>
+                <input type="text" placeholder="Ej: Bienvenida Nuevo Lead" value={form.nombre} onChange={(e) => setForm((p) => ({ ...p, nombre: e.target.value }))}
+                  className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 transition-all" /></div>
+              <div className="space-y-1.5"><label className="text-[11px] font-semibold text-slate-700">Descripcion</label>
+                <textarea placeholder="Describe que hace este trigger..." rows={2} value={form.descripcion} onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))}
+                  className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 resize-none transition-all" /></div>
+              <div className="space-y-1.5"><label className="text-[11px] font-semibold text-slate-700">Evento Trigger *</label>
+                <select value={form.trigger} onChange={(e) => { const val = e.target.value; const cat = TRIGGERS_TIPOS.find((t) => t.id === val)?.categoria || "lead"; setForm((p) => ({ ...p, trigger: val, categoria: cat })); }}
+                  className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400">
+                  {TRIGGER_CATEGORIAS.map((cat) => <optgroup key={cat.id} label={cat.label}>{TRIGGERS_TIPOS.filter((t) => t.categoria === cat.id).map((tipo) => <option key={tipo.id} value={tipo.id}>{tipo.label} - {tipo.descripcion}</option>)}</optgroup>)}
+                </select></div>
+            </div>
+          )}
+          {paso === 2 && (
+            <div className="space-y-5">
+              <div className="space-y-1.5"><label className="text-[11px] font-semibold text-slate-700">Logica entre condiciones</label>
+                <div className="flex gap-2">{(["AND", "OR"] as const).map((logica) => (
+                  <button key={logica} onClick={() => setForm((p) => ({ ...p, logica_condiciones: logica }))}
+                    className={`px-4 py-2 rounded-xl text-[11px] font-semibold transition-all ${form.logica_condiciones === logica ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                    {logica === "AND" ? "Todas (AND)" : "Cualquiera (OR)"}</button>))}</div></div>
+              <div className="space-y-3"><label className="text-[11px] font-semibold text-slate-700">Condiciones</label>
+                {form.condiciones.length === 0 ? <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center"><p className="text-[10px] text-slate-400">Sin condiciones = se ejecuta siempre</p></div> : (
+                  form.condiciones.map((cond: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                      <select value={cond.campo} onChange={(e) => actualizarCondicion(idx, "campo", e.target.value)} className="h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600">{camposDisponibles.map((campo) => <option key={campo.id} value={campo.id}>{campo.label}</option>)}</select>
+                      <select value={cond.operador} onChange={(e) => actualizarCondicion(idx, "operador", e.target.value)} className="h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600">{CONDICION_OPERADORES.map((op) => <option key={op.id} value={op.id}>{op.label}</option>)}</select>
+                      {!["esta_vacio", "no_vacio"].includes(cond.operador) && <input type="text" placeholder="Valor" value={cond.valor || ""} onChange={(e) => actualizarCondicion(idx, "valor", e.target.value)} className="h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600 flex-1" />}
+                      <button onClick={() => eliminarCondicion(idx)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">?</button>
+                    </div>
+                  )))}
+                <button onClick={agregarCondicion} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700">+ Agregar condicion</button></div>
+            </div>
+          )}
+          {paso === 3 && (
+            <div className="space-y-5">
+              <div className="space-y-3"><label className="text-[11px] font-semibold text-slate-700">Acciones del Trigger *</label>
+                {form.acciones.length === 0 ? <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center"><p className="text-[10px] text-slate-400">Agrega al menos una accion</p></div> : (
+                  <div className="space-y-2">{form.acciones.map((accion: any, idx: number) => {
+                    const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
+                    return (<div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                      <span className="text-[11px] font-bold text-slate-400 w-6">{idx + 1}</span>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${config?.color || "#64748B"}15` }}><Zap size={14} style={{ color: config?.color || "#64748B" }} /></div>
+                      <div className="flex-1"><span className="text-[11px] font-semibold text-slate-700">{config?.label || accion.tipo}</span></div>
+                      <input type="number" placeholder="Delay (min)" value={accion.delay || ""} onChange={(e) => { const val = parseInt(e.target.value) || 0; setForm((p) => ({ ...p, acciones: p.acciones.map((a: any, i: number) => i === idx ? { ...a, delay: val } : a) })); }} className="w-24 h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600" />
+                      <button onClick={() => eliminarAccion(idx)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">?</button>
+                    </div>);
+                  })}</div>)}</div>
+              <div className="space-y-2"><label className="text-[11px] font-semibold text-slate-700">Agregar accion</label>
+                <div className="grid grid-cols-2 gap-2">{ACCIONES_TIPOS.map((accion) => (
+                  <button key={accion.id} onClick={() => agregarAccion(accion.id)} className="flex items-center gap-2 p-2.5 bg-slate-50 hover:bg-amber-50 rounded-xl border border-slate-200 hover:border-amber-300 transition-all text-left">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accion.color}15` }}><Zap size={14} style={{ color: accion.color }} /></div>
+                    <span className="text-[10px] font-semibold text-slate-700">{accion.label}</span>
+                  </button>))}</div></div>
+            </div>
+          )}
+        </div>
+        <div className="p-6 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex gap-2">{paso > 1 && <button onClick={() => setPaso((p) => p - 1)} className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Anterior</button>}</div>
+          <div className="flex gap-2">
+            <button onClick={onCerrar} className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancelar</button>
+            {paso < 3 ? <button onClick={() => setPaso((p) => p + 1)} className="px-5 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-md shadow-amber-500/20">Siguiente</button> : <button onClick={handleSubmit} className="px-5 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-md shadow-amber-500/20">{trigger ? "Actualizar" : "Crear"} Trigger</button>}
+          </div>
+        </div>
       </div>
-
-      {/* Modal Detalle */}
-      {triggerDetalle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-3xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-amber-100 rounded-xl flex items-center justify-center">
-                    <Zap size={24} className="text-amber-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800">{triggerDetalle.nombre}</h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{triggerDetalle.descripcion}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                          triggerDetalle.estado === "ACTIVO"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-amber-50 text-amber-600"
-                        }`}
-                      >
-                        {triggerDetalle.estado}
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        Creado por {triggerDetalle.creadoPor}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModalDetalle(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <span className="text-slate-400">✕</span>
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              {/* Diagrama del trigger */}
-              <div className="bg-slate-50 rounded-xl p-6 mb-6">
-                <h4 className="text-sm font-bold text-slate-800 mb-4">Flujo del Trigger</h4>
-                <div className="flex items-center gap-3 overflow-x-auto">
-                  {/* Trigger */}
-                  <div className="flex flex-col items-center min-w-[100px]">
-                    <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
-                      <Zap size={22} className="text-amber-500" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-600 mt-2">Trigger</span>
-                    <span className="text-[10px] text-slate-400 text-center">
-                      {TIPOS_TRIGGER.find((t) => t.id === triggerDetalle.trigger)?.nombre}
-                    </span>
-                  </div>
-
-                  <ArrowRight size={16} className="text-slate-300 flex-shrink-0" />
-
-                  {/* Condiciones */}
-                  <div className="flex flex-col items-center min-w-[100px]">
-                    <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center">
-                      <Filter size={22} className="text-purple-500" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-600 mt-2">Condición</span>
-                    <span className="text-[10px] text-slate-400 text-center">
-                      {triggerDetalle.condiciones.length > 0
-                        ? `${triggerDetalle.condiciones.length} regla(s)`
-                        : "Siempre"}
-                    </span>
-                  </div>
-
-                  <ArrowRight size={16} className="text-slate-300 flex-shrink-0" />
-
-                  {/* Acciones */}
-                  {(triggerDetalle.acciones || []).map((accion: any, idx: number) => {
-                    const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
-                    return (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="flex flex-col items-center min-w-[80px]">
-                          <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: `${accionConfig?.color || "#64748B"}15` }}
-                          >
-                            {accionConfig && (
-                              <span style={{ color: accionConfig.color }}>
-                                <accionConfig.icono size={18} />
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-semibold text-slate-600 mt-1 text-center">
-                            {accionConfig?.nombre}
-                          </span>
-                        </div>
-                        {idx < triggerDetalle.acciones.length - 1 && (
-                          <ArrowRight size={12} className="text-slate-300 flex-shrink-0" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Métricas */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                  <div className="text-xl font-bold text-blue-700">{triggerDetalle.ejecuciones.toLocaleString()}</div>
-                  <div className="text-[10px] text-blue-500">Ejecuciones</div>
-                </div>
-                <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                  <div className="text-xl font-bold text-emerald-700">{triggerDetalle.exitosas}</div>
-                  <div className="text-[10px] text-emerald-500">Exitosas</div>
-                </div>
-                <div className="bg-red-50 rounded-xl p-4 text-center">
-                  <div className="text-xl font-bold text-red-700">{triggerDetalle.fallidas}</div>
-                  <div className="text-[10px] text-red-500">Fallidas</div>
-                </div>
-              </div>
-
-              {/* Condiciones detalladas */}
-              <div className="mb-6">
-                <h4 className="text-sm font-bold text-slate-800 mb-3">Condiciones</h4>
-                {triggerDetalle.condiciones.length === 0 ? (
-                  <p className="text-[11px] text-slate-400 italic">
-                    Este trigger se ejecuta siempre que se produce el evento
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {(triggerDetalle.condiciones || []).map((cond: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                        <span className="text-[10px] font-semibold text-slate-600">{cond.campo}</span>
-                        <span className="text-[10px] text-slate-400">{cond.operador}</span>
-                        <span className="text-[10px] font-bold text-slate-800">{cond.valor}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Acciones detalladas */}
-              <div>
-                <h4 className="text-sm font-bold text-slate-800 mb-3">Acciones</h4>
-                <div className="space-y-2">
-                  {(triggerDetalle.acciones || []).map((accion: any, idx: number) => {
-                    const accionConfig = ACCIONES_DISPONIBLES.find((a) => a.id === accion.tipo);
-                    return (
-                      <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${accionConfig?.color || "#64748B"}15` }}
-                        >
-                          {accionConfig && (
-                            <span style={{ color: accionConfig.color }}>
-                              <accionConfig.icono size={14} />
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-[11px] font-semibold text-slate-700">
-                            {accionConfig?.nombre}
-                          </span>
-                          {accion.plantilla && (
-                            <span className="text-[11px] text-slate-400 ml-2">
-                              Plantilla: {accion.plantilla}
-                            </span>
-                          )}
-                        </div>
-                        {accion.delay > 0 && (
-                          <span className="text-[11px] text-slate-400">
-                            Espera: {accion.delay >= 60 ? `${Math.round(accion.delay / 60)} horas` : `${accion.delay} min`}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setModalDetalle(null)}
-                className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cerrar
-              </button>
-              <button className="px-4 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-1.5">
-                <Edit size={14} /> Editar Trigger
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Crear Trigger */}
-      {modalCrear && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">Nuevo Trigger</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Configura una regla automática para tu CRM
-                  </p>
-                </div>
-                <button
-                  onClick={() => setModalCrear(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <span className="text-slate-400">✕</span>
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Nombre del Trigger *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Bienvenida Nuevo Lead"
-                  className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Descripción</label>
-                <textarea
-                  placeholder="Describe qué hace este trigger..."
-                  rows={2}
-                  className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 resize-none transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Evento Trigger *</label>
-                <select className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400">
-                  {TIPOS_TRIGGER.map((tipo) => (
-                    <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Condiciones (opcional)</label>
-                <div className="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                  <p className="text-[10px] text-slate-400 text-center">
-                    Sin condiciones = se ejecuta siempre
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Acciones *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {ACCIONES_DISPONIBLES.slice(0, 6).map((accion) => {
-                    const IconoAccion = accion.icono;
-                    return (
-                      <button
-                        key={accion.id}
-                        className="flex items-center gap-2 p-2.5 bg-slate-50 hover:bg-amber-50 rounded-xl border border-slate-200 hover:border-amber-300 transition-all text-left"
-                      >
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${accion.color}15` }}
-                        >
-                          <IconoAccion size={14} style={{ color: accion.color }} />
-                        </div>
-                        <span className="text-[10px] font-semibold text-slate-700">
-                          {accion.nombre}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setModalCrear(false)}
-                className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setModalCrear(false)}
-                className="px-5 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors shadow-md shadow-amber-500/20"
-              >
-                Crear Trigger
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-// Icono XCircle
-function XCircle({ size, className }: { size: number; className?: string }) {
+// --- Modal Detalle de Trigger ---
+function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: string; onCerrar: () => void; onEditar: (trigger: any) => void }) {
+  const [trigger, setTrigger] = useState<any>(null);
+  const [tabActiva, setTabActiva] = useState<"general" | "historial">("general");
+
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const res = await fetch("/api/triggers");
+        const json = await res.json();
+        if (json.success) { const found = json.data.find((t: any) => t.id === triggerId); setTrigger(found); }
+      } catch {}
+    }
+    cargar();
+  }, [triggerId]);
+
+  if (!trigger) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="bg-white rounded-2xl w-full max-w-3xl mx-4 p-12 text-center"><div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto" /></div></div>;
+
+  const triggerConfig = TRIGGERS_TIPOS.find((t) => t.id === trigger.trigger);
+  const categoria = TRIGGER_CATEGORIAS.find((c) => c.id === (trigger.categoria || triggerConfig?.categoria)) || TRIGGER_CATEGORIAS[0];
+
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="15" y1="9" x2="9" y2="15" />
-      <line x1="9" y1="9" x2="15" y2="15" />
-    </svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-3xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${categoria.color}15` }}><Zap size={24} style={{ color: categoria.color }} /></div>
+              <div><h3 className="text-lg font-bold text-slate-800">{trigger.nombre}</h3><p className="text-[11px] text-slate-500 mt-0.5">{trigger.descripcion}</p>
+                <div className="flex items-center gap-2 mt-2"><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${trigger.estado === "ACTIVO" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>{trigger.estado}</span><span className="text-[11px] text-slate-400">{triggerConfig?.label}</span></div></div>
+            </div>
+            <button onClick={onCerrar} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span className="text-slate-400">?</span></button>
+          </div>
+        </div>
+        <div className="border-b border-slate-100 px-6"><div className="flex gap-4">{(["general", "historial"] as const).map((tab) => (
+          <button key={tab} onClick={() => setTabActiva(tab)} className={`py-3 text-[11px] font-semibold border-b-2 transition-colors ${tabActiva === tab ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}>{tab === "general" ? "General" : "Historial"}</button>))}</div></div>
+        <div className="p-6">
+          {tabActiva === "general" ? (
+            <div className="space-y-6">
+              <div className="bg-slate-50 rounded-xl p-4"><h4 className="text-[11px] font-bold text-slate-600 mb-3">Flujo del Trigger</h4>
+                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                  <div className="flex flex-col items-center min-w-[80px]"><div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center"><Zap size={18} className="text-amber-500" /></div><span className="text-[10px] font-semibold text-slate-600 mt-1">{triggerConfig?.label}</span></div>
+                  {(trigger.acciones || []).map((accion: any, idx: number) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-1"><span className="text-slate-300">?</span><div className="flex flex-col items-center min-w-[70px]"><div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${config?.color || "#64748B"}15` }}><Zap size={14} style={{ color: config?.color || "#64748B" }} /></div><span className="text-[9px] font-semibold text-slate-600 mt-1 text-center">{config?.label || accion.tipo}</span></div></div>); })}
+                </div></div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 rounded-xl p-4 text-center"><div className="text-xl font-bold text-blue-700">{(trigger.ejecuciones || 0).toLocaleString()}</div><div className="text-[10px] text-blue-500">Ejecuciones</div></div>
+                <div className="bg-emerald-50 rounded-xl p-4 text-center"><div className="text-xl font-bold text-emerald-700">{trigger.exitosas || 0}</div><div className="text-[10px] text-emerald-500">Exitosas</div></div>
+                <div className="bg-red-50 rounded-xl p-4 text-center"><div className="text-xl font-bold text-red-700">{trigger.fallidas || 0}</div><div className="text-[10px] text-red-500">Fallidas</div></div>
+              </div>
+              <div><h4 className="text-[11px] font-bold text-slate-600 mb-2">Condiciones</h4>
+                {(!trigger.condiciones || trigger.condiciones.length === 0) ? <p className="text-[10px] text-slate-400 italic">Se ejecuta siempre</p> : (
+                  <div className="space-y-1">{trigger.condiciones.map((cond: any, idx: number) => <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-[11px]"><span className="font-semibold text-slate-600">{cond.campo}</span><span className="text-slate-400">{cond.operador}</span><span className="font-bold text-slate-800">{cond.valor}</span></div>)}</div>)}</div>
+              <div><h4 className="text-[11px] font-bold text-slate-600 mb-2">Acciones</h4>
+                <div className="space-y-1">{trigger.acciones?.map((accion: any, idx: number) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg"><span className="text-[10px] font-bold text-slate-400 w-5">{idx + 1}</span><span className="text-[11px] font-semibold text-slate-700">{config?.label || accion.tipo}</span>{accion.delay > 0 && <span className="text-[10px] text-slate-400">+{accion.delay >= 60 ? `${Math.round(accion.delay / 60)}h` : `${accion.delay}m`}</span>}</div>); })}</div></div>
+            </div>
+          ) : <TriggerHistorialContent triggerId={triggerId} />}
+        </div>
+        <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button onClick={onCerrar} className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cerrar</button>
+          <button onClick={() => onEditar(trigger)} className="px-4 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-1.5">Editar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Contenido del Historial ---
+function TriggerHistorialContent({ triggerId }: { triggerId: string }) {
+  const { historial, stats, cargando, pagina, setPagina, total } = useTriggerHistorial(triggerId);
+  if (cargando) return <div className="text-center py-8 text-[11px] text-slate-400">Cargando historial...</div>;
+  return (
+    <div className="space-y-4">
+      {stats && <div className="grid grid-cols-4 gap-3">
+        <div className="bg-slate-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-slate-700">{stats.total}</div><div className="text-[10px] text-slate-400">Total</div></div>
+        <div className="bg-emerald-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-emerald-700">{stats.exitosas}</div><div className="text-[10px] text-emerald-500">Exitosas</div></div>
+        <div className="bg-red-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-red-700">{stats.fallidas}</div><div className="text-[10px] text-red-500">Fallidas</div></div>
+        <div className="bg-amber-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-amber-700">{stats.tasaExito}%</div><div className="text-[10px] text-amber-500">Exito</div></div>
+      </div>}
+      {historial.length === 0 ? <div className="text-center py-8"><p className="text-[11px] text-slate-400">No hay ejecuciones registradas</p></div> : (
+        <div className="space-y-2">{historial.map((ejec: any) => (
+          <div key={ejec.id} className="p-3 bg-slate-50 rounded-xl">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${ejec.estado === "EXITOSO" ? "bg-emerald-100 text-emerald-700" : ejec.estado === "FALLIDO" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{ejec.estado}</span><span className="text-[11px] font-semibold text-slate-700">{ejec.leadNombre || "Sin lead"}</span></div>
+              <span className="text-[10px] text-slate-400">{new Date(ejec.ejecutadoEn || ejec.ejecutado_en).toLocaleString("es-CL")}</span>
+            </div>
+            {ejec.accionesEjecutadas && <div className="flex flex-wrap gap-1 mt-1">{JSON.parse(typeof ejec.accionesEjecutadas === "string" ? ejec.accionesEjecutadas : "[]").map((a: any, idx: number) => <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded ${a.estado === "EXITOSO" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>{a.tipo}: {a.estado}</span>)}</div>}
+            {ejec.errorMensaje && <p className="text-[10px] text-red-500 mt-1">{ejec.errorMensaje}</p>}
+          </div>))}</div>)}
+      {total > 20 && <div className="flex items-center justify-center gap-2 pt-2">
+        <button onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina === 1} className="px-3 py-1 text-[10px] font-semibold bg-slate-100 rounded-lg disabled:opacity-50">Anterior</button>
+        <span className="text-[10px] text-slate-400">Pagina {pagina}</span>
+        <button onClick={() => setPagina((p) => p + 1)} disabled={historial.length < 20} className="px-3 py-1 text-[10px] font-semibold bg-slate-100 rounded-lg disabled:opacity-50">Siguiente</button>
+      </div>}
+    </div>
   );
 }
