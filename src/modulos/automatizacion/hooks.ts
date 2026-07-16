@@ -1,5 +1,5 @@
 /**
- * Hooks del módulo Automatización
+ * Hooks del mÃ³dulo AutomatizaciÃ³n
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -107,6 +107,57 @@ export function useTriggerHistorial(triggerId: string | null) {
       setCargando(false);
     }
   }, [triggerId, pagina]);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  return {
+    historial,
+    stats,
+    cargando,
+    pagina,
+    setPagina,
+    total,
+    recargar: cargar,
+  };
+}
+export function useFlujoHistorial(flujoId: string | null) {
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    total: number;
+    exitosas: number;
+    fallidas: number;
+    parciales: number;
+    tasaExito: number;
+  } | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const cargar = useCallback(async () => {
+    if (!flujoId) {
+      setHistorial([]);
+      setStats(null);
+      setCargando(false);
+      return;
+    }
+
+    try {
+      setCargando(true);
+      const res = await fetch(`/api/flujos/${flujoId}/historial?page=${pagina}&limit=20`);
+      const json = await res.json();
+      if (json.success) {
+        setHistorial(json.data);
+        setStats(json.stats);
+        setTotal(json.total);
+      }
+    } catch (err) {
+      console.error("Error cargando historial:", err);
+    } finally {
+      setCargando(false);
+    }
+  }, [flujoId, pagina]);
 
   useEffect(() => {
     cargar();
