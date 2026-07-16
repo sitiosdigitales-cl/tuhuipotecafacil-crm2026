@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Building2, TrendingUp, DollarSign, Users, CheckCircle, Clock, AlertCircle,
-  Phone, Mail, Globe, User, Star, Eye, Pencil, Plus, Search, ChevronRight,
+  Phone, Mail, Globe, User, MessageSquare, Star, Eye, Pencil, Plus, Search, ChevronRight,
   Percent, FileText, Target, Award, ExternalLink, X, MapPin, Briefcase,
   Calendar, Home, ArrowRight,
 } from "lucide-react";
@@ -291,44 +291,96 @@ export default function BancosPage() {
                 </div>
               </div>
 
-              {/* Contacto */}
+              {/* Condiciones Adicionales */}
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contacto</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <User size={12} className="text-slate-400" />
-                    <span className="text-[11px] text-slate-600">{bancoSeleccionado.contactoNombre}</span>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Condiciones Adicionales</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="bg-slate-50 rounded-lg p-2 text-center">
+                    <div className="text-[9px] text-slate-400">Prepago</div>
+                    <div className="text-xs font-bold text-slate-700">{bancoSeleccionado.prepago ? "Permitido" : "No permitido"}</div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <Phone size={12} className="text-slate-400" />
-                    <span className="text-[11px] text-slate-600">{bancoSeleccionado.contactoTelefono}</span>
+                  <div className="bg-slate-50 rounded-lg p-2 text-center">
+                    <div className="text-[9px] text-slate-400">Complemento Renta</div>
+                    <div className="text-xs font-bold text-slate-700">{bancoSeleccionado.complementoRenta ? "Si" : "No"}</div>
                   </div>
-                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <Mail size={12} className="text-slate-400" />
-                    <span className="text-[11px] text-slate-600">{bancoSeleccionado.contactoEmail}</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                    <MapPin size={12} className="text-slate-400" />
-                    <span className="text-[11px] text-slate-600">{bancoSeleccionado.sucursal}</span>
+                  <div className="bg-slate-50 rounded-lg p-2 text-center">
+                    <div className="text-[9px] text-slate-400">Comision Convenio</div>
+                    <div className="text-xs font-bold text-slate-700">{bancoSeleccionado.comisionConvenio}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Metricas */}
+              {/* Tiempos */}
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Metricas</h3>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Tiempos de Proceso</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold text-emerald-700">{leadsPorBanco[bancoSeleccionado.nombre] || 0}</div>
-                    <div className="text-[9px] text-emerald-500">Leads Asignados</div>
-                  </div>
                   <div className="bg-blue-50 rounded-xl p-3 text-center">
-                    <div className="text-lg font-bold text-blue-700">{bancoSeleccionado.tiempoAprobacion}</div>
-                    <div className="text-[9px] text-blue-500">Tiempo Aprobacion</div>
+                    <Clock size={14} className="text-blue-500 mx-auto mb-1" />
+                    <div className="text-xs font-bold text-blue-700">{bancoSeleccionado.tiempoAprobacion}</div>
+                    <div className="text-[9px] text-blue-500">Aprobacion</div>
                   </div>
                   <div className="bg-purple-50 rounded-xl p-3 text-center">
+                    <FileText size={14} className="text-purple-500 mx-auto mb-1" />
+                    <div className="text-xs font-bold text-purple-700">{bancoSeleccionado.tiempoEscrituracion}</div>
+                    <div className="text-[9px] text-purple-500">Escrituracion</div>
+                  </div>
+                  <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                    <DollarSign size={14} className="text-emerald-500 mx-auto mb-1" />
+                    <div className="text-xs font-bold text-emerald-700">{bancoSeleccionado.tiempoPago}</div>
+                    <div className="text-[9px] text-emerald-500">Pago</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contacto */}
+              <div>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Contacto del Ejecutivo</h3>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: bancoSeleccionado.color }}>
+                      {bancoSeleccionado.contactoNombre?.[0]}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">{bancoSeleccionado.contactoNombre}</div>
+                      <div className="text-[10px] text-slate-500">{bancoSeleccionado.sucursal} - {bancoSeleccionado.region}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <a href={`tel:${bancoSeleccionado.contactoTelefono}`} className="flex items-center gap-2 text-[11px] text-slate-600 hover:text-blue-600">
+                      <Phone size={12} /> {bancoSeleccionado.contactoTelefono}
+                    </a>
+                    <a href={`mailto:${bancoSeleccionado.contactoEmail}`} className="flex items-center gap-2 text-[11px] text-slate-600 hover:text-blue-600">
+                      <Mail size={12} /> {bancoSeleccionado.contactoEmail}
+                    </a>
+                    <a href={`https://wa.me/56${(bancoSeleccionado.contactoWhatsapp || "").replace(/[^0-9]/g, "").replace(/^56/, "")}`} target="_blank" className="flex items-center gap-2 text-[11px] text-green-600 hover:text-green-700">
+                      <MessageSquare size={12} /> WhatsApp
+                    </a>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <Clock size={12} /> {bancoSeleccionado.horarioAtencion}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Metricas del Banco */}
+              <div>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Rendimiento</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="bg-emerald-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-emerald-700">{leadsPorBanco[bancoSeleccionado.nombre] || 0}</div>
+                    <div className="text-[9px] text-emerald-500">Leads</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-blue-700">{bancoSeleccionado.tiempoAprobacion}</div>
+                    <div className="text-[9px] text-blue-500">Aprobacion</div>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-purple-700">{bancoSeleccionado.tiempoEscrituracion}</div>
-                    <div className="text-[9px] text-purple-500">Tiempo Escrituracion</div>
+                    <div className="text-[9px] text-purple-500">Escrituracion</div>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-amber-700">{bancoSeleccionado.tiempoPago}</div>
+                    <div className="text-[9px] text-amber-500">Pago</div>
                   </div>
                 </div>
               </div>
