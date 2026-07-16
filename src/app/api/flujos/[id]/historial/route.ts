@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, fromSupabaseArray } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
+
+function mapEjecucion(row: any) {
+  return {
+    id: row.id,
+    flujoId: row.flujo_id,
+    leadId: row.lead_id,
+    leadNombre: row.lead_nombre,
+    leadEmail: row.lead_email,
+    estado: row.estado,
+    accionesEjecutadas: row.acciones_ejecutadas,
+    contexto: row.contexto,
+    duracionTotalMs: row.duracion_total_ms,
+    errorMensaje: row.error_mensaje,
+    ejecutadoEn: row.ejecutado_en,
+    creadoEn: row.creado_en,
+  };
+}
 
 export async function GET(
   request: NextRequest,
@@ -36,7 +53,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: fromSupabaseArray(data || []),
+      data: (data || []).map(mapEjecucion),
       total: count || 0,
       page,
       limit,
@@ -88,7 +105,6 @@ export async function POST(
       return NextResponse.json({ success: false, error: "Error al registrar ejecucion" }, { status: 500 });
     }
 
-    // Actualizar contadores del flujo
     const { data: flujoData } = await supabase
       .from("flujos")
       .select("ejecuciones, exitosos, fallidos")
