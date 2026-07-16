@@ -23,6 +23,8 @@ import {
   Sparkles,
   PanelRightClose,
   PanelRightOpen,
+  Database,
+  Shield,
 } from "lucide-react";
 import { useNotificaciones } from "@/lib/contexts/NotificationContext";
 import { useLeads } from "@/modulos/leads";
@@ -35,6 +37,8 @@ const iconoRecordatorio = (icono: string) => {
     case "users": return <div className={`${clases} bg-green-50 dark:bg-green-900/30`}><Users size={14} className="text-green-500" /></div>;
     case "building": return <div className={`${clases} bg-purple-50 dark:bg-purple-900/30`}><Plug size={14} className="text-purple-500" /></div>;
     case "hard-drive": return <div className={`${clases} bg-slate-100 dark:bg-slate-700`}><HardDrive size={14} className="text-slate-500" /></div>;
+    case "database": return <div className={`${clases} bg-indigo-50 dark:bg-indigo-900/30`}><Database size={14} className="text-indigo-500" /></div>;
+    case "shield": return <div className={`${clases} bg-amber-50 dark:bg-amber-900/30`}><Shield size={14} className="text-amber-500" /></div>;
     default: return <div className={`${clases} bg-slate-100 dark:bg-slate-700`}><Bell size={14} className="text-slate-500" /></div>;
   }
 };
@@ -109,6 +113,8 @@ export function PanelDerecho({ _onClose, colapsado = false, onToggleColapsado }:
   const recordatoriosSistema = [
     { icono: "refresh-cw", titulo: "Actualizar datos", descripcion: "Última actualización hace 2 horas" },
     { icono: "users", titulo: "Leads sin asignar", descripcion: `${leads.filter(l => !l.nombreEjecutivo).length} leads pendientes` },
+    { icono: "database", titulo: "Respaldo de Seguridad", descripcion: "Último respaldo: Hoy 02:00 AM", href: "/backups", color: "text-blue-500" },
+    { icono: "shield", titulo: "Auditoría del Sistema", descripcion: "Revisar registros de actividad", href: "/auditoria", color: "text-amber-500" },
   ];
 
   // Mostrar solo las primeras 5 en el panel
@@ -228,13 +234,18 @@ export function PanelDerecho({ _onClose, colapsado = false, onToggleColapsado }:
         </div>
         <div className="space-y-1">
           {recordatoriosSistema.map((rec, i) => (
-            <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+            <Link
+              key={i}
+              href={rec.href || "#"}
+              className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
               {iconoRecordatorio(rec.icono)}
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 truncate">{rec.titulo}</div>
                 <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{rec.descripcion}</div>
               </div>
-            </div>
+              {rec.href && <ChevronRight size={12} className="text-slate-400" />}
+            </Link>
           ))}
         </div>
       </div>
