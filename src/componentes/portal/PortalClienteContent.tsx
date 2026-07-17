@@ -721,14 +721,13 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 </div>
               </div>
 
-              {/* Documentos subidos */}
+              {/* Documentos Requeridos */}
               <div className="mb-6">
-                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Mis Documentos</h3>
+                <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Requeridos</h3>
                 <div className="space-y-2">
                   {docsConfig.map((docConfig) => {
                     const docMatch = documentos.find((d) => buscarDocSubido(d as any, docConfig));
-                    if (!docMatch) return null;
-                    const doc = { ...docMatch, leadId: cliente!.id, leadNombre: `${cliente!.nombre} ${cliente!.apellido}`, tipo: docConfig.tipo, creadoEn: new Date() } as any;
+                    const doc = docMatch ? { ...docMatch, leadId: cliente!.id, leadNombre: `${cliente!.nombre} ${cliente!.apellido}`, tipo: docConfig.tipo, creadoEn: new Date() } as any : null;
                     return (
                       <DocumentoChecklistRow
                         key={docConfig.id}
@@ -751,9 +750,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                       />
                     );
                   })}
-                  {docsConfig.every(dc => !documentos.some(d => buscarDocSubido(d as any, dc))) && (
-                    <p className="text-[11px] text-slate-400 text-center py-6">Aun no has subido documentos</p>
-                  )}
                 </div>
               </div>
 
