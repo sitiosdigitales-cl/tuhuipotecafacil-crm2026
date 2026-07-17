@@ -116,13 +116,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Notificacion in-app via dispatcher
-    despacharNotificacion({
-      evento: "lead_nuevo",
-      leadId,
-      titulo: "Nuevo lead desde sitio web",
-      descripcion: `${nombre} ${apellido} completo el formulario`,
-      accionUrl: `/leads/${leadId}`,
-    }).catch(() => {});
+    try {
+      await despacharNotificacion({
+        evento: "lead_nuevo",
+        leadId,
+        titulo: "Nuevo lead desde sitio web",
+        descripcion: `${nombre} ${apellido} completo el formulario`,
+        accionUrl: `/leads/${leadId}`,
+      });
+      console.log("Notificacion dispatch OK para lead:", leadId);
+    } catch (notifErr) {
+      console.error("Error en dispatch notificacion:", notifErr);
+    }
 
     // Enviar emails de notificación (no bloquear si falla)
     try {
