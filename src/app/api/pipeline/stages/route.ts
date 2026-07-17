@@ -21,6 +21,7 @@ let etapasEnMemoria = [
 
 export async function GET() {
   // Intentar cargar desde la base de datos
+  let etapasDB: typeof etapasEnMemoria = [];
   try {
     const { data, error } = await supabase
       .from("pipeline_stages")
@@ -28,14 +29,18 @@ export async function GET() {
       .order("orden", { ascending: true });
 
     if (!error && data && data.length > 0) {
-      return NextResponse.json({ success: true, data });
+      etapasDB = data;
     }
   } catch {
     // Ignorar errores
   }
 
-  // Retornar etapas en memoria
-  return NextResponse.json({ success: true, data: etapasEnMemoria });
+  // Combinar: etapas de DB + etapas del sistema que falten
+  const idsDB = new Set(etapasDB.map((e) => e.id));
+  const etapasSistema = etapasEnMemoria.filter((e) => !idsDB.has(e.id));
+  const todasEtapas = [...etapasDB, ...etapasSistema].sort((a, b) => a.orden - b.orden);
+
+  return NextResponse.json({ success: true, data: todasEtapas });
 }
 
 export async function POST(request: NextRequest) {
