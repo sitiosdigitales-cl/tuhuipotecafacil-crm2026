@@ -32,6 +32,9 @@ import { ETAPAS_CONFIG, SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Lead, Etapa, SituacionLaboral } from "@/tipos";
+import { obtenerDocumentosCompletos, buscarDocSubido } from "@/modulos/documentos/config";
+import type { DocConfigEntry } from "@/modulos/documentos/config";
+import { DocumentoChecklistRow } from "@/componentes/documentos/DocumentoChecklistRow";
 
 const PASOS_PROGRESO = [
   { paso: 1, label: "Registro", etapa: "NUEVO_LEAD" as Etapa },
@@ -41,101 +44,6 @@ const PASOS_PROGRESO = [
   { paso: 5, label: "Evaluación", etapa: "EVALUACION_BANCARIA" as Etapa },
   { paso: 6, label: "Aprobado", etapa: "APROBADO" as Etapa },
 ];
-
-const DOCUMENTOS_CONFIG = {
-  DEPENDIENTE: {
-    comun: [
-      { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
-      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
-      { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true },
-    ],
-    hipotecario: [
-      { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true },
-      { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true },
-      { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true },
-      { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false },
-    ],
-    consumo: [
-      { id: "liq-sueldo", nombre: "3 Últimas Liquidaciones de Sueldo", obligatorio: true },
-      { id: "afp", nombre: "Certificado de Cotizaciones AFP (12 meses)", obligatorio: true },
-    ],
-    generales: [
-      { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true },
-      { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true },
-      { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true },
-    ],
-    patrimonio: [
-      { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false },
-      { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false },
-    ],
-  },
-  INDEPENDIENTE: {
-    comun: [
-      { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
-      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
-      { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true },
-    ],
-    hipotecario: [
-      { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true },
-      { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
-      { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true },
-      { id: "resumen-anual-2025", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true },
-      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
-      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-      { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-      { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false },
-    ],
-    consumo: [
-      { id: "boletas", nombre: "3 Últimas Boletas con Impuesto", obligatorio: true },
-      { id: "resumen-mensual", nombre: "3 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
-      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
-    ],
-    generales: [
-      { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true },
-      { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
-      { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true },
-      { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
-      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-      { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-    ],
-    patrimonio: [
-      { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false },
-      { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false },
-    ],
-  },
-  EMPRESA: {
-    comun: [
-      { id: "cedula-socios", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true },
-      { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
-      { id: "rol-empresa", nombre: "Rol Empresa", obligatorio: true },
-      { id: "cert-tgr", nombre: "Certificado de Deuda de TGR", obligatorio: true },
-    ],
-    hipotecario: [
-      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-      { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true },
-      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
-      { id: "balance-2024", nombre: "Balance 2024 firmado por contador", obligatorio: true },
-      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
-      { id: "renta-f22-2025", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true },
-      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-      { id: "aceptacion-renta-2025", nombre: "Aceptación de Renta 2025", obligatorio: true },
-    ],
-    consumo: [
-      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
-      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
-      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-    ],
-    generales: [
-      { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-      { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true },
-      { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
-      { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
-      { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-    ],
-    patrimonio: [],
-  },
-};
 
 interface PortalClienteContentProps {
   className?: string;
@@ -271,24 +179,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const progreso = Math.max(1, Math.min(etapaActual, totalPasos));
   const pasoActual = PASOS_PROGRESO.find((p) => p.etapa === cliente?.etapa);
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
-  const docsConfigBase = DOCUMENTOS_CONFIG[cliente?.situacionLaboral || "DEPENDIENTE"];
-  
-  // Combinar documentos según tipo de crédito
-  const tipoCredito = cliente?.tipoCredito || "";
-  let docsConfig: { id: string; nombre: string; obligatorio: boolean }[] = docsConfigBase.comun || [];
-  
-  if (tipoCredito.includes("Hipotecario")) {
-    docsConfig = [...docsConfig, ...(docsConfigBase.hipotecario || [])];
-  } else if (tipoCredito.includes("Consumo")) {
-    docsConfig = [...docsConfig, ...(docsConfigBase.consumo || [])];
-  } else if (tipoCredito.includes("Fines") || tipoCredito.includes("General")) {
-    docsConfig = [...docsConfig, ...(docsConfigBase.generales || [])];
-  } else if (tipoCredito.includes("Empresa") || tipoCredito.includes("Capital")) {
-    docsConfig = [...docsConfig, ...(docsConfigBase.generales || [])];
-  }
-  
-  // Agregar documentos de patrimonio siempre
-  docsConfig = [...docsConfig, ...(docsConfigBase.patrimonio || [])];
+  const docsConfig: DocConfigEntry[] = cliente ? obtenerDocumentosCompletos(cliente.situacionLaboral) : [];
   
   const docsAprobados = documentos.filter(d => d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION").length;
   const docsTotal = docsConfig.length;
@@ -831,69 +722,40 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
               <div className="mb-6">
                 <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Requeridos</h3>
                 <div className="space-y-2">
-                  {docsConfig.map((doc) => {
-                    const docSubido = documentos.find((d) => d.nombre.toLowerCase().includes(doc.id));
-                    const subido = !!docSubido;
+                  {docsConfig.map((docConfig) => {
+                    const docMatch = documentos.find((d) => buscarDocSubido(d as any, docConfig));
+                    const doc = docMatch ? { ...docMatch, leadId: cliente!.id, leadNombre: `${cliente!.nombre} ${cliente!.apellido}`, tipo: docConfig.tipo, creadoEn: new Date() } as any : null;
                     return (
-                      <div key={doc.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
-                        subido ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"
-                      }`}>
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          subido ? "bg-emerald-100" : "bg-slate-100"
-                        }`}>
-                          {subido ? <CheckCircle size={16} className="text-emerald-500" /> : <FileText size={16} className="text-slate-400" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[12px] font-semibold text-slate-700 truncate">{doc.nombre}</div>
-                          <div className="flex items-center gap-2">
-                            {doc.obligatorio && <span className="text-[9px] text-red-500 font-semibold">Obligatorio</span>}
-                            {subido && <span className="text-[9px] text-emerald-600 font-semibold">Subido</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {/* Botón Subir */}
-                          <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
-                            subido 
-                              ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
-                              : "bg-blue-600 text-white hover:bg-blue-700"
-                          }`}>
-                            <Upload size={12} />
-                            {subido ? "Reemplazar" : "Subir"}
-                            <input
-                              type="file"
-                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) subirDocumento(file, doc.nombre);
-                              }}
-                            />
-                          </label>
-                          {/* Botón Descargar */}
-                          {subido && docSubido?.archivoUrl && (
-                            <a
-                              href={docSubido.archivoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                            >
-                              <Download size={12} />
-                              Ver
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                      <DocumentoChecklistRow
+                        key={docConfig.id}
+                        config={docConfig}
+                        documento={doc}
+                        leadId={cliente!.id}
+                        leadNombre={`${cliente!.nombre} ${cliente!.apellido}`}
+                        portalMode={true}
+                        onUploadComplete={(nuevoDoc) => {
+                          setDocumentos((prev) => [...prev, {
+                            id: nuevoDoc.id,
+                            nombre: nuevoDoc.nombre,
+                            tipo: nuevoDoc.tipo,
+                            estado: "PENDIENTE",
+                            archivoUrl: nuevoDoc.archivoUrl,
+                            fecha: new Date().toLocaleDateString("es-CL"),
+                          }]);
+                          toast.success("Documento subido", { description: docConfig.nombre });
+                        }}
+                      />
                     );
                   })}
                 </div>
               </div>
 
-              {/* Lista de documentos subidos (otros) */}
-              {documentos.filter(d => !docsConfig.some(dc => d.nombre.toLowerCase().includes(dc.id))).length > 0 && (
+              {/* Otros documentos subidos */}
+              {documentos.filter(d => !docsConfig.some(dc => buscarDocSubido(d, dc))).length > 0 && (
                 <div>
                   <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Otros Documentos</h3>
                   <div className="space-y-2">
-                    {documentos.filter(d => !docsConfig.some(dc => d.nombre.toLowerCase().includes(dc.id))).map((doc) => (
+                    {documentos.filter(d => !docsConfig.some(dc => buscarDocSubido(d, dc))).map((doc) => (
                       <div key={doc.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors group">
                         <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
                           <FileCheck size={16} className="text-blue-600" />

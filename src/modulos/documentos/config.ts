@@ -1,6 +1,7 @@
 /**
  * Configuración del módulo Documentos
  * Tipos de documento por categoría y crédito
+ * FUENTE ÚNICA DE VERDAD para todos los componentes
  */
 
 import type { Rol } from "@/tipos";
@@ -23,59 +24,88 @@ export const DOCUMENTOS_ESTADOS = [
   { id: "RECHAZADO", label: "Rechazado", color: "#EF4444", bgColor: "bg-red-50" },
 ] as const;
 
+// ─── Tipo de cada entrada de documento ───
+export interface DocConfigEntry {
+  id: string;
+  tipo: string;
+  nombre: string;
+  obligatorio: boolean;
+  buscarPor: string[];
+}
+
 // ─── Tipos de documento por situación laboral ───
-export const DOCUMENTOS_POR_SITUACION = {
+export const DOCUMENTOS_POR_SITUACION: Record<string, DocConfigEntry[]> = {
   DEPENDIENTE: [
-    { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
-    { id: "liq-sueldo", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true },
-    { id: "afp", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true },
-    { id: "anexo-laboral", nombre: "Anexo o Permanencia Laboral", obligatorio: true },
-    { id: "domicilio", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true },
-    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula", "cedula", "identidad"] },
+    { id: "liq-sueldo", tipo: "LIQUIDACION_SUELDO", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true, buscarPor: ["liquidación", "liquidacion", "sueldo"] },
+    { id: "afp", tipo: "CERTIFICADO_COTIZACIONES_AFP", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true, buscarPor: ["afp", "cotizaciones"] },
+    { id: "anexo-laboral", tipo: "ANEXO_LABORAL", nombre: "Anexo o Permanencia Laboral", obligatorio: true, buscarPor: ["anexo", "laboral", "permanencia"] },
+    { id: "domicilio", tipo: "COMPROBANTE_DOMICILIO", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true, buscarPor: ["domicilio", "cuenta casa", "luz", "agua"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
   ],
   INDEPENDIENTE: [
-    { id: "cedula", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true },
-    { id: "boletas", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true },
-    { id: "resumen-mensual", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true },
-    { id: "resumen-anual-2026", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true },
-    { id: "resumen-anual-2025", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true },
-    { id: "renta-2026", nombre: "Declaración de Renta 2026", obligatorio: true },
-    { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-    { id: "cartera-trib", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula", "cedula", "identidad"] },
+    { id: "boletas", tipo: "BOLETAS_CON_IMPUESTO", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true, buscarPor: ["boletas", "impuesto"] },
+    { id: "resumen-mensual", tipo: "RESUMEN_MENSUAL_BOLETAS", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true, buscarPor: ["resumen mensual", "boletas"] },
+    { id: "resumen-anual-2026", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true, buscarPor: ["resumen anual", "boletas", "2026"] },
+    { id: "resumen-anual-2025", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true, buscarPor: ["resumen anual", "boletas", "2025"] },
+    { id: "renta-2026", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta 2026", obligatorio: true, buscarPor: ["renta", "declaración", "2026"] },
+    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2026"] },
+    { id: "cartera-trib", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, buscarPor: ["cartera", "tributaria"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
   ],
   EMPRESA: [
-    { id: "cedula-socios", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true },
-    { id: "cartera-trib-36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true },
-    { id: "cartera-trib-credito", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true },
-    { id: "balance-2025", nombre: "Balance 2025 firmado por contador", obligatorio: true },
-    { id: "balance-2024", nombre: "Balance 2024 firmado por contador", obligatorio: true },
-    { id: "renta-f22-2026", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true },
-    { id: "renta-f22-2025", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true },
-    { id: "aceptacion-renta-2026", nombre: "Aceptación de Renta 2026", obligatorio: true },
-    { id: "aceptacion-renta-2025", nombre: "Aceptación de Renta 2025", obligatorio: true },
-    { id: "rol-empresa", nombre: "Rol Empresa", obligatorio: true },
-    { id: "cert-tgr", nombre: "Certificado de Deuda de TGR", obligatorio: true },
-    { id: "dicom", nombre: "Certificado de Deudas CMF", obligatorio: true },
+    { id: "cedula-socios", tipo: "CEDULA_IDENTIDAD", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true, buscarPor: ["cédula", "cedula", "socios"] },
+    { id: "cartera-trib-36", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, buscarPor: ["cartera", "tributaria", "36"] },
+    { id: "cartera-trib-credito", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true, buscarPor: ["cartera", "tributaria", "crédito"] },
+    { id: "balance-2025", tipo: "BALANCE", nombre: "Balance 2025 firmado por contador", obligatorio: true, buscarPor: ["balance", "2025"] },
+    { id: "balance-2024", tipo: "BALANCE", nombre: "Balance 2024 firmado por contador", obligatorio: true, buscarPor: ["balance", "2024"] },
+    { id: "renta-f22-2026", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true, buscarPor: ["renta", "f22", "2026"] },
+    { id: "renta-f22-2025", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true, buscarPor: ["renta", "f22", "2025"] },
+    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2026"] },
+    { id: "aceptacion-renta-2025", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2025", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2025"] },
+    { id: "rol-empresa", tipo: "ROL_EMPRESA", nombre: "Rol Empresa", obligatorio: true, buscarPor: ["rol", "empresa"] },
+    { id: "cert-tgr", tipo: "CERTIFICADO_DEUDA_TGR", nombre: "Certificado de Deuda de TGR", obligatorio: true, buscarPor: ["tgr", "deuda"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
   ],
 };
 
 // ─── Documentos opcionales (patrimonio) ───
-export const DOCUMENTOS_PATRIMONIO = [
-  { id: "padron-vehiculo", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false },
-  { id: "dominio-propiedad", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false },
-  { id: "titulo", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false },
-] as const;
+export const DOCUMENTOS_PATRIMONIO: DocConfigEntry[] = [
+  { id: "padron-vehiculo", tipo: "PADRON_VEHICULO", nombre: "Padrón de Vehículo (para apalancar patrimonio)", obligatorio: false, buscarPor: ["vehículo", "vehiculo", "padrón", "padron"] },
+  { id: "dominio-propiedad", tipo: "DOMINIO_PROPIEDAD", nombre: "Dominio Vigente de Propiedad (para apalancar patrimonio)", obligatorio: false, buscarPor: ["dominio", "propiedad"] },
+  { id: "titulo", tipo: "TITULO_UNIVERSITARIO", nombre: "Título Universitario o Certificado de Título (si aplica)", obligatorio: false, buscarPor: ["título", "titulo", "universitario"] },
+];
 
 // ─── Función para obtener documentos según situación laboral ───
-export function obtenerDocumentosPorSituacion(situacionLaboral: string) {
-  return DOCUMENTOS_POR_SITUACION[situacionLaboral as keyof typeof DOCUMENTOS_POR_SITUACION] || [];
+export function obtenerDocumentosPorSituacion(situacionLaboral: string): DocConfigEntry[] {
+  return DOCUMENTOS_POR_SITUACION[situacionLaboral] || DOCUMENTOS_POR_SITUACION.DEPENDIENTE;
 }
 
 // ─── Función para obtener documentos completos (con patrimonio) ───
-export function obtenerDocumentosCompletos(situacionLaboral: string) {
+export function obtenerDocumentosCompletos(situacionLaboral: string): DocConfigEntry[] {
   const docsBase = obtenerDocumentosPorSituacion(situacionLaboral);
   return [...docsBase, ...DOCUMENTOS_PATRIMONIO];
+}
+
+/**
+ * Busca si un documento subido coincide con una entrada de config.
+ * Estrategia: primero por tipo exacto, luego por nombre (includes).
+ */
+export function buscarDocSubido(
+  docSubido: { tipo?: string; nombre?: string },
+  configEntry: DocConfigEntry
+): boolean {
+  // Match por tipo exacto
+  if (docSubido.tipo && docSubido.tipo === configEntry.tipo) return true;
+  // Match por id en el tipo
+  if (docSubido.tipo && docSubido.tipo.toUpperCase().replace(/\s+/g, "_") === configEntry.id.toUpperCase().replace(/-/g, "_")) return true;
+  // Match por palabras clave en el nombre
+  if (docSubido.nombre) {
+    const nombreLower = docSubido.nombre.toLowerCase();
+    return configEntry.buscarPor.some((palabra) => nombreLower.includes(palabra.toLowerCase()));
+  }
+  return false;
 }
 
 // ─── Función para verificar permisos ───

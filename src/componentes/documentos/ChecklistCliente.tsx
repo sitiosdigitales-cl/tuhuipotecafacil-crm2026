@@ -14,7 +14,7 @@ import {
   User,
   Building2,
 } from "lucide-react";
-import { DOCUMENTOS_POR_SITUACION, DOCUMENTOS_PATRIMONIO } from "@/modulos/documentos/config";
+import { obtenerDocumentosCompletos, buscarDocSubido } from "@/modulos/documentos/config";
 import type { DocumentoLead } from "@/tipos";
 
 type SituacionLaboral = "DEPENDIENTE" | "INDEPENDIENTE" | "EMPRESA";
@@ -51,47 +51,20 @@ export function ChecklistCliente({
   const [mostrarOpcionales, setMostrarOpcionales] = useState(false);
 
   const documentosRequeridos = useMemo(() => {
-    return DOCUMENTOS_POR_SITUACION[situacion] || [];
+    return obtenerDocumentosCompletos(situacion);
   }, [situacion]);
 
   const checklistItems = useMemo<DocChecklistItem[]>(() => {
-    const items: DocChecklistItem[] = [];
-
-    // Documentos obligatorios
-    for (const req of documentosRequeridos) {
-      const docReal = documentos.find((d) => {
-        const tipo = d.tipo?.toUpperCase().replace(/\s+/g, "_");
-        const reqId = req.id.toUpperCase().replace(/-/g, "_");
-        return tipo === reqId || d.nombre?.toLowerCase().includes(req.nombre.toLowerCase().split("(")[0].trim().toLowerCase());
-      });
-
-      items.push({
+    return documentosRequeridos.map((req) => {
+      const docReal = documentos.find((d) => buscarDocSubido(d, req));
+      return {
         id: req.id,
         nombre: req.nombre,
-        obligatorio: true,
+        obligatorio: req.obligatorio,
         estado: docReal ? (docReal.estado as any) : "FALTA",
         documentoReal: docReal,
-      });
-    }
-
-    // Documentos de patrimonio (opcionales)
-    for (const opt of DOCUMENTOS_PATRIMONIO) {
-      const docReal = documentos.find((d) => {
-        const tipo = d.tipo?.toUpperCase().replace(/\s+/g, "_");
-        const optId = opt.id.toUpperCase().replace(/-/g, "_");
-        return tipo === optId || d.nombre?.toLowerCase().includes(opt.nombre.toLowerCase().split("(")[0].trim().toLowerCase());
-      });
-
-      items.push({
-        id: opt.id,
-        nombre: opt.nombre,
-        obligatorio: false,
-        estado: docReal ? (docReal.estado as any) : "FALTA",
-        documentoReal: docReal,
-      });
-    }
-
-    return items;
+      };
+    });
   }, [documentosRequeridos, documentos]);
 
   const obligatorios = checklistItems.filter((i) => i.obligatorio);
