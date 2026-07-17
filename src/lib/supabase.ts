@@ -12,6 +12,12 @@ export const supabase = createClient(
   supabaseKey || "placeholder-key"
 );
 
+// Cliente admin con service role (bypass RLS) - solo server-side
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export const supabaseAdmin = serviceKey
+  ? createClient(supabaseUrl || "https://placeholder.supabase.co", serviceKey)
+  : supabase;
+
 // Convertir camelCase a minusculas para columnas Supabase
 export function toSupabaseColumns(obj: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};

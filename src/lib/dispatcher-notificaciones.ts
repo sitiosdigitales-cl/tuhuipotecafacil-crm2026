@@ -5,7 +5,7 @@
  * y envía notificaciones por los canales habilitados.
  */
 
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 import { enviarEmail, EMAIL_TEMPLATES } from "./email";
 import { enviarMensajeWhatsApp, isWhatsAppConfigured } from "./whatsapp";
 
@@ -167,7 +167,7 @@ async function crearNotificacionInApp(opts: {
   accionUrl?: string;
 }): Promise<void> {
   try {
-    await supabase.from("notificaciones").insert({
+    await supabaseAdmin.from("notificaciones").insert({
       id: crypto.randomUUID(),
       tipo: opts.tipo,
       titulo: opts.titulo,
