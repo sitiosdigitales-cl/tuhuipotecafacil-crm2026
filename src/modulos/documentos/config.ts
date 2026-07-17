@@ -90,15 +90,16 @@ export function obtenerDocumentosCompletos(situacionLaboral: string): DocConfigE
 
 /**
  * Busca si un documento subido coincide con una entrada de config.
- * Cada elemento de buscarPor es un grupo de variantes (separadas por |).
- * TODOS los grupos deben encontrar al menos una variante en el nombre.
- * Ejemplo: ["resumen anual", "boletas|boleta", "2026"]
- *   -> require "resumen anual" Y ("boletas" O "boleta") Y "2026"
+ * 1. Match por tipo exacto (el campo tipo del doc = tipo del config)
+ * 2. Match por keywords en el nombre (busca TODOS los grupos)
  */
 export function buscarDocSubido(
   docSubido: { tipo?: string; nombre?: string },
   configEntry: DocConfigEntry
 ): boolean {
+  // Match por tipo exacto
+  if (docSubido.tipo && configEntry.tipo && docSubido.tipo === configEntry.tipo) return true;
+  // Match por keywords en el nombre
   if (!docSubido.nombre) return false;
   const nombreLower = docSubido.nombre.toLowerCase();
   return configEntry.buscarPor.every((grupo) => {
