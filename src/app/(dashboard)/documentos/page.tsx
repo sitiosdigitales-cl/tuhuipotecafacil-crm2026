@@ -285,8 +285,8 @@ export default function DocumentosPage() {
   const handleUpload = async (nuevoDoc: Omit<DocumentoLead, "creadoEn">) => {
     // /api/upload ya creo el registro en la DB, solo agregar al estado local
     setDocumentos((prev) => [{
-      id: nuevoDoc.id || crypto.randomUUID(),
       ...nuevoDoc,
+      id: nuevoDoc.id || crypto.randomUUID(),
       creadoEn: new Date(),
     }, ...prev]);
   };

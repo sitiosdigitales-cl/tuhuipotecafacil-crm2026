@@ -24,7 +24,7 @@ interface SubirDocumentoProps {
   onOpenChange: (open: boolean) => void;
   leadId: string;
   leadNombre?: string;
-  onUpload: (doc: Omit<DocumentoLead, "id" | "creadoEn">) => void;
+  onUpload: (doc: Omit<DocumentoLead, "creadoEn">) => void;
 }
 
 interface ArchivoSubido {
