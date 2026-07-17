@@ -36,37 +36,37 @@ export interface DocConfigEntry {
 // ─── Tipos de documento por situación laboral ───
 export const DOCUMENTOS_POR_SITUACION: Record<string, DocConfigEntry[]> = {
   DEPENDIENTE: [
-    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula", "cedula", "identidad"] },
-    { id: "liq-sueldo", tipo: "LIQUIDACION_SUELDO", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true, buscarPor: ["liquidación", "liquidacion", "sueldo"] },
-    { id: "afp", tipo: "CERTIFICADO_COTIZACIONES_AFP", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true, buscarPor: ["afp", "cotizaciones"] },
-    { id: "anexo-laboral", tipo: "ANEXO_LABORAL", nombre: "Anexo o Permanencia Laboral", obligatorio: true, buscarPor: ["anexo", "laboral", "permanencia"] },
-    { id: "domicilio", tipo: "COMPROBANTE_DOMICILIO", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true, buscarPor: ["domicilio", "cuenta casa", "luz", "agua"] },
-    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
+    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula|cedula", "identidad"] },
+    { id: "liq-sueldo", tipo: "LIQUIDACION_SUELDO", nombre: "6 Últimas Liquidaciones de Sueldo", obligatorio: true, buscarPor: ["liquidación|liquidacion|liquidaciones", "sueldo"] },
+    { id: "afp", tipo: "CERTIFICADO_COTIZACIONES_AFP", nombre: "Certificado de Cotizaciones AFP (24 meses)", obligatorio: true, buscarPor: ["afp|cotizaciones"] },
+    { id: "anexo-laboral", tipo: "ANEXO_LABORAL", nombre: "Anexo o Permanencia Laboral", obligatorio: true, buscarPor: ["anexo|permanencia", "laboral"] },
+    { id: "domicilio", tipo: "COMPROBANTE_DOMICILIO", nombre: "Cuenta Casa (luz, agua, gas, internet, celular o cartola AFP)", obligatorio: true, buscarPor: ["domicilio|cuenta casa|luz|agua"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf|dicom|deudas"] },
   ],
   INDEPENDIENTE: [
-    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula", "cedula", "identidad"] },
-    { id: "boletas", tipo: "BOLETAS_CON_IMPUESTO", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true, buscarPor: ["boletas", "impuesto"] },
-    { id: "resumen-mensual", tipo: "RESUMEN_MENSUAL_BOLETAS", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true, buscarPor: ["resumen mensual", "boletas"] },
-    { id: "resumen-anual-2026", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true, buscarPor: ["resumen anual", "boletas", "2026"] },
-    { id: "resumen-anual-2025", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true, buscarPor: ["resumen anual", "boletas", "2025"] },
-    { id: "renta-2026", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta 2026", obligatorio: true, buscarPor: ["renta", "declaración", "2026"] },
-    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2026"] },
-    { id: "cartera-trib", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, buscarPor: ["cartera", "tributaria"] },
-    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
+    { id: "cedula", tipo: "CEDULA_IDENTIDAD", nombre: "Cédula de Identidad por ambos lados (vigente)", obligatorio: true, buscarPor: ["cédula|cedula", "identidad"] },
+    { id: "boletas", tipo: "BOLETAS_CON_IMPUESTO", nombre: "6 Últimas Boletas con Impuesto", obligatorio: true, buscarPor: ["boletas|boleta", "impuesto"] },
+    { id: "resumen-mensual", tipo: "RESUMEN_MENSUAL_BOLETAS", nombre: "6 Últimos Resúmenes Mensuales de Boletas", obligatorio: true, buscarPor: ["resumen", "mensual", "boletas|boleta"] },
+    { id: "resumen-anual-2026", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2026", obligatorio: true, buscarPor: ["resumen anual", "boletas|boleta", "2026"] },
+    { id: "resumen-anual-2025", tipo: "RESUMEN_ANUAL_BOLETAS", nombre: "Resumen Anual de Boletas Año 2025", obligatorio: true, buscarPor: ["resumen anual", "boletas|boleta", "2025"] },
+    { id: "renta-2026", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta 2026", obligatorio: true, buscarPor: ["renta|declaración|declaracion", "2026"] },
+    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación|aceptacion", "renta", "2026"] },
+    { id: "cartera-trib", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, buscarPor: ["cartera", "tributaria", "36"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf|dicom|deudas"] },
   ],
   EMPRESA: [
-    { id: "cedula-socios", tipo: "CEDULA_IDENTIDAD", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true, buscarPor: ["cédula", "cedula", "socios"] },
+    { id: "cedula-socios", tipo: "CEDULA_IDENTIDAD", nombre: "CI por ambos lados de los socios o dueños", obligatorio: true, buscarPor: ["cédula|cedula|ci", "socios|dueños|duenos"] },
     { id: "cartera-trib-36", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria Actualizada 36 meses", obligatorio: true, buscarPor: ["cartera", "tributaria", "36"] },
-    { id: "cartera-trib-credito", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true, buscarPor: ["cartera", "tributaria", "crédito"] },
+    { id: "cartera-trib-credito", tipo: "CARTERA_TRIBUTARIA_36", nombre: "Cartera Tributaria para Solicitar Créditos", obligatorio: true, buscarPor: ["cartera", "tributaria", "crédito|credito|solicitar"] },
     { id: "balance-2025", tipo: "BALANCE", nombre: "Balance 2025 firmado por contador", obligatorio: true, buscarPor: ["balance", "2025"] },
     { id: "balance-2024", tipo: "BALANCE", nombre: "Balance 2024 firmado por contador", obligatorio: true, buscarPor: ["balance", "2024"] },
     { id: "renta-f22-2026", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta F22 Compacto 2026", obligatorio: true, buscarPor: ["renta", "f22", "2026"] },
     { id: "renta-f22-2025", tipo: "DECLARACION_RENTA_F22", nombre: "Declaración de Renta F22 Compacto 2025", obligatorio: true, buscarPor: ["renta", "f22", "2025"] },
-    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2026"] },
-    { id: "aceptacion-renta-2025", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2025", obligatorio: true, buscarPor: ["aceptación", "aceptacion", "renta", "2025"] },
+    { id: "aceptacion-renta-2026", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2026", obligatorio: true, buscarPor: ["aceptación|aceptacion", "renta", "2026"] },
+    { id: "aceptacion-renta-2025", tipo: "ACEPTACION_RENTA", nombre: "Aceptación de Renta 2025", obligatorio: true, buscarPor: ["aceptación|aceptacion", "renta", "2025"] },
     { id: "rol-empresa", tipo: "ROL_EMPRESA", nombre: "Rol Empresa", obligatorio: true, buscarPor: ["rol", "empresa"] },
-    { id: "cert-tgr", tipo: "CERTIFICADO_DEUDA_TGR", nombre: "Certificado de Deuda de TGR", obligatorio: true, buscarPor: ["tgr", "deuda"] },
-    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf", "dicom", "deudas"] },
+    { id: "cert-tgr", tipo: "CERTIFICADO_DEUDA_TGR", nombre: "Certificado de Deuda de TGR", obligatorio: true, buscarPor: ["tgr|deuda tgr"] },
+    { id: "dicom", tipo: "CERTIFICADO_CMF", nombre: "Certificado de Deudas CMF", obligatorio: true, buscarPor: ["cmf|dicom|deudas"] },
   ],
 };
 
@@ -90,22 +90,21 @@ export function obtenerDocumentosCompletos(situacionLaboral: string): DocConfigE
 
 /**
  * Busca si un documento subido coincide con una entrada de config.
- * Estrategia: primero por tipo exacto, luego por nombre (includes).
+ * Cada elemento de buscarPor es un grupo de variantes (separadas por |).
+ * TODOS los grupos deben encontrar al menos una variante en el nombre.
+ * Ejemplo: ["resumen anual", "boletas|boleta", "2026"]
+ *   -> require "resumen anual" Y ("boletas" O "boleta") Y "2026"
  */
 export function buscarDocSubido(
   docSubido: { tipo?: string; nombre?: string },
   configEntry: DocConfigEntry
 ): boolean {
-  // Match por tipo exacto
-  if (docSubido.tipo && docSubido.tipo === configEntry.tipo) return true;
-  // Match por id en el tipo
-  if (docSubido.tipo && docSubido.tipo.toUpperCase().replace(/\s+/g, "_") === configEntry.id.toUpperCase().replace(/-/g, "_")) return true;
-  // Match por palabras clave en el nombre
-  if (docSubido.nombre) {
-    const nombreLower = docSubido.nombre.toLowerCase();
-    return configEntry.buscarPor.some((palabra) => nombreLower.includes(palabra.toLowerCase()));
-  }
-  return false;
+  if (!docSubido.nombre) return false;
+  const nombreLower = docSubido.nombre.toLowerCase();
+  return configEntry.buscarPor.every((grupo) => {
+    const variantes = grupo.split("|");
+    return variantes.some((v) => nombreLower.includes(v.toLowerCase()));
+  });
 }
 
 // ─── Función para verificar permisos ───
