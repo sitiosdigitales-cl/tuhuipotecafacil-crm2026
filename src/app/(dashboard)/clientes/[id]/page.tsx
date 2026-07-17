@@ -177,6 +177,34 @@ export default function ClientePerfilPage() {
     return () => { cancelado = true; };
   }, [id]);
 
+  // Cargar documentos reales de la API y fusionar con los generados
+  useEffect(() => {
+    if (!lead) return;
+    const leadId = lead.id;
+    async function cargarDocumentosReales() {
+      try {
+        const res = await fetch(`/api/documentos?leadId=${leadId}`);
+        const json = await res.json();
+        if (json.success && json.data && json.data.length > 0) {
+          const docsReales = json.data.map((d: any) => ({
+            ...d,
+            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+          }));
+          setDocumentos((prev) => {
+            // Merge: documentos reales reemplazan los mock por tipo
+            const mocksRestantes = prev.filter(
+              (mock) => !docsReales.some((real: any) => real.tipo === mock.tipo)
+            );
+            return [...docsReales, ...mocksRestantes];
+          });
+        }
+      } catch {
+        // Mantener documentos mock si falla
+      }
+    }
+    cargarDocumentosReales();
+  }, [lead]);
+
   // Cargar datos del asesor asignado
   useEffect(() => {
     if (!lead?.asignadoA) {
@@ -269,28 +297,60 @@ export default function ClientePerfilPage() {
     }
   };
 
-  const handleUpload = (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
-    const doc: DocumentoLead = {
-      ...nuevoDoc,
-      id: `doc-${Date.now()}`,
-      creadoEn: new Date(),
-    };
-    setDocumentos((prev) => [doc, ...prev]);
+  const handleUpload = async (_nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
+    // Recargar documentos desde la API
+    try {
+      const res = await fetch(`/api/documentos?leadId=${lead!.id}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        const docsReales = json.data.map((d: any) => ({
+          ...d,
+          creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+        }));
+        setDocumentos((prev) => {
+          const mocksRestantes = prev.filter(
+            (mock) => !docsReales.some((real: any) => real.tipo === mock.tipo)
+          );
+          return [...docsReales, ...mocksRestantes];
+        });
+      }
+    } catch {
+      // Mantener estado actual
+    }
   };
 
-  const handleSubirDocumento = (file: File, nombreDoc: string, tipo: string) => {
-    const doc: DocumentoLead = {
-      id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      leadId: lead.id,
-      leadNombre: `${lead.nombre} ${lead.apellido}`,
-      nombre: nombreDoc,
-      tipo: tipo as DocumentoLead["tipo"],
-      estado: "EN_REVISION",
-      archivoUrl: URL.createObjectURL(file),
-      creadoEn: new Date(),
-    };
-    setDocumentos((prev) => [doc, ...prev]);
-    toast.success("Documento subido", { description: nombreDoc });
+  const handleSubirDocumento = async (file: File, nombreDoc: string, tipo: string) => {
+    try {
+      const formData = new FormData();
+      formData.append("archivo", file);
+      formData.append("leadId", lead!.id);
+      formData.append("tipo", tipo);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+
+      if (json.success && json.data) {
+        const doc: DocumentoLead = {
+          id: json.data.id,
+          leadId: lead.id,
+          leadNombre: `${lead.nombre} ${lead.apellido}`,
+          nombre: nombreDoc,
+          tipo: tipo as DocumentoLead["tipo"],
+          estado: "PENDIENTE",
+          archivoUrl: json.data.archivoUrl,
+          creadoEn: new Date(),
+        };
+        setDocumentos((prev) => [doc, ...prev]);
+        toast.success("Documento subido", { description: nombreDoc });
+      } else {
+        toast.error("Error al subir", { description: json.error || "Intenta de nuevo" });
+      }
+    } catch {
+      toast.error("Error al subir documento");
+    }
   };
 
   const handleCambiarEstado = (docId: string, nuevoEstado: DocumentoLead["estado"]) => {
