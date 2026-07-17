@@ -123,6 +123,7 @@ export function SubirDocumento({
           );
 
           onUpload({
+            id: json.data.id,
             leadId,
             leadNombre,
             nombre: archivos[i].file.name,

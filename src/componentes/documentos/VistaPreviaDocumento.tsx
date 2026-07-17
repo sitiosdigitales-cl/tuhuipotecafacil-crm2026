@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   Dialog,
@@ -27,7 +27,7 @@ interface VistaPreviaDocumentoProps {
 
 const estadoConfig: Record<string, { label: string; color: string; bg: string }> = {
   PENDIENTE: { label: "Pendiente", color: "text-slate-600", bg: "bg-slate-100" },
-  EN_REVISION: { label: "En Revisio&#241;n", color: "text-amber-600", bg: "bg-amber-100" },
+  EN_REVISION: { label: "En Revisión", color: "text-amber-600", bg: "bg-amber-100" },
   APROBADO: { label: "Aprobado", color: "text-emerald-600", bg: "bg-emerald-100" },
   RECHAZADO: { label: "Rechazado", color: "text-red-600", bg: "bg-red-100" },
 };
@@ -80,7 +80,7 @@ export function VistaPreviaDocumento({
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px] text-slate-400">{configTipo?.label}</span>
-                  <span className={	ext-[9px] font-semibold px-2 py-0.5 rounded-full  }>
+                  <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${configEstado?.bg} ${configEstado?.color}`}>
                     {configEstado?.label}
                   </span>
                 </div>
@@ -132,7 +132,7 @@ export function VistaPreviaDocumento({
           <div
             className="bg-white rounded-xl shadow-lg overflow-hidden transition-transform"
             style={{
-              transform: scale() rotate(deg),
+              transform: `scale(${zoom / 100}) rotate(${rotacion}deg)`,
               maxWidth: "100%",
               maxHeight: "100%",
             }}
