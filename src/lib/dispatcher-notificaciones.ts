@@ -167,7 +167,7 @@ async function crearNotificacionInApp(opts: {
   accionUrl?: string;
 }): Promise<void> {
   try {
-    await supabaseAdmin.from("notificaciones").insert({
+    const { error } = await supabaseAdmin.from("notificaciones").insert({
       id: crypto.randomUUID(),
       tipo: opts.tipo,
       titulo: opts.titulo,
@@ -178,6 +178,9 @@ async function crearNotificacionInApp(opts: {
       accionurl: opts.accionUrl || null,
       creadoen: new Date().toISOString(),
     });
+    if (error) {
+      console.error("Error creando notificacion in-app:", JSON.stringify(error));
+    }
   } catch {
     // Silenciar errores de notificacion in-app
   }
