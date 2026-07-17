@@ -183,7 +183,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const configEstado = cliente ? ETAPAS_CONFIG[cliente.etapa] : null;
   const docsConfig: DocConfigEntry[] = cliente ? obtenerDocumentosCompletos(cliente.situacionLaboral) : [];
   
-  const docsAprobados = documentos.filter(d => d.estado === "APROBADO" || d.estado === "RECIBIDO" || d.estado === "EN_REVISION").length;
+  // Contar documentos subidos (que matcheen con la config)
+  const docsEntregados = docsConfig.filter(dc => documentos.some(d => buscarDocSubido(d as any, dc))).length;
   const docsTotal = docsConfig.length;
 
   const iniciarEdicion = () => {
@@ -1268,15 +1269,15 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-600">Documentos entregados</span>
-                <span className="text-xs font-bold text-blue-700">{docsAprobados} / {docsTotal}</span>
+                <span className="text-xs font-bold text-blue-700">{docsEntregados} / {docsTotal}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-600">Documentos pendientes</span>
-                <span className="text-xs font-bold text-amber-600">{docsTotal - docsAprobados}</span>
+                <span className="text-xs font-bold text-amber-600">{docsTotal - docsEntregados}</span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all"
-                  style={{ width: `${(docsAprobados / docsTotal) * 100}%` }} />
+                  style={{ width: `${docsTotal > 0 ? (docsEntregados / docsTotal) * 100 : 0}%` }} />
               </div>
             </div>
           </div>
