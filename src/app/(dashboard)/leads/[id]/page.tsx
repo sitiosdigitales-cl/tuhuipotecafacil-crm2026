@@ -715,7 +715,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id as any });
+                                setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id, leadId: "", estado: "PENDIENTE", creadoEn: new Date() } as any);
                                 setUploadOpen(true);
                               }
                             }}
