@@ -139,24 +139,25 @@ export default function DocumentosPage() {
   const [nombreEditandoTipo, setNombreEditandoTipo] = useState("");
 
   useEffect(() => {
-    async function cargarDocumentos() {
-      try {
-        const res = await fetch("/api/documentos");
-        const json = await res.json();
-        if (json.success && json.data) {
-          setDocumentos(json.data.map((d: Record<string, any>) => ({
-            ...d,
-            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
-          })));
-        }
-      } catch {
-        setDocumentos([]);
-      } finally {
-        setCargando(false);
-      }
-    }
     cargarDocumentos();
   }, []);
+
+  async function cargarDocumentos() {
+    try {
+      const res = await fetch("/api/documentos");
+      const json = await res.json();
+      if (json.success && json.data) {
+        setDocumentos(json.data.map((d: Record<string, any>) => ({
+          ...d,
+          creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+        })));
+      }
+    } catch {
+      setDocumentos([]);
+    } finally {
+      setCargando(false);
+    }
+  }
 
   // Obtener leads únicos
   const leadsUnicos = useMemo(() => {
@@ -282,13 +283,9 @@ export default function DocumentosPage() {
     }
   };
 
-  const handleUpload = async (nuevoDoc: Omit<DocumentoLead, "creadoEn">) => {
-    // /api/upload ya creo el registro en la DB, solo agregar al estado local
-    setDocumentos((prev) => [{
-      ...nuevoDoc,
-      id: nuevoDoc.id || crypto.randomUUID(),
-      creadoEn: new Date(),
-    }, ...prev]);
+  const handleUpload = async (_nuevoDoc: Omit<DocumentoLead, "creadoEn">) => {
+    // Recargar documentos desde la API para tener datos frescos
+    await cargarDocumentos();
   };
 
   const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
@@ -913,7 +910,6 @@ export default function DocumentosPage() {
       <SubirDocumento
         open={uploadOpen}
         onOpenChange={setUploadOpen}
-        leadId=""
         onUpload={handleUpload}
       />
 

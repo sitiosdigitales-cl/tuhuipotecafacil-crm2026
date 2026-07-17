@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +15,17 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Users,
+  Search,
 } from "lucide-react";
-import type { TipoDocumento, DocumentoLead } from "@/tipos";
+import { useLeads } from "@/modulos/leads";
+import type { TipoDocumento, DocumentoLead, Lead } from "@/tipos";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 
 interface SubirDocumentoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  leadId: string;
+  leadId?: string;
   leadNombre?: string;
   onUpload: (doc: Omit<DocumentoLead, "creadoEn">) => void;
 }
@@ -37,15 +40,48 @@ interface ArchivoSubido {
 export function SubirDocumento({
   open,
   onOpenChange,
-  leadId,
-  leadNombre,
+  leadId: leadIdProp,
+  leadNombre: leadNombreProp,
   onUpload,
 }: SubirDocumentoProps) {
+  const { leads } = useLeads();
   const [archivos, setArchivos] = useState<ArchivoSubido[]>([]);
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento>("CEDULA_IDENTIDAD");
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Selector de cliente
+  const [leadSeleccionado, setLeadSeleccionado] = useState<Lead | null>(null);
+  const [busquedaLead, setBusquedaLead] = useState("");
+
+  // Pre-seleccionar lead cuando se abre con leadId
+  useEffect(() => {
+    if (open && leadIdProp && leads.length > 0) {
+      const lead = leads.find((l) => l.id === leadIdProp);
+      if (lead) setLeadSeleccionado(lead);
+    }
+    if (!open) {
+      setLeadSeleccionado(null);
+      setBusquedaLead("");
+      setArchivos([]);
+    }
+  }, [open, leadIdProp, leads]);
+
+  const leadsFiltrados = useMemo(() => {
+    if (!busquedaLead) return leads.slice(0, 10);
+    return leads.filter(
+      (l) =>
+        l.nombre.toLowerCase().includes(busquedaLead.toLowerCase()) ||
+        l.apellido.toLowerCase().includes(busquedaLead.toLowerCase()) ||
+        l.rut?.includes(busquedaLead)
+    );
+  }, [leads, busquedaLead]);
+
+  const leadId = leadSeleccionado?.id || leadIdProp || "";
+  const leadNombre = leadSeleccionado
+    ? `${leadSeleccionado.nombre} ${leadSeleccionado.apellido}`
+    : leadNombreProp || "";
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -76,7 +112,6 @@ export function SubirDocumento({
     e.preventDefault();
     e.stopPropagation();
     setArrastrando(false);
-
     const files = Array.from(e.dataTransfer.files);
     agregarArchivos(files);
   }, []);
@@ -93,6 +128,7 @@ export function SubirDocumento({
   };
 
   const handleSubir = async () => {
+    if (!leadId) return;
     setSubiendo(true);
 
     for (let i = 0; i < archivos.length; i++) {
@@ -103,7 +139,6 @@ export function SubirDocumento({
       );
 
       try {
-        // Subir archivo a Supabase Storage
         const formData = new FormData();
         formData.append("archivo", archivos[i].file);
         formData.append("leadId", leadId);
@@ -160,7 +195,7 @@ export function SubirDocumento({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] p-0 gap-0">
+      <DialogContent className="sm:max-w-[560px] p-0 gap-0">
         <DialogHeader className="p-5 pb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -169,13 +204,81 @@ export function SubirDocumento({
             <div>
               <DialogTitle className="text-slate-900">Subir Documentos</DialogTitle>
               <DialogDescription className="text-slate-500">
-                {leadNombre ? `Para ${leadNombre}` : "Adjuntar archivos"}
+                {leadNombre ? `Para ${leadNombre}` : "Selecciona un cliente y adjunta archivos"}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="px-5 space-y-4">
+          {/* Selector de cliente */}
+          <div>
+            <label className="text-[11px] font-semibold text-slate-700 mb-1.5 block">
+              Cliente *
+            </label>
+            {leadSeleccionado ? (
+              <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
+                  {leadSeleccionado.nombre[0]}{leadSeleccionado.apellido[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] font-bold text-slate-800">
+                    {leadSeleccionado.nombre} {leadSeleccionado.apellido}
+                  </div>
+                  <div className="text-[10px] text-slate-500">{leadSeleccionado.email}</div>
+                </div>
+                <button
+                  onClick={() => setLeadSeleccionado(null)}
+                  className="p-1 hover:bg-white rounded-lg transition-colors"
+                >
+                  <X size={14} className="text-slate-400" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar cliente por nombre o RUT..."
+                  value={busquedaLead}
+                  onChange={(e) => setBusquedaLead(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-[12px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
+                  autoFocus
+                />
+                {busquedaLead && (
+                  <div className="mt-2 max-h-40 overflow-y-auto border border-slate-200 rounded-xl">
+                    {leadsFiltrados.length === 0 ? (
+                      <div className="p-3 text-center text-[11px] text-slate-400">
+                        No se encontraron clientes
+                      </div>
+                    ) : (
+                      leadsFiltrados.map((lead) => (
+                        <button
+                          key={lead.id}
+                          onClick={() => {
+                            setLeadSeleccionado(lead);
+                            setBusquedaLead("");
+                          }}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-indigo-50 transition-colors text-left"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                            {lead.nombre[0]}{lead.apellido[0]}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-semibold text-slate-800 truncate">
+                              {lead.nombre} {lead.apellido}
+                            </div>
+                            <div className="text-[10px] text-slate-400">{lead.rut}</div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Selector de tipo */}
           <div>
             <label className="text-[11px] font-semibold text-slate-700 mb-1.5 block">
@@ -223,10 +326,10 @@ export function SubirDocumento({
               </div>
               <div>
                 <p className="text-[11px] font-semibold text-slate-700">
-                  {arrastrando ? "Suelta los archivos aquí" : "Arrastra archivos o haz clic para seleccionar"}
+                  {arrastrando ? "Suelta los archivos aqui" : "Arrastra archivos o haz clic para seleccionar"}
                 </p>
                 <p className="text-[9px] text-slate-400 mt-0.5">
-                  PDF, JPG, PNG, DOC - Máx. 10MB por archivo
+                  PDF, JPG, PNG, DOC - Max. 10MB por archivo
                 </p>
               </div>
             </div>
@@ -295,7 +398,7 @@ export function SubirDocumento({
           </button>
           <button
             onClick={handleSubir}
-            disabled={archivos.length === 0 || subiendo}
+            disabled={archivos.length === 0 || subiendo || !leadId}
             className="flex items-center gap-1.5 px-5 py-2.5 gradient-primary text-white rounded-xl text-[11px] font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-blue-600/15 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {subiendo ? (
