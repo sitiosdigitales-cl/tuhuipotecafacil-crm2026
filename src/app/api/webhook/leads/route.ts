@@ -87,11 +87,12 @@ export async function POST(request: NextRequest) {
       if (!isNaN(parsed) && parsed > 0) monto = parsed;
     }
 
+    const leadId = crypto.randomUUID();
     const { error } = await supabaseAdmin.from("leads").insert({
-      id: crypto.randomUUID(),
+      id: leadId,
       nombre,
       apellido,
-      rut: rut || `web-${crypto.randomUUID().substring(0, 8)}`,
+      rut: rut || `web-${leadId.substring(0, 8)}`,
       email,
       telefono,
       montosolicitado: monto,
@@ -101,8 +102,8 @@ export async function POST(request: NextRequest) {
       situacionlaboral: sitLaboral,
       tipocredito: tipoCredito,
       rentamensual: rentaMensual,
-      complementarrenta: complementarRenta === "Sí" || complementarRenta === "si",
-      endicom: enDicom === "Sí" || enDicom === "si",
+      complementarrenta: complementarRenta === "Si" || complementarRenta === "si",
+      endicom: enDicom === "Si" || enDicom === "si",
       dicomdetalle: dicomDetalle,
       notas: comentarios,
       diasenetapa: 0,
@@ -115,16 +116,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Notificacion in-app via dispatcher
-    const leadId = (await supabaseAdmin.from("leads").select("id").eq("rut", rut || "").order("creadoen", { ascending: false }).limit(1).single())?.data?.id;
-    if (leadId) {
-      despacharNotificacion({
-        evento: "lead_nuevo",
-        leadId,
-        titulo: "Nuevo lead desde sitio web",
-        descripcion: `${nombre} ${apellido} completo el formulario`,
-        accionUrl: `/leads/${leadId}`,
-      }).catch(() => {});
-    }
+    despacharNotificacion({
+      evento: "lead_nuevo",
+      leadId,
+      titulo: "Nuevo lead desde sitio web",
+      descripcion: `${nombre} ${apellido} completo el formulario`,
+      accionUrl: `/leads/${leadId}`,
+    }).catch(() => {});
 
     // Enviar emails de notificación (no bloquear si falla)
     try {
