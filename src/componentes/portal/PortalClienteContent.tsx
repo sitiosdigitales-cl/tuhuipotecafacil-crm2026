@@ -71,7 +71,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     patrimonioVehiculo: "", patrimonioVivienda: "", patrimonioOtros: "",
   });
   const [guardando, setGuardando] = useState(false);
-  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; estado: string; fecha?: string; tamaño?: number; archivoUrl?: string }[]>([]);
+  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; tipo?: string; estado: string; archivoUrl?: string; fecha?: string; tamaño?: number }[]>([]);
   const [subiendo, setSubiendo] = useState(false);
   const [mostrarSidebar, setMostrarSidebar] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -158,9 +158,11 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
         const dataDocs = await resDocs.json();
         if (dataDocs.success && dataDocs.data) {
           setDocumentos(dataDocs.data.map((d: any) => ({
-            id: d.id || d.id,
-            nombre: d.nombre || d.nombre,
+            id: d.id,
+            nombre: d.nombre,
+            tipo: d.tipo,
             estado: d.estado || "PENDIENTE",
+            archivoUrl: d.archivoUrl,
             fecha: d.creadoen || d.creadoEn,
             tamaño: d.tamanio || d.tamaño || 0,
           })));
