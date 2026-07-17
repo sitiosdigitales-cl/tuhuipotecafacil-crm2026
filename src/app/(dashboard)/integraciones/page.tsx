@@ -22,6 +22,7 @@ import {
   Video,
   Cloud,
   Send,
+  Database,
 } from "lucide-react";
 import { WordPressIntegration } from "@/componentes/integraciones/WordPressIntegration";
 import { toast } from "sonner";
