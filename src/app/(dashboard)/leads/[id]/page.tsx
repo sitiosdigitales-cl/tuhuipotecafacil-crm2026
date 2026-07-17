@@ -724,7 +724,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         {tieneArchivo && (
                           <>
                             <button
-                              onClick={() => setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id, archivoUrl: tieneArchivo, leadId: lead.id, leadNombre: lead.nombre, estado: estado as any, creadoEn: new Date() })}
+                              onClick={() => setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id as any, archivoUrl: tieneArchivo, leadId: lead.id, leadNombre: lead.nombre, estado: estado as any, creadoEn: new Date() })}
                               className="p-1.5 hover:bg-emerald-100 rounded-lg transition-colors"
                               title="Ver"
                             >
