@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { enviarEmail } from "@/lib/email";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 // Service role key para bypass de RLS (solo server-side)
 const supabaseAdmin = createClient(
@@ -111,6 +112,18 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Error guardando lead:", error);
       return NextResponse.json({ error: "Error al guardar lead", details: error.message }, { status: 500 });
+    }
+
+    // Notificacion in-app via dispatcher
+    const leadId = (await supabaseAdmin.from("leads").select("id").eq("rut", rut || "").order("creadoen", { ascending: false }).limit(1).single())?.data?.id;
+    if (leadId) {
+      despacharNotificacion({
+        evento: "lead_nuevo",
+        leadId,
+        titulo: "Nuevo lead desde sitio web",
+        descripcion: `${nombre} ${apellido} completo el formulario`,
+        accionUrl: `/leads/${leadId}`,
+      }).catch(() => {});
     }
 
     // Enviar emails de notificación (no bloquear si falla)
