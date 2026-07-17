@@ -97,7 +97,7 @@ interface PanelDerechoProps {
   onToggleColapsado?: () => void;
 }
 
-export function PanelDerecho({ _onClose, colapsado = false, onToggleColapsado }: PanelDerechoProps) {
+export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: PanelDerechoProps) {
   const { notificaciones, noLeidas, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion } = useNotificaciones();
   const { leads } = useLeads();
   const { usuarios } = useUser();

@@ -27,7 +27,7 @@ interface GoogleCalendarIntegrationProps {
   }) => void;
 }
 
-export function GoogleCalendarIntegration({ _onEventCreated }: GoogleCalendarIntegrationProps) {
+export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarIntegrationProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

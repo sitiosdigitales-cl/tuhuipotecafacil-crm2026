@@ -36,7 +36,7 @@ import { ETAPAS_CONFIG } from "@/tipos";
 import { ROLES_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Usuario } from "@/tipos";
+import type { Usuario, Etapa } from "@/tipos";
 import { useLeads } from "@/lib/contexts/LeadContext";
 import { PerfilProfesional } from "@/componentes/usuarios/PerfilProfesional";
 

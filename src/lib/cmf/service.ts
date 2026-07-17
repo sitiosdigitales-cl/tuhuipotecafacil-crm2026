@@ -216,6 +216,7 @@ const TASAS_MOCK: CMFTasa[] = [
 ];
 
 // Cache en memoria
+let tasasCache: CMFTasa[] = TASAS_MOCK;
 let ultimoCache: Date = new Date();
 
 // Función para obtener tasas de la API CMF

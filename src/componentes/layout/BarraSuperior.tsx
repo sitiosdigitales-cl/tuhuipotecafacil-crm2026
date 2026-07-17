@@ -25,7 +25,7 @@ interface BarraSuperiorProps {
   panelColapsado?: boolean;
 }
 
-export function BarraSuperior({ onMenuClick, _onPanelClick, _panelColapsado }: BarraSuperiorProps) {
+export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: BarraSuperiorProps) {
   const router = useRouter();
   const { usuarioActual, esSuperAdmin } = useUser();
   const { logout } = useAuth();
