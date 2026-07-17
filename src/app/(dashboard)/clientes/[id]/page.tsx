@@ -30,6 +30,7 @@ import {
   MapPin,
   BriefcaseBusiness,
   Check,
+  Eye,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
@@ -686,17 +687,31 @@ export default function ClientePerfilPage() {
                         }}
                       />
                     </label>
-                    {/* Botón Descargar/Ver */}
+                    {/* Botones Ver/Descargar */}
                     {subido && doc?.archivoUrl && (
-                      <a
-                        href={doc.archivoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                      >
-                        <Download size={12} />
-                        Ver
-                      </a>
+                      <>
+                        <button
+                          onClick={() => {
+                            setDocSeleccionado(doc);
+                            setPreviewOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
+                          title="Vista previa"
+                        >
+                          <Eye size={12} />
+                          Ver
+                        </button>
+                        <a
+                          href={doc.archivoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                          title="Descargar"
+                        >
+                          <Download size={12} />
+                          Descargar
+                        </a>
+                      </>
                     )}
                     {/* Select de estado */}
                     {subido && (

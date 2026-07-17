@@ -25,6 +25,7 @@ import {
   LayoutList,
   LayoutGrid,
   UserPlus,
+  FileText,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS, ROLES_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";

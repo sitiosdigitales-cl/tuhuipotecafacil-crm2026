@@ -679,12 +679,13 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
               {documentosFiltrados.map((doc) => {
                 const estado = documentos[doc.id]?.estado || "PENDIENTE";
                 const configEstado = estadoConfig[estado];
+                const docSubido = docsSubidos.find(d => d.tipo === doc.id || d.nombre === doc.nombre);
+                const tieneArchivo = docSubido?.archivoUrl || documentos[doc.id]?.archivoUrl;
 
                 return (
                   <div
                     key={doc.id}
-                    onClick={() => toggleEstado(doc.id)}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all hover:shadow-sm ${configEstado.bg}`}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all hover:shadow-sm ${configEstado.bg}`}
                   >
                     <div className={`${configEstado.color}`}>
                       {configEstado.icono}
@@ -696,9 +697,52 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                       </div>
                       <div className="text-[8px] text-slate-400 truncate">{doc.descripcion}</div>
                     </div>
-                    <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded ${configEstado.color} bg-white/50`}>
-                      {configEstado.label}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded ${configEstado.color} bg-white/50`}>
+                        {configEstado.label}
+                      </span>
+                      {/* Botones de acción */}
+                      <div className="flex items-center gap-0.5">
+                        <label
+                          className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                          title="Subir"
+                        >
+                          <Upload size={10} className="text-blue-500" />
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id });
+                                setUploadOpen(true);
+                              }
+                            }}
+                          />
+                        </label>
+                        {tieneArchivo && (
+                          <>
+                            <button
+                              onClick={() => setDocPreview({ id: doc.id, nombre: doc.nombre, tipo: doc.id, archivoUrl: tieneArchivo, leadId: lead.id, leadNombre: lead.nombre, estado: estado as any, creadoEn: new Date() })}
+                              className="p-1.5 hover:bg-emerald-100 rounded-lg transition-colors"
+                              title="Ver"
+                            >
+                              <Eye size={10} className="text-emerald-500" />
+                            </button>
+                            <a
+                              href={tieneArchivo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 hover:bg-purple-100 rounded-lg transition-colors"
+                              title="Descargar"
+                            >
+                              <Download size={10} className="text-purple-500" />
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })}
