@@ -26,12 +26,14 @@ import {
   X,
   Check,
   Tag,
+  ClipboardList,
 } from "lucide-react";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 import { SubirDocumento } from "@/componentes/documentos/SubirDocumento";
 import { VistaPreviaDocumento } from "@/componentes/documentos/VistaPreviaDocumento";
 import { GestionarEstado } from "@/componentes/documentos/GestionarEstado";
 import { SolicitarDocumentos } from "@/componentes/documentos/SolicitarDocumentos";
+import { ChecklistCliente } from "@/componentes/documentos/ChecklistCliente";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 import type { DocumentoLead, TipoDocumento } from "@/tipos";
@@ -114,7 +116,7 @@ export default function DocumentosPage() {
   const [filtroEstado, setFiltroEstado] = useState<EstadoDoc | "todos">("todos");
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [filtroLead, setFiltroLead] = useState<string>("todos");
-  const [vistaActiva, setVistaActiva] = useState<"tabla" | "tarjetas">("tabla");
+  const [vistaActiva, setVistaActiva] = useState<"tabla" | "tarjetas" | "checklist">("tabla");
 
   // Modales
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -123,6 +125,10 @@ export default function DocumentosPage() {
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [solicitarOpen, setSolicitarOpen] = useState(false);
   const [docSeleccionado, setDocSeleccionado] = useState<DocumentoLead | null>(null);
+
+  // Checklist: lead y documentos faltantes para solicitar
+  const [checklistLeadId, setChecklistLeadId] = useState<string>("");
+  const [checklistLeadNombre, setChecklistLeadNombre] = useState<string>("");
 
   // Gestión de tipos de documento personalizados
   const [tiposDocumento, setTiposDocumento] = useState<TipoDocumentoCustom[]>(TIPOS_DOCUMENTO_BASE);
@@ -302,6 +308,12 @@ export default function DocumentosPage() {
 
   const irAlCliente = (leadId: string) => {
     router.push(`/clientes/${leadId}`);
+  };
+
+  const handleSolicitarFaltantesChecklist = (leadId: string, leadNombre: string, _faltantes: string[]) => {
+    setChecklistLeadId(leadId);
+    setChecklistLeadNombre(leadNombre);
+    setSolicitarOpen(true);
   };
 
   const getTipoColor = (tipo: string): string => {
@@ -573,14 +585,23 @@ export default function DocumentosPage() {
             <button
               onClick={() => setVistaActiva("tabla")}
               className={`p-2 rounded-lg transition-colors ${vistaActiva === "tabla" ? "bg-white shadow-sm" : ""}`}
+              title="Vista tabla"
             >
               <List size={14} className={vistaActiva === "tabla" ? "text-slate-700" : "text-slate-400"} />
             </button>
             <button
               onClick={() => setVistaActiva("tarjetas")}
               className={`p-2 rounded-lg transition-colors ${vistaActiva === "tarjetas" ? "bg-white shadow-sm" : ""}`}
+              title="Vista tarjetas"
             >
               <Grid size={14} className={vistaActiva === "tarjetas" ? "text-slate-700" : "text-slate-400"} />
+            </button>
+            <button
+              onClick={() => setVistaActiva("checklist")}
+              className={`p-2 rounded-lg transition-colors ${vistaActiva === "checklist" ? "bg-white shadow-sm" : ""}`}
+              title="Vista checklist"
+            >
+              <ClipboardList size={14} className={vistaActiva === "checklist" ? "text-slate-700" : "text-slate-400"} />
             </button>
           </div>
 
@@ -854,6 +875,40 @@ export default function DocumentosPage() {
         </div>
       )}
 
+      {/* Vista de Checklist */}
+      {vistaActiva === "checklist" && (
+        <div className="space-y-3">
+          {leadsUnicos.length > 0 ? (
+            leadsUnicos
+              .sort((a, b) => {
+                // Ordenar por menor % de completado primero
+                const statsA = estadisticas.porLead.find((l) => l.id === a.id);
+                const statsB = estadisticas.porLead.find((l) => l.id === b.id);
+                const pctA = statsA ? (statsA.aprobados / Math.max(statsA.total, 1)) * 100 : 0;
+                const pctB = statsB ? (statsB.aprobados / Math.max(statsB.total, 1)) * 100 : 0;
+                return pctA - pctB;
+              })
+              .map((lead) => (
+                <ChecklistCliente
+                  key={lead.id}
+                  leadId={lead.id}
+                  leadNombre={lead.nombre}
+                  documentos={documentos.filter((d) => d.leadId === lead.id)}
+                  onSolicitarFaltantes={handleSolicitarFaltantesChecklist}
+                />
+              ))
+          ) : (
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-100/80 shadow-soft">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ClipboardList size={24} className="text-slate-300" />
+              </div>
+              <p className="text-sm font-semibold text-slate-600">No hay clientes con documentos</p>
+              <p className="text-[11px] text-slate-400 mt-1">Los checklists aparecerán cuando haya documentos asociados a leads</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Modal Upload */}
       <SubirDocumento
         open={uploadOpen}
@@ -892,6 +947,7 @@ export default function DocumentosPage() {
       <SolicitarDocumentos
         open={solicitarOpen}
         onOpenChange={setSolicitarOpen}
+        leadId={checklistLeadId}
       />
     </div>
   );

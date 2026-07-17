@@ -41,10 +41,12 @@ interface DespacharOpts {
  */
 export async function despacharNotificacion(opts: DespacharOpts): Promise<void> {
   try {
-    // 1. Resolver usuario objetivo
-    let usuarioId = opts.usuarioIdDirecto || null;
+    const usuariosNotificados = new Set<string>();
 
-    if (!usuarioId && opts.leadId) {
+    // 1. Resolver ejecutivo del lead
+    let ejecutivoId = opts.usuarioIdDirecto || null;
+
+    if (!ejecutivoId && opts.leadId) {
       const { data: lead } = await supabase
         .from("leads")
         .select("nombreejecutivo, nombre, apellido")
@@ -52,7 +54,6 @@ export async function despacharNotificacion(opts: DespacharOpts): Promise<void> 
         .single();
 
       if (lead?.nombreejecutivo) {
-        // Buscar usuario por nombre del ejecutivo
         const nombreBusqueda = "%" + lead.nombreejecutivo + "%";
         const { data: usuario } = await supabase
           .from("usuarios")
@@ -62,13 +63,34 @@ export async function despacharNotificacion(opts: DespacharOpts): Promise<void> 
           .single();
 
         if (usuario) {
-          usuarioId = usuario.id;
+          ejecutivoId = usuario.id;
         }
       }
     }
 
-    if (!usuarioId) {
-      // Sin usuario objetivo, crear notificacion global (sin filtro)
+    // 2. Enviar al ejecutivo del lead
+    if (ejecutivoId) {
+      usuariosNotificados.add(ejecutivoId);
+      await enviarNotificacionAUsuario(ejecutivoId, opts);
+    }
+
+    // 3. SIEMPRE enviar a todos los SUPER_ADMIN (evitar duplicados)
+    const { data: superAdmins } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("rol", "SUPER_ADMIN");
+
+    if (superAdmins) {
+      for (const admin of superAdmins) {
+        if (!usuariosNotificados.has(admin.id)) {
+          usuariosNotificados.add(admin.id);
+          await enviarNotificacionAUsuario(admin.id, opts);
+        }
+      }
+    }
+
+    // 4. Si no se pudo resolver ningun usuario, crear notificacion global
+    if (usuariosNotificados.size === 0) {
       await crearNotificacionInApp({
         tipo: opts.evento,
         titulo: opts.titulo,
@@ -76,10 +98,21 @@ export async function despacharNotificacion(opts: DespacharOpts): Promise<void> 
         leadId: opts.leadId,
         accionUrl: opts.accionUrl,
       });
-      return;
     }
+  } catch (error) {
+    console.error("Error en dispatcher de notificaciones:", error);
+  }
+}
 
-    // 2. Consultar preferencias del usuario
+/**
+ * Envía notificación in-app, email y WhatsApp a un usuario específico
+ */
+async function enviarNotificacionAUsuario(
+  usuarioId: string,
+  opts: DespacharOpts
+): Promise<void> {
+  try {
+    // Consultar preferencias del usuario
     const { data: prefs } = await supabase
       .from("preferencias_notificacion")
       .select("canal, habilitado")
@@ -96,7 +129,7 @@ export async function despacharNotificacion(opts: DespacharOpts): Promise<void> 
     const emailHabilitado = prefsMap.has("email") ? prefsMap.get("email") : true;
     const whatsappHabilitado = prefsMap.has("whatsapp") ? prefsMap.get("whatsapp") : true;
 
-    // 3. Crear notificacion in-app
+    // Crear notificacion in-app
     if (inAppHabilitado) {
       await crearNotificacionInApp({
         tipo: opts.evento,
@@ -108,17 +141,17 @@ export async function despacharNotificacion(opts: DespacharOpts): Promise<void> 
       });
     }
 
-    // 4. Enviar email
+    // Enviar email
     if (emailHabilitado) {
       await enviarNotificacionEmail(usuarioId, opts);
     }
 
-    // 5. WhatsApp
+    // WhatsApp
     if (whatsappHabilitado && isWhatsAppConfigured()) {
       await enviarNotificacionWhatsApp(usuarioId, opts);
     }
   } catch (error) {
-    console.error("Error en dispatcher de notificaciones:", error);
+    console.error("Error enviando notificacion a usuario:", usuarioId, error);
   }
 }
 
