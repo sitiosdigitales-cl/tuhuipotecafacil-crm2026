@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
     const { error: dbError } = await supabase.from("documentos").insert(toSupabaseColumns({
       id: docId,
       leadId,
-      leadNombre: `${lead.nombre} ${lead.apellido || ""}`.trim(),
       nombre: archivo.name,
       tipo: tipo || "OTRO",
       estado: "PENDIENTE",
