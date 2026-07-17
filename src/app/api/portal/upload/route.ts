@@ -71,7 +71,13 @@ export async function POST(request: NextRequest) {
     }));
 
     if (dbError) {
-      console.error("Error guardando referencia:", dbError);
+      console.error("Error guardando referencia en DB:", JSON.stringify(dbError));
+      // Retornar el error para debug
+      return NextResponse.json({
+        success: false,
+        error: `Archivo subido pero error guardando registro: ${dbError.message || dbError.code || "unknown"}`,
+        storageUrl: urlData?.publicUrl,
+      }, { status: 500 });
     }
 
     return NextResponse.json({
