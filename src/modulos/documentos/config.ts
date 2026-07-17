@@ -91,7 +91,8 @@ export function obtenerDocumentosCompletos(situacionLaboral: string): DocConfigE
 /**
  * Busca si un documento subido coincide con una entrada de config.
  * 1. Match por tipo exacto (el campo tipo del doc = tipo del config)
- * 2. Match por keywords en el nombre (busca TODOS los grupos)
+ * 2. Match por keywords en el nombre del archivo (busca TODOS los grupos)
+ * 3. Match por keywords en el campo tipo (puede ser nombre display si se subió con el nombre legible)
  */
 export function buscarDocSubido(
   docSubido: { tipo?: string; nombre?: string },
@@ -99,13 +100,23 @@ export function buscarDocSubido(
 ): boolean {
   // Match por tipo exacto
   if (docSubido.tipo && configEntry.tipo && docSubido.tipo === configEntry.tipo) return true;
-  // Match por keywords en el nombre
-  if (!docSubido.nombre) return false;
-  const nombreLower = docSubido.nombre.toLowerCase();
-  return configEntry.buscarPor.every((grupo) => {
-    const variantes = grupo.split("|");
-    return variantes.some((v) => nombreLower.includes(v.toLowerCase()));
-  });
+
+  // Función helper para matchear keywords contra un texto
+  const matchKeywords = (texto: string): boolean => {
+    const textoLower = texto.toLowerCase();
+    return configEntry.buscarPor.every((grupo) => {
+      const variantes = grupo.split("|");
+      return variantes.some((v) => textoLower.includes(v.toLowerCase()));
+    });
+  };
+
+  // Match por keywords en el nombre del archivo
+  if (docSubido.nombre && matchKeywords(docSubido.nombre)) return true;
+
+  // Match por keywords en el campo tipo (puede contener el nombre display del documento)
+  if (docSubido.tipo && docSubido.tipo !== configEntry.tipo && matchKeywords(docSubido.tipo)) return true;
+
+  return false;
 }
 
 // ─── Función para verificar permisos ───

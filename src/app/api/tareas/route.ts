@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,19 +41,15 @@ export async function POST(request: NextRequest) {
       .single();
     if (error) return NextResponse.json({ success: false, error: "Error al crear tarea" }, { status: 500 });
 
-    // Notificación si hay asignado
+    // Notificacion si hay asignado
     if (body.asignadoA || body.nombreEjecutivo) {
-      try {
-        await supabase.from("notificaciones").insert({
-          id: crypto.randomUUID(),
-          tipo: "tarea",
-          titulo: "Tarea asignada",
-          descripcion: body.titulo,
-          leida: false,
-          accionurl: `/tareas`,
-          creadoen: new Date().toISOString(),
-        });
-      } catch {}
+      despacharNotificacion({
+        evento: "tarea_asignada",
+        leadId: body.leadId || undefined,
+        titulo: "Tarea asignada",
+        descripcion: body.titulo,
+        accionUrl: "/tareas",
+      }).catch(() => {});
     }
 
     return NextResponse.json({ success: true, data }, { status: 201 });

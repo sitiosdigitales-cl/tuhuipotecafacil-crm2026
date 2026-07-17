@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -142,6 +143,31 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (error) {
       console.error("Error al actualizar:", error);
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    // Notificaciones para cambios importantes
+    const leadData = fromSupabaseColumns(data);
+
+    // Cambio de etapa
+    if (body.etapa && leadData) {
+      despacharNotificacion({
+        evento: "lead_etapa",
+        leadId: id,
+        titulo: "Lead avanzo de etapa",
+        descripcion: `${leadData.nombre} ${leadData.apellido} paso a ${body.etapa}`,
+        accionUrl: `/leads/${id}`,
+      }).catch(() => {});
+    }
+
+    // Asignacion de ejecutivo
+    if (body.nombreEjecutivo !== undefined && leadData) {
+      despacharNotificacion({
+        evento: "lead_asignado",
+        leadId: id,
+        titulo: "Lead asignado",
+        descripcion: `${leadData.nombre} ${leadData.apellido} fue asignado a ${body.nombreEjecutivo || "sin asignar"}`,
+        accionUrl: `/leads/${id}`,
+      }).catch(() => {});
     }
 
     return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });

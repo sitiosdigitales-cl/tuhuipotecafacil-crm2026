@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
   try {
@@ -102,21 +103,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Crear notificación automática
-    try {
-      await supabase.from("notificaciones").insert({
-        id: crypto.randomUUID(),
-        tipo: "lead",
-        titulo: "Nuevo lead registrado",
-        descripcion: `${body.nombre} ${body.apellido} completó el formulario web`,
-        leida: false,
-        leadid: leadId,
-        accionurl: `/leads/${leadId}`,
-        creadoen: new Date().toISOString(),
-      });
-    } catch {
-      // Notificación es opcional
-    }
+    // Notificacion via dispatcher
+    despacharNotificacion({
+      evento: "lead_nuevo",
+      leadId,
+      titulo: "Nuevo lead registrado",
+      descripcion: `${body.nombre} ${body.apellido} completo el formulario web`,
+      accionUrl: `/leads/${leadId}`,
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error) {

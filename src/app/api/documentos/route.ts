@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       .insert(toSupabaseColumns({
         id: crypto.randomUUID(),
         leadId: body.leadId,
-        leadNombre: body.leadNombre || null,
         nombre: body.nombre,
         tipo: body.tipo || "OTRO",
         estado: body.estado || "PENDIENTE",
@@ -37,23 +36,17 @@ export async function POST(request: NextRequest) {
       .single();
     if (error) return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
 
-    // NotificaciÃ³n automÃ¡tica
-    try {
-      await supabase.from("notificaciones").insert({
-        id: crypto.randomUUID(),
-        tipo: "documento",
-        titulo: "Documento recibido",
-        descripcion: `${body.leadNombre || "Cliente"} subiÃ³: ${body.nombre}`,
-        leida: false,
-        leadid: body.leadId,
-        accionurl: `/documentos`,
-        creadoen: new Date().toISOString(),
-      });
-    } catch {}
+    // Notificacion via dispatcher (ejecutivo + SUPER_ADMIN)
+    despacharNotificacion({
+      evento: "documento_subido",
+      leadId: body.leadId,
+      titulo: "Documento recibido",
+      descripcion: `Nuevo documento: ${body.nombre}`,
+      accionUrl: "/documentos",
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch {
     return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
   }
 }
-
