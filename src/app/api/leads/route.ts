@@ -67,6 +67,10 @@ export async function POST(request: NextRequest) {
         valorPropiedad: body.valorPropiedad || null,
         pieDisponible: body.pieDisponible || null,
         notas: body.notas || null,
+        // Referidos
+        referidoPor: body.referidoPor || null,
+        referidoPorNombre: body.referidoPorNombre || null,
+        codigoReferido: body.codigoReferido || null,
         situacionLaboral: body.situacionLaboral || "DEPENDIENTE",
         enDicom: body.enDicom || false,
         diasEnEtapa: 0,

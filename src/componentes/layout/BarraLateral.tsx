@@ -79,7 +79,6 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
     items: [
       { label: "Referidos", icon: <Share2 size={17} />, href: "/referidos" },
       { label: "Campañas", icon: <Target size={17} />, href: "/campanas" },
-      { label: "Landing Pages", icon: <Globe size={17} />, href: "/landings" },
       { label: "Biblioteca Comercial", icon: <BookOpen size={17} />, href: "/biblioteca" },
       { label: "Comisiones", icon: <DollarSign size={17} />, href: "/comisiones" },
     ],

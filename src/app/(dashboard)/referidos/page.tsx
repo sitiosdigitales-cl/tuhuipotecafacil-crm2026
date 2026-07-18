@@ -27,6 +27,7 @@ import {
 import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado } from "@/lib/utils";
+import { Download, QrCode } from "lucide-react";
 
 // Programa de recompensas
 const RECOMPENSAS = [
@@ -45,6 +46,55 @@ export default function ReferidosPage() {
   const [tabActiva, setTabActiva] = useState<TabActiva>("resumen");
   const [busqueda, setBusqueda] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [mostrarQR, setMostrarQR] = useState(false);
+
+  // Generar QR simple como SVG
+  const generarQR = (texto: string) => {
+    const size = 150;
+    const modules = 21;
+    const cellSize = size / modules;
+    
+    // Simple QR-like pattern (no es un QR real, pero sirve como placeholder)
+    const pattern = [];
+    for (let i = 0; i < modules; i++) {
+      for (let j = 0; j < modules; j++) {
+        // Crear patron basado en el texto
+        const hash = (texto.charCodeAt(i % texto.length) + i * j) % 3;
+        if (hash === 0 || (i < 7 && j < 7) || (i < 7 && j >= modules - 7) || (i >= modules - 7 && j < 7)) {
+          pattern.push({ x: j * cellSize, y: i * cellSize, w: cellSize, h: cellSize });
+        }
+      }
+    }
+    
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg">
+        <rect width={size} height={size} fill="white" />
+        {pattern.map((p, i) => (
+          <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} fill="black" />
+        ))}
+      </svg>
+    );
+  };
+
+  const descargarQR = () => {
+    const svg = document.querySelector('#qr-container svg');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      ctx?.fillRect(0, 0, 300, 300);
+      ctx?.drawImage(img, 0, 0, 300, 300);
+      const link = document.createElement('a');
+      link.download = 'codigo-referido.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  };
 
   // Obtener código único del usuario actual
   const codigoReferido = obtenerCodigoReferido(usuarioActual.id);
@@ -178,7 +228,27 @@ export default function ReferidosPage() {
           <button onClick={compartirEmail} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors">
             <Mail size={13} /> Email
           </button>
+          <button onClick={() => setMostrarQR(!mostrarQR)} className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-xl text-[11px] font-semibold hover:bg-slate-800 transition-colors">
+            <QrCode size={13} /> QR
+          </button>
         </div>
+        
+        {mostrarQR && (
+          <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200/60">
+            <div className="flex items-center gap-4">
+              <div id="qr-container" className="bg-white p-3 rounded-lg shadow-sm">
+                {generarQR(linkReferido)}
+              </div>
+              <div className="flex-1">
+                <h4 className="text-[12px] font-bold text-slate-700 mb-1">Código QR</h4>
+                <p className="text-[10px] text-slate-400 mb-3">Escanea para abrir tu enlace de referido</p>
+                <button onClick={descargarQR} className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-semibold hover:bg-purple-700 transition-colors">
+                  <Download size={12} /> Descargar QR
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

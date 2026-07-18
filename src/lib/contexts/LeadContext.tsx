@@ -214,7 +214,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     await actualizarLead(leadId, { etapa: nuevaEtapa, diasEnEtapa: 0 });
   }, [actualizarLead]);
 
-  const obtenerCodigoReferido = useCallback((usuarioId: string) => `REF-${usuarioId.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`, []);
+  const obtenerCodigoReferido = useCallback((usuarioId: string) => {
+    if (!usuarioId) return "";
+    const storageKey = `crm_codigo_ref_${usuarioId}`;
+    const existente = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+    if (existente) return existente;
+    const nuevo = `REF-${usuarioId.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    if (typeof window !== "undefined") localStorage.setItem(storageKey, nuevo);
+    return nuevo;
+  }, []);
 
   const obtenerLeadsPorReferido = useCallback((codigoReferido: string) => leads.filter((l) => l.notas?.includes(codigoReferido)), [leads]);
 

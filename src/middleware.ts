@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/solicitudes", "/centro-actividad", "/tareas", "/actividades", "/documentos", "/agenda", "/conversaciones", "/reportes", "/configuracion", "/usuarios", "/permisos", "/auditoria", "/bancos", "/cmf", "/simulador", "/comisiones", "/referidos", "/campanas", "/landings", "/biblioteca", "/flujos", "/plantillas", "/triggers", "/integraciones", "/portal", "/recordatorios", "/resumen", "/asistente"];
+const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/solicitudes", "/centro-actividad", "/tareas", "/actividades", "/documentos", "/agenda", "/conversaciones", "/reportes", "/configuracion", "/usuarios", "/permisos", "/auditoria", "/bancos", "/cmf", "/simulador", "/comisiones", "/referidos", "/campanas", "/biblioteca", "/flujos", "/plantillas", "/triggers", "/integraciones", "/portal", "/recordatorios", "/resumen", "/asistente"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
