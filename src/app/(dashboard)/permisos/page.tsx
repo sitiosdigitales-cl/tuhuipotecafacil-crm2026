@@ -21,6 +21,7 @@ import {
   Save,
   ArrowRight,
 } from "lucide-react";
+import { ROLES_CONFIG, type Rol } from "@/tipos";
 
 
 // Módulos del sistema
@@ -99,49 +100,28 @@ const MODULOS = [
   },
 ];
 
-// Roles del sistema
-const ROLES = [
-  {
-    id: "SUPER_ADMIN",
-    nombre: "Super Admin",
-    descripcion: "Acceso total al sistema sin restricciones",
-    color: "from-purple-500 to-purple-600",
-    usuarios: 1,
-    esSistema: true,
-  },
-  {
-    id: "ADMIN",
-    nombre: "Administrador",
-    descripcion: "Gestión avanzada del sistema y usuarios",
-    color: "from-blue-500 to-blue-600",
-    usuarios: 2,
-    esSistema: true,
-  },
-  {
-    id: "GERENTE",
-    nombre: "Gerente",
-    descripcion: "Supervisión de equipo y reportes",
-    color: "from-amber-500 to-amber-600",
-    usuarios: 2,
-    esSistema: true,
-  },
-  {
-    id: "AGENTE",
-    nombre: "Agente",
-    descripcion: "Operaciones básicas de ventas",
-    color: "from-emerald-500 to-emerald-600",
-    usuarios: 3,
-    esSistema: true,
-  },
-  {
-    id: "VISOR",
-    nombre: "Visor",
-    descripcion: "Solo lectura en todo el sistema",
-    color: "from-slate-400 to-slate-500",
-    usuarios: 0,
-    esSistema: false,
-  },
-];
+// Degradado de cada rol. Es lo único propio de esta pantalla; el nombre y la
+// descripción salen de ROLES_CONFIG.
+const DEGRADADO_ROL: Record<Rol, string> = {
+  SUPER_ADMIN: "from-purple-500 to-purple-600",
+  ADMIN: "from-blue-500 to-blue-600",
+  EJECUTIVO: "from-cyan-500 to-cyan-600",
+  AGENTE: "from-amber-500 to-amber-600",
+  CLIENTE: "from-emerald-500 to-emerald-600",
+};
+
+/**
+ * Los roles se derivan de ROLES_CONFIG y no de una lista propia. Mantener dos
+ * catálogos fue justamente lo que dejó esta pantalla ofreciendo GERENTE y
+ * VISOR, que ya no existen en el tipo `Rol`, y sin EJECUTIVO, que sí.
+ */
+const ROLES = (Object.keys(ROLES_CONFIG) as Rol[]).map((id) => ({
+  id,
+  nombre: ROLES_CONFIG[id].label,
+  descripcion: ROLES_CONFIG[id].descripcion,
+  color: DEGRADADO_ROL[id],
+  esSistema: true,
+}));
 
 // Permisos por defecto por rol
 const PERMISOS_POR_ROL: Record<string, Record<string, string[]>> = {
@@ -160,7 +140,7 @@ const PERMISOS_POR_ROL: Record<string, Record<string, string[]>> = {
     auditoria: ["ver", "exportar"],
     marketing: ["ver", "crear", "editar", "enviar"],
   },
-  GERENTE: {
+  EJECUTIVO: {
     dashboard: ["ver", "exportar"],
     pipeline: ["ver", "editar", "mover_etapa"],
     leads: ["ver", "crear", "editar", "asignar"],
@@ -188,20 +168,20 @@ const PERMISOS_POR_ROL: Record<string, Record<string, string[]>> = {
     auditoria: [],
     marketing: ["ver"],
   },
-  VISOR: {
-    dashboard: ["ver"],
-    pipeline: ["ver"],
-    leads: ["ver"],
-    clientes: ["ver"],
-    documentos: ["ver"],
-    tareas: ["ver"],
-    reportes: ["ver"],
+  CLIENTE: {
+    dashboard: [],
+    pipeline: [],
+    leads: [],
+    clientes: ["ver", "editar"],
+    documentos: ["ver", "subir"],
+    tareas: [],
+    reportes: [],
     comisiones: [],
     usuarios: [],
     configuracion: [],
-    auditoria: ["ver"],
-    marketing: ["ver"],
-  },
+    auditoria: [],
+    marketing: [],
+  }
 };
 
 const PERMISOS_LABELS: Record<string, string> = {
@@ -370,7 +350,11 @@ export default function PermisosPage() {
                   </div>
                   <div className="flex-1 text-left">
                     <div className="text-[12px] font-semibold text-slate-700">{rol.nombre}</div>
-                    <div className="text-[11px] text-slate-400">{rol.usuarios} usuario{rol.usuarios !== 1 ? "s" : ""}</div>
+                    {/* Aquí había un contador de usuarios por rol con cifras
+                        escritas a mano (1, 2, 2, 3, 0) que nunca consultaron
+                        nada. En una pantalla de permisos, un número inventado
+                        confunde más de lo que informa. */}
+                    <div className="text-[11px] text-slate-400">{rol.descripcion}</div>
                   </div>
                   {rol.esSistema && (
                     <Shield size={12} className="text-slate-300" />

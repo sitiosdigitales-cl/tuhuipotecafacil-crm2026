@@ -422,9 +422,9 @@ export default function UsuariosPage() {
           className="px-3 py-2.5 bg-white border border-slate-200/60 rounded-xl text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 font-medium"
         >
           <option value="todos">Todos los roles</option>
-          <option value="SUPER_ADMIN">Super Admin</option>
-          <option value="ADMIN">Administrador</option>
-          <option value="AGENTE">Agente</option>
+          {(Object.keys(ROLES_CONFIG) as Rol[]).map((r) => (
+            <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
+          ))}
         </select>
         <select
           value={filtroEstado}
@@ -652,9 +652,9 @@ export default function UsuariosPage() {
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
                 <select value={formRol} onChange={(e) => setFormRol(e.target.value as Rol)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
-                  <option value="AGENTE">Agente</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
+                  {(Object.keys(ROLES_CONFIG) as Rol[]).map((r) => (
+                    <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -719,9 +719,9 @@ export default function UsuariosPage() {
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
                 <select value={editRol} onChange={(e) => setEditRol(e.target.value as Rol)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
-                  <option value="AGENTE">Agente</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
+                  {(Object.keys(ROLES_CONFIG) as Rol[]).map((r) => (
+                    <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
+                  ))}
                 </select>
               </div>
             </div>

@@ -105,12 +105,16 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   const [editarTelefono, setEditarTelefono] = useState("");
   const [editarRol, setEditarRol] = useState("");
 
+  // Las claves son los cinco roles vigentes. Tenía GERENTE y VISOR, que ya no
+  // existen en el tipo `Rol`, y le faltaba AGENTE. Como la vista recorre este
+  // objeto y busca cada clave en ROLES_CONFIG, los roles muertos salían sin
+  // nombre y el que faltaba no salía.
   const [comisionesPorRol, setComisionesPorRol] = useState({
     SUPER_ADMIN: { cobroCliente: 0, comisionAgente: 0 },
     ADMIN: { cobroCliente: 5, comisionAgente: 10 },
-    GERENTE: { cobroCliente: 6, comisionAgente: 12 },
     EJECUTIVO: { cobroCliente: 7, comisionAgente: 15 },
-    VISOR: { cobroCliente: 0, comisionAgente: 0 },
+    AGENTE: { cobroCliente: 0, comisionAgente: 0 },
+    CLIENTE: { cobroCliente: 0, comisionAgente: 0 },
   });
 
   // Guardar perfil
@@ -531,10 +535,9 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
                     onChange={(e) => setEditarRol(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                   >
-                    <option value="SUPER_ADMIN">Super Admin</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="EJECUTIVO">Ejecutivo</option>
-                    <option value="VISOR">Visor</option>
+                    {(Object.keys(ROLES_CONFIG) as Array<keyof typeof ROLES_CONFIG>).map((r) => (
+                      <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
+                    ))}
                   </select>
                 </div>
               )}
