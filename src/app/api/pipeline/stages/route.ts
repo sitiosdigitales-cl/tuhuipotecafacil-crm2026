@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { requireRole, forbidden } from "@/lib/api-auth";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 // Etapas por defecto del sistema (almacenadas en memoria)
 let etapasEnMemoria = [
@@ -19,7 +19,10 @@ let etapasEnMemoria = [
   { id: "CREDITO_PAGADO", nombre: "Crédito Pagado", color: "#22C55E", orden: 13, activa: true },
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Los metodos de escritura ya pedian rol; la lectura no pedia nada y
+  // devolvia el flujo completo del CRM a cualquiera.
+  if (!requireAuth(request)) return unauthorized();
   // Intentar cargar desde la base de datos
   let etapasDB: typeof etapasEnMemoria = [];
   try {

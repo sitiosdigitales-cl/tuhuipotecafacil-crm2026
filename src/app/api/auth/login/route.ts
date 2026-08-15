@@ -81,6 +81,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
     }
 
+    // Solo entra una cuenta ACTIVA. El estado se leía y no se usaba, así que
+    // alguien dado de baja seguía iniciando sesión con su contraseña de
+    // siempre: inhabilitar la cuenta no hacía nada.
+    //
+    // Se comprueba DESPUÉS de la contraseña a propósito: si respondiera antes,
+    // el mensaje distinto delataría qué correos existen en el sistema.
+    if (user.estado !== "ACTIVO") {
+      return NextResponse.json(
+        { success: false, error: "Esta cuenta no está habilitada. Habla con un administrador." },
+        { status: 403 }
+      );
+    }
+
     await limpiarIntentos(user.id);
 
     const token = generarToken({ userId: user.id, email: user.email, rol: user.rol });

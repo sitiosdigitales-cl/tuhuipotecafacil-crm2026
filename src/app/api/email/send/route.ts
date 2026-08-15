@@ -154,7 +154,8 @@ export async function POST(request: NextRequest) {
 }
 
 // GET - Listar templates disponibles
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   return NextResponse.json({
     success: true,
     templates: [

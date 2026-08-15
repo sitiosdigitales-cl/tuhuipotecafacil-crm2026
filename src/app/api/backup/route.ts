@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 const DIAS_RETENCION = 5;
 
@@ -81,7 +82,10 @@ export async function POST(request: NextRequest) {
 }
 
 // GET - Listar respaldos disponibles
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Listar los respaldos revela cada cuanto se respalda y desde cuando
+  // existe el sistema. POST y DELETE ya pedian la BACKUP_API_KEY.
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { data: files, error } = await supabase.storage
       .from("backups")
