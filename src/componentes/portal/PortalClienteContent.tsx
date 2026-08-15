@@ -234,7 +234,7 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     if (!cliente) return;
     setGuardando(true);
     try {
-      await fetch(`/api/leads/${cliente.id}`, {
+      const respuesta = await fetch(`/api/leads/${cliente.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -268,6 +268,21 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           patrimonioOtros: perfilEditado.patrimonioOtros,
         }),
       });
+
+      // El servidor manda. Antes no se miraba la respuesta: ante un 500 la
+      // pantalla igual cerraba la edición, decía "Perfil actualizado
+      // correctamente" y avisaba al ejecutivo de un cambio que no existía. El
+      // cliente se iba creyendo que sus datos quedaron guardados.
+      const resultado = await respuesta.json().catch(() => null);
+      if (!respuesta.ok || !resultado?.success) {
+        toast.error(
+          resultado?.error || "No pudimos guardar tus datos. Inténtalo de nuevo."
+        );
+        // La edición queda abierta y con lo escrito, para no perder el trabajo.
+        setGuardando(false);
+        return;
+      }
+
       setCliente({
         ...cliente,
         nombre: perfilEditado.nombre,
