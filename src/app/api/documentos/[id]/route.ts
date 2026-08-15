@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -52,17 +53,31 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
-    
-    // Obtener el documento para saber la URL del archivo
+
+    // Obtener el documento para saber la URL del archivo y a qué lead pertenece
     const { data: doc } = await supabase
       .from("documentos")
-      .select("archivourl")
+      .select("archivourl, leadid")
       .eq("id", id)
       .single();
-    
+
+    if (!doc) {
+      return NextResponse.json({ success: false, error: "Documento no encontrado" }, { status: 404 });
+    }
+
+    // El permiso lo define el lead dueño del documento, y se comprueba ANTES
+    // de borrar del bucket: un archivo eliminado no se recupera.
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("email, asignadoa")
+      .eq("id", doc.leadid)
+      .single();
+    if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
+
     // Eliminar archivo de Storage si existe
     if (doc?.archivourl) {
       const filePath = doc.archivourl.split("/documentos/")[1];

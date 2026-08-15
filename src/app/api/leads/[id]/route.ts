@@ -25,13 +25,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = await request.json();
 
-    // Verificar que el lead pertenece al cliente (si es CLIENTE)
-    if (auth.rol === "CLIENTE") {
-      const { data: lead } = await supabase.from("leads").select("email").eq("id", id).single();
-      if (!lead || lead.email !== auth.email) {
-        return forbidden();
-      }
+    // El alcance se comprueba para todos los roles, no solo CLIENTE: un AGENTE
+    // podía modificar la ficha de un lead asignado a otra persona.
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("email, asignadoa")
+      .eq("id", id)
+      .single();
+    if (!lead) {
+      return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
     }
+    if (!puedeAccederLead(auth, lead)) return forbidden();
 
     const updateData: Record<string, any> = {};
 
