@@ -173,3 +173,10 @@ ubicaciones, notas y clientes sin sesión.
 [build] ocupado — Codex, BUG-019.
 
 [build] libre — Codex, BUG-019; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-020] hallazgo — `GET /api/recordatorios` expone próximos
+contactos, mensajes y clientes sin sesión.
+
+[build] ocupado — Codex, BUG-020.
+
+[build] libre — Codex, BUG-020; build terminó en 0 con variables ficticias.
