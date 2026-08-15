@@ -449,3 +449,10 @@ usuarios `INACTIVO` y `SUSPENDIDO`, aunque el estado ya viene en la consulta.
 
 [calidad · LINT-01] hecho — `src/app/api/**` queda en 0 errores y 0 warnings;
 23 errores y 8 warnings eliminados. Suite conserva la única roja de BUG-037.
+
+[build] ocupado — Codex, LINT-02 · simuladores.
+
+[build] libre — Codex, LINT-02 · simuladores; build y typecheck terminaron en 0.
+
+[calidad · LINT-02] hecho — ambos simuladores quedan en 0 errores y 0 warnings;
+52 errores y 2 warnings eliminados. BUG-037 sigue siendo la única prueba roja.

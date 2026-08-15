@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Calculator, DollarSign, Building2, Home, Wallet, Shield, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
+import { useState, useMemo, useCallback, useRef } from "react";
+import { Calculator, DollarSign, Building2, Home, Wallet, Shield, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
 // Gráficos en SVG a mano, sin Recharts. Se importan de forma estática porque
 // ahora pesan unos pocos KB: diferirlos solo agregaba una petición más.
 // Recharts aportaba ~417 KiB a esta ruta pública para dibujar un anillo, una
@@ -13,6 +13,7 @@ import {
 } from "@/componentes/simulador/GraficosLigeros";
 import { toast } from "sonner";
 import { PreEvaluacionModal } from "@/componentes/simulador/PreEvaluacionModal";
+import { InputField, SectionHeader } from "@/componentes/simulador/CamposSimulador";
 
 const UF_CLP = 40844.79;
 
@@ -45,6 +46,26 @@ const GASTOS = [
 ];
 
 const PLAZOS = [5, 10, 15, 20, 25, 30, 35];
+
+interface AmortizationRow {
+  año: number;
+  saldoInicial: number;
+  dividendo: number;
+  interes: number;
+  capital: number;
+  saldoFinal: number;
+}
+
+interface BalancePoint {
+  name: string;
+  saldo: number;
+}
+
+interface CapitalInterestPoint {
+  name: string;
+  capital: number;
+  interes: number;
+}
 
 function fmt(n: number) {
   return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(n);
@@ -82,7 +103,7 @@ export default function SimuladorPage() {
   const [plazo, setPlazo] = useState(20);
   const [tipoTasa, setTipoTasa] = useState("fija");
   const [bancoSeleccionado, setBancoSeleccionado] = useState("bancodechile");
-  const [tasaPersonalizada, setTasaPersonalizada] = useState(0);
+  const tasaPersonalizada = 0;
 
   // Seguros
   const [segurosOn, setSegurosOn] = useState<Record<string, boolean>>({
@@ -139,10 +160,10 @@ export default function SimuladorPage() {
     const cae = Math.pow(totalPagado / montoCredito, 1 / plazo) - 1;
 
     // Tabla de amortización anual
-    const tabla: any[] = [];
+    const tabla: AmortizationRow[] = [];
     let saldo = montoCredito;
-    const chartData: any[] = [];
-    const barData: any[] = [];
+    const chartData: BalancePoint[] = [];
+    const barData: CapitalInterestPoint[] = [];
     for (let año = 1; año <= plazo; año++) {
       let intAño = 0, capAño = 0;
       for (let m = 0; m < 12; m++) {
@@ -221,91 +242,6 @@ export default function SimuladorPage() {
     toast.success("Simulación copiada");
   }, [resultado, valorPropiedad, pie, porcentajePie, montoCredito, plazo, tasaFinal]);
 
-  const SectionHeader = ({ num, title, icon: Icon }: { num: number; title: string; icon: any }) => (
-    <button onClick={() => setSeccionActiva(seccionActiva === num ? 0 : num)}
-      className="w-full flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-300 transition-all">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${seccionActiva === num ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>{num}</div>
-      <Icon size={16} className={seccionActiva === num ? "text-blue-600" : "text-slate-400"} />
-      <span className="text-sm font-bold text-slate-800 flex-1 text-left">{title}</span>
-      <ChevronDown size={16} className={`text-slate-400 transition-transform ${seccionActiva === num ? "rotate-180" : ""}`} />
-    </button>
-  );
-
-  const formatCLP = (n: number): string => {
-    if (n === 0) return "0";
-    return n.toLocaleString("es-CL");
-  };
-
-  const InputField = ({ label, value, onChange, prefix = "$", placeholder, hint, suffix }: {
-    label: string; value: number; onChange: (v: number) => void;
-    prefix?: string; placeholder?: string; hint?: string; suffix?: string;
-  }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const [localValue, setLocalValue] = useState(formatCLP(value));
-    const isTyping = useRef(false);
-
-    useEffect(() => {
-      if (!isTyping.current) {
-        setLocalValue(formatCLP(value));
-      }
-    }, [value]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      isTyping.current = true;
-      const raw = e.target.value.replace(/[^0-9]/g, "");
-      const num = Number(raw) || 0;
-      const formatted = formatCLP(num);
-      const cursorPos = e.target.selectionStart || 0;
-      const digitsBefore = e.target.value.substring(0, cursorPos).replace(/[^0-9]/g, "").length;
-      setLocalValue(formatted);
-      requestAnimationFrame(() => {
-        const input = inputRef.current;
-        if (!input) return;
-        let newPos = 0;
-        let counted = 0;
-        for (let i = 0; i < formatted.length; i++) {
-          if (counted === digitsBefore) break;
-          newPos = i + 1;
-          if (/[0-9]/.test(formatted[i])) counted++;
-        }
-        input.setSelectionRange(newPos, newPos);
-        isTyping.current = false;
-      });
-    };
-
-    const handleFocus = () => { isTyping.current = false; };
-
-    const handleBlur = () => {
-      isTyping.current = false;
-      const raw = localValue.replace(/[^0-9]/g, "");
-      const num = Number(raw) || 0;
-      setLocalValue(formatCLP(num));
-      onChange(num);
-    };
-
-    return (
-      <div className="space-y-1.5">
-        {label && <label className="text-[11px] font-bold text-slate-500">{label}</label>}
-        <div className="relative">
-          {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base font-semibold">{prefix}</span>}
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="numeric"
-            value={localValue}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholder={placeholder}
-            className={`w-full ${prefix ? "pl-9" : "pl-4"} ${suffix ? "pr-14" : "pr-4"} py-3 bg-white border-2 rounded-xl text-lg font-bold text-slate-800 tracking-wide transition-all outline-none border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10`}
-          />
-          {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-500">{suffix}</span>}
-        </div>
-        {hint && <p className="text-[10px] text-slate-400 font-medium">{hint}</p>}
-      </div>
-    );
-  };
-
   return (
     <>
     <div className="min-h-screen bg-slate-50">
@@ -363,7 +299,7 @@ export default function SimuladorPage() {
         {/* Columna izquierda — Formulario */}
         <div className="lg:col-span-2 space-y-3">
           {/* 1. Ingresos */}
-          <SectionHeader num={1} title="Ingresos del hogar" icon={DollarSign} />
+          <SectionHeader num={1} title="Ingresos del hogar" icon={DollarSign} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 1 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <InputField label="Ingreso mensual líquido" value={ingreso} onChange={setIngreso} hint="Ingresos líquidos del grupo familiar" />
@@ -385,7 +321,7 @@ export default function SimuladorPage() {
           )}
 
           {/* 2. Gastos */}
-          <SectionHeader num={2} title="Gastos mensuales" icon={Wallet} />
+          <SectionHeader num={2} title="Gastos mensuales" icon={Wallet} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 2 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -412,7 +348,7 @@ export default function SimuladorPage() {
           )}
 
           {/* 3. Propiedad */}
-          <SectionHeader num={3} title="Datos de la propiedad" icon={Home} />
+          <SectionHeader num={3} title="Datos de la propiedad" icon={Home} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 3 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <InputField label="Valor de la propiedad" value={valorPropiedad} onChange={setValorPropiedad} hint={fmtUF(valorPropiedad)} />
@@ -444,7 +380,7 @@ export default function SimuladorPage() {
           )}
 
           {/* 4. Financiamiento */}
-          <SectionHeader num={4} title="Financiamiento" icon={Building2} />
+          <SectionHeader num={4} title="Financiamiento" icon={Building2} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 4 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
               <div>
@@ -504,7 +440,7 @@ export default function SimuladorPage() {
           )}
 
           {/* 5. Seguros */}
-          <SectionHeader num={5} title="Seguros" icon={Shield} />
+          <SectionHeader num={5} title="Seguros" icon={Shield} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 5 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
               {SEGUROS.map((s) => (
@@ -522,7 +458,7 @@ export default function SimuladorPage() {
           )}
 
           {/* 6. Gastos operacionales */}
-          <SectionHeader num={6} title="Gastos operacionales" icon={Calculator} />
+          <SectionHeader num={6} title="Gastos operacionales" icon={Calculator} activeSection={seccionActiva} onSectionChange={setSeccionActiva} />
           {seccionActiva === 6 && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-2">
               {GASTOS.map((g, i) => (
@@ -754,7 +690,7 @@ export default function SimuladorPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {resultado.tabla.map((fila: any) => (
+                      {resultado.tabla.map((fila) => (
                         <tr key={fila.año} className="border-b border-slate-50 hover:bg-slate-50/50">
                           <td className="px-4 py-2.5 font-bold text-slate-700">{fila.año}</td>
                           <td className="px-4 py-2.5 text-right text-slate-600">{fmt(fila.saldoInicial)}</td>
