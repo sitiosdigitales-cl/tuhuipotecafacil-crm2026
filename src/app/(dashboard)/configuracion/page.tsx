@@ -61,15 +61,6 @@ function ConfiguracionContent() {
   const [idioma, setIdioma] = useState("es-CL");
   const [moneda, setMoneda] = useState("CLP");
 
-  // Notificaciones
-  const [notifEmail, setNotifEmail] = useState(true);
-  const [notifWhatsApp, setNotifWhatsApp] = useState(true);
-  const [notifSms, setNotifSms] = useState(false);
-  const [notifNuevosLeads, setNotifNuevosLeads] = useState(true);
-  const [notifTareasVencidas, setNotifTareasVencidas] = useState(true);
-  const [notifDocumentos, setNotifDocumentos] = useState(true);
-  const [notifAprobaciones, setNotifAprobaciones] = useState(true);
-
   // Pipeline
   const [etapas, setEtapas] = useState<Array<{ id: string; nombre: string; color: string; activa: boolean }>>([]);
   const [cargandoEtapas, setCargandoEtapas] = useState(true);
@@ -157,7 +148,6 @@ function ConfiguracionContent() {
         body: JSON.stringify({
           empresa: { nombre: nombreEmpresa, rut: rutEmpresa, email: emailEmpresa, telefono: telefonoEmpresa, direccion: direccionEmpresa },
           regionales: { timezone, idioma, moneda },
-          notificaciones: { email: notifEmail, whatsapp: notifWhatsApp, sms: notifSms, nuevosLeads: notifNuevosLeads, tareasVencidas: notifTareasVencidas, documentos: notifDocumentos, aprobaciones: notifAprobaciones },
           email: { smtpServer, smtpPort, smtpUsuario, smtpPassword, smtpSeguro, emailFrom, emailNombre },
           integraciones: { whatsappToken, whatsappPhoneId, whatsappActivo, webhookUrl, apiKeyExterna },
           seguridad: { passwordMinLength, requiereMayuscula, requiereNumero, requiereEspecial, bloqueoIntentos, sesionDuracion, twoFactorActivo },
@@ -281,15 +271,7 @@ function ConfiguracionContent() {
             />
           )}
           {tabActiva === "notificaciones" && (
-            <TabNotificaciones
-              notifEmail={notifEmail} setNotifEmail={setNotifEmail}
-              notifWhatsApp={notifWhatsApp} setNotifWhatsApp={setNotifWhatsApp}
-              notifSms={notifSms} setNotifSms={setNotifSms}
-              notifNuevosLeads={notifNuevosLeads} setNotifNuevosLeads={setNotifNuevosLeads}
-              notifTareasVencidas={notifTareasVencidas} setNotifTareasVencidas={setNotifTareasVencidas}
-              notifDocumentos={notifDocumentos} setNotifDocumentos={setNotifDocumentos}
-              notifAprobaciones={notifAprobaciones} setNotifAprobaciones={setNotifAprobaciones}
-            />
+            <TabNotificaciones />
           )}
           {tabActiva === "pipeline" && (
             <TabPipeline etapas={etapas} setEtapas={setEtapas} cargandoEtapas={cargandoEtapas} />

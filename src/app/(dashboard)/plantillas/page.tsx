@@ -15,7 +15,7 @@ import {
   Upload,
   GitBranch,
   Variable,
-  Image,
+  Image as ImageIcon,
   Signature,
   AlignLeft,
   AlignCenter,
@@ -33,6 +33,7 @@ import {
   X,
   Save,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 // Variables disponibles para plantillas
 const VARIABLES = [
@@ -68,8 +69,7 @@ const IMAGENES_EJEMPLO = [
   { id: "img6", nombre: "Ícono WhatsApp", tipo: "icono", url: "/whatsapp.png", preview: "https://via.placeholder.com/50x50/25D366/FFFFFF?text=WA" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: any }> = {
+const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: LucideIcon }> = {
   EMAIL: { label: "Email", color: "text-blue-600", bg: "bg-blue-50", icono: Mail },
   WHATSAPP: { label: "WhatsApp", color: "text-green-600", bg: "bg-green-50", icono: MessageSquare },
   SMS: { label: "SMS", color: "text-purple-600", bg: "bg-purple-50", icono: Smartphone },
@@ -86,25 +86,47 @@ const CATEGORIA_CONFIG: Record<string, { label: string; color: string }> = {
 
 type TabPlantilla = "todas" | "email" | "whatsapp" | "sms" | "documento";
 
+interface Plantilla {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  tipo: string;
+  categoria: string;
+  activa: boolean;
+  uso: number;
+  asunto?: string;
+  contenido: string;
+  imagenes?: string[];
+  flujos: string[];
+  creadoEn: Date;
+}
+
+type PlantillaApi = Omit<Plantilla, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
 export default function PlantillasPage() {
-  const [plantillas, setPlantillas] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
   const [tabActiva, setTabActiva] = useState<TabPlantilla>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalEditar, setModalEditar] = useState<string | null>(null);
   const [modalPreview, setModalPreview] = useState<string | null>(null);
   const [modalVariables, setModalVariables] = useState(false);
-  const [modalImagenes, setModalImagenes] = useState(false);
 
   useEffect(() => {
     async function cargar() {
       try {
         const res = await fetch("/api/plantillas");
         const json = await res.json();
-        if (json.success && json.data) setPlantillas(json.data);
+        if (json.success && json.data) {
+          setPlantillas((json.data as PlantillaApi[]).map((plantilla) => ({
+            ...plantilla,
+            flujos: plantilla.flujos || [],
+            creadoEn: plantilla.creadoEn ? new Date(plantilla.creadoEn) : new Date(),
+          })));
+        }
       } catch { setPlantillas([]); }
-      finally { setCargando(false); }
     }
     cargar();
   }, []);
@@ -250,11 +272,12 @@ export default function PlantillasPage() {
         <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Image size={16} className="text-blue-500" />
+              <ImageIcon size={16} className="text-blue-500" />
               Imágenes y Firmas
             </h3>
             <button
-              onClick={() => setModalImagenes(true)}
+              title="La carga de imágenes aún no está disponible"
+              disabled
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-semibold hover:bg-blue-200 transition-colors"
             >
               <Upload size={12} /> Subir
@@ -554,7 +577,7 @@ export default function PlantillasPage() {
                 </button>
                 <div className="w-px h-6 bg-slate-300 mx-1" />
                 <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors" title="Insertar imagen">
-                  <Image size={14} className="text-slate-600" />
+                  <ImageIcon size={14} className="text-slate-600" />
                 </button>
                 <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors" title="Insertar firma">
                   <Signature size={14} className="text-slate-600" />
@@ -615,7 +638,7 @@ export default function PlantillasPage() {
                     const img = IMAGENES_EJEMPLO.find((i) => i.id === imgId);
                     return img ? (
                       <div key={imgId} className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                        <Image size={12} className="text-blue-500" />
+                        <ImageIcon size={12} className="text-blue-500" />
                         <span className="text-[10px] font-semibold text-blue-700">{img.nombre}</span>
                       </div>
                     ) : null;
@@ -706,7 +729,7 @@ export default function PlantillasPage() {
                 </button>
                 <div className="w-px h-6 bg-slate-300 mx-1" />
                 <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors" title="Insertar imagen">
-                  <Image size={14} className="text-slate-600" />
+                  <ImageIcon size={14} className="text-slate-600" />
                 </button>
                 <button className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors" title="Insertar firma">
                   <Signature size={14} className="text-slate-600" />
@@ -763,7 +786,7 @@ export default function PlantillasPage() {
                       key={img.id}
                       className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-colors"
                     >
-                      <Image size={12} className="text-slate-400" />
+                      <ImageIcon size={12} className="text-slate-400" />
                       <span className="text-[10px] font-semibold text-slate-600">{img.nombre}</span>
                     </div>
                   ))}

@@ -206,10 +206,12 @@ export default function PermisosPage() {
   const [expandedModulos, setExpandedModulos] = useState<string[]>(["leads", "clientes"]);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
-  const [modalNuevoRol, setModalNuevoRol] = useState(false);
 
   const rolActual = ROLES.find((r) => r.id === rolSeleccionado);
-  const permisosActuales = permisos[rolSeleccionado] || {};
+  const permisosActuales = useMemo(
+    () => permisos[rolSeleccionado] || {},
+    [permisos, rolSeleccionado]
+  );
 
   const modulosFiltrados = useMemo(() => {
     if (!busqueda) return MODULOS;
@@ -364,7 +366,8 @@ export default function PermisosPage() {
             </div>
             <div className="p-3 border-t border-slate-100">
               <button
-                onClick={() => setModalNuevoRol(true)}
+                disabled
+                title="La creación de roles personalizados aún no está disponible"
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 transition-colors"
               >
                 <Plus size={14} /> Nuevo Rol

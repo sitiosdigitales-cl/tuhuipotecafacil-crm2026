@@ -46,32 +46,7 @@ const getIcon = (name: string, className: string) => {
   return icons[name] || <Bell size={14} className={className} />;
 };
 
-interface TabNotificacionesProps {
-  notifEmail: boolean;
-  setNotifEmail: (v: boolean) => void;
-  notifWhatsApp: boolean;
-  setNotifWhatsApp: (v: boolean) => void;
-  notifSms: boolean;
-  setNotifSms: (v: boolean) => void;
-  notifNuevosLeads: boolean;
-  setNotifNuevosLeads: (v: boolean) => void;
-  notifTareasVencidas: boolean;
-  setNotifTareasVencidas: (v: boolean) => void;
-  notifDocumentos: boolean;
-  setNotifDocumentos: (v: boolean) => void;
-  notifAprobaciones: boolean;
-  setNotifAprobaciones: (v: boolean) => void;
-}
-
-export function TabNotificaciones({
-  notifEmail, setNotifEmail,
-  notifWhatsApp, setNotifWhatsApp,
-  notifSms, setNotifSms,
-  notifNuevosLeads, setNotifNuevosLeads,
-  notifTareasVencidas, setNotifTareasVencidas,
-  notifDocumentos, setNotifDocumentos,
-  notifAprobaciones, setNotifAprobaciones,
-}: TabNotificacionesProps) {
+export function TabNotificaciones() {
   const [preferencias, setPreferencias] = useState<PreferenciaNotificacion[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);

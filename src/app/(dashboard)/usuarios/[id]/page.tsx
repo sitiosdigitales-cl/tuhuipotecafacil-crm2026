@@ -41,7 +41,7 @@ import { useLeads } from "@/lib/contexts/LeadContext";
 import { PerfilProfesional } from "@/componentes/usuarios/PerfilProfesional";
 
 // Actividad mock del usuario
-function generarActividadUsuario(_nombreUsuario: string) {
+function generarActividadUsuario() {
   const hoy = new Date();
   return [
     { id: "a1", tipo: "llamada", titulo: "Llamada de seguimiento", descripcion: `Contacto con cliente sobre documentos`, fecha: new Date(hoy.getTime() - 3600000), icono: Phone, color: "text-emerald-500", bg: "bg-emerald-50" },
@@ -72,7 +72,7 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { id } = use(params);
   const { leads } = useLeads();
-  const [esSuperAdmin, setEsSuperAdmin] = useState(true);
+  const esSuperAdmin = true;
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -169,7 +169,7 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
     return { totalLeads, aprobados, enPipeline, montoTotal, tasaConversion, ticketPromedio, porEtapa, porBanco, porOrigen };
   }, [leadsAsignados]);
 
-  const actividad = useMemo(() => generarActividadUsuario(`${usuario?.nombre} ${usuario?.apellido}`), [usuario]);
+  const actividad = useMemo(() => generarActividadUsuario(), []);
   const rolConfig = ROLES_CONFIG[usuario?.rol || "AGENTE"];
 
   // Datos para gráficos

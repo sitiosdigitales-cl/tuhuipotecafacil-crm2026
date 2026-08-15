@@ -477,3 +477,10 @@ en 0 errores y 0 warnings; 13 errores y 5 warnings eliminados. BUG-037 sigue roj
 
 [calidad · LINT-04B] hecho — ocho vistas operativas del panel quedan en 0/0;
 21 errores y 4 warnings eliminados. BUG-037 sigue siendo la única prueba roja.
+
+[build] ocupado — Codex, LINT-04C · configuración del panel.
+
+[build] libre — Codex, LINT-04C · build y typecheck terminaron en 0.
+
+[calidad · LINT-04C] hecho — configuración, permisos, plantillas y perfil de
+usuario quedan en 0/0; 1 error y 25 warnings eliminados. BUG-037 sigue roja.
