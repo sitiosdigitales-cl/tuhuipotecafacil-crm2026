@@ -77,3 +77,10 @@ de una conversación arbitraria sin sesión.
 [build] libre — Codex, BUG-006; el primer intento se detuvo al detectar un
 `.env` local nuevo. El build seguro repitió con valores ficticios inyectados
 para sus 19 claves y terminó en 0 sin usar credenciales reales.
+
+[FASE 1 · C-01 · BUG-007] hallazgo — `/api/notificaciones` permite listar,
+marcar como leídas y borrar notificaciones sin sesión.
+
+[build] ocupado — Codex, BUG-007.
+
+[build] libre — Codex, BUG-007; build terminó en 0 con variables ficticias.
