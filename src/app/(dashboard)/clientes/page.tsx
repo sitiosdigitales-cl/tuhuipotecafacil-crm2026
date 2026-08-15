@@ -996,7 +996,13 @@ function EditarClienteFormInline({
                 { id: "seguimiento", label: "Seguimiento", color: "bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200" },
                 { id: "completado", label: "Completado", color: "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" },
               ].map((tag) => {
-                const seleccionada = etiqueta.includes(tag.id);
+                // Coincidencia exacta sobre la lista separada por comas. Con
+                // `etiqueta.includes(...)` una etiqueta `no-vip` marcaba `vip`
+                // como seleccionada, y el botón quedaba mintiendo: al pulsarlo
+                // el filtro por valor exacto no quitaba nada.
+                const seleccionada = (etiqueta ? etiqueta.split(",") : [])
+                  .map((e) => e.trim())
+                  .includes(tag.id);
                 return (
                   <button
                     key={tag.id}

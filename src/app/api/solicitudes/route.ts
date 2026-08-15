@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { SolicitudSchema } from "@/modulos/solicitudes";
 
 // GET /api/solicitudes - Listar solicitudes
 export async function GET(request: NextRequest) {
@@ -44,6 +45,24 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+
+    // SolicitudSchema existía desde el principio y ningún endpoint lo usaba:
+    // se guardaban solicitudes con monto cero, pie negativo o plazos fuera de
+    // rango, y el error aparecía recién cuando alguien las revisaba a mano.
+    const validacion = SolicitudSchema.safeParse(body);
+    if (!validacion.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Datos de la solicitud inválidos",
+          detalles: validacion.error.issues.map((i) => ({
+            campo: i.path.join("."),
+            problema: i.message,
+          })),
+        },
+        { status: 400 }
+      );
+    }
 
     const solicitud = {
       id: crypto.randomUUID(),

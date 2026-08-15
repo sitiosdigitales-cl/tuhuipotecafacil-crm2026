@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
         leadId: body.leadId,
         nombre: body.nombre,
         tipo: body.tipo || "OTRO",
-        estado: body.estado || "PENDIENTE",
+        // Un documento recién subido siempre nace PENDIENTE. Antes se copiaba
+        // `body.estado`, así que bastaba enviar "APROBADO" para que entrara ya
+        // revisado. Aprobar es una decisión de una persona y va por el PUT,
+        // que sí comprueba quién la toma.
+        estado: "PENDIENTE",
         archivoUrl: body.archivoUrl || null,
         creadoEn: new Date().toISOString(),
       }))
