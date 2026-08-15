@@ -61,3 +61,10 @@ expone email, teléfono, rol y estado sin sesión aunque el listado ya fue cerra
 [build] ocupado — Codex, BUG-004.
 
 [build] libre — Codex, BUG-004; build terminó en 0.
+
+[FASE 1 · C-01 · BUG-005] hallazgo — listado y detalle de conversaciones
+exponen participantes y metadatos privados sin sesión.
+
+[build] ocupado — Codex, BUG-005.
+
+[build] libre — Codex, BUG-005; build terminó en 0.
