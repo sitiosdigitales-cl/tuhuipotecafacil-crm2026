@@ -356,3 +356,10 @@ perfil cuando `PUT /api/leads/[id]` responde 500; 78 verdes y BUG-037/038/039 ro
 
 [FASE 2 · C-10 · BUG-040] hallazgo — `/backups` muestra “sin respaldos” ante
 una respuesta 500; 78 verdes y solo BUG-037 a BUG-040 en rojo.
+
+[build] ocupado — Codex, C-10 rutas públicas.
+
+[build] libre — Codex, C-10 rutas públicas; build terminó en 0 con variables ficticias.
+
+[FASE 2 · C-10] verificado — `/login`, `/portal-cliente`, `/referir/[codigo]`
+y `/simulador-publico` montan fuera del panel sin depender de sus cinco contextos.
