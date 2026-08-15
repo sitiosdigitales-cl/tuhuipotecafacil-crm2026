@@ -383,3 +383,11 @@ comprobaciones se comportan según la matriz esperada.
 [CI-03 · pipeline · BUG-042] hallazgo — una coincidencia parcial de
 `docs-completos` o `aprobado-banco` se cuenta como requisito cumplido; los 23
 casos previos siguen verdes y los dos casos de frontera quedan rojos.
+
+[build] ocupado — Codex, C-08 · verificación independiente de BUG-037.
+
+[build] libre — Codex, C-08 · verificación independiente de BUG-037; build terminó en 0 con variables ficticias.
+
+[C-08 · BUG-037] confirmado — los 43 manifiestos de página comparten cinco
+`rootMainFiles` por `456.625` bytes; Next registra `609.234` bytes totales para
+`/simulador-publico`, por lo que 400 KiB no es alcanzable con esa suma.
