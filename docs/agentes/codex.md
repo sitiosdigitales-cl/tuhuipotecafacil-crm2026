@@ -40,3 +40,10 @@ sesión; prueba preparada para exigir 401 antes de consultar Supabase.
 [build] ocupado — Codex, BUG-001.
 
 [build] libre — Codex, BUG-001; build terminó en 0.
+
+[FASE 1 · C-01 · BUG-002] hallazgo — `GET /api/auditoria` expone hasta 200
+cambios internos sin sesión; la prueba exige 401 antes de consultar Supabase.
+
+[build] ocupado — Codex, BUG-002.
+
+[build] libre — Codex, BUG-002; build terminó en 0.
