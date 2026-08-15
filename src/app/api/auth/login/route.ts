@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
     }
 
-    const passwordValido = await bcrypt.compare(password, user.password);
+    const passwordValido = await bcrypt.compare(password, user.password_hash);
     if (!passwordValido) {
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
     }
@@ -36,15 +36,6 @@ export async function POST(request: NextRequest) {
     });
 
     response.cookies.set("crm_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
-
-    // Compatibilidad con cookie antigua
-    response.cookies.set("auth_token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
