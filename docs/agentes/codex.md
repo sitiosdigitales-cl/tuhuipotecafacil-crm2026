@@ -303,3 +303,10 @@ quedan fijadas con datos sintéticos.
 [build] ocupado — Codex, CI-03 pipeline.
 
 [build] libre — Codex, CI-03 pipeline; build terminó en 0 con variables ficticias.
+
+[CI-03 · comisiones · BUG-035] hallazgo — la API guarda el total recibido en
+lugar de calcularlo con `montoTotal` y `tasaComision`; datos sintéticos.
+
+[build] ocupado — Codex, BUG-035.
+
+[build] libre — Codex, BUG-035; build terminó en 0 con variables ficticias.
