@@ -391,3 +391,15 @@ casos previos siguen verdes y los dos casos de frontera quedan rojos.
 [C-08 · BUG-037] confirmado — los 43 manifiestos de página comparten cinco
 `rootMainFiles` por `456.625` bytes; Next registra `609.234` bytes totales para
 `/simulador-publico`, por lo que 400 KiB no es alcanzable con esa suma.
+
+[build] ocupado — Codex, barrido CSV · BUG-043.
+
+[build] libre — Codex, barrido CSV · BUG-043; build terminó en 0 con variables ficticias.
+
+[calidad · etiquetas · BUG-043] hallazgo — los dos formularios activos de
+clientes usan coincidencia parcial al seleccionar etiquetas CSV; la copia
+restante en `src/lib/validaciones-pipeline.ts` no tiene importaciones.
+
+[build] ocupado — Codex, validación final de BUG-043.
+
+[build] libre — Codex, validación final de BUG-043; build terminó en 0 con variables ficticias.
