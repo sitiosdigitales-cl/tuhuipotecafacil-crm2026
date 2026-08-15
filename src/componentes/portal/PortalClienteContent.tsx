@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Search,
   FileText,
   CheckCircle,
   Clock,
@@ -15,7 +14,6 @@ import {
   DollarSign,
   ChevronRight,
   TrendingUp,
-  Upload,
   Edit,
   Save,
   Info,
@@ -30,7 +28,7 @@ import {
 import { ETAPAS_CONFIG, SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Lead, Etapa, SituacionLaboral } from "@/tipos";
+import type { DocumentoLead, Lead, Etapa, SituacionLaboral } from "@/tipos";
 import { obtenerDocumentosCompletos, buscarDocSubido } from "@/modulos/documentos/config";
 import type { DocConfigEntry } from "@/modulos/documentos/config";
 import { DocumentoChecklistRow } from "@/componentes/documentos/DocumentoChecklistRow";
@@ -46,6 +44,59 @@ const PASOS_PROGRESO = [
 
 interface PortalClienteContentProps {
   className?: string;
+}
+
+interface Asesor {
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  cargo: string;
+}
+
+interface UsuarioAsesorApi {
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  telefono?: string;
+  cargo?: string;
+}
+
+interface DocumentoPortal {
+  id: string;
+  nombre: string;
+  tipo?: string;
+  estado: DocumentoLead["estado"];
+  archivoUrl?: string;
+  fecha?: string;
+  tamaño?: number;
+}
+
+interface DocumentoApi {
+  id: string;
+  nombre: string;
+  tipo?: string;
+  estado?: string;
+  archivoUrl?: string;
+  creadoen?: string;
+  creadoEn?: string;
+  tamanio?: number;
+  tamaño?: number;
+}
+
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+type LeadApi = Omit<Lead, "creadoEn"> & { creadoEn: string | Date };
+
+function normalizarEstadoDocumento(estado: string | undefined): DocumentoLead["estado"] {
+  if (estado === "EN_REVISION" || estado === "APROBADO" || estado === "RECHAZADO") {
+    return estado;
+  }
+  return "PENDIENTE";
 }
 
 export function PortalClienteContent({ className = "" }: PortalClienteContentProps) {
@@ -68,19 +119,18 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     patrimonioVehiculo: "", patrimonioVivienda: "", patrimonioOtros: "",
   });
   const [guardando, setGuardando] = useState(false);
-  const [documentos, setDocumentos] = useState<{ id: string; nombre: string; tipo?: string; estado: string; archivoUrl?: string; fecha?: string; tamaño?: number }[]>([]);
-  const [subiendo, setSubiendo] = useState(false);
+  const [documentos, setDocumentos] = useState<DocumentoPortal[]>([]);
   const [mostrarSidebar, setMostrarSidebar] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  const [asesor, setAsesor] = useState<{ nombre: string; apellido: string; email: string; telefono: string; cargo: string } | null>(null);
+  const [asesor, setAsesor] = useState<Asesor | null>(null);
 
   // Función para cargar datos del asesor
   const cargarAsesor = async (asignadoA: string | undefined, nombreEjecutivo: string | undefined) => {
     if (asignadoA) {
       try {
         const res = await fetch(`/api/usuarios?id=${asignadoA}`);
-        const data = await res.json();
+        const data: RespuestaApi<UsuarioAsesorApi[]> = await res.json();
         if (data.success && data.data && data.data.length > 0) {
           const usuario = data.data[0];
           setAsesor({
@@ -97,10 +147,10 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     if (nombreEjecutivo) {
       try {
         const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`);
-        const data = await res.json();
+        const data: RespuestaApi<UsuarioAsesorApi[]> = await res.json();
         if (data.success && data.data && data.data.length > 0) {
-          const usuario = data.data.find((u: any) => {
-            return `${u.nombre} ${u.apellido}`.toLowerCase().includes(nombreEjecutivo.toLowerCase());
+          const usuario = data.data.find((usuarioActual) => {
+            return `${usuarioActual.nombre || ""} ${usuarioActual.apellido || ""}`.toLowerCase().includes(nombreEjecutivo.toLowerCase());
           }) || data.data[0];
           setAsesor({
             nombre: usuario.nombre || "",
@@ -145,9 +195,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     setError("");
     try {
       const res = await fetch("/api/portal/mi-solicitud", { credentials: "include" });
-      const data = await res.json();
+      const data: RespuestaApi<LeadApi> = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (!res.ok || !data.success || !data.data) {
         setCliente(null);
         setError(data.error || "No pudimos cargar tu solicitud");
         return;
@@ -159,16 +209,16 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
       try {
         const resDocs = await fetch(`/api/documentos?leadId=${found.id}`, { credentials: "include" });
-        const dataDocs = await resDocs.json();
+        const dataDocs: RespuestaApi<DocumentoApi[]> = await resDocs.json();
         if (dataDocs.success && dataDocs.data) {
-          setDocumentos(dataDocs.data.map((d: any) => ({
-            id: d.id,
-            nombre: d.nombre,
-            tipo: d.tipo,
-            estado: d.estado || "PENDIENTE",
-            archivoUrl: d.archivoUrl,
-            fecha: d.creadoen || d.creadoEn,
-            tamaño: d.tamanio || d.tamaño || 0,
+          setDocumentos(dataDocs.data.map((documento) => ({
+            id: documento.id,
+            nombre: documento.nombre,
+            tipo: documento.tipo,
+            estado: normalizarEstadoDocumento(documento.estado),
+            archivoUrl: documento.archivoUrl,
+            fecha: documento.creadoen || documento.creadoEn,
+            tamaño: documento.tamanio || documento.tamaño || 0,
           })));
         }
       } catch { /* documentos no disponibles */ }
@@ -182,7 +232,10 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     }
   }, []);
 
-  useEffect(() => { cargarMiSolicitud(); }, [cargarMiSolicitud]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void cargarMiSolicitud(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [cargarMiSolicitud]);
 
   const etapaActual = cliente ? PASOS_PROGRESO.findIndex((p) => p.etapa === cliente.etapa) + 1 : 0;
   const totalPasos = PASOS_PROGRESO.length;
@@ -192,7 +245,9 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
   const docsConfig: DocConfigEntry[] = cliente ? obtenerDocumentosCompletos(cliente.situacionLaboral) : [];
   
   // Contar documentos subidos (que matcheen con la config)
-  const docsEntregados = docsConfig.filter(dc => documentos.some(d => buscarDocSubido(d as any, dc))).length;
+  const docsEntregados = docsConfig.filter((docConfig) =>
+    documentos.some((documento) => buscarDocSubido(documento, docConfig))
+  ).length;
   const docsTotal = docsConfig.length;
 
   const iniciarEdicion = () => {
@@ -347,38 +402,6 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     } catch {
       // Silenciar errores de notificación
     }
-  };
-
-  // Funciones de documentos
-  const subirDocumento = async (file: File, nombreDoc: string) => {
-    if (!cliente) return;
-    setSubiendo(true);
-    try {
-      const formData = new FormData();
-      formData.append("archivo", file);
-      formData.append("leadId", cliente.id);
-      formData.append("tipo", nombreDoc);
-      const uploadRes = await fetch("/api/portal/upload", { method: "POST", body: formData });
-      const uploadData = await uploadRes.json();
-      if (uploadData.success) {
-        // El endpoint ya creo el registro en la DB, solo agregar al estado local
-        setDocumentos((prev) => [...prev, {
-          id: uploadData.data.id,
-          nombre: nombreDoc,
-          tipo: nombreDoc,
-          estado: "PENDIENTE",
-          archivoUrl: uploadData.data.archivoUrl,
-          fecha: new Date().toLocaleDateString("es-CL"),
-        }]);
-        toast.success("Documento subido", { description: nombreDoc });
-      } else {
-        toast.error("Error al subir documento", { description: uploadData.error || "Error" });
-      }
-    } catch {
-      toast.error("Error al conectar con el servidor");
-    }
-    await notificarEjecutivo("documento", "Documento subido por cliente", `${cliente.nombre} ${cliente.apellido} subió: ${nombreDoc}`);
-    setSubiendo(false);
   };
 
   const eliminarDocumento = (id: string) => {
@@ -758,22 +781,31 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
                 <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Documentos Requeridos</h3>
                 <div className="space-y-2">
                   {docsConfig.map((docConfig) => {
-                    const docMatch = documentos.find((d) => buscarDocSubido(d as any, docConfig));
-                    const doc = docMatch ? { ...docMatch, leadId: cliente!.id, leadNombre: `${cliente!.nombre} ${cliente!.apellido}`, tipo: docConfig.tipo, creadoEn: new Date() } as any : null;
+                    const docMatch = documentos.find((documento) => buscarDocSubido(documento, docConfig));
+                    const documentoChecklist: DocumentoLead | null = docMatch ? {
+                      id: docMatch.id,
+                      leadId: cliente.id,
+                      leadNombre: `${cliente.nombre} ${cliente.apellido}`,
+                      nombre: docMatch.nombre,
+                      tipo: docConfig.tipo as DocumentoLead["tipo"],
+                      estado: docMatch.estado,
+                      archivoUrl: docMatch.archivoUrl,
+                      creadoEn: new Date(),
+                    } : null;
                     return (
                       <DocumentoChecklistRow
                         key={docConfig.id}
                         config={docConfig}
-                        documento={doc}
-                        leadId={cliente!.id}
-                        leadNombre={`${cliente!.nombre} ${cliente!.apellido}`}
+                        documento={documentoChecklist}
+                        leadId={cliente.id}
+                        leadNombre={`${cliente.nombre} ${cliente.apellido}`}
                         portalMode={true}
                         onUploadComplete={(nuevoDoc) => {
                           setDocumentos((prev) => [...prev, {
                             id: nuevoDoc.id,
                             nombre: nuevoDoc.nombre,
                             tipo: nuevoDoc.tipo,
-                            estado: "PENDIENTE",
+                            estado: nuevoDoc.estado,
                             archivoUrl: nuevoDoc.archivoUrl,
                             fecha: new Date().toLocaleDateString("es-CL"),
                           }]);

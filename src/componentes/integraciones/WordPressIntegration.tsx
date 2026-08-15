@@ -188,7 +188,7 @@ add_action('elementor_pro/forms/submission', function($submission) {
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</div>
             <div>
               <div className="text-[11px] font-bold text-slate-800">Agrega una acción Webhook</div>
-              <div className="text-[10px] text-slate-500">En "Agregar acción" selecciona "Webhook"</div>
+              <div className="text-[10px] text-slate-500">En &ldquo;Agregar acción&rdquo; selecciona &ldquo;Webhook&rdquo;</div>
             </div>
           </div>
 
@@ -304,7 +304,7 @@ add_action('elementor_pro/forms/submission', function($submission) {
             <h4 className="text-[11px] font-bold text-amber-800 mb-2">Notas Importantes</h4>
             <ul className="text-[10px] text-amber-700 space-y-1">
               <li>• Asegúrate de que tu sitio WordPress tenga SSL (HTTPS) para que el webhook funcione</li>
-              <li>• Los leads llegan a la etapa "Nuevo Lead" automáticamente</li>
+              <li>• Los leads llegan a la etapa &ldquo;Nuevo Lead&rdquo; automáticamente</li>
               <li>• Puedes personalizar los campos del formulario en Elementor</li>
               <li>• Si usas otro plugin de formularios (Contact Form 7, WPForms), el código PHP es la mejor opción</li>
             </ul>

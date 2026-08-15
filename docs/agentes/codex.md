@@ -505,3 +505,10 @@ usuario quedan en 0/0; 1 error y 25 warnings eliminados. BUG-037 sigue roja.
 
 [calidad · LINT-05B] hecho — automatización queda en 0/0; 53 errores
 eliminados con tipos compartidos. BUG-037 sigue siendo la única prueba roja.
+
+[build] ocupado — Codex, LINT-05C · portal e integración WordPress.
+
+[build] libre — Codex, LINT-05C · build y typecheck terminaron en 0.
+
+[calidad · LINT-05C] hecho — portal e integración quedan en 0/0; 12 errores y
+4 warnings eliminados. BUG-037 sigue siendo la única prueba roja.
