@@ -4,6 +4,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 // GET /api/solicitudes - Listar solicitudes
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

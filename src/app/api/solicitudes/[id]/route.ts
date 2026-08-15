@@ -4,6 +4,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 // GET /api/solicitudes/[id]
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const { data, error } = await supabase.from("solicitudes").select("*").eq("id", id).single();

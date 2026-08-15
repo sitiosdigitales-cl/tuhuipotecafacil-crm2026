@@ -4,9 +4,11 @@ import {
   enviarPlantillaWhatsApp,
   isWhatsAppConfigured,
 } from "@/lib/whatsapp";
+import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 // POST /api/whatsapp/send — Enviar mensaje de WhatsApp
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     // Verificar configuración
     if (!isWhatsAppConfigured()) {
@@ -80,7 +82,8 @@ export async function POST(request: NextRequest) {
 }
 
 // GET — Estado de la configuración
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   const configured = isWhatsAppConfigured();
   return NextResponse.json({
     configured,
