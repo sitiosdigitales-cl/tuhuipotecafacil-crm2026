@@ -47,3 +47,10 @@ cambios internos sin sesión; la prueba exige 401 antes de consultar Supabase.
 [build] ocupado — Codex, BUG-002.
 
 [build] libre — Codex, BUG-002; build terminó en 0.
+
+[FASE 1 · C-01 · BUG-003] hallazgo — la API de bancos lista, crea, modifica y
+elimina registros sin sesión; cinco casos exigen 401.
+
+[build] ocupado — Codex, BUG-003.
+
+[build] libre — Codex, BUG-003; build terminó en 0.
