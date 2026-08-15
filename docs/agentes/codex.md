@@ -282,3 +282,10 @@ por completo el buscador de RUT, sin perder la regresión contra el código viej
 [build] ocupado — Codex, ajuste BUG-030.
 
 [build] libre — Codex, ajuste BUG-030; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-04 · BUG-033] hallazgo — `PUT /api/leads/[id]` permite a un
+`AGENTE` cambiar la etapa de un cliente asignado a otro vendedor.
+
+[build] ocupado — Codex, BUG-033.
+
+[build] libre — Codex, BUG-033; build terminó en 0 con variables ficticias.
