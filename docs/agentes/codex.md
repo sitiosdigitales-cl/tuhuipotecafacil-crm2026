@@ -68,3 +68,12 @@ exponen participantes y metadatos privados sin sesión.
 [build] ocupado — Codex, BUG-005.
 
 [build] libre — Codex, BUG-005; build terminó en 0.
+
+[FASE 1 · C-01 · BUG-006] hallazgo — `GET /api/mensajes` devuelve el contenido
+de una conversación arbitraria sin sesión.
+
+[build] ocupado — Codex, BUG-006.
+
+[build] libre — Codex, BUG-006; el primer intento se detuvo al detectar un
+`.env` local nuevo. El build seguro repitió con valores ficticios inyectados
+para sus 19 claves y terminó en 0 sin usar credenciales reales.
