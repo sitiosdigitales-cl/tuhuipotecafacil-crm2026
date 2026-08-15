@@ -261,3 +261,10 @@ la ficha completa de otra persona en el portal; prueba de componente aislada.
 [build] ocupado — Codex, BUG-030.
 
 [build] libre — Codex, BUG-030; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-04 · BUG-031] hallazgo — `GET /api/leads` entrega a un `AGENTE`
+los clientes asignados a otros vendedores; prueba con datos sintéticos.
+
+[build] ocupado — Codex, BUG-031.
+
+[build] libre — Codex, BUG-031; build terminó en 0 con variables ficticias.
