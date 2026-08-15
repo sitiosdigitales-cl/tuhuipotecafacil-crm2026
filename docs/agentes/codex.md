@@ -222,3 +222,10 @@ acepta cualquier firma; prueba pura sin red ni datos reales.
 [build] ocupado — Codex, BUG-026.
 
 [build] libre — Codex, BUG-026; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-027] hallazgo — el webhook email acepta JSON anónimo,
+crea leads con service role y envía correos; prueba totalmente mockeada.
+
+[build] ocupado — Codex, BUG-027.
+
+[build] libre — Codex, BUG-027; build terminó en 0 con variables ficticias.
