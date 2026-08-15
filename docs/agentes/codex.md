@@ -310,3 +310,10 @@ lugar de calcularlo con `montoTotal` y `tasaComision`; datos sintéticos.
 [build] ocupado — Codex, BUG-035.
 
 [build] libre — Codex, BUG-035; build terminó en 0 con variables ficticias.
+
+[CI-03 · documentos · BUG-036] hallazgo — una versión anual satisface también
+el requisito de otro año cuando ambos comparten `tipo`; datos sintéticos.
+
+[build] ocupado — Codex, BUG-036.
+
+[build] libre — Codex, BUG-036; build terminó en 0 con variables ficticias.
