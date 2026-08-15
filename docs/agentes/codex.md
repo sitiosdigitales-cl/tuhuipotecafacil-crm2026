@@ -152,3 +152,10 @@ mensajes arbitrarios y consultar configuración sin sesión; prueba mockeada.
 [build] ocupado — Codex, BUG-016.
 
 [build] libre — Codex, BUG-016; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-017] hallazgo — listado y detalle de solicitudes exponen
+antecedentes financieros y de la propiedad sin sesión.
+
+[build] ocupado — Codex, BUG-017.
+
+[build] libre — Codex, BUG-017; build terminó en 0 con variables ficticias.
