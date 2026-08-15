@@ -229,3 +229,10 @@ crea leads con service role y envía correos; prueba totalmente mockeada.
 [build] ocupado — Codex, BUG-027.
 
 [build] libre — Codex, BUG-027; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-028] hallazgo — el portal acepta archivos para cualquier
+`leadId` existente sin demostrar pertenencia; prueba totalmente mockeada.
+
+[build] ocupado — Codex, BUG-028.
+
+[build] libre — Codex, BUG-028; build terminó en 0 con variables ficticias.
