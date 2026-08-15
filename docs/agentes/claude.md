@@ -60,6 +60,33 @@ incluida. Degrada sin bloquear a nadie si las columnas no existen. `fecd72d`
     4. La propiedad se define por `asignadoA` o por `nombreEjecutivo`? Hay que
        elegir uno; mantener los dos es lo que produjo esta ambiguedad.
 
+[FASE 2 · PERF-01] RESULTADO NEGATIVO — `next/dynamic` no difiere la descarga
+de recharts en este proyecto. Medido en navegador contra el build de
+produccion: /simulador-publico baja 1248 KB antes y 1248 KB despues, con 417 KB
+de recharts emitidos como `<script src>` a los 98 ms pese a que los graficos
+solo se pintan cuando existe `resultado`. Los docs de Next 16
+(`01-app/02-guides/lazy-loading.md`) dicen que dynamic() por si solo "carga
+inmediatamente, pero en un bundle separado"; aca el render ya es condicional y
+aun asi baja, porque en una pagina cliente de 834 lineas todo lo alcanzable
+entra al grafo. `8d0a54b` `40a48cc`
+
+  Correccion de mi propio reporte: en `8d0a54b` anuncie "-172 KB". Esa medicion
+  era de `.next/static/chunks` en disco, que NO es lo que descarga el
+  navegador. Di a entender una mejora de usuario sin haberla verificado.
+
+  PERF-01 no se cierra con dynamic(). El arreglo de fondo es convertir esas
+  paginas en server components con islas cliente, que es Fase 5. Propongo
+  repriorizar y que Codex lo verifique de forma independiente (C-07/C-08).
+
+  Lo que si quedo: los graficos duplicados inline pasaron a un componente
+  tipado y reutilizable, eslint baja de 28 a 25 errores en la pagina.
+
+[FASE 2 · PERF-02] hecho — `useMemo` en el value de los cinco contextos,
+`useCallback` en login, logout y cambiarUsuario, y memoizado
+`cargaPorEjecutivo`, que se recalculaba con un reduce en cada render y por si
+solo habria invalidado el memo. Premisa de re-render, no de bundling, asi que
+no depende del empaquetador. Sin regresion de lint. `212b8cd`
+
 [nota · fuera de mi tarea] `webhook/leads/route.ts` imprimia con console.log
 los primeros 500 caracteres del cuerpo de cada request. Eso manda RUT, renta y
 telefono a los logs de Vercel. Quite los dos logs del bloque del secreto en
