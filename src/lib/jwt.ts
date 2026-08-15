@@ -1,10 +1,17 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "24h";
 
-if (!JWT_SECRET) {
-  console.warn("Variable JWT_SECRET no configurada");
+// Se resuelve en cada llamada, no en el ambito de modulo: lanzar al importar
+// romperia `next build`, que corre sin variables de entorno.
+function obtenerSecreto(): string {
+  const secreto = process.env.JWT_SECRET;
+  if (!secreto) {
+    throw new Error(
+      "JWT_SECRET no esta configurada. La autenticacion no puede operar sin ella."
+    );
+  }
+  return secreto;
 }
 
 export interface TokenPayload {
@@ -14,13 +21,16 @@ export interface TokenPayload {
 }
 
 export function generarToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET || "fallback-secret", { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, obtenerSecreto(), { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verificarToken(token: string): TokenPayload | null {
+  // Fuera del try a proposito: un secreto ausente es un error de configuracion
+  // del servidor y debe propagarse como 500, no confundirse con un token
+  // invalido, que es 401.
+  const secreto = obtenerSecreto();
   try {
-    const decoded = jwt.verify(token, JWT_SECRET || "fallback-secret") as TokenPayload;
-    return decoded;
+    return jwt.verify(token, secreto) as TokenPayload;
   } catch {
     return null;
   }
