@@ -215,3 +215,10 @@ con monto y `comisionId` arbitrarios; prueba totalmente mockeada.
 [build] ocupado — Codex, BUG-025.
 
 [build] libre — Codex, BUG-025; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-026] hallazgo — la verificación del webhook WhatsApp
+acepta cualquier firma; prueba pura sin red ni datos reales.
+
+[build] ocupado — Codex, BUG-026.
+
+[build] libre — Codex, BUG-026; build terminó en 0 con variables ficticias.
