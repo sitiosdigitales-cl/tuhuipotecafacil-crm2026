@@ -91,3 +91,10 @@ marcar como leídas y borrar notificaciones sin sesión.
 [build] ocupado — Codex, BUG-008.
 
 [build] libre — Codex, BUG-008; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-009] hallazgo — `GET /api/documentos` expone metadatos y
+URLs de archivos de clientes sin sesión.
+
+[build] ocupado — Codex, BUG-009.
+
+[build] libre — Codex, BUG-009; build terminó en 0 con variables ficticias.
