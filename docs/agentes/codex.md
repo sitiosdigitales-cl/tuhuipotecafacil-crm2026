@@ -349,3 +349,10 @@ pero omite `EJECUTIVO`; 78 pruebas verdes y solo BUG-037/038 en rojo.
 
 [FASE 2 · C-10 · BUG-039] hallazgo — el portal presenta como guardado un
 perfil cuando `PUT /api/leads/[id]` responde 500; 78 verdes y BUG-037/038/039 rojos.
+
+[build] ocupado — Codex, C-10 · BUG-040.
+
+[build] libre — Codex, C-10 · BUG-040; build terminó en 0 con variables ficticias.
+
+[FASE 2 · C-10 · BUG-040] hallazgo — `/backups` muestra “sin respaldos” ante
+una respuesta 500; 78 verdes y solo BUG-037 a BUG-040 en rojo.
