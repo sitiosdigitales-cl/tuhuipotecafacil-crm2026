@@ -54,3 +54,10 @@ elimina registros sin sesión; cinco casos exigen 401.
 [build] ocupado — Codex, BUG-003.
 
 [build] libre — Codex, BUG-003; build terminó en 0.
+
+[FASE 1 · C-01 · BUG-004] hallazgo — el detalle individual de usuario todavía
+expone email, teléfono, rol y estado sin sesión aunque el listado ya fue cerrado.
+
+[build] ocupado — Codex, BUG-004.
+
+[build] libre — Codex, BUG-004; build terminó en 0.
