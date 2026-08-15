@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { supabase, toSupabaseColumns, limpiarParaFiltro } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
@@ -19,11 +19,18 @@ export async function GET(request: NextRequest) {
     if (rol) query = query.eq("rol", rol);
     if (estado) query = query.eq("estado", estado);
     if (busqueda) {
-      // Dividir la búsqueda en palabras para buscar en nombre y apellido
-      const palabras = busqueda.split(' ').filter(p => p.length > 0);
-      const condiciones = palabras.map(p => `nombre.ilike.%${p}%`).join(',');
-      const condicionesApellido = palabras.map(p => `apellido.ilike.%${p}%`).join(',');
-      query = query.or(`${condiciones},${condicionesApellido},email.ilike.%${busqueda}%`);
+      // Cada palabra se limpia por separado: el texto se interpola en la
+      // sintaxis de `.or()`, donde una coma o un paréntesis dejarían de ser
+      // parte del valor y pasarían a ser estructura de la consulta.
+      const limpio = limpiarParaFiltro(busqueda);
+      const palabras = limpio.split(" ").filter(Boolean);
+      if (palabras.length) {
+        const condiciones = palabras.flatMap((p) => [
+          `nombre.ilike.%${p}%`,
+          `apellido.ilike.%${p}%`,
+        ]);
+        query = query.or([...condiciones, `email.ilike.%${limpio}%`].join(","));
+      }
     }
 
     query = query.order("creadoen", { ascending: false });

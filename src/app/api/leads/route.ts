@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
+import { supabase, toSupabaseColumns, fromSupabaseArray, limpiarParaFiltro } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
     // sobre un pozo compartido.
 
     if (busqueda) {
-      query = query.or(`nombre.ilike.%${busqueda}%,apellido.ilike.%${busqueda}%,rut.ilike.%${busqueda}%,email.ilike.%${busqueda}%`);
+      const q = limpiarParaFiltro(busqueda);
+      if (q) {
+        query = query.or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,rut.ilike.%${q}%,email.ilike.%${q}%`);
+      }
     }
     if (etapa) {
       query = query.eq("etapa", etapa);

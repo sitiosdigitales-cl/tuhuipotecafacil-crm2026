@@ -18,6 +18,32 @@ export const supabaseAdmin = serviceKey
   ? createClient(supabaseUrl || "https://placeholder.supabase.co", serviceKey)
   : supabase;
 
+/**
+ * Limpia un texto antes de interpolarlo en un filtro `.or()` de PostgREST.
+ *
+ * `.eq()`, `.in()` y compañía viajan como parámetros y son seguras. `.or()`
+ * NO: recibe una cadena con sintaxis propia — `campo.operador.valor` separado
+ * por comas y agrupado con paréntesis — así que un texto de búsqueda con una
+ * coma o un paréntesis deja de ser un valor y pasa a ser estructura de la
+ * consulta.
+ *
+ * Se quitan solo los caracteres que rompen la estructura:
+ *   , ( )   separan y agrupan condiciones
+ *   % *     comodines de LIKE; permiten además búsquedas costosas a propósito
+ *   \ "     escape y comillas del parser
+ *
+ * El punto se conserva a propósito. PostgREST ya consumió los dos primeros
+ * para `columna.operador`, así que en la posición de valor es un carácter
+ * corriente — y quitarlo rompería buscar por correo, que es lo más frecuente.
+ */
+export function limpiarParaFiltro(texto: string): string {
+  return texto
+    .replace(/[,()%*\\"]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100);
+}
+
 // Convertir camelCase a minusculas para columnas Supabase
 export function toSupabaseColumns(obj: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};
