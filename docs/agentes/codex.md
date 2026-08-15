@@ -126,3 +126,10 @@ acciones y configuración sin sesión.
 [build] ocupado — Codex, BUG-013.
 
 [build] libre — Codex, BUG-013; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-014] hallazgo — el historial de triggers expone datos de
+leads y acepta ejecuciones falsas sin sesión.
+
+[build] ocupado — Codex, BUG-014.
+
+[build] libre — Codex, BUG-014; build terminó en 0 con variables ficticias.
