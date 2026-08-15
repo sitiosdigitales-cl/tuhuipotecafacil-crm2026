@@ -428,3 +428,14 @@ de emails y etapas del pipeline.
 
 [operación · ingreso] requiere acción humana — el dominio de Vercel responde
 `Protected deployment` antes de ejecutar `/login`; revisar Deployment Protection.
+
+[build] ocupado — Codex, contrato de estado de cuenta · BUG-049.
+
+[build] libre — Codex, contrato de estado de cuenta · BUG-049; build terminó en 0 con variables ficticias.
+
+[build] ocupado — Codex, validación final de BUG-049.
+
+[build] libre — Codex, validación final de BUG-049; build terminó en 0 con variables ficticias.
+
+[calidad · autenticación · BUG-049] hallazgo — el login crea sesión para
+usuarios `INACTIVO` y `SUSPENDIDO`, aunque el estado ya viene en la consulta.
