@@ -417,3 +417,14 @@ estado inicial del cuerpo y puede crear un documento directamente aprobado.
 
 [calidad · solicitudes · BUG-045] hallazgo — el alta no aplica
 `SolicitudSchema`: seis entradas obligatorias o financieras inválidas llegan al guardado.
+
+[build] ocupado — Codex, cobertura automática de sesión · BUG-046 a BUG-048.
+
+[build] libre — Codex, cobertura automática de sesión · BUG-046 a BUG-048; build terminó en 0 con variables ficticias.
+
+[calidad · sesión · BUG-046 a BUG-048] hallazgo — el guard automático revisó
+125 métodos y encontró tres GET internos sin comprobación: respaldos, catálogo
+de emails y etapas del pipeline.
+
+[operación · ingreso] requiere acción humana — el dominio de Vercel responde
+`Protected deployment` antes de ejecutar `/login`; revisar Deployment Protection.
