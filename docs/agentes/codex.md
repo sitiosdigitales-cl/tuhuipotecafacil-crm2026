@@ -363,3 +363,15 @@ una respuesta 500; 78 verdes y solo BUG-037 a BUG-040 en rojo.
 
 [FASE 2 · C-10] verificado — `/login`, `/portal-cliente`, `/referir/[codigo]`
 y `/simulador-publico` montan fuera del panel sin depender de sus cinco contextos.
+
+[build] ocupado — Codex, pruebas del proxy · BUG-041.
+
+[build] libre — Codex, pruebas del proxy · BUG-041; build terminó en 0 con variables ficticias.
+
+[build] ocupado — Codex, validación final del proxy · BUG-041.
+
+[build] libre — Codex, validación final del proxy · BUG-041; build terminó en 0 con variables ficticias.
+
+[regresión · proxy · BUG-041] hallazgo — `AGENTE` y `CLIENTE` reciben 307 hacia
+`/dashboard` cuando ya están en `/dashboard`; firma, matcher y las otras 171
+comprobaciones se comportan según la matriz esperada.
