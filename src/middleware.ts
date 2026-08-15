@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/solicitudes", "/centro-actividad", "/tareas", "/actividades", "/documentos", "/agenda", "/conversaciones", "/reportes", "/configuracion", "/usuarios", "/permisos", "/auditoria", "/bancos", "/cmf", "/simulador", "/comisiones", "/referidos", "/campanas", "/biblioteca", "/flujos", "/plantillas", "/triggers", "/integraciones", "/portal", "/recordatorios", "/resumen", "/asistente"];
+const RUTAS_PROTEGIDAS = ["/dashboard", "/pipeline", "/leads", "/clientes", "/solicitudes", "/centro-actividad", "/tareas", "/actividades", "/documentos", "/agenda", "/conversaciones", "/reportes", "/configuracion", "/usuarios", "/permisos", "/auditoria", "/bancos", "/cmf", "/simulador", "/comisiones", "/referidos", "/campanas", "/biblioteca", "/flujos", "/plantillas", "/triggers", "/integraciones", "/portal", "/portal-cliente", "/recordatorios", "/resumen", "/asistente"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,7 +26,9 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluir /api/, /_next/, /favicon, /portal-cliente y /login
-    "/((?!api/|_next/|favicon|portal-cliente|simulador-publico|login|register).*)",
+    // Excluir /api/, /_next/, /favicon y las páginas realmente públicas.
+    // /portal-cliente salió de esta lista: mostraba datos de solicitudes a
+    // quien no había iniciado sesión.
+    "/((?!api/|_next/|favicon|simulador-publico|login|register).*)",
   ],
 };

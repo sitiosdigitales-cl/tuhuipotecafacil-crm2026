@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   FileText,
@@ -27,7 +27,6 @@ import {
   Trash2, X, ChevronDown,
   Download,
 } from "lucide-react";
-import { useLeads } from "@/modulos/leads";
 import { ETAPAS_CONFIG, SITUACION_LABORAL_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF, formatoMoneda } from "@/lib/utils";
 import { toast } from "sonner";
@@ -50,8 +49,6 @@ interface PortalClienteContentProps {
 }
 
 export function PortalClienteContent({ className = "" }: PortalClienteContentProps) {
-  const { leads } = useLeads();
-  const [rut, setRut] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [cliente, setCliente] = useState<Lead | null>(null);
   const [error, setError] = useState("");
@@ -140,21 +137,28 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
     }
   };
 
-  const handleBuscar = async () => {
-    if (!rut.trim()) { setError("Ingresa un RUT"); return; }
-    setBuscando(true); setError("");
-    const norm = (r: string) => r.replace(/\./g, "").replace("-", "").replace(/\s/g, "").toLowerCase();
-    const rutBuscado = norm(rut);
-    const found = leads.find((l) => {
-      const rutLead = norm(l.rut);
-      return rutLead === rutBuscado || (rutBuscado.length >= 6 && rutLead.includes(rutBuscado));
-    });
-    if (found) {
-      setCliente(found); setError("");
+  // La solicitud se resuelve por la sesión, no por un RUT escrito a mano. La
+  // versión anterior buscaba sobre TODOS los leads con coincidencia parcial:
+  // seis dígitos cualesquiera devolvían la ficha de otra persona.
+  const cargarMiSolicitud = useCallback(async () => {
+    setBuscando(true);
+    setError("");
+    try {
+      const res = await fetch("/api/portal/mi-solicitud", { credentials: "include" });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setCliente(null);
+        setError(data.error || "No pudimos cargar tu solicitud");
+        return;
+      }
+
+      const found: Lead = { ...data.data, creadoEn: new Date(data.data.creadoEn) };
+      setCliente(found);
       verificarPrimeraVez(found);
-      // Cargar documentos reales del lead
+
       try {
-        const resDocs = await fetch(`/api/documentos?leadId=${found.id}`);
+        const resDocs = await fetch(`/api/documentos?leadId=${found.id}`, { credentials: "include" });
         const dataDocs = await resDocs.json();
         if (dataDocs.success && dataDocs.data) {
           setDocumentos(dataDocs.data.map((d: any) => ({
@@ -168,13 +172,17 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
           })));
         }
       } catch { /* documentos no disponibles */ }
-      // Cargar datos del asesor
+
       await cargarAsesor(found.asignadoA, found.nombreEjecutivo);
-    } else {
-      setError("RUT no encontrado"); setCliente(null);
+    } catch {
+      setCliente(null);
+      setError("No pudimos conectar con el servidor");
+    } finally {
+      setBuscando(false);
     }
-    setBuscando(false);
-  };
+  }, []);
+
+  useEffect(() => { cargarMiSolicitud(); }, [cargarMiSolicitud]);
 
   const etapaActual = cliente ? PASOS_PROGRESO.findIndex((p) => p.etapa === cliente.etapa) + 1 : 0;
   const totalPasos = PASOS_PROGRESO.length;
@@ -382,20 +390,29 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
             <p className="text-sm text-slate-500">Consulta el estado de tu solicitud hipotecaria</p>
           </div>
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-6 sm:p-8">
-            <div className="text-center mb-6"><div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3"><Search size={20} className="text-blue-600" /></div><h2 className="text-sm font-bold text-slate-800">Ingresa tu RUT</h2><p className="text-[11px] text-slate-400 mt-1">El RUT del titular de la solicitud</p></div>
-            <div className="space-y-3">
-              <input type="text" placeholder="12.345.678-9" value={rut}
-                onChange={(e) => { setRut(e.target.value); setError(""); }}
-                onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                className="w-full h-14 px-4 pr-12 bg-slate-50 border-2 border-slate-200 rounded-2xl text-lg font-mono font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
-              <button onClick={handleBuscar} disabled={buscando}
-                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-sm font-bold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {buscando ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search size={16} />}
-                Buscar
-              </button>
-            </div>
-            {error && <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl"><AlertCircle size={16} className="text-red-500 flex-shrink-0" /><p className="text-xs text-red-600 font-medium">{error}</p></div>}
-
+            {buscando ? (
+              <div className="flex flex-col items-center gap-3 py-6">
+                <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <p className="text-xs text-slate-400">Cargando tu solicitud…</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                  <AlertCircle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 font-medium">
+                    {error || "No encontramos una solicitud asociada a tu cuenta"}
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                  Si crees que es un error, escríbele a tu ejecutivo: la solicitud
+                  tiene que estar registrada con este mismo correo.
+                </p>
+                <button onClick={cargarMiSolicitud}
+                  className="w-full h-12 bg-slate-100 text-slate-700 rounded-2xl text-sm font-bold hover:bg-slate-200 transition-all">
+                  Reintentar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

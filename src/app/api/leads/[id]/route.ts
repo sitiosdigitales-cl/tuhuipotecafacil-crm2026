@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
     const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
     if (error || !data) return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
+    if (!puedeAccederLead(auth, data)) return forbidden();
     return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
   } catch {
     return NextResponse.json({ success: false, error: "Error al obtener lead" }, { status: 500 });

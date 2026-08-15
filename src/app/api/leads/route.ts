@@ -4,7 +4,8 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda") || "";
@@ -12,6 +13,19 @@ export async function GET(request: NextRequest) {
     const ejecutivo = searchParams.get("ejecutivo") || "";
 
     let query = supabase.from("leads").select("*");
+
+    // El alcance por rol se aplica en la consulta, no filtrando después: lo que
+    // no corresponde no debe salir de la base. Es la versión de listado de la
+    // misma regla que puedeAccederLead aplica a un lead suelto.
+    if (auth.rol === "AGENTE") {
+      // Contraparte del banco: solo los leads que le asignaron.
+      query = query.eq("asignadoa", auth.userId);
+    } else if (auth.rol === "CLIENTE") {
+      // Solo el suyo, identificado por correo.
+      query = query.eq("email", auth.email.toLowerCase());
+    }
+    // SUPER_ADMIN, ADMIN y EJECUTIVO ven todo: el equipo comercial trabaja
+    // sobre un pozo compartido.
 
     if (busqueda) {
       query = query.or(`nombre.ilike.%${busqueda}%,apellido.ilike.%${busqueda}%,rut.ilike.%${busqueda}%,email.ilike.%${busqueda}%`);
