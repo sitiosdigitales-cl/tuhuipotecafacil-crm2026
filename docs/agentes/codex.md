@@ -33,3 +33,10 @@ el working tree compartido.
 
 [FASE 0 · T-02] hecho — CI con lint de la zona Codex, typecheck, build y test
 en jobs separados para pushes y pull requests hacia `diego`.
+
+[FASE 1 · C-01 · BUG-001] hallazgo — `GET /api/actividades` devuelve datos sin
+sesión; prueba preparada para exigir 401 antes de consultar Supabase.
+
+[build] ocupado — Codex, BUG-001.
+
+[build] libre — Codex, BUG-001; build terminó en 0.
