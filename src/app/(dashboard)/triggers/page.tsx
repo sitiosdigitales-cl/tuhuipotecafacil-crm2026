@@ -9,17 +9,83 @@ import { TRIGGERS_TIPOS, ACCIONES_TIPOS, CONDICION_OPERADORES, TRIGGER_CATEGORIA
 import { toast } from "sonner";
 
 type TabTrigger = "todos" | "activos" | "pausados" | "borrador";
+type EstadoTrigger = "ACTIVO" | "PAUSADO" | "BORRADOR";
+
+interface CondicionTrigger {
+  campo: string;
+  operador: string;
+  valor: string;
+}
+
+interface AccionTrigger {
+  tipo: string;
+  configuracion: Record<string, unknown>;
+  delay: number;
+  orden: number;
+}
+
+interface TriggerFormulario {
+  nombre: string;
+  descripcion: string;
+  trigger: string;
+  categoria: string;
+  condiciones: CondicionTrigger[];
+  logica_condiciones: "AND" | "OR";
+  acciones: AccionTrigger[];
+  estado: EstadoTrigger;
+}
+
+interface TriggerData extends TriggerFormulario {
+  id: string;
+  ejecuciones?: number;
+  exitosas?: number;
+  fallidas?: number;
+  ultimoDisparo?: string;
+}
+
+interface AccionEjecutada {
+  tipo: string;
+  estado: string;
+}
+
+interface EjecucionTrigger {
+  id: string;
+  estado: string;
+  leadNombre?: string;
+  ejecutadoEn?: string;
+  ejecutado_en?: string;
+  accionesEjecutadas?: string | AccionEjecutada[];
+  errorMensaje?: string;
+}
+
+function esAccionEjecutada(value: unknown): value is AccionEjecutada {
+  if (!value || typeof value !== "object") return false;
+  const accion = value as Record<string, unknown>;
+  return typeof accion.tipo === "string" && typeof accion.estado === "string";
+}
+
+function parseAccionesEjecutadas(value: EjecucionTrigger["accionesEjecutadas"]): AccionEjecutada[] {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(esAccionEjecutada) : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function TriggersPage() {
   const { triggers, setTriggers, cargando } = useTriggers();
+  const triggersTipados = triggers as TriggerData[];
   const [tabActiva, setTabActiva] = useState<TabTrigger>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [triggerEditando, setTriggerEditando] = useState<any>(null);
+  const [triggerEditando, setTriggerEditando] = useState<TriggerData | null>(null);
 
   const triggersFiltrados = useMemo(() => {
-    return triggers.filter((t) => {
+    return triggersTipados.filter((t) => {
       const coincideTab =
         tabActiva === "todos" ||
         (tabActiva === "activos" && t.estado === "ACTIVO") ||
@@ -31,22 +97,22 @@ export default function TriggersPage() {
         t.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
       return coincideTab && coincideBusqueda;
     });
-  }, [tabActiva, busqueda, triggers]);
+  }, [tabActiva, busqueda, triggersTipados]);
 
   const stats = useMemo(() => ({
-    total: triggers.length,
-    activos: triggers.filter((t) => t.estado === "ACTIVO").length,
-    pausados: triggers.filter((t) => t.estado === "PAUSADO").length,
-    borrador: triggers.filter((t) => t.estado === "BORRADOR").length,
-    ejecuciones: triggers.reduce((sum, t) => sum + (t.ejecuciones || 0), 0),
-    exitosas: triggers.reduce((sum, t) => sum + (t.exitosas || 0), 0),
-    fallidas: triggers.reduce((sum, t) => sum + (t.fallidas || 0), 0),
-  }), [triggers]);
+    total: triggersTipados.length,
+    activos: triggersTipados.filter((t) => t.estado === "ACTIVO").length,
+    pausados: triggersTipados.filter((t) => t.estado === "PAUSADO").length,
+    borrador: triggersTipados.filter((t) => t.estado === "BORRADOR").length,
+    ejecuciones: triggersTipados.reduce((sum, t) => sum + (t.ejecuciones || 0), 0),
+    exitosas: triggersTipados.reduce((sum, t) => sum + (t.exitosas || 0), 0),
+    fallidas: triggersTipados.reduce((sum, t) => sum + (t.fallidas || 0), 0),
+  }), [triggersTipados]);
 
   const tasaExito = stats.ejecuciones > 0 ? Math.round((stats.exitosas / stats.ejecuciones) * 100) : 0;
 
   const toggleEstado = async (triggerId: string) => {
-    const trigger = triggers.find((t) => t.id === triggerId);
+    const trigger = triggersTipados.find((t) => t.id === triggerId);
     if (!trigger) return;
     const nuevoEstado = trigger.estado === "ACTIVO" ? "PAUSADO" : "ACTIVO";
     try {
@@ -73,12 +139,12 @@ export default function TriggersPage() {
     } catch { toast.error("Error al eliminar"); }
   };
 
-  const abrirEditor = (trigger?: any) => {
+  const abrirEditor = (trigger?: TriggerData) => {
     setTriggerEditando(trigger || null);
     setModalCrear(true);
   };
 
-  const guardarTrigger = async (data: any) => {
+  const guardarTrigger = async (data: TriggerFormulario) => {
     try {
       const url = triggerEditando ? `/api/triggers/${triggerEditando.id}` : "/api/triggers";
       const method = triggerEditando ? "PUT" : "POST";
@@ -165,9 +231,9 @@ export default function TriggersPage() {
   );
 }
 // --- Modal Editor de Trigger ---
-function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; onGuardar: (data: any) => void; onCerrar: () => void }) {
+function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: TriggerData | null; onGuardar: (data: TriggerFormulario) => void; onCerrar: () => void }) {
   const [paso, setPaso] = useState(1);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<TriggerFormulario>({
     nombre: trigger?.nombre || "", descripcion: trigger?.descripcion || "",
     trigger: trigger?.trigger || TRIGGERS_TIPOS[0].id, categoria: trigger?.categoria || "lead",
     condiciones: trigger?.condiciones || [], logica_condiciones: trigger?.logica_condiciones || "AND",
@@ -175,10 +241,10 @@ function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; on
   });
   const camposDisponibles = CAMPOS_POR_CATEGORIA[form.categoria] || [];
   const agregarCondicion = () => setForm((p) => ({ ...p, condiciones: [...p.condiciones, { campo: camposDisponibles[0]?.id || "", operador: "igual", valor: "" }] }));
-  const eliminarCondicion = (idx: number) => setForm((p) => ({ ...p, condiciones: p.condiciones.filter((_: any, i: number) => i !== idx) }));
-  const actualizarCondicion = (idx: number, campo: string, valor: any) => setForm((p) => ({ ...p, condiciones: p.condiciones.map((c: any, i: number) => i === idx ? { ...c, [campo]: valor } : c) }));
+  const eliminarCondicion = (idx: number) => setForm((p) => ({ ...p, condiciones: p.condiciones.filter((_, i) => i !== idx) }));
+  const actualizarCondicion = (idx: number, campo: keyof CondicionTrigger, valor: string) => setForm((p) => ({ ...p, condiciones: p.condiciones.map((condicion, i) => i === idx ? { ...condicion, [campo]: valor } : condicion) }));
   const agregarAccion = (tipo: string) => setForm((p) => ({ ...p, acciones: [...p.acciones, { tipo, configuracion: {}, delay: 0, orden: p.acciones.length + 1 }] }));
-  const eliminarAccion = (idx: number) => setForm((p) => ({ ...p, acciones: p.acciones.filter((_: any, i: number) => i !== idx).map((a: any, i: number) => ({ ...a, orden: i + 1 })) }));
+  const eliminarAccion = (idx: number) => setForm((p) => ({ ...p, acciones: p.acciones.filter((_, i) => i !== idx).map((accion, i) => ({ ...accion, orden: i + 1 })) }));
   const handleSubmit = () => { if (!form.nombre || !form.trigger || form.acciones.length === 0) { toast.error("Completa todos los campos obligatorios"); return; } onGuardar(form); };
 
   return (
@@ -217,7 +283,7 @@ function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; on
                     {logica === "AND" ? "Todas (AND)" : "Cualquiera (OR)"}</button>))}</div></div>
               <div className="space-y-3"><label className="text-[11px] font-semibold text-slate-700">Condiciones</label>
                 {form.condiciones.length === 0 ? <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center"><p className="text-[10px] text-slate-400">Sin condiciones = se ejecuta siempre</p></div> : (
-                  form.condiciones.map((cond: any, idx: number) => (
+                  form.condiciones.map((cond, idx) => (
                     <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
                       <select value={cond.campo} onChange={(e) => actualizarCondicion(idx, "campo", e.target.value)} className="h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600">{camposDisponibles.map((campo) => <option key={campo.id} value={campo.id}>{campo.label}</option>)}</select>
                       <select value={cond.operador} onChange={(e) => actualizarCondicion(idx, "operador", e.target.value)} className="h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600">{CONDICION_OPERADORES.map((op) => <option key={op.id} value={op.id}>{op.label}</option>)}</select>
@@ -232,13 +298,13 @@ function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; on
             <div className="space-y-5">
               <div className="space-y-3"><label className="text-[11px] font-semibold text-slate-700">Acciones del Trigger *</label>
                 {form.acciones.length === 0 ? <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center"><p className="text-[10px] text-slate-400">Agrega al menos una accion</p></div> : (
-                  <div className="space-y-2">{form.acciones.map((accion: any, idx: number) => {
+                  <div className="space-y-2">{form.acciones.map((accion, idx) => {
                     const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
                     return (<div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                       <span className="text-[11px] font-bold text-slate-400 w-6">{idx + 1}</span>
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${config?.color || "#64748B"}15` }}><Zap size={14} style={{ color: config?.color || "#64748B" }} /></div>
                       <div className="flex-1"><span className="text-[11px] font-semibold text-slate-700">{config?.label || accion.tipo}</span></div>
-                      <input type="number" placeholder="Delay (min)" value={accion.delay || ""} onChange={(e) => { const val = parseInt(e.target.value) || 0; setForm((p) => ({ ...p, acciones: p.acciones.map((a: any, i: number) => i === idx ? { ...a, delay: val } : a) })); }} className="w-24 h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600" />
+                      <input type="number" placeholder="Delay (min)" value={accion.delay || ""} onChange={(e) => { const val = parseInt(e.target.value) || 0; setForm((p) => ({ ...p, acciones: p.acciones.map((accionActual, i) => i === idx ? { ...accionActual, delay: val } : accionActual) })); }} className="w-24 h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600" />
                       <button onClick={() => eliminarAccion(idx)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">?</button>
                     </div>);
                   })}</div>)}</div>
@@ -264,8 +330,8 @@ function TriggerEditorModal({ trigger, onGuardar, onCerrar }: { trigger: any; on
 }
 
 // --- Modal Detalle de Trigger ---
-function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: string; onCerrar: () => void; onEditar: (trigger: any) => void }) {
-  const [trigger, setTrigger] = useState<any>(null);
+function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: string; onCerrar: () => void; onEditar: (trigger: TriggerData) => void }) {
+  const [trigger, setTrigger] = useState<TriggerData | null>(null);
   const [tabActiva, setTabActiva] = useState<"general" | "historial">("general");
 
   useEffect(() => {
@@ -273,7 +339,10 @@ function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: str
       try {
         const res = await fetch("/api/triggers");
         const json = await res.json();
-        if (json.success) { const found = json.data.find((t: any) => t.id === triggerId); setTrigger(found); }
+        if (json.success) {
+          const found = (json.data as TriggerData[]).find((item) => item.id === triggerId);
+          setTrigger(found || null);
+        }
       } catch {}
     }
     cargar();
@@ -305,7 +374,7 @@ function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: str
               <div className="bg-slate-50 rounded-xl p-4"><h4 className="text-[11px] font-bold text-slate-600 mb-3">Flujo del Trigger</h4>
                 <div className="flex items-center gap-2 overflow-x-auto pb-2">
                   <div className="flex flex-col items-center min-w-[80px]"><div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center"><Zap size={18} className="text-amber-500" /></div><span className="text-[10px] font-semibold text-slate-600 mt-1">{triggerConfig?.label}</span></div>
-                  {(trigger.acciones || []).map((accion: any, idx: number) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-1"><span className="text-slate-300">?</span><div className="flex flex-col items-center min-w-[70px]"><div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${config?.color || "#64748B"}15` }}><Zap size={14} style={{ color: config?.color || "#64748B" }} /></div><span className="text-[9px] font-semibold text-slate-600 mt-1 text-center">{config?.label || accion.tipo}</span></div></div>); })}
+                  {(trigger.acciones || []).map((accion, idx) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-1"><span className="text-slate-300">?</span><div className="flex flex-col items-center min-w-[70px]"><div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${config?.color || "#64748B"}15` }}><Zap size={14} style={{ color: config?.color || "#64748B" }} /></div><span className="text-[9px] font-semibold text-slate-600 mt-1 text-center">{config?.label || accion.tipo}</span></div></div>); })}
                 </div></div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-blue-50 rounded-xl p-4 text-center"><div className="text-xl font-bold text-blue-700">{(trigger.ejecuciones || 0).toLocaleString()}</div><div className="text-[10px] text-blue-500">Ejecuciones</div></div>
@@ -314,9 +383,9 @@ function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: str
               </div>
               <div><h4 className="text-[11px] font-bold text-slate-600 mb-2">Condiciones</h4>
                 {(!trigger.condiciones || trigger.condiciones.length === 0) ? <p className="text-[10px] text-slate-400 italic">Se ejecuta siempre</p> : (
-                  <div className="space-y-1">{trigger.condiciones.map((cond: any, idx: number) => <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-[11px]"><span className="font-semibold text-slate-600">{cond.campo}</span><span className="text-slate-400">{cond.operador}</span><span className="font-bold text-slate-800">{cond.valor}</span></div>)}</div>)}</div>
+                  <div className="space-y-1">{trigger.condiciones.map((cond, idx) => <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-[11px]"><span className="font-semibold text-slate-600">{cond.campo}</span><span className="text-slate-400">{cond.operador}</span><span className="font-bold text-slate-800">{cond.valor}</span></div>)}</div>)}</div>
               <div><h4 className="text-[11px] font-bold text-slate-600 mb-2">Acciones</h4>
-                <div className="space-y-1">{trigger.acciones?.map((accion: any, idx: number) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg"><span className="text-[10px] font-bold text-slate-400 w-5">{idx + 1}</span><span className="text-[11px] font-semibold text-slate-700">{config?.label || accion.tipo}</span>{accion.delay > 0 && <span className="text-[10px] text-slate-400">+{accion.delay >= 60 ? `${Math.round(accion.delay / 60)}h` : `${accion.delay}m`}</span>}</div>); })}</div></div>
+                <div className="space-y-1">{trigger.acciones?.map((accion, idx) => { const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo); return (<div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg"><span className="text-[10px] font-bold text-slate-400 w-5">{idx + 1}</span><span className="text-[11px] font-semibold text-slate-700">{config?.label || accion.tipo}</span>{accion.delay > 0 && <span className="text-[10px] text-slate-400">+{accion.delay >= 60 ? `${Math.round(accion.delay / 60)}h` : `${accion.delay}m`}</span>}</div>); })}</div></div>
             </div>
           ) : <TriggerHistorialContent triggerId={triggerId} />}
         </div>
@@ -332,6 +401,7 @@ function TriggerDetalleModal({ triggerId, onCerrar, onEditar }: { triggerId: str
 // --- Contenido del Historial ---
 function TriggerHistorialContent({ triggerId }: { triggerId: string }) {
   const { historial, stats, cargando, pagina, setPagina, total } = useTriggerHistorial(triggerId);
+  const historialTipado = historial as EjecucionTrigger[];
   if (cargando) return <div className="text-center py-8 text-[11px] text-slate-400">Cargando historial...</div>;
   return (
     <div className="space-y-4">
@@ -341,20 +411,24 @@ function TriggerHistorialContent({ triggerId }: { triggerId: string }) {
         <div className="bg-red-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-red-700">{stats.fallidas}</div><div className="text-[10px] text-red-500">Fallidas</div></div>
         <div className="bg-amber-50 rounded-lg p-3 text-center"><div className="text-lg font-bold text-amber-700">{stats.tasaExito}%</div><div className="text-[10px] text-amber-500">Exito</div></div>
       </div>}
-      {historial.length === 0 ? <div className="text-center py-8"><p className="text-[11px] text-slate-400">No hay ejecuciones registradas</p></div> : (
-        <div className="space-y-2">{historial.map((ejec: any) => (
-          <div key={ejec.id} className="p-3 bg-slate-50 rounded-xl">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${ejec.estado === "EXITOSO" ? "bg-emerald-100 text-emerald-700" : ejec.estado === "FALLIDO" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{ejec.estado}</span><span className="text-[11px] font-semibold text-slate-700">{ejec.leadNombre || "Sin lead"}</span></div>
-              <span className="text-[10px] text-slate-400">{new Date(ejec.ejecutadoEn || ejec.ejecutado_en).toLocaleString("es-CL")}</span>
+      {historialTipado.length === 0 ? <div className="text-center py-8"><p className="text-[11px] text-slate-400">No hay ejecuciones registradas</p></div> : (
+        <div className="space-y-2">{historialTipado.map((ejec) => {
+          const accionesEjecutadas = parseAccionesEjecutadas(ejec.accionesEjecutadas);
+          return (
+            <div key={ejec.id} className="p-3 bg-slate-50 rounded-xl">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2"><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${ejec.estado === "EXITOSO" ? "bg-emerald-100 text-emerald-700" : ejec.estado === "FALLIDO" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{ejec.estado}</span><span className="text-[11px] font-semibold text-slate-700">{ejec.leadNombre || "Sin lead"}</span></div>
+                <span className="text-[10px] text-slate-400">{new Date(ejec.ejecutadoEn || ejec.ejecutado_en || 0).toLocaleString("es-CL")}</span>
+              </div>
+              {accionesEjecutadas.length > 0 && <div className="flex flex-wrap gap-1 mt-1">{accionesEjecutadas.map((accion, idx) => <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded ${accion.estado === "EXITOSO" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>{accion.tipo}: {accion.estado}</span>)}</div>}
+              {ejec.errorMensaje && <p className="text-[10px] text-red-500 mt-1">{ejec.errorMensaje}</p>}
             </div>
-            {ejec.accionesEjecutadas && <div className="flex flex-wrap gap-1 mt-1">{JSON.parse(typeof ejec.accionesEjecutadas === "string" ? ejec.accionesEjecutadas : "[]").map((a: any, idx: number) => <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded ${a.estado === "EXITOSO" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>{a.tipo}: {a.estado}</span>)}</div>}
-            {ejec.errorMensaje && <p className="text-[10px] text-red-500 mt-1">{ejec.errorMensaje}</p>}
-          </div>))}</div>)}
+          );
+        })}</div>)}
       {total > 20 && <div className="flex items-center justify-center gap-2 pt-2">
         <button onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina === 1} className="px-3 py-1 text-[10px] font-semibold bg-slate-100 rounded-lg disabled:opacity-50">Anterior</button>
         <span className="text-[10px] text-slate-400">Pagina {pagina}</span>
-        <button onClick={() => setPagina((p) => p + 1)} disabled={historial.length < 20} className="px-3 py-1 text-[10px] font-semibold bg-slate-100 rounded-lg disabled:opacity-50">Siguiente</button>
+        <button onClick={() => setPagina((p) => p + 1)} disabled={historialTipado.length < 20} className="px-3 py-1 text-[10px] font-semibold bg-slate-100 rounded-lg disabled:opacity-50">Siguiente</button>
       </div>}
     </div>
   );

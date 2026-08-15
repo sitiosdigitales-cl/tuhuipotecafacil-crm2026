@@ -133,6 +133,14 @@ interface ActividadLead {
   usuario: string;
 }
 
+type DocumentoApi = Omit<DocumentoLead, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
+type ActividadLeadApi = Omit<ActividadLead, "fecha"> & {
+  fecha?: string | Date;
+};
+
 export default function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
@@ -161,7 +169,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [tipoTrabajador, setTipoTrabajador] = useState<TipoTrabajador>("DEPENDIENTE");
-  const [documentos, setDocumentos] = useState<Record<string, { estado: "RECIBIDO" | "EN_REVISION" | "APROBADO" | "RECHAZADO" | "PENDIENTE"; fecha?: Date; archivoUrl?: string }>>({});
   const [docsSubidos, setDocsSubidos] = useState<DocumentoLead[]>([]);
   const [actividades, setActividades] = useState<ActividadLead[]>([]);
   const [copiado, setCopiado] = useState(false);
@@ -175,9 +182,9 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         const res = await fetch(`/api/documentos?leadId=${lead.id}`);
         const json = await res.json();
         if (json.success && json.data) {
-          setDocsSubidos(json.data.map((d: Record<string, any>) => ({
-            ...d,
-            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+          setDocsSubidos((json.data as DocumentoApi[]).map((documento) => ({
+            ...documento,
+            creadoEn: documento.creadoEn ? new Date(documento.creadoEn) : new Date(),
           })));
         }
       } catch {
@@ -197,9 +204,9 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         const res = await fetch(`/api/actividades?leadId=${lead.id}`);
         const json = await res.json();
         if (json.success && json.data) {
-          setActividades(json.data.map((a: Record<string, any>) => ({
-            ...a,
-            fecha: a.fecha ? new Date(a.fecha) : new Date(),
+          setActividades((json.data as ActividadLeadApi[]).map((actividad) => ({
+            ...actividad,
+            fecha: actividad.fecha ? new Date(actividad.fecha) : new Date(),
           })));
         }
       } catch {
@@ -242,7 +249,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const config = ETAPAS_CONFIG[lead.etapa];
 
   const documentosFiltrados = DOCUMENTOS_POR_TIPO[tipoTrabajador];
-  const docsAprobados = documentosFiltrados.filter(d => documentos[d.id]?.estado === "APROBADO").length;
+  const docsAprobados = documentosFiltrados.filter((documento) =>
+    docsSubidos.some((subido) =>
+      (subido.tipo === documento.id || subido.nombre === documento.nombre) && subido.estado === "APROBADO"
+    )
+  ).length;
   const docsTotal = documentosFiltrados.length;
   const porcentaje = Math.round((docsAprobados / docsTotal) * 100);
 
@@ -250,21 +261,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     router.push("/leads");
   };
 
-  const handleSubmitLead = (_data: Partial<Lead>) => {
+  const handleSubmitLead = () => {
     setFormularioOpen(false);
-  };
-
-  const toggleEstado = (docId: string) => {
-    setDocumentos(prev => {
-      const actual = prev[docId]?.estado || "PENDIENTE";
-      const siguiente = actual === "PENDIENTE" ? "RECIBIDO" :
-                        actual === "RECIBIDO" ? "EN_REVISION" :
-                        actual === "EN_REVISION" ? "APROBADO" : "PENDIENTE";
-      return {
-        ...prev,
-        [docId]: { estado: siguiente, fecha: siguiente !== "PENDIENTE" ? new Date() : undefined }
-      };
-    });
   };
 
   const generarPlantilla = () => {
@@ -353,7 +351,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  const handleCambiarEstadoDoc = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
+  const handleCambiarEstadoDoc = async (docId: string, nuevoEstado: DocumentoLead["estado"]) => {
     try {
       await fetch(`/api/documentos/${docId}`, {
         method: "PUT",
@@ -515,7 +513,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                   <FileText size={20} className="text-slate-300" />
                 </div>
                 <p className="text-[11px] text-slate-500">No hay documentos subidos aún</p>
-                <p className="text-[9px] text-slate-400 mt-1">Haz clic en "Subir" para agregar documentos</p>
+                <p className="text-[9px] text-slate-400 mt-1">Haz clic en &quot;Subir&quot; para agregar documentos</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -677,10 +675,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             {/* Lista de documentos */}
             <div className="p-3 space-y-1.5 max-h-[400px] overflow-y-auto">
               {documentosFiltrados.map((doc) => {
-                const estado = documentos[doc.id]?.estado || "PENDIENTE";
-                const configEstado = estadoConfig[estado];
                 const docSubido = docsSubidos.find(d => d.tipo === doc.id || d.nombre === doc.nombre);
-                const tieneArchivo = docSubido?.archivoUrl || documentos[doc.id]?.archivoUrl;
+                const estado = docSubido?.estado || "PENDIENTE";
+                const configEstado = estadoConfig[estado];
+                const tieneArchivo = docSubido?.archivoUrl;
 
                 return (
                   <div
@@ -715,7 +713,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id, leadId: "", estado: "PENDIENTE", creadoEn: new Date() } as any);
                                 setUploadOpen(true);
                               }
                             }}
@@ -724,7 +721,9 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         {tieneArchivo && (
                           <>
                             <button
-                              onClick={() => setDocSeleccionado({ id: doc.id, nombre: doc.nombre, tipo: doc.id as any, archivoUrl: tieneArchivo, leadId: lead.id, leadNombre: lead.nombre, estado: estado as any, creadoEn: new Date() })}
+                              onClick={() => {
+                                if (docSubido) handlePreviewDoc(docSubido);
+                              }}
                               className="p-1.5 hover:bg-emerald-100 rounded-lg transition-colors"
                               title="Ver"
                             >
