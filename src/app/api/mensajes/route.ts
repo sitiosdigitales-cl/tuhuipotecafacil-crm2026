@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const mensajes = (data || []).map((m: any) => ({
+    const mensajes = (data || []).map((m: Record<string, unknown>) => ({
       id: m.id,
       conversacionId: m.conversacionid,
       remitenteId: m.remitenteid,

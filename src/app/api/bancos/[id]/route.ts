@@ -20,7 +20,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (body.nombre !== undefined) updateData.nombre = body.nombre;
     if (body.color !== undefined) updateData.color = body.color;
     if (body.estado !== undefined) updateData.estado = body.estado;

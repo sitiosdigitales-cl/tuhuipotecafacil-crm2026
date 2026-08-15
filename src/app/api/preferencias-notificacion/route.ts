@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest) {
 
     // Insertar nuevas preferencias
     if (preferencias.length > 0) {
-      const rows = preferencias.map((p: any) => ({
+      const rows = preferencias.map((p: Record<string, unknown>) => ({
         id: crypto.randomUUID(),
         usuario_id: usuarioId,
         canal: p.canal,
@@ -94,7 +94,13 @@ function getDefaultPreferences(usuarioId: string) {
   ];
   const canales = ["in_app", "email", "whatsapp"];
 
-  const prefs: any[] = [];
+  const prefs: Array<{
+    id: string;
+    usuario_id: string;
+    canal: string;
+    evento: string;
+    habilitado: boolean;
+  }> = [];
   for (const evento of eventos) {
     for (const canal of canales) {
       prefs.push({

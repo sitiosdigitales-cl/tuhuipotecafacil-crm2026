@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
-    const camposPermitidos: Record<string, any> = {};
+    const camposPermitidos: Record<string, unknown> = {};
     if (body.titulo !== undefined) camposPermitidos.titulo = body.titulo;
     if (body.descripcion !== undefined) camposPermitidos.descripcion = body.descripcion;
     if (body.tipo !== undefined) camposPermitidos.tipo = body.tipo;

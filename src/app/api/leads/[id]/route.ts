@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     if (!puedeAccederLead(auth, lead)) return forbidden();
 
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
 
     // CLIENTE puede actualizar campos de perfil y datos financieros
     if (auth.rol === "CLIENTE") {

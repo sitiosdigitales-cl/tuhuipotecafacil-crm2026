@@ -8,7 +8,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const body = await request.json();
-    const camposPermitidos: Record<string, any> = {};
+    const camposPermitidos: Record<string, unknown> = {};
     if (body.contenido !== undefined) camposPermitidos.contenido = body.contenido;
     if (body.reacciones !== undefined) camposPermitidos.reacciones = body.reacciones;
     if (body.respondiendoA !== undefined) camposPermitidos.respondiendoA = body.respondiendoA;

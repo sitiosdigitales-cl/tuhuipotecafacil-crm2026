@@ -39,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = await request.json();
 
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (body.nombre) updateData.nombre = body.nombre;
     if (body.apellido) updateData.apellido = body.apellido;
     if (body.email) updateData.email = body.email.toLowerCase();

@@ -3,6 +3,19 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function firstText(fields: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = fields[key];
+    if (typeof value === "string" && value) return value;
+    if (typeof value === "number") return String(value);
+  }
+  return "";
+}
+
 // POST /api/webhook/leads — Endpoint unificado para formularios externos (Elementor, WordPress, etc.)
 // Autenticación: cabecera X-Webhook-Secret, o ?secret= (obsoleto, solo durante la transición).
 // Soporta: JSON, form-urlencoded, y el formato anidado de Elementor ({fields: {key: {value, raw_value}}})
@@ -32,43 +45,47 @@ export async function POST(request: NextRequest) {
     // panel.
     console.log("Webhook leads - Content-Type:", contentType, "Body length:", rawBody.length);
 
-    let body: Record<string, any> = {};
+    let body: Record<string, unknown> = {};
 
     if (contentType.includes("application/json")) {
-      body = JSON.parse(rawBody);
+      const parsed: unknown = JSON.parse(rawBody);
+      body = isRecord(parsed) ? parsed : {};
     } else if (contentType.includes("application/x-www-form-urlencoded")) {
       const params = new URLSearchParams(rawBody);
       params.forEach((value, key) => { body[key] = value; });
     } else {
-      try { body = JSON.parse(rawBody); } catch {
+      try {
+        const parsed: unknown = JSON.parse(rawBody);
+        body = isRecord(parsed) ? parsed : {};
+      } catch {
         const params = new URLSearchParams(rawBody);
         params.forEach((value, key) => { body[key] = value; });
       }
     }
 
     // Normalizar formato Elementor: {fields: {key: {value}}} → {key: value}
-    const rawFields = body.fields ?? body;
-    const normalized: Record<string, any> = {};
+    const rawFields = isRecord(body.fields) ? body.fields : body;
+    const normalized: Record<string, unknown> = {};
 
-    Object.entries(rawFields).forEach(([key, val]: [string, any]) => {
-      normalized[key] = typeof val === "object" && val?.value !== undefined ? val.value : val;
+    Object.entries(rawFields).forEach(([key, value]) => {
+      normalized[key] = isRecord(value) && value.value !== undefined ? value.value : value;
     });
 
     // Mapear campos del formulario al esquema de leads
     // Soporta etiquetas de Elementor (en español) y nombres genéricos (inglés/español)
-    const nombre = normalized["Nombre"] || normalized["nombre"] || normalized["first_name"] || normalized["name"] || "";
-    const apellido = normalized["Apellido"] || normalized["apellido"] || normalized["last_name"] || "";
-    const rut = normalized["Rut"] || normalized["rut"] || normalized["RUT"] || "";
-    const email = normalized["Correo Electrónico"] || normalized["email"] || normalized["correo"] || "";
-    const telefono = normalized["Número de Teléfono"] || normalized["telefono"] || normalized["teléfono"] || normalized["phone"] || normalized["tel"] || null;
-    const montoCredito = normalized["monto_credito"] || normalized["montoCredito"] || normalized["monto"] || normalized["monto_solicitado"] || null;
-    const tipoCredito = normalized["¿Qué tipo de crédito buscas?"] || normalized["tipo_credito"] || normalized["tipoCredito"] || null;
-    const situacionLaboral = normalized["¿Cuál es tu situación laboral?"] || normalized["situacion_laboral"] || null;
-    const comentarios = normalized["Comentarios adicionales"] || normalized["mensaje"] || normalized["message"] || normalized["consulta"] || null;
-    const rentaMensual = normalized["¿Cuál es tu renta mensual aproximada?"] || normalized["renta_mensual"] || normalized["rentaMensual"] || null;
-    const complementarRenta = normalized["¿Deseas complementar renta?"] || normalized["complementar_renta"] || null;
-    const enDicom = normalized["¿Estás actualmente en DICOM?"] || normalized["en_dicom"] || null;
-    const dicomDetalle = normalized["Si estás en DICOM, ¿corresponde?"] || normalized["dicom_detalle"] || null;
+    const nombre = firstText(normalized, ["Nombre", "nombre", "first_name", "name"]);
+    const apellido = firstText(normalized, ["Apellido", "apellido", "last_name"]);
+    const rut = firstText(normalized, ["Rut", "rut", "RUT"]);
+    const email = firstText(normalized, ["Correo Electrónico", "email", "correo"]);
+    const telefono = firstText(normalized, ["Número de Teléfono", "telefono", "teléfono", "phone", "tel"]) || null;
+    const montoCredito = firstText(normalized, ["monto_credito", "montoCredito", "monto", "monto_solicitado"]) || null;
+    const tipoCredito = firstText(normalized, ["¿Qué tipo de crédito buscas?", "tipo_credito", "tipoCredito"]) || null;
+    const situacionLaboral = firstText(normalized, ["¿Cuál es tu situación laboral?", "situacion_laboral"]) || null;
+    const comentarios = firstText(normalized, ["Comentarios adicionales", "mensaje", "message", "consulta"]) || null;
+    const rentaMensual = firstText(normalized, ["¿Cuál es tu renta mensual aproximada?", "renta_mensual", "rentaMensual"]) || null;
+    const complementarRenta = firstText(normalized, ["¿Deseas complementar renta?", "complementar_renta"]) || null;
+    const enDicom = firstText(normalized, ["¿Estás actualmente en DICOM?", "en_dicom"]) || null;
+    const dicomDetalle = firstText(normalized, ["Si estás en DICOM, ¿corresponde?", "dicom_detalle"]) || null;
 
     if (!nombre && !apellido) {
       return NextResponse.json({ error: "Nombre y apellido son requeridos" }, { status: 400 });

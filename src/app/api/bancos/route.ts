@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
       console.error("Error al consultar bancos:", error.message);
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
-    const bancos = (data || []).map((b: any) => fromSupabaseColumns(b));
+    const bancos = (data || []).map((b: Record<string, unknown>) => fromSupabaseColumns(b));
     return NextResponse.json({ success: true, data: bancos });
-  } catch (_e) {
+  } catch {
     return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
   }
 }
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.from("bancos").insert(toSupabaseColumns(bancoData)).select().single();
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     return NextResponse.json({ success: true, data: fromSupabaseColumns(data) }, { status: 201 });
-  } catch (_e) {
+  } catch {
     return NextResponse.json({ success: false, error: "Error al crear banco" }, { status: 500 });
   }
 }

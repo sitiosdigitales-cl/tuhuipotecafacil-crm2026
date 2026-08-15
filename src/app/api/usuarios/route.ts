@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const usuarios = (data || []).map((u: any) => ({
+    const usuarios = (data || []).map((u: Record<string, unknown>) => ({
       id: u.id,
       nombre: u.nombre,
       apellido: u.apellido,

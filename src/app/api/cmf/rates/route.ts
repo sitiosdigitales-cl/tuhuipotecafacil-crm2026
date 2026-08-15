@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       data: tasa,
       timestamp: new Date().toISOString(),
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Error al obtener tasa" },
       { status: 500 }

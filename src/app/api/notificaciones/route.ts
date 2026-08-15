@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const notificaciones = (data || []).map((n: any) => ({
+    const notificaciones = (data || []).map((n: Record<string, unknown>) => ({
       id: n.id,
       tipo: n.tipo,
       titulo: n.titulo,

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const actividades = (data || []).map((a: any) => ({
+    const actividades = (data || []).map((a: Record<string, unknown>) => ({
       id: a.id,
       leadId: a.leadid,
       tipo: a.tipo,

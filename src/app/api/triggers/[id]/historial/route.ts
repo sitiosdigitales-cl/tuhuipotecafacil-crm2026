@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { supabase } from "@/lib/supabase";
 
-function mapEjecucion(row: any) {
+function mapEjecucion(row: Record<string, unknown>) {
   return {
     id: row.id,
     triggerId: row.trigger_id,
@@ -115,7 +115,12 @@ export async function POST(
       .single();
 
     if (triggerData) {
-      const updates: Record<string, any> = {
+      const updates: {
+        ejecuciones: number;
+        ultimo_ejecucion: string;
+        exitosos?: number;
+        fallidos?: number;
+      } = {
         ejecuciones: (triggerData.ejecuciones || 0) + 1,
         ultimo_ejecucion: new Date().toISOString(),
       };

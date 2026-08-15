@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Error al actualizar tasas" },
       { status: 500 }

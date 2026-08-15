@@ -12,7 +12,7 @@ export async function GET() {
       data: estado,
       timestamp: new Date().toISOString(),
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Error al obtener estado" },
       { status: 500 }

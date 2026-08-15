@@ -439,3 +439,13 @@ de emails y etapas del pipeline.
 
 [calidad · autenticación · BUG-049] hallazgo — el login crea sesión para
 usuarios `INACTIVO` y `SUSPENDIDO`, aunque el estado ya viene en la consulta.
+
+[excepción · LINT-ALL] Diego autorizó explícitamente a Codex a corregir
+`src/**`; trabajo dividido en lotes pequeños para no interferir con Claude.
+
+[build] ocupado — Codex, LINT-01 · API.
+
+[build] libre — Codex, LINT-01 · API; build y typecheck terminaron en 0.
+
+[calidad · LINT-01] hecho — `src/app/api/**` queda en 0 errores y 0 warnings;
+23 errores y 8 warnings eliminados. Suite conserva la única roja de BUG-037.

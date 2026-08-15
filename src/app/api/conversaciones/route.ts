@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    let conversaciones = (data || []).map((c: any) => ({
+    let conversaciones = (data || []).map((c: Record<string, unknown>) => ({
       id: c.id,
       nombre: c.nombre,
       tipo: c.tipo,
       descripcion: c.descripcion,
-      participantes: Array.isArray(c.participantes) ? c.participantes : (typeof c.participantes === 'string' ? JSON.parse(c.participantes) : []),
+      participantes: Array.isArray(c.participantes) ? c.participantes : (typeof c.participantes === "string" ? JSON.parse(c.participantes) : []),
       mensajesNoLeidos: c.mensajesnoleidos || 0,
       esFijo: c.esfijo || false,
       creadoPor: c.creadopor,

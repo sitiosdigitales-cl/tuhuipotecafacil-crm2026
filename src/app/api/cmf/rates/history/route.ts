@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       total: historico.length,
       timestamp: new Date().toISOString(),
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: "Error al obtener histÃ³rico" },
       { status: 500 }
