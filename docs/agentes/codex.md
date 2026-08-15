@@ -250,3 +250,7 @@ hallazgo hasta que Claude estabilice `src/`.
 
 [build] libre — Codex, BUG-029; el reintento compiló y pasó TypeScript, pero
 falló al desaparecer `/api/stripe/create-session` durante el build compartido.
+
+[build] ocupado — Codex, BUG-029; segundo reintento con el árbol estable.
+
+[build] libre — Codex, BUG-029; build terminó en 0 con variables ficticias.
