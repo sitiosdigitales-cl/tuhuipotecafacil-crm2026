@@ -187,3 +187,10 @@ variables de comunicaciones internas sin sesión.
 [build] ocupado — Codex, BUG-021.
 
 [build] libre — Codex, BUG-021; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-022] hallazgo — `GET /api/biblioteca` expone documentos,
+descripciones y URLs internas sin sesión.
+
+[build] ocupado — Codex, BUG-022.
+
+[build] libre — Codex, BUG-022; build terminó en 0 con variables ficticias.
