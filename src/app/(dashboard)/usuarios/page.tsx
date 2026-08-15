@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -24,10 +24,15 @@ import { toast } from "sonner";
 import { useUser } from "@/modulos/usuarios";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
 
+type UsuarioApi = Omit<Usuario, "ultimoAcceso" | "creadoEn"> & {
+  ultimoAcceso?: string | Date;
+  creadoEn?: string | Date;
+};
+
 export default function UsuariosPage() {
   const router = useRouter();
   const { esSuperAdmin } = useUser();
-  const ahora = useMemo(() => Date.now(), []);
+  const [ahora] = useState(() => Date.now());
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -68,7 +73,7 @@ export default function UsuariosPage() {
         const res = await fetch("/api/usuarios", { credentials: "include" });
         const json = await res.json();
         if (json.success && json.data) {
-          setUsuarios(json.data.map((u: Record<string, any>) => ({
+          setUsuarios((json.data as UsuarioApi[]).map((u) => ({
             ...u,
             ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
             creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
@@ -184,7 +189,7 @@ export default function UsuariosPage() {
         const reload = await fetch("/api/usuarios", { credentials: "include" });
         const reloadData = await reload.json();
         if (reloadData.success && reloadData.data) {
-          setUsuarios(reloadData.data.map((u: Record<string, any>) => ({
+          setUsuarios((reloadData.data as UsuarioApi[]).map((u) => ({
             ...u,
             ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
             creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),

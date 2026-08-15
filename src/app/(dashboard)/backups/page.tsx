@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Database,
-  Download,
   Trash2,
   RefreshCw,
   Clock,
@@ -21,6 +20,17 @@ interface Backup {
   creado: string;
 }
 
+async function obtenerBackups(signal?: AbortSignal): Promise<Backup[]> {
+  const response = await fetch("/api/backup", { signal });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || "No se pudieron cargar los respaldos");
+  }
+
+  return data.data || [];
+}
+
 export default function BackupsPage() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,32 +39,38 @@ export default function BackupsPage() {
   // hay respaldos" son cosas diferentes, y solo una de las dos deja tranquilo.
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBackups();
-  }, []);
-
-  const fetchBackups = async () => {
+  const fetchBackups = useCallback(async () => {
     setLoading(true);
     setErrorCarga(null);
     try {
-      const response = await fetch("/api/backup");
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.success) {
-        setErrorCarga(data?.error || "No se pudieron cargar los respaldos");
-        setBackups([]);
-        return;
-      }
-
-      setBackups(data.data || []);
+      setBackups(await obtenerBackups());
     } catch (error) {
       console.error("Error fetching backups:", error);
-      setErrorCarga("No se pudieron cargar los respaldos");
+      setErrorCarga(error instanceof Error ? error.message : "No se pudieron cargar los respaldos");
       setBackups([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    obtenerBackups(controller.signal)
+      .then((data) => {
+        setBackups(data);
+        setErrorCarga(null);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Error fetching backups:", error);
+        setErrorCarga(error instanceof Error ? error.message : "No se pudieron cargar los respaldos");
+        setBackups([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   const createBackup = async () => {
     setCreating(true);
@@ -68,7 +84,7 @@ export default function BackupsPage() {
       } else {
         toast.error(data.error || "Error al crear respaldo");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al conectar con el servidor");
     } finally {
       setCreating(false);
@@ -90,7 +106,7 @@ export default function BackupsPage() {
       } else {
         toast.error(data.error || "Error al eliminar");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al conectar con el servidor");
     }
   };

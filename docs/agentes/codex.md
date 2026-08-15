@@ -456,3 +456,10 @@ usuarios `INACTIVO` y `SUSPENDIDO`, aunque el estado ya viene en la consulta.
 
 [calidad · LINT-02] hecho — ambos simuladores quedan en 0 errores y 0 warnings;
 52 errores y 2 warnings eliminados. BUG-037 sigue siendo la única prueba roja.
+
+[build] ocupado — Codex, LINT-03 · correcciones React del panel.
+
+[build] libre — Codex, LINT-03 · build y typecheck terminaron en 0.
+
+[calidad · LINT-03] hecho — seis vistas del panel quedan en 0 errores y 0 warnings;
+17 errores y 16 warnings eliminados. BUG-037 sigue siendo la única prueba roja.

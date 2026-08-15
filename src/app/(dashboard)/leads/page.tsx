@@ -76,11 +76,6 @@ export default function LeadsPage() {
   const [emailToLeadOpen, setEmailToLeadOpen] = useState(false);
   const LEADS_POR_PAGINA = 25;
 
-  // Resetear paginación al cambiar filtros
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [busqueda, filtroOrigen, filtroEtapa, filtroPrioridad]);
-
   // Tiempo real
   const [nuevosLeads, setNuevosLeads] = useState(0);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(new Date());
@@ -376,13 +371,13 @@ export default function LeadsPage() {
               type="text"
               placeholder="Buscar por nombre, RUT o email..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
               className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 focus:bg-white transition-all"
             />
           </div>
           <select
             value={filtroOrigen}
-            onChange={(e) => setFiltroOrigen(e.target.value)}
+            onChange={(e) => { setFiltroOrigen(e.target.value); setPaginaActual(1); }}
             className="px-3 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 font-medium"
           >
             {ORIGENES.map((o) => (
@@ -391,7 +386,7 @@ export default function LeadsPage() {
           </select>
           <select
             value={filtroEtapa}
-            onChange={(e) => setFiltroEtapa(e.target.value)}
+            onChange={(e) => { setFiltroEtapa(e.target.value); setPaginaActual(1); }}
             className="px-3 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 font-medium"
           >
             {ETAPAS_FILTRO.map((e) => (
@@ -400,7 +395,7 @@ export default function LeadsPage() {
           </select>
           <select
             value={filtroPrioridad}
-            onChange={(e) => setFiltroPrioridad(e.target.value)}
+            onChange={(e) => { setFiltroPrioridad(e.target.value); setPaginaActual(1); }}
             className="px-3 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 font-medium"
           >
             <option value="todos">Todas las prioridades</option>

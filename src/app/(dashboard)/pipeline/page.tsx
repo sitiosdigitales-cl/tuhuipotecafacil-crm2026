@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult, DragStart } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -25,7 +25,6 @@ import {
   LayoutList,
   LayoutGrid,
   UserPlus,
-  FileText,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS, ROLES_CONFIG } from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
@@ -410,9 +409,36 @@ export default function PipelinePage() {
     aprobados: leadsFiltrados.filter(l => ['APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
   }), [leadsFiltrados]);
 
+  const handleAsignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
+    const lead = leads.find((item) => item.id === leadId);
+    try {
+      const updateResponse = await fetch(`/api/leads/${leadId}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombreEjecutivo: nombreEjecutivo || null }),
+      });
+
+      if (updateResponse.ok) {
+        await actualizarLead(leadId, { nombreEjecutivo: nombreEjecutivo || undefined });
+        if (lead) {
+          toast.success("Ejecutivo asignado", {
+            description: nombreEjecutivo
+              ? `${lead.nombre} ${lead.apellido} asignado a ${nombreEjecutivo}`
+              : `${lead.nombre} ${lead.apellido} sin asignar`,
+          });
+        }
+      } else {
+        const errorResponse = await updateResponse.json().catch(() => ({}));
+        toast.error("Error al asignar", { description: errorResponse.error || "Intenta de nuevo" });
+      }
+    } catch {
+      toast.error("Error de conexion");
+    }
+  }, [actualizarLead, leads]);
+
   // Capturar el lead al iniciar el arrastre
-  const onDragStart = useCallback((_start: DragStart) => {
-  }, []);
+  const onDragStart = useCallback(() => {}, []);
 
   const onDragEnd = useCallback(async (result: DropResult) => {
     if (!result.destination) return;
@@ -532,7 +558,7 @@ export default function PipelinePage() {
     toast.success(`Lead movido a ${nombreEtapaDestino}`, {
       description: `${leadMovido.nombre} ${leadMovido.apellido} avanzó de etapa`,
     });
-  }, [leadsFiltrados, moverEtapa, agregarActividad, usuarioActual]);
+  }, [leadsFiltrados, moverEtapa, agregarActividad, usuarioActual, handleAsignarEjecutivo]);
 
   const forzarAvance = () => {
     if (!validacionModal.lead || !validacionModal.etapaDestino) return;
@@ -584,35 +610,6 @@ export default function PipelinePage() {
     e.stopPropagation();
     setLeadSeleccionado(lead);
     setFormularioOpen(true);
-  };
-
-  const handleAsignarEjecutivo = async (leadId: string, nombreEjecutivo: string) => {
-    const lead = leads.find(l => l.id === leadId);
-    try {
-      const updateResponse = await fetch(`/api/leads/${leadId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreEjecutivo: nombreEjecutivo || null }),
-      });
-
-      if (updateResponse.ok) {
-        // Actualizar estado local via el contexto
-        actualizarLead(leadId, { nombreEjecutivo: nombreEjecutivo || undefined } as any);
-        if (lead) {
-          toast.success("Ejecutivo asignado", {
-            description: nombreEjecutivo
-              ? `${lead.nombre} ${lead.apellido} asignado a ${nombreEjecutivo}`
-              : `${lead.nombre} ${lead.apellido} sin asignar`,
-          });
-        }
-      } else {
-        const err = await updateResponse.json().catch(() => ({}));
-        toast.error("Error al asignar", { description: err.error || "Intenta de nuevo" });
-      }
-    } catch {
-      toast.error("Error de conexion");
-    }
   };
 
   const handleSubmitLead = (data: Partial<Lead>) => {

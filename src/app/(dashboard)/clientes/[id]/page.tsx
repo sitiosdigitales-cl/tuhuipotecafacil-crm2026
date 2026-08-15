@@ -10,9 +10,7 @@ import {
   FileText,
   Calendar,
   Clock,
-  CheckCircle,
   Upload,
-  Download,
   Edit,
   Building2,
   Home,
@@ -30,7 +28,6 @@ import {
   MapPin,
   BriefcaseBusiness,
   Check,
-  Eye,
 } from "lucide-react";
 import { ETAPAS_CONFIG, ORIGEN_LABELS } from "@/tipos";
 import { SITUACION_LABORAL_CONFIG, RENTAS_MENSUALES } from "@/tipos";
@@ -52,8 +49,40 @@ import {
 } from "@/components/ui/dialog";
 import type { Lead, DocumentoLead, SituacionLaboral, Etapa } from "@/tipos";
 import { obtenerDocumentosCompletos, buscarDocSubido } from "@/modulos/documentos/config";
-import type { DocConfigEntry } from "@/modulos/documentos/config";
 import { DocumentoChecklistRow } from "@/componentes/documentos/DocumentoChecklistRow";
+
+type DocumentoApi = Omit<DocumentoLead, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
+interface ActividadCliente {
+  id: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  fecha: Date;
+  usuario: string;
+}
+
+interface NuevaActividadCliente {
+  leadId: string;
+  tipo: string;
+  titulo: string;
+  descripcion: string;
+  usuario: string;
+  usuarioId?: string;
+}
+
+interface AsesorAsignado {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  cargo?: string;
+  rol?: string;
+  avatar?: string;
+}
 
 const prioridadConfig = {
   BAJA: { label: "Baja", class: "bg-slate-100 text-slate-600" },
@@ -88,6 +117,24 @@ export default function ClientePerfilPage() {
   const { usuarioActual } = useUser();
   const [lead, setLead] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [tabActiva, setTabActiva] = useState("resumen");
+  const [documentos, setDocumentos] = useState<DocumentoLead[]>([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [gestionarOpen, setGestionarOpen] = useState(false);
+  const [docSeleccionado, setDocSeleccionado] = useState<DocumentoLead | null>(null);
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [agendarOpen, setAgendarOpen] = useState(false);
+  const [fechaReunion, setFechaReunion] = useState("");
+  const [horaReunion, setHoraReunion] = useState("10:00");
+  const [notasReunion, setNotasReunion] = useState("");
+  const [editarOpen, setEditarOpen] = useState(false);
+  const [solicitarOpen, setSolicitarOpen] = useState(false);
+  const [guardandoProgreso, setGuardandoProgreso] = useState(false);
+  const [asesorResultado, setAsesorResultado] = useState<{ id: string; data: AsesorAsignado | null } | null>(null);
+  const asesorId = lead?.asignadoA;
+  const asesorAsignado = asesorResultado && asesorResultado.id === asesorId ? asesorResultado.data : null;
+  const cargandoAsesor = Boolean(asesorId && asesorResultado?.id !== asesorId);
 
   useEffect(() => {
     if (!id) return;
@@ -130,9 +177,9 @@ export default function ClientePerfilPage() {
         const res = await fetch(`/api/documentos?leadId=${leadId}`);
         const json = await res.json();
         if (json.success && json.data) {
-          setDocumentos(json.data.map((d: any) => ({
-            ...d,
-            creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+          setDocumentos((json.data as DocumentoApi[]).map((documento) => ({
+            ...documento,
+            creadoEn: documento.creadoEn ? new Date(documento.creadoEn) : new Date(),
           })));
         }
       } catch {
@@ -144,48 +191,28 @@ export default function ClientePerfilPage() {
 
   // Cargar datos del asesor asignado
   useEffect(() => {
-    if (!lead?.asignadoA) {
-      setAsesorAsignado(null);
+    if (!asesorId) {
       return;
     }
+    const idAsesor = asesorId;
     let cancelado = false;
     async function cargarAsesor() {
-      setCargandoAsesor(true);
       try {
-        const res = await fetch(`/api/usuarios?id=${lead!.asignadoA}`, { credentials: "include" });
+        const res = await fetch(`/api/usuarios?id=${idAsesor}`, { credentials: "include" });
         if (cancelado) return;
         const json = await res.json();
         if (json.success && json.data && json.data.length > 0) {
-          setAsesorAsignado(json.data[0]);
+          setAsesorResultado({ id: idAsesor, data: json.data[0] as AsesorAsignado });
         } else {
-          setAsesorAsignado(null);
+          setAsesorResultado({ id: idAsesor, data: null });
         }
       } catch {
-        if (!cancelado) setAsesorAsignado(null);
-      } finally {
-        if (!cancelado) setCargandoAsesor(false);
+        if (!cancelado) setAsesorResultado({ id: idAsesor, data: null });
       }
     }
     cargarAsesor();
     return () => { cancelado = true; };
-  }, [lead?.asignadoA]);
-
-  const [tabActiva, setTabActiva] = useState("resumen");
-  const [documentos, setDocumentos] = useState<DocumentoLead[]>([]);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [gestionarOpen, setGestionarOpen] = useState(false);
-  const [docSeleccionado, setDocSeleccionado] = useState<DocumentoLead | null>(null);
-  const [eliminarOpen, setEliminarOpen] = useState(false);
-  const [agendarOpen, setAgendarOpen] = useState(false);
-  const [fechaReunion, setFechaReunion] = useState("");
-  const [horaReunion, setHoraReunion] = useState("10:00");
-  const [notasReunion, setNotasReunion] = useState("");
-  const [editarOpen, setEditarOpen] = useState(false);
-  const [solicitarOpen, setSolicitarOpen] = useState(false);
-  const [guardandoProgreso, setGuardandoProgreso] = useState(false);
-  const [asesorAsignado, setAsesorAsignado] = useState<{ id: string; nombre: string; apellido: string; email: string; telefono?: string; cargo?: string; rol?: string; avatar?: string } | null>(null);
-  const [cargandoAsesor, setCargandoAsesor] = useState(false);
+  }, [asesorId]);
 
   const etapaActual = lead ? PASOS_PROGRESO.find((p) => p.etapa === lead.etapa)?.paso || 1 : 0;
   const totalPasos = PASOS_PROGRESO.length;
@@ -205,10 +232,9 @@ export default function ClientePerfilPage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const agregarActividad = async (_data: any) => {};
-  const actividades: any[] = [];
-  const getIconoActividad = (_tipo: string) => ({ icono: Clock, color: "text-slate-500", bg: "bg-slate-50" });
+  const agregarActividad = (actividad: NuevaActividadCliente) => { void actividad; };
+  const actividades: ActividadCliente[] = [];
+  const getIconoActividad = () => ({ icono: Clock, color: "text-slate-500", bg: "bg-slate-50" });
   const formatearTiempoRelativo = (fecha: Date) => fecha.toLocaleDateString("es-CL");
 
   if (cargando) {
@@ -235,15 +261,15 @@ export default function ClientePerfilPage() {
     }
   };
 
-  const handleUpload = async (_nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
+  const handleUpload = async () => {
     // Recargar documentos desde la API
     try {
       const res = await fetch(`/api/documentos?leadId=${lead!.id}`);
       const json = await res.json();
       if (json.success && json.data) {
-        setDocumentos(json.data.map((d: any) => ({
-          ...d,
-          creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+        setDocumentos((json.data as DocumentoApi[]).map((documento) => ({
+          ...documento,
+          creadoEn: documento.creadoEn ? new Date(documento.creadoEn) : new Date(),
         })));
       }
     } catch {
@@ -507,7 +533,7 @@ export default function ClientePerfilPage() {
               </h3>
               <div className="space-y-3">
                 {actividades.slice(0, 5).map((actividad) => {
-                  const configIcono = getIconoActividad(actividad.tipo);
+                  const configIcono = getIconoActividad();
                   const IconoAct = configIcono.icono;
                   return (
                     <div key={actividad.id} className="flex items-start gap-3">
@@ -629,7 +655,7 @@ export default function ClientePerfilPage() {
           </h3>
           <div className="space-y-4">
             {actividades.map((actividad, idx) => {
-              const configIcono = getIconoActividad(actividad.tipo);
+              const configIcono = getIconoActividad();
               const IconoAct = configIcono.icono;
               return (
                 <div key={actividad.id} className="flex gap-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Mail,
   MessageSquare,
@@ -26,7 +26,7 @@ import {
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 
 // Datos mock de campañas (fechas fijas para evitar hidratación)
-const CAMPANAS_MOCK = [
+export const CAMPANAS_MOCK = [
   {
     id: "c1",
     nombre: "Black Friday Hipotecario 2024",
@@ -161,6 +161,13 @@ const CAMPANAS_MOCK = [
   },
 ];
 
+type Campana = (typeof CAMPANAS_MOCK)[number];
+type CampanaApi = Omit<Campana, "fechaInicio" | "fechaFin" | "creadoEn"> & {
+  fechaInicio: string | Date;
+  fechaFin: string | Date;
+  creadoEn: string | Date;
+};
+
 // Estadísticas generales
 const STATS_GLOBALES = {
   totalCampanas: 6,
@@ -181,25 +188,30 @@ const STATS_GLOBALES = {
 type TabCampana = "todas" | "activas" | "programadas" | "finalizadas";
 
 export default function CampanasPage() {
-  const [campanas, setCampanas] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [campanas, setCampanas] = useState<Campana[]>([]);
   const [tabActiva, setTabActiva] = useState<TabCampana>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [modalCrear, setModalCrear] = useState(false);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const [ordenarPor, setOrdenarPor] = useState("recientes");
-  const ahoraRef = useRef(Date.now());
-  const ahora = ahoraRef.current;
+  const ordenarPor = "recientes";
+  const [ahora] = useState(() => Date.now());
 
   useEffect(() => {
     async function cargar() {
       try {
         const res = await fetch("/api/campanas");
         const json = await res.json();
-        if (json.success && json.data) setCampanas(json.data);
+        if (json.success && Array.isArray(json.data)) {
+          const rows = json.data as CampanaApi[];
+          setCampanas(rows.map((campana) => ({
+            ...campana,
+            fechaInicio: new Date(campana.fechaInicio),
+            fechaFin: new Date(campana.fechaFin),
+            creadoEn: new Date(campana.creadoEn),
+          })));
+        }
       } catch { setCampanas([]); }
-      finally { setCargando(false); }
     }
     cargar();
   }, []);
@@ -224,9 +236,9 @@ export default function CampanasPage() {
       if (ordenarPor === "conversiones") return b.conversiones - a.conversiones;
       return 0;
     });
-  }, [tabActiva, busqueda, filtroTipo, ordenarPor]);
+  }, [campanas, tabActiva, busqueda, filtroTipo, ordenarPor]);
 
-  const campanaDetalle = CAMPANAS_MOCK.find((c) => c.id === modalDetalle);
+  const campanaDetalle = campanas.find((campana) => campana.id === modalDetalle);
 
   const estadoConfig: Record<string, { label: string; color: string; bg: string; icono: React.ReactNode }> = {
     ACTIVA: { label: "Activa", color: "text-emerald-600", bg: "bg-emerald-50", icono: <Play size={12} /> },
