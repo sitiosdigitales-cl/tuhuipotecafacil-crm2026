@@ -133,3 +133,15 @@ leads y acepta ejecuciones falsas sin sesión.
 [build] ocupado — Codex, BUG-014.
 
 [build] libre — Codex, BUG-014; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-015] hallazgo — `GET /api/integraciones` devuelve la
+columna de configuración que puede contener API keys y secretos, sin sesión.
+
+[build] ocupado — Codex, BUG-015.
+
+[build] libre — Codex, BUG-015; build no iniciado porque Claude comenzó a
+corregir la cola C-01 en el árbol compartido.
+
+[build] ocupado — Codex, BUG-015; reanudado después de `6349ef0`.
+
+[build] libre — Codex, BUG-015; build terminó en 0 con variables ficticias.
