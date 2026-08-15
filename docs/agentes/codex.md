@@ -542,3 +542,11 @@ BUG-037 sigue siendo la única prueba roja (273/274).
 [calidad · LINT-07B] hecho — utilidades e integraciones quedan en 0/0;
 17 errores y 1 warning eliminados. Quedan 5 errores y 5 warnings;
 BUG-037 sigue siendo la única prueba roja (273/274).
+
+[build] ocupado — Codex, LINT-07C · scripts y warnings finales.
+
+[build] libre — Codex, LINT-07C · build y typecheck terminaron en 0.
+
+[calidad · LINT-07C] hecho — lint completo queda en 0 errores y 0 warnings;
+se retiraron dos scripts duplicados sin consumidores. BUG-037 sigue siendo
+la única prueba roja (273/274).

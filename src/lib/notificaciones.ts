@@ -83,7 +83,7 @@ export const Notificaciones = {
       accionUrl: "/documentos",
     }),
 
-  nuevoMensaje: (remitente: string, _conversacionId: string) =>
+  nuevoMensaje: (remitente: string) =>
     despacharNotificacionClient({
       evento: "mensaje",
       titulo: "Nuevo mensaje",

@@ -215,8 +215,6 @@ const TASAS_MOCK: CMFTasa[] = [
   { fecha: "2026-04-01", tipoOperacion: "Hipotecario CLP", tasa: 9.20, moneda: "CLP", fuente: "CMF", fechaConsulta: new Date() },
 ];
 
-// Cache en memoria
-let tasasCache: CMFTasa[] = TASAS_MOCK;
 let ultimoCache: Date = new Date();
 
 // Función para obtener tasas de la API CMF
@@ -226,7 +224,7 @@ export async function fetchTasasCMF(): Promise<CMFTasa[]> {
 }
 
 // Obtener tasas por banco
-export async function obtenerTasasPorBanco(_moneda: string = "UF", monto?: number): Promise<TasaBanco[]> {
+export async function obtenerTasasPorBanco(monto?: number): Promise<TasaBanco[]> {
   await new Promise(resolve => setTimeout(resolve, 50));
   
   let bancos = [...TASAS_POR_BANCO];
@@ -244,7 +242,7 @@ export async function obtenerTasasPorBanco(_moneda: string = "UF", monto?: numbe
 
 // Obtener mejor banco
 export async function obtenerMejorBanco(monto: number, plazo: number): Promise<TasaBanco | null> {
-  const bancos = await obtenerTasasPorBanco("UF", monto);
+  const bancos = await obtenerTasasPorBanco(monto);
   
   // Filtrar por plazo
   const bancosValidos = bancos.filter(b => plazo >= b.plazoMinimo && plazo <= b.plazoMaximo);
@@ -264,7 +262,7 @@ export async function obtenerTasaVigente(tipoOperacion?: string, moneda?: string
 }
 
 // Obtener histórico
-export async function obtenerHistorico(_meses: number = 12): Promise<CMFHistorico[]> {
+export async function obtenerHistorico(meses: number = 12): Promise<CMFHistorico[]> {
   const tasas = await fetchTasasCMF();
   
   const porMes: Record<string, number[]> = {};
@@ -274,13 +272,18 @@ export async function obtenerHistorico(_meses: number = 12): Promise<CMFHistoric
     porMes[mes].push(tasa.tasa);
   }
 
-  return Object.entries(porMes).map(([mes, valores]) => ({
-    mes,
-    tasaPromedio: valores.reduce((a, b) => a + b, 0) / valores.length,
-    tasaMinima: Math.min(...valores),
-    tasaMaxima: Math.max(...valores),
-    registros: valores.length,
-  }));
+  const limite = Number.isFinite(meses) ? Math.max(0, Math.floor(meses)) : 12;
+
+  return Object.entries(porMes)
+    .sort(([mesA], [mesB]) => mesB.localeCompare(mesA))
+    .slice(0, limite)
+    .map(([mes, valores]) => ({
+      mes,
+      tasaPromedio: valores.reduce((a, b) => a + b, 0) / valores.length,
+      tasaMinima: Math.min(...valores),
+      tasaMaxima: Math.max(...valores),
+      registros: valores.length,
+    }));
 }
 
 // Obtener estado del servicio
@@ -298,7 +301,6 @@ export async function obtenerEstadoCMF(): Promise<CMFStatus> {
 export async function actualizarTasas(): Promise<{ exito: boolean; registros: number; mensaje: string }> {
   try {
     const tasas = await fetchTasasCMF();
-    tasasCache = tasas;
     ultimoCache = new Date();
     
     return {
@@ -320,8 +322,7 @@ export async function actualizarTasas(): Promise<{ exito: boolean; registros: nu
 export function calcularDividendo(
   monto: number,
   tasaAnual: number,
-  plazoAnos: number,
-  _moneda: "CLP" | "UF" = "UF"
+  plazoAnos: number
 ): {
   dividendo: number;
   cae: number;
