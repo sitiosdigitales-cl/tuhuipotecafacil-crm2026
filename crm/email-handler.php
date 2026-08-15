@@ -28,12 +28,19 @@ function logMessage($message) {
 function sendToCRM($emailData) {
     global $CRM_WEBHOOK_URL;
     
+    // El secreto se lee del entorno, nunca se escribe en este archivo.
+    // Debe coincidir con EMAIL_WEBHOOK_SECRET configurada en Vercel.
+    $secret = getenv('CRM_EMAIL_WEBHOOK_SECRET') ?: '';
+
+    $headers = ['Content-Type: application/json'];
+    if ($secret !== '') {
+        $headers[] = 'X-Webhook-Secret: ' . $secret;
+    }
+
     $ch = curl_init($CRM_WEBHOOK_URL);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($emailData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-    ]);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);

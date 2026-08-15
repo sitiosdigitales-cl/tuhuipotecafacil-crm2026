@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function POST(request: NextRequest) {
-    if (!requireAuth(request)) return unauthorized();
+    const auth = requireAuth(request);
+    if (!auth) return unauthorized();
     try {
     const formData = await request.formData();
     const archivo = formData.get("archivo") as File;
@@ -30,6 +32,19 @@ export async function POST(request: NextRequest) {
     if (!tiposPermitidos.includes(archivo.type)) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
     }
+
+    // Quién es dueño del lead se resuelve ANTES de tocar Storage: un archivo
+    // subido y luego rechazado igual quedó escrito en el bucket.
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("id, asignadoa, email")
+      .eq("id", leadId)
+      .single();
+
+    if (!lead) {
+      return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
+    }
+    if (!puedeAccederLead(auth, lead)) return forbidden();
 
     // Subir archivo a Supabase Storage
     const docId = crypto.randomUUID();

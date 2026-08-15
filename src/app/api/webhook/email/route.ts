@@ -5,6 +5,26 @@ import { enviarEmail } from "@/lib/email";
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
 // Soporta: SendGrid Inbound Parse, Mailgun Routes, formato JSON genérico
 // Crea un lead automáticamente en el CRM
+//
+// Autenticación: cabecera X-Webhook-Secret contra EMAIL_WEBHOOK_SECRET.
+// Es obligatoria: el endpoint escribe en la base con la service role key y
+// dispara correos, así que sin secreto configurado no acepta nada.
+
+function remitenteAutorizado(request: NextRequest): boolean {
+  const esperado = process.env.EMAIL_WEBHOOK_SECRET;
+  if (!esperado) return false;
+
+  const recibido = request.headers.get("x-webhook-secret");
+  if (!recibido || recibido.length !== esperado.length) return false;
+
+  // Comparación en tiempo constante sin traer crypto: acumula las diferencias
+  // en vez de cortar en el primer byte distinto.
+  let diff = 0;
+  for (let i = 0; i < esperado.length; i++) {
+    diff |= esperado.charCodeAt(i) ^ recibido.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 interface EmailData {
   from?: string;
@@ -98,6 +118,9 @@ function extraerContexto(subject: string, body: string): { tipoConsulta: string;
 }
 
 export async function POST(request: NextRequest) {
+  if (!remitenteAutorizado(request)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
   try {
     const rawBody = await request.text();
     const contentType = request.headers.get("content-type") || "";

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
 
-// POST /api/portal/upload - Upload endpoint público para el portal del cliente
-// No requiere autenticación - el cliente accede con su RUT
+// POST /api/portal/upload - Subida de documentos desde el portal del cliente.
+//
+// Antes era público: bastaba conocer un leadId para escribir en el bucket de
+// documentos de cualquier persona. El RUT no sirve como credencial, en Chile
+// es un dato que cualquiera puede obtener o deducir.
 export async function POST(request: NextRequest) {
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const formData = await request.formData();
     const archivo = formData.get("archivo") as File;
@@ -30,16 +37,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
     }
 
-    // Verificar que el lead existe
+    // Verificar que el lead existe y que quien sube puede tocarlo
     const { data: lead, error: leadError } = await supabase
       .from("leads")
-      .select("id, nombre, apellido")
+      .select("id, nombre, apellido, asignadoa, email")
       .eq("id", leadId)
       .single();
 
     if (leadError || !lead) {
       return NextResponse.json({ success: false, error: "Lead no encontrado" }, { status: 404 });
     }
+    if (!puedeAccederLead(auth, lead)) return forbidden();
 
     // Subir archivo a Supabase Storage
     const docId = crypto.randomUUID();
