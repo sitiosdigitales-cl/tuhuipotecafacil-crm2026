@@ -34,5 +34,5 @@ export const LANDINGS_ESTADOS = [
 export function tienePermisoMarketing(rol: string, accion: string): boolean {
   const permisos = MARKETING_PERMISOS[accion];
   if (!permisos) return false;
-  return permisos.includes(rol as any);
+  return permisos.some((permiso) => permiso === rol);
 }

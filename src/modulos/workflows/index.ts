@@ -54,8 +54,28 @@ export interface Condicion {
 
 export interface Accion {
   tipo: TipoAccion;
-  configuracion: Record<string, any>;
+  configuracion: Record<string, unknown>;
   orden: number;
+}
+
+interface RespuestaWorkflows {
+  success: boolean;
+  data?: Workflow[];
+}
+
+function obtenerTexto(registro: Record<string, unknown>, campo: string): string | undefined {
+  const valor = registro[campo];
+  return typeof valor === "string" ? valor : undefined;
+}
+
+function obtenerNumero(registro: Record<string, unknown>, campo: string): number | undefined {
+  const valor = registro[campo];
+  if (typeof valor === "number" && Number.isFinite(valor)) return valor;
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : undefined;
+  }
+  return undefined;
 }
 
 // â”€â”€â”€ ConfiguraciÃ³n â”€â”€â”€
@@ -106,7 +126,7 @@ export const WorkflowSchema = z.object({
 export type CrearWorkflowInput = z.infer<typeof WorkflowSchema>;
 
 // â”€â”€â”€ Servicios â”€â”€â”€
-export async function obtenerWorkflows() {
+export async function obtenerWorkflows(): Promise<RespuestaWorkflows> {
   return fetch("/api/flujos", { credentials: "include" }).then(r => r.json());
 }
 
@@ -142,7 +162,7 @@ export async function eliminarWorkflow(id: string) {
 }
 
 // â”€â”€â”€ Motor de ejecuciÃ³n â”€â”€â”€
-export async function ejecutarWorkflow(workflow: Workflow, contexto: Record<string, any>) {
+export async function ejecutarWorkflow(workflow: Workflow, contexto: Record<string, unknown>) {
   console.log(`[Workflow] Ejecutando: ${workflow.nombre}`);
 
   for (const accion of workflow.acciones.sort((a, b) => a.orden - b.orden)) {
@@ -158,33 +178,36 @@ export async function ejecutarWorkflow(workflow: Workflow, contexto: Record<stri
   await editarWorkflow(workflow.id, {
     ejecuciones: (workflow.ejecuciones || 0) + 1,
     ultimoEjecucion: new Date().toISOString(),
-  } as any);
+  });
 }
 
-async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
+async function ejecutarAccion(accion: Accion, contexto: Record<string, unknown>) {
+  const leadId = obtenerTexto(contexto, "leadId");
   switch (accion.tipo) {
     case "asignar_ejecutivo":
-      if (contexto.leadId && accion.configuracion.ejecutivoId) {
-        await fetch(`/api/leads/${contexto.leadId}`, {
+      const ejecutivoId = obtenerTexto(accion.configuracion, "ejecutivoId");
+      if (leadId && ejecutivoId) {
+        await fetch(`/api/leads/${leadId}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nombreEjecutivo: accion.configuracion.ejecutivoId }),
+          body: JSON.stringify({ nombreEjecutivo: ejecutivoId }),
         });
       }
       break;
 
     case "crear_tarea":
+      const diasPlazo = obtenerNumero(accion.configuracion, "diasPlazo");
       await fetch("/api/tareas", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          titulo: accion.configuracion.titulo || "Tarea automÃ¡tica",
-          leadId: contexto.leadId,
-          asignadoA: accion.configuracion.asignadoA,
-          fechavencimiento: accion.configuracion.diasPlazo
-            ? new Date(Date.now() + accion.configuracion.diasPlazo * 86400000).toISOString()
+          titulo: obtenerTexto(accion.configuracion, "titulo") || "Tarea automÃ¡tica",
+          leadId,
+          asignadoA: obtenerTexto(accion.configuracion, "asignadoA"),
+          fechavencimiento: diasPlazo
+            ? new Date(Date.now() + diasPlazo * 86400000).toISOString()
             : undefined,
         }),
       });
@@ -197,20 +220,21 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tipo: "custom",
-          to: contexto.email,
-          subject: accion.configuracion.asunto || "NotificaciÃ³n",
-          html: accion.configuracion.mensaje || "Tienes una nueva notificaciÃ³n",
+          to: obtenerTexto(contexto, "email"),
+          subject: obtenerTexto(accion.configuracion, "asunto") || "NotificaciÃ³n",
+          html: obtenerTexto(accion.configuracion, "mensaje") || "Tienes una nueva notificaciÃ³n",
         }),
       });
       break;
 
     case "mover_pipeline":
-      if (contexto.leadId && accion.configuracion.etapaDestino) {
-        await fetch(`/api/leads/${contexto.leadId}`, {
+      const etapaDestino = obtenerTexto(accion.configuracion, "etapaDestino");
+      if (leadId && etapaDestino) {
+        await fetch(`/api/leads/${leadId}`, {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ etapa: accion.configuracion.etapaDestino }),
+          body: JSON.stringify({ etapa: etapaDestino }),
         });
       }
       break;
@@ -218,8 +242,8 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, any>) {
     case "notificar_ejecutivo":
       // Emitir evento para notificaciÃ³n
       eventBus.emit(EVENTOS.NOTIFICATION_CREATED, {
-        titulo: accion.configuracion.mensaje || "NotificaciÃ³n",
-        leadId: contexto.leadId,
+        titulo: obtenerTexto(accion.configuracion, "mensaje") || "NotificaciÃ³n",
+        leadId,
       });
       break;
 
@@ -236,11 +260,14 @@ export function iniciarMotorWorkflows() {
       try {
         const result = await obtenerWorkflows();
         const workflows = (result.data || []).filter(
-          (w: any) => w.estado === "ACTIVO" && w.trigger === evento
+          (workflow) => workflow.estado === "ACTIVO" && workflow.trigger === evento
         );
+        const contextoWorkflow = contexto && typeof contexto === "object"
+          ? contexto as Record<string, unknown>
+          : {};
         
         for (const workflow of workflows) {
-          await ejecutarWorkflow(workflow, contexto);
+          await ejecutarWorkflow(workflow, contextoWorkflow);
         }
       } catch (err) {
         console.error(`[Workflow] Error procesando evento ${evento}:`, err);

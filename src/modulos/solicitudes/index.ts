@@ -101,7 +101,7 @@ export async function obtenerSolicitud(id: string) {
   return fetch(`/api/solicitudes/${id}`, { credentials: "include" }).then(r => r.json());
 }
 
-export async function listarSolicitudes(filtros?: Record<string, any>) {
+export async function listarSolicitudes(filtros?: Record<string, string>) {
   const params = new URLSearchParams(filtros);
   return fetch(`/api/solicitudes?${params}`, { credentials: "include" }).then(r => r.json());
 }
@@ -116,7 +116,7 @@ export async function actualizarSolicitud(id: string, data: Partial<Solicitud>) 
 }
 
 export async function cambiarEstadoSolicitud(id: string, nuevoEstado: string) {
-  return actualizarSolicitud(id, { estado: nuevoEstado } as any);
+  return actualizarSolicitud(id, { estado: nuevoEstado });
 }
 
 // ─── Validaciones ───

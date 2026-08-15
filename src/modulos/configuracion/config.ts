@@ -22,5 +22,5 @@ export const CONFIG_SECCIONES = [
 export function tienePermisoConfig(rol: string, accion: string): boolean {
   const permisos = CONFIG_PERMISOS[accion];
   if (!permisos) return false;
-  return permisos.includes(rol as any);
+  return permisos.some((permiso) => permiso === rol);
 }

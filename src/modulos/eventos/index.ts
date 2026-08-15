@@ -10,7 +10,7 @@
  *   eventBus.on("LeadCreated", (data) => { ... });
  */
 
-type EventCallback = (data: any) => void;
+type EventCallback = (data: unknown) => void;
 
 class EventBus {
   private listeners: Map<string, EventCallback[]> = new Map();
@@ -31,7 +31,7 @@ class EventBus {
     };
   }
 
-  emit(event: string, data?: any): void {
+  emit(event: string, data?: unknown): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       callbacks.forEach((cb) => cb(data));

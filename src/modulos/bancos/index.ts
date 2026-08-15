@@ -19,7 +19,10 @@ export function useBancos() {
     }
   }, []);
 
-  useEffect(() => { cargarBancos(); }, [cargarBancos]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void cargarBancos(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [cargarBancos]);
 
   const crearBanco = async (banco: Omit<Banco, "id">) => {
     const res = await fetch("/api/bancos", {

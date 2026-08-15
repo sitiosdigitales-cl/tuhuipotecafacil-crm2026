@@ -519,3 +519,10 @@ eliminados con tipos compartidos. BUG-037 sigue siendo la única prueba roja.
 
 [calidad · LINT-06A] hecho — leads, clientes, documentos, tareas, usuarios y
 reportes quedan en 0/0; 51 errores y 4 warnings eliminados. BUG-037 sigue roja.
+
+[build] ocupado — Codex, LINT-06B · módulos auxiliares.
+
+[build] libre — Codex, LINT-06B · build y typecheck terminaron en 0.
+
+[calidad · LINT-06B] hecho — módulos auxiliares TypeScript quedan en 0/0;
+42 errores eliminados. Quedan 52 errores y 8 warnings; BUG-037 sigue roja.

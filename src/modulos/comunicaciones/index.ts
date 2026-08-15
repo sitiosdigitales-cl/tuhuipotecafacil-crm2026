@@ -24,7 +24,7 @@ export interface Comunicacion {
   estado: "enviado" | "entregado" | "leido" | "fallido";
   archivoUrl?: string;
   duracion?: number; // para llamadas, en segundos
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   creadoEn: string;
 }
 
@@ -81,6 +81,26 @@ export const ComunicacionSchema = z.object({
 });
 
 export type EnviarComunicacionInput = z.infer<typeof ComunicacionSchema>;
+
+interface RespuestaLista<T> {
+  data?: T[];
+}
+
+interface ConversacionTimeline {
+  canal?: CanalComunicacion;
+  ultimoMensaje?: string;
+  ultimoMensajeFecha?: string;
+  creadoEn?: string;
+  creadoen?: string;
+}
+
+interface ActividadTimeline {
+  tipo?: string;
+  titulo?: string;
+  fecha?: string;
+  creadoEn?: string;
+  creadoen?: string;
+}
 
 // ─── Servicios ───
 export async function obtenerComunicaciones(leadId?: string) {
@@ -141,25 +161,28 @@ export async function enviarMensaje(conversacionId: string, contenido: string, r
 
 // ─── Timeline ───
 export async function obtenerTimeline(leadId: string) {
-  const [comunicaciones, actividades] = await Promise.all([
+  const [comunicaciones, actividades]: [
+    RespuestaLista<ConversacionTimeline>,
+    RespuestaLista<ActividadTimeline>,
+  ] = await Promise.all([
     fetch(`/api/conversaciones?leadId=${leadId}`, { credentials: "include" }).then(r => r.json()),
     fetch(`/api/actividades?leadId=${leadId}`, { credentials: "include" }).then(r => r.json()),
   ]);
 
   const eventos = [
-    ...(comunicaciones.data || []).map((c: any) => ({
+    ...(comunicaciones.data || []).map((comunicacion) => ({
       tipo: "comunicacion",
-      canal: c.canal || "correo",
-      titulo: c.ultimoMensaje || "Conversación",
-      fecha: c.ultimoMensajeFecha || c.creadoen,
-      datos: c,
+      canal: comunicacion.canal || "correo",
+      titulo: comunicacion.ultimoMensaje || "Conversación",
+      fecha: comunicacion.ultimoMensajeFecha || comunicacion.creadoEn || comunicacion.creadoen || "",
+      datos: comunicacion,
     })),
-    ...(actividades.data || []).map((a: any) => ({
+    ...(actividades.data || []).map((actividad) => ({
       tipo: "actividad",
-      canal: a.tipo,
-      titulo: a.titulo,
-      fecha: a.fecha || a.creadoen,
-      datos: a,
+      canal: actividad.tipo,
+      titulo: actividad.titulo,
+      fecha: actividad.fecha || actividad.creadoEn || actividad.creadoen || "",
+      datos: actividad,
     })),
   ];
 

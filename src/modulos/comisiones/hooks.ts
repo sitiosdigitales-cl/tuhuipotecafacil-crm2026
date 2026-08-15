@@ -4,9 +4,10 @@
 
 import { useState, useEffect } from "react";
 import { obtenerComisiones } from "./servicios";
+import type { Comision } from "./servicios";
 
 export function useComisiones() {
-  const [comisiones, setComisiones] = useState<any[]>([]);
+  const [comisiones, setComisiones] = useState<Comision[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

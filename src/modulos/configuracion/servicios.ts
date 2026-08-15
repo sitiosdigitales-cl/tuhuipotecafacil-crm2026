@@ -2,12 +2,29 @@
  * Servicios del módulo Configuración
  */
 
-export async function obtenerConfiguracion() {
+import type { ConfiguracionInput } from "./validaciones";
+
+export interface Integracion {
+  id: string;
+  nombre?: string;
+  tipo?: string;
+  estado?: string;
+  configuracion?: Record<string, unknown>;
+  creadoEn?: string;
+}
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+export async function obtenerConfiguracion(): Promise<RespuestaDatos<ConfiguracionInput>> {
   const response = await fetch("/api/configuracion", { credentials: "include" });
   return response.json();
 }
 
-export async function actualizarConfiguracion(data: any) {
+export async function actualizarConfiguracion(data: ConfiguracionInput): Promise<RespuestaDatos<ConfiguracionInput>> {
   const response = await fetch("/api/configuracion", {
     method: "PUT",
     credentials: "include",
@@ -17,12 +34,12 @@ export async function actualizarConfiguracion(data: any) {
   return response.json();
 }
 
-export async function obtenerIntegraciones() {
+export async function obtenerIntegraciones(): Promise<RespuestaDatos<Integracion[]>> {
   const response = await fetch("/api/integraciones", { credentials: "include" });
   return response.json();
 }
 
-export async function crearIntegracion(data: any) {
+export async function crearIntegracion(data: Omit<Integracion, "id">): Promise<RespuestaDatos<Integracion>> {
   const response = await fetch("/api/integraciones", {
     method: "POST",
     credentials: "include",
@@ -32,7 +49,7 @@ export async function crearIntegracion(data: any) {
   return response.json();
 }
 
-export async function editarIntegracion(id: string, data: any) {
+export async function editarIntegracion(id: string, data: Partial<Integracion>): Promise<{ success: boolean; error?: string }> {
   const response = await fetch(`/api/integraciones/${id}`, {
     method: "PUT",
     credentials: "include",

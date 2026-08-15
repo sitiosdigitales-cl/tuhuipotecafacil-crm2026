@@ -4,9 +4,11 @@
 
 import { useState, useEffect } from "react";
 import { obtenerConfiguracion, obtenerIntegraciones } from "./servicios";
+import type { ConfiguracionInput } from "./validaciones";
+import type { Integracion } from "./servicios";
 
 export function useConfiguracion() {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<ConfiguracionInput | null>(null);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function useConfiguracion() {
 }
 
 export function useIntegraciones() {
-  const [integraciones, setIntegraciones] = useState<any[]>([]);
+  const [integraciones, setIntegraciones] = useState<Integracion[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

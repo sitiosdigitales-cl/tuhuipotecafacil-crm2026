@@ -2,6 +2,19 @@
  * Servicios del módulo Comisiones
  */
 
+import type { ComisionInput } from "./validaciones";
+
+export interface Comision extends ComisionInput {
+  id: string;
+  creadoEn?: string;
+}
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
@@ -13,18 +26,18 @@ async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export async function obtenerComisiones() {
-  return apiRequest<{ success: boolean; data: any[] }>("/api/comisiones");
+  return apiRequest<RespuestaDatos<Comision[]>>("/api/comisiones");
 }
 
-export async function crearComision(data: any) {
-  return apiRequest<{ success: boolean; data: any }>("/api/comisiones", {
+export async function crearComision(data: ComisionInput) {
+  return apiRequest<RespuestaDatos<Comision>>("/api/comisiones", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function editarComision(id: string, data: any) {
-  return apiRequest<{ success: boolean; data: any }>(`/api/comisiones/${id}`, {
+export async function editarComision(id: string, data: Partial<ComisionInput>) {
+  return apiRequest<RespuestaDatos<Comision>>(`/api/comisiones/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });

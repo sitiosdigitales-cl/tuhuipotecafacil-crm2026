@@ -31,6 +31,63 @@ export interface Actividad {
   created_at: string;
 }
 
+interface RespuestaLista<T> {
+  data?: T[];
+}
+
+interface TareaActividadApi {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  leadId?: string;
+  leadid?: string;
+  leadNombre?: string;
+  leadnombre?: string;
+  fechaVencimiento?: string;
+  fechavencimiento?: string;
+  estado?: string;
+  prioridad?: string;
+  asignadoA?: string;
+  asignadoa?: string;
+  creadoEn?: string;
+  creadoen?: string;
+}
+
+interface EventoActividadApi {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  leadId?: string;
+  leadid?: string;
+  fecha: string;
+  hora?: string;
+  estado?: string;
+  creadoEn?: string;
+  creadoen?: string;
+}
+
+interface RecordatorioActividadApi {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  leadId?: string;
+  leadid?: string;
+  fecha: string;
+  completado?: boolean;
+  creadoEn?: string;
+  creadoen?: string;
+}
+
+async function obtenerLista<T>(url: string): Promise<RespuestaLista<T>> {
+  const respuesta = await fetch(url, { credentials: "include" });
+  return respuesta.json();
+}
+
+function normalizarPrioridad(prioridad?: string): Actividad["prioridad"] {
+  const valor = prioridad?.toLowerCase();
+  return valor === "baja" || valor === "media" || valor === "alta" ? valor : undefined;
+}
+
 // ─── Configuración de tipos ───
 export const TIPOS_ACTIVIDAD_CONFIG: Record<TipoActividad, { label: string; icono: string; color: string }> = {
   tarea: { label: "Tarea", icono: "CheckSquare", color: "#3B82F6" },
@@ -60,56 +117,57 @@ export async function obtenerActividades(filtros?: { fecha?: string; leadId?: st
   
   // Combinar tareas, eventos y recordatorios
   const [tareas, eventos, recordatorios] = await Promise.all([
-    fetch(`/api/tareas${qs ? `?${qs}` : ""}`, { credentials: "include" }).then(r => r.json()),
-    fetch(`/api/eventos${qs ? `?${qs}` : ""}`, { credentials: "include" }).then(r => r.json()),
-    fetch(`/api/recordatorios${qs ? `?${qs}` : ""}`, { credentials: "include" }).then(r => r.json()),
+    obtenerLista<TareaActividadApi>(`/api/tareas${qs ? `?${qs}` : ""}`),
+    obtenerLista<EventoActividadApi>(`/api/eventos${qs ? `?${qs}` : ""}`),
+    obtenerLista<RecordatorioActividadApi>(`/api/recordatorios${qs ? `?${qs}` : ""}`),
   ]);
 
   const actividades: Actividad[] = [];
 
   // Mapear tareas
-  (tareas.data || []).forEach((t: any) => {
+  (tareas.data || []).forEach((tarea) => {
+    const creadoEn = tarea.creadoEn || tarea.creadoen || "";
     actividades.push({
-      id: t.id,
+      id: tarea.id,
       tipo: "tarea",
-      titulo: t.titulo,
-      descripcion: t.descripcion,
-      leadId: t.leadid,
-      leadNombre: t.leadnombre,
-      fecha: t.fechavencimiento || t.creadoen,
-      estado: t.estado === "COMPLETADA" ? "completada" : t.estado === "VENCIDA" ? "vencida" : "pendiente",
-      prioridad: t.prioridad?.toLowerCase(),
-      asignadoA: t.asignadoa,
-      created_at: t.creadoen,
+      titulo: tarea.titulo,
+      descripcion: tarea.descripcion,
+      leadId: tarea.leadId || tarea.leadid,
+      leadNombre: tarea.leadNombre || tarea.leadnombre,
+      fecha: tarea.fechaVencimiento || tarea.fechavencimiento || creadoEn,
+      estado: tarea.estado === "COMPLETADA" ? "completada" : tarea.estado === "VENCIDA" ? "vencida" : "pendiente",
+      prioridad: normalizarPrioridad(tarea.prioridad),
+      asignadoA: tarea.asignadoA || tarea.asignadoa,
+      created_at: creadoEn,
     });
   });
 
   // Mapear eventos
-  (eventos.data || []).forEach((e: any) => {
+  (eventos.data || []).forEach((evento) => {
     actividades.push({
-      id: e.id,
+      id: evento.id,
       tipo: "reunion",
-      titulo: e.titulo,
-      descripcion: e.descripcion,
-      leadId: e.leadid,
-      fecha: e.fecha,
-      hora: e.hora,
-      estado: e.estado === "COMPLETADO" ? "completada" : "pendiente",
-      created_at: e.creadoen,
+      titulo: evento.titulo,
+      descripcion: evento.descripcion,
+      leadId: evento.leadId || evento.leadid,
+      fecha: evento.fecha,
+      hora: evento.hora,
+      estado: evento.estado === "COMPLETADO" ? "completada" : "pendiente",
+      created_at: evento.creadoEn || evento.creadoen || "",
     });
   });
 
   // Mapear recordatorios
-  (recordatorios.data || []).forEach((r: any) => {
+  (recordatorios.data || []).forEach((recordatorio) => {
     actividades.push({
-      id: r.id,
+      id: recordatorio.id,
       tipo: "recordatorio",
-      titulo: r.titulo,
-      descripcion: r.descripcion,
-      leadId: r.leadid,
-      fecha: r.fecha,
-      estado: r.completado ? "completada" : "pendiente",
-      created_at: r.creadoen,
+      titulo: recordatorio.titulo,
+      descripcion: recordatorio.descripcion,
+      leadId: recordatorio.leadId || recordatorio.leadid,
+      fecha: recordatorio.fecha,
+      estado: recordatorio.completado ? "completada" : "pendiente",
+      created_at: recordatorio.creadoEn || recordatorio.creadoen || "",
     });
   });
 

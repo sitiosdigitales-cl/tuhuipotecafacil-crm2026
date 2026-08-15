@@ -4,9 +4,14 @@
 
 import { useState, useEffect } from "react";
 import { obtenerCampanas, obtenerLandings, obtenerBiblioteca } from "./servicios";
+import type {
+  CampanaMarketing,
+  LandingMarketing,
+  RecursoBiblioteca,
+} from "./servicios";
 
 export function useCampanas() {
-  const [campanas, setCampanas] = useState<any[]>([]);
+  const [campanas, setCampanas] = useState<CampanaMarketing[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export function useCampanas() {
 }
 
 export function useLandings() {
-  const [landings, setLandings] = useState<any[]>([]);
+  const [landings, setLandings] = useState<LandingMarketing[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -50,7 +55,7 @@ export function useLandings() {
 }
 
 export function useBiblioteca() {
-  const [recursos, setRecursos] = useState<any[]>([]);
+  const [recursos, setRecursos] = useState<RecursoBiblioteca[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

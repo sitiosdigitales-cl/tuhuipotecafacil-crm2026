@@ -2,6 +2,33 @@
  * Servicios del módulo Marketing
  */
 
+import type { CampanaInput, LandingInput } from "./validaciones";
+
+export interface CampanaMarketing extends CampanaInput {
+  id: string;
+  creadoEn?: string;
+}
+
+export interface LandingMarketing extends LandingInput {
+  id: string;
+  creadoEn?: string;
+}
+
+export interface RecursoBiblioteca {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  tipo?: string;
+  archivoUrl?: string;
+  creadoEn?: string;
+}
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
@@ -13,18 +40,18 @@ async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export async function obtenerCampanas() {
-  return apiRequest<{ success: boolean; data: any[] }>("/api/campanas");
+  return apiRequest<RespuestaDatos<CampanaMarketing[]>>("/api/campanas");
 }
 
-export async function crearCampana(data: any) {
-  return apiRequest<{ success: boolean; data: any }>("/api/campanas", {
+export async function crearCampana(data: CampanaInput) {
+  return apiRequest<RespuestaDatos<CampanaMarketing>>("/api/campanas", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function editarCampana(id: string, data: any) {
-  return apiRequest<{ success: boolean; data: any }>(`/api/campanas/${id}`, {
+export async function editarCampana(id: string, data: Partial<CampanaInput>) {
+  return apiRequest<RespuestaDatos<CampanaMarketing>>(`/api/campanas/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
@@ -35,16 +62,16 @@ export async function eliminarCampana(id: string) {
 }
 
 export async function obtenerLandings() {
-  return apiRequest<{ success: boolean; data: any[] }>("/api/landings");
+  return apiRequest<RespuestaDatos<LandingMarketing[]>>("/api/landings");
 }
 
-export async function crearLanding(data: any) {
-  return apiRequest<{ success: boolean; data: any }>("/api/landings", {
+export async function crearLanding(data: LandingInput) {
+  return apiRequest<RespuestaDatos<LandingMarketing>>("/api/landings", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function obtenerBiblioteca() {
-  return apiRequest<{ success: boolean; data: any[] }>("/api/biblioteca");
+  return apiRequest<RespuestaDatos<RecursoBiblioteca[]>>("/api/biblioteca");
 }
