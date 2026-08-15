@@ -166,3 +166,10 @@ responsables y clientes sin sesión.
 [build] ocupado — Codex, BUG-018.
 
 [build] libre — Codex, BUG-018; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-019] hallazgo — `GET /api/eventos` expone agenda,
+ubicaciones, notas y clientes sin sesión.
+
+[build] ocupado — Codex, BUG-019.
+
+[build] libre — Codex, BUG-019; build terminó en 0 con variables ficticias.
