@@ -201,3 +201,10 @@ segmentos, ingresos, ROI y métricas sin sesión.
 [build] ocupado — Codex, BUG-023.
 
 [build] libre — Codex, BUG-023; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-024] hallazgo — la verificación del webhook Stripe acepta
+cualquier firma y permite registrar pagos falsos; prueba totalmente mockeada.
+
+[build] ocupado — Codex, BUG-024.
+
+[build] libre — Codex, BUG-024; build terminó en 0 con variables ficticias.
