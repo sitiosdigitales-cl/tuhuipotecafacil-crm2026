@@ -30,6 +30,10 @@ interface Evento {
   calendarLink?: string;
 }
 
+type EventoApi = Omit<Evento, "fecha"> & {
+  fecha?: string | Date;
+};
+
 function generarEventos(): Evento[] {
   const hoy = new Date();
   return [
@@ -79,7 +83,10 @@ export default function AgendaPage() {
         const res = await fetch("/api/eventos");
         const json = await res.json();
         if (json.success && json.data) {
-          setEventos(json.data.map((e: Record<string, any>) => ({ ...e, fecha: e.fecha ? new Date(e.fecha) : new Date() })));
+          setEventos((json.data as EventoApi[]).map((evento) => ({
+            ...evento,
+            fecha: evento.fecha ? new Date(evento.fecha) : new Date(),
+          })));
         }
       } catch { setEventos(generarEventos()); } finally { setCargando(false); }
     }

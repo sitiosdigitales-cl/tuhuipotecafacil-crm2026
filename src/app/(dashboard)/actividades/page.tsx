@@ -30,6 +30,42 @@ interface Recordatorio {
   creadoEn: Date; ultimoEnvio?: Date;
 }
 
+type TareaApi = Omit<Tarea, "fechaVencimiento" | "creadoEn"> & {
+  fechaVencimiento?: string | Date;
+  creadoEn?: string | Date;
+};
+
+type RecordatorioApi = Omit<Recordatorio, "fechaEnvio" | "proximoEnvio" | "creadoEn" | "ultimoEnvio"> & {
+  fechaEnvio: string | Date;
+  proximoEnvio: string | Date;
+  creadoEn?: string | Date;
+  ultimoEnvio?: string | Date;
+};
+
+const ESTADOS_KANBAN: EstadoTarea[] = ["PENDIENTE", "EN_PROGRESO", "COMPLETADA", "VENCIDA"];
+
+function normalizarTarea(tarea: TareaApi): Tarea {
+  return {
+    ...tarea,
+    fechaVencimiento: tarea.fechaVencimiento ? new Date(tarea.fechaVencimiento) : undefined,
+    creadoEn: tarea.creadoEn ? new Date(tarea.creadoEn) : new Date(),
+  };
+}
+
+function normalizarRecordatorio(recordatorio: RecordatorioApi): Recordatorio {
+  return {
+    ...recordatorio,
+    fechaEnvio: new Date(recordatorio.fechaEnvio),
+    proximoEnvio: new Date(recordatorio.proximoEnvio),
+    creadoEn: recordatorio.creadoEn ? new Date(recordatorio.creadoEn) : new Date(),
+    ultimoEnvio: recordatorio.ultimoEnvio ? new Date(recordatorio.ultimoEnvio) : undefined,
+  };
+}
+
+function esEstadoTarea(estado: string): estado is EstadoTarea {
+  return estado in ESTADOS_TAREA_CONFIG;
+}
+
 // Configs
 const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: typeof Bell }> = {
   tarea: { label: "Tarea", color: "text-blue-600", bg: "bg-blue-50", icono: ClipboardList },
@@ -68,7 +104,6 @@ export default function ActividadesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<TipoActividad | "todos">("todos");
   const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [filtroCanal, setFiltroCanal] = useState("todos");
 
   // Tareas
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -99,8 +134,8 @@ export default function ActividadesPage() {
           fetch("/api/recordatorios"),
         ]);
         const [dT, dR] = await Promise.all([resT.json(), resR.json()]);
-        if (dT.success && dT.data) setTareas(dT.data.map((t: any) => ({ ...t, fechaVencimiento: t.fechaVencimiento ? new Date(t.fechaVencimiento) : undefined, creadoEn: new Date(t.creadoEn || Date.now()) })));
-        if (dR.success && dR.data) setRecordatorios(dR.data.map((r: any) => ({ ...r, fechaEnvio: new Date(r.fechaEnvio), proximoEnvio: new Date(r.proximoEnvio), creadoEn: new Date(r.creadoEn || Date.now()) })));
+        if (dT.success && dT.data) setTareas((dT.data as TareaApi[]).map(normalizarTarea));
+        if (dR.success && dR.data) setRecordatorios((dR.data as RecordatorioApi[]).map(normalizarRecordatorio));
       } catch {}
       setCargandoTareas(false);
       setCargandoRecordatorios(false);
@@ -177,10 +212,9 @@ export default function ActividadesPage() {
     return items.filter((item) => {
       const matchBusqueda = !busqueda || item.titulo.toLowerCase().includes(busqueda.toLowerCase()) || item.leadNombre?.toLowerCase().includes(busqueda.toLowerCase());
       const matchEstado = filtroEstado === "todos" || item.estado === filtroEstado;
-      const matchCanal = filtroCanal === "todos" || item.canal === filtroCanal;
-      return matchBusqueda && matchEstado && matchCanal;
+      return matchBusqueda && matchEstado;
     }).sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
-  }, [tareas, recordatorios, busqueda, filtroTipo, filtroEstado, filtroCanal]);
+  }, [tareas, recordatorios, busqueda, filtroTipo, filtroEstado]);
 
   // Acciones
   const toggleActivo = async (id: string) => {
@@ -238,7 +272,7 @@ export default function ActividadesPage() {
       try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ tipo: "tarea", titulo: "Nueva tarea creada", descripcion: `${form.titulo}${form.leadNombre ? ` para ${form.leadNombre}` : ""}` }) }); } catch {}
       const res = await fetch("/api/tareas"); const d = await res.json();
-      if (d.success && d.data) setTareas(d.data.map((t: any) => ({ ...t, fechaVencimiento: t.fechaVencimiento ? new Date(t.fechaVencimiento) : undefined, creadoEn: new Date(t.creadoEn || Date.now()) })));
+      if (d.success && d.data) setTareas((d.data as TareaApi[]).map(normalizarTarea));
     } else {
       await fetch("/api/recordatorios", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ titulo: form.titulo, descripcion: form.descripcion, tipo: form.canal, frecuencia: form.frecuencia, leadNombre: form.leadNombre || null, fechaEnvio: form.fechaEnvio ? `${form.fechaEnvio}T${form.horaEnvio}:00` : new Date().toISOString() }) });
@@ -247,7 +281,7 @@ export default function ActividadesPage() {
       try { await fetch("/api/notificaciones", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ tipo: "documento", titulo: "Nuevo recordatorio", descripcion: `${form.titulo} (${form.canal})` }) }); } catch {}
       const res = await fetch("/api/recordatorios"); const d = await res.json();
-      if (d.success && d.data) setRecordatorios(d.data.map((r: any) => ({ ...r, fechaEnvio: new Date(r.fechaEnvio), proximoEnvio: new Date(r.proximoEnvio), creadoEn: new Date(r.creadoEn || Date.now()) })));
+      if (d.success && d.data) setRecordatorios((d.data as RecordatorioApi[]).map(normalizarRecordatorio));
     }
     setCrearTipo(null);
     setForm({ titulo: "", descripcion: "", tipoTarea: "SEGUIMIENTO", prioridad: "MEDIA", leadId: "", leadNombre: "", fechaVencimiento: "", fechaEnvio: "", canal: "whatsapp", frecuencia: "una_vez", horaEnvio: "09:00" });
@@ -380,6 +414,7 @@ export default function ActividadesPage() {
                 {itemsFiltrados.map((item) => {
                   const tc = TIPO_CONFIG[item.tipo];
                   const isTarea = item.tipo === "tarea";
+                  const estadoTarea = isTarea && esEstadoTarea(item.estado) ? ESTADOS_TAREA_CONFIG[item.estado] : null;
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-4 py-3">
@@ -403,10 +438,10 @@ export default function ActividadesPage() {
                       <td className="px-3 py-3"><span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${tc.bg} ${tc.color}`}>{tc.label}</span></td>
                       <td className="px-3 py-3">
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                          isTarea ? (ESTADOS_TAREA_CONFIG as any)[item.estado]?.color || "bg-slate-100 text-slate-600"
+                          isTarea ? estadoTarea?.color || "bg-slate-100 text-slate-600"
                           : item.estado === "enviado" ? "bg-emerald-100 text-emerald-700" : item.estado === "fallido" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
                         }`}>
-                          {isTarea ? (ESTADOS_TAREA_CONFIG as any)[item.estado]?.label || item.estado : item.estado}
+                          {estadoTarea?.label || item.estado}
                         </span>
                       </td>
                       <td className="px-3 py-3">
@@ -437,11 +472,11 @@ export default function ActividadesPage() {
       {/* Vista Kanban */}
       {vista === "kanban" && (
         <div className="grid grid-cols-4 gap-4">
-          {["PENDIENTE", "EN_PROGRESO", "COMPLETADA", "VENCIDA"].map((estado) => (
+          {ESTADOS_KANBAN.map((estado) => (
             <div key={estado} className="space-y-3">
               <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-100">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (ESTADOS_TAREA_CONFIG as any)[estado]?.color }} />
-                <span className="text-[11px] font-bold text-slate-700">{(ESTADOS_TAREA_CONFIG as any)[estado]?.label}</span>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ESTADOS_TAREA_CONFIG[estado].color }} />
+                <span className="text-[11px] font-bold text-slate-700">{ESTADOS_TAREA_CONFIG[estado].label}</span>
                 <span className="text-[9px] text-slate-400 ml-auto">{tareas.filter((t) => t.estado === estado).length}</span>
               </div>
               {tareas.filter((t) => t.estado === estado).map((t) => (

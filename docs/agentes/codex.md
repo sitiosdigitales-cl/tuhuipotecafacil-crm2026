@@ -463,3 +463,10 @@ usuarios `INACTIVO` y `SUSPENDIDO`, aunque el estado ya viene en la consulta.
 
 [calidad · LINT-03] hecho — seis vistas del panel quedan en 0 errores y 0 warnings;
 17 errores y 16 warnings eliminados. BUG-037 sigue siendo la única prueba roja.
+
+[build] ocupado — Codex, LINT-04A · actividades del panel.
+
+[build] libre — Codex, LINT-04A · build y typecheck terminaron en 0.
+
+[calidad · LINT-04A] hecho — actividades, agenda, auditoría y biblioteca quedan
+en 0 errores y 0 warnings; 13 errores y 5 warnings eliminados. BUG-037 sigue roja.

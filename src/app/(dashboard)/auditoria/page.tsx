@@ -35,9 +35,12 @@ const iconoAccion: Record<TipoAccion, React.ReactNode> = {
   CAMBIO_ESTADO: <ArrowDownRight size={14} />,
 };
 
+type RegistroAuditoriaApi = Omit<RegistroAuditoria, "fecha"> & {
+  fecha?: string | Date;
+};
+
 export default function AuditoriaPage() {
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([]);
-  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     async function cargar() {
@@ -45,15 +48,13 @@ export default function AuditoriaPage() {
         const res = await fetch("/api/auditoria");
         const json = await res.json();
         if (json.success && json.data) {
-          setRegistros(json.data.map((r: Record<string, any>) => ({
-            ...r,
-            fecha: r.fecha ? new Date(r.fecha) : new Date(),
+          setRegistros((json.data as RegistroAuditoriaApi[]).map((registro) => ({
+            ...registro,
+            fecha: registro.fecha ? new Date(registro.fecha) : new Date(),
           })));
         }
       } catch {
         setRegistros([]);
-      } finally {
-        setCargando(false);
       }
     }
     cargar();

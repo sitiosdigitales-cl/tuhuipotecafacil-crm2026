@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   FileText,
-  Image,
+  Image as ImageIcon,
   Video,
   Presentation,
   Download,
@@ -19,7 +19,7 @@ import {
 const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string; icono: React.ElementType }> = {
   DOCUMENTO: { label: "Documento", color: "text-blue-600", bg: "bg-blue-50", icono: FileText },
   PRESENTACION: { label: "Presentación", color: "text-purple-600", bg: "bg-purple-50", icono: Presentation },
-  IMAGEN: { label: "Imagen", color: "text-pink-600", bg: "bg-pink-50", icono: Image },
+  IMAGEN: { label: "Imagen", color: "text-pink-600", bg: "bg-pink-50", icono: ImageIcon },
   VIDEO: { label: "Video", color: "text-red-600", bg: "bg-red-50", icono: Video },
 };
 
@@ -35,26 +35,49 @@ const CATEGORIA_CONFIG: Record<string, { label: string; color: string; icono: st
 
 type TabBiblioteca = "todos" | "favoritos" | "recientes" | "populares";
 
+interface DocumentoBiblioteca {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  tipo: string;
+  categoria: string;
+  formato: string;
+  tamano: string;
+  icono: string;
+  autor: string;
+  tags: string[];
+  favorito: boolean;
+  vistas: number;
+  descargas: number;
+  fechaSubida: Date;
+}
+
+type DocumentoBibliotecaApi = Omit<DocumentoBiblioteca, "fechaSubida"> & {
+  fechaSubida?: string | Date;
+};
+
 export default function BibliotecaPage() {
-  const [documentos, setDocumentos] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [documentos, setDocumentos] = useState<DocumentoBiblioteca[]>([]);
   const [tabActiva, setTabActiva] = useState<TabBiblioteca>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroCategoria, setFiltroCategoria] = useState("todos");
   const [vistaActiva, setVistaActiva] = useState<"grid" | "lista">("grid");
   const [modalSubir, setModalSubir] = useState(false);
-  // eslint-disable-next-line react-hooks/purity -- Timestamp estable, calculado una vez
-  const hace7Dias = useMemo(() => new Date(Date.now() - 7 * 86400000), []);
+  const [hace7Dias] = useState(() => new Date(Date.now() - 7 * 86400000));
 
   useEffect(() => {
     async function cargar() {
       try {
         const res = await fetch("/api/biblioteca");
         const json = await res.json();
-        if (json.success && json.data) setDocumentos(json.data);
+        if (json.success && json.data) {
+          setDocumentos((json.data as DocumentoBibliotecaApi[]).map((documento) => ({
+            ...documento,
+            fechaSubida: documento.fechaSubida ? new Date(documento.fechaSubida) : new Date(),
+          })));
+        }
       } catch { setDocumentos([]); }
-      finally { setCargando(false); }
     }
     cargar();
   }, []);
@@ -75,13 +98,13 @@ export default function BibliotecaPage() {
       const coincideCategoria = filtroCategoria === "todos" || doc.categoria === filtroCategoria;
       return coincideTab && coincideBusqueda && coincideTipo && coincideCategoria;
     });
-  }, [tabActiva, busqueda, filtroTipo, filtroCategoria, documentos]);
+  }, [tabActiva, busqueda, filtroTipo, filtroCategoria, documentos, hace7Dias]);
 
   const stats = useMemo(() => ({
     total: documentos.length,
     favoritos: documentos.filter((d) => d.favorito).length,
-    totalVistas: documentos.reduce((sum: number, d: any) => sum + (d.vistas || 0), 0),
-    totalDescargas: documentos.reduce((sum: number, d: any) => sum + (d.descargas || 0), 0),
+    totalVistas: documentos.reduce((sum, documento) => sum + (documento.vistas || 0), 0),
+    totalDescargas: documentos.reduce((sum, documento) => sum + (documento.descargas || 0), 0),
     documentos: documentos.filter((d) => d.tipo === "DOCUMENTO").length,
     presentaciones: documentos.filter((d) => d.tipo === "PRESENTACION").length,
     imagenes: documentos.filter((d) => d.tipo === "IMAGEN").length,
@@ -150,7 +173,7 @@ export default function BibliotecaPage() {
         <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center">
-              <Image size={18} className="text-pink-500" />
+              <ImageIcon size={18} className="text-pink-500" />
             </div>
             <span className="text-[10px] text-slate-400 font-medium">Imágenes</span>
           </div>
