@@ -550,3 +550,10 @@ BUG-037 sigue siendo la única prueba roja (273/274).
 [calidad · LINT-07C] hecho — lint completo queda en 0 errores y 0 warnings;
 se retiraron dos scripts duplicados sin consumidores. BUG-037 sigue siendo
 la única prueba roja (273/274).
+
+[build] ocupado — Codex, LINT-08 · lint completo en CI.
+
+[build] libre — Codex, LINT-08 · lint, build y typecheck terminaron en 0.
+
+[calidad · LINT-08] hecho — CI ejecuta `npm run lint` sobre todo el repo;
+BUG-037 sigue siendo la única prueba roja (273/274).
