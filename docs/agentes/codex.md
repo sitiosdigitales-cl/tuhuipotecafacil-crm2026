@@ -317,3 +317,14 @@ el requisito de otro año cuando ambos comparten `tipo`; datos sintéticos.
 [build] ocupado — Codex, BUG-036.
 
 [build] libre — Codex, BUG-036; build terminó en 0 con variables ficticias.
+
+[build] ocupado — Codex, C-07.
+
+[build] libre — Codex, C-07; build bloqueado por `src/proxy.ts` sin exportación reconocida.
+
+[build] ocupado — Codex, reintento C-07.
+
+[build] libre — Codex, C-07; build terminó en 0 con variables ficticias.
+
+[FASE 2 · C-07] hecho — medición independiente confirma 1.248,2 KiB en
+`/simulador-publico`; PERF-01 no redujo la descarga y PERF-02 no se evalúa por bundle.
