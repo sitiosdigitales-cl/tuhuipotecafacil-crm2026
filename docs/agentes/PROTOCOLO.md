@@ -27,23 +27,27 @@ Esto hace la partición disjunta por construcción: **Codex nunca escribe en
 
 ---
 
-## 2bis. MODO LOCAL — vigente ahora
+## 2bis. ÁRBOL COMPARTIDO — vigente
 
-Los dos agentes comparten **un solo working tree**: el mismo clon, el mismo
-directorio. Y `git push` devuelve 403 porque `Godblessdiego` tiene lectura pero
-no escritura sobre `sitiosdigitales-cl/tuhuipotecafacil-crm2026`. `origin/diego`
-no existe y no puede crearse sin ese permiso.
+**El modo local terminó.** `origin/diego` existe y el push funciona desde el
+commit `08421ad`. La causa del 403 no era falta de permisos: la cuenta siempre
+tuvo `push: true` sobre el repositorio. `git` usaba el llavero de macOS con
+credenciales viejas mientras `gh` tenía el token bueno. Se resolvió con
+`gh auth setup-git`, que hace que git le pida el token a `gh`.
 
-Mientras dure esta situación:
+Los pasos de `pull` y `push` de la sección 2 **vuelven a aplicar**.
 
-1. **El paso `git pull --rebase origin diego` es un no-op. Sáltalo.** Estaba
-   pensado para dos agentes en clones distintos. En un árbol compartido ya se
-   ven los commits del otro al instante: no hay nada que sincronizar y el
-   comando falla con `couldn't find remote ref diego`.
-2. **`git push` también se salta.** Los commits se acumulan locales y se suben
-   en un solo lote cuando se resuelva el acceso. Nada se pierde.
-3. **Ningún bloqueo de push justifica detener una tarea local.** Si tu tarea no
-   necesita código del otro agente, se hace igual y se commitea.
+Lo que NO cambió: los dos agentes seguimos compartiendo **un solo working
+tree**, el mismo clon y el mismo directorio. Todo lo de abajo sigue vigente.
+
+### Cómo nos sincronizamos de verdad
+
+El árbol compartido es el mecanismo: los commits del otro agente ya están en tu
+historial local apenas los hace, sin red de por medio.
+
+`git pull --rebase origin diego` antes de cada push sigue siendo obligatorio,
+pero por otra razón: por si la rama se movió desde fuera —un merge, un push de
+Diego desde otra máquina—. No es lo que te sincroniza con el otro agente.
 
 ### Prohibido en árbol compartido
 
@@ -58,34 +62,34 @@ git add -A / .     ← los incluye en tu commit
 git reset --hard   ← los destruye
 ```
 
-Para comparar lint antes y después de un cambio, usa `git diff` o revisa el
-archivo commiteado con `git show HEAD:<ruta>`. Nunca `stash`.
+Para comparar lint antes y después de un cambio, usa `git diff` o
+`git show HEAD:<ruta>`. Nunca `stash`.
 
-> Esto ya pasó: durante la Fase 1, Claude usó `git stash` dos veces para
-> comparar errores de eslint. Si Codex hubiera tenido cambios sin commitear en
-> ese momento, se habrían escondido sin aviso.
+> Esto ya pasó dos veces. Claude usó `git stash` para comparar eslint, y más
+> tarde `git add -A`, que arrastró dos archivos de Codex a un commit ajeno con
+> la autoría mal atribuida. Las dos son la misma lección: en árbol compartido,
+> los comandos que abarcan el directorio completo no son tuyos.
 
 ### Builds
 
-`npm run build` escribe en `.next/`, que es único para el directorio. Dos builds
-simultáneos se pisan y producen fallos que no corresponden al código.
+`npm run build` escribe en `.next/`, que es único para el directorio. Dos
+builds simultáneos se pisan y producen fallos que no corresponden al código.
 
 Antes de compilar, anota `[build] ocupado` en tu bitácora, y `[build] libre` al
-terminar. Si ves la marca del otro agente, espera. Es tosco, pero es el
-mecanismo más simple que funciona sin coordinación en tiempo real.
+terminar. Si ves la marca del otro agente, espera.
+
+> También pasó: un build falló con "Another next build process is already
+> running" y el marcador permitió diagnosticarlo en un minuto en vez de buscar
+> un bug inexistente.
 
 ### Commitea seguido
 
 En árbol compartido, el trabajo sin commitear es el único que corre riesgo.
-Commitea apenas una tarea esté verificada; no acumules cambios en el working
-tree.
+Commitea apenas una tarea esté verificada.
 
 ---
 
 ## 2. Rama y sincronización
-
-> Esta sección describe el modo con remoto. Mientras rija el **modo local**
-> (sección 2bis), los pasos de `pull` y `push` no aplican.
 
 - Rama única de trabajo: **`diego`**. Nadie hace push a `master`.
 - Nadie usa `git push --force`, ni `reset --hard` sobre commits pusheados, ni
