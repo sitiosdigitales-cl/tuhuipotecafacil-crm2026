@@ -25,20 +25,32 @@ export default function BackupsPage() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  // Distinto de una lista vacía: "no hay respaldos" y "no pude averiguar si
+  // hay respaldos" son cosas diferentes, y solo una de las dos deja tranquilo.
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBackups();
   }, []);
 
   const fetchBackups = async () => {
+    setLoading(true);
+    setErrorCarga(null);
     try {
       const response = await fetch("/api/backup");
-      const data = await response.json();
-      if (data.success) {
-        setBackups(data.data || []);
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        setErrorCarga(data?.error || "No se pudieron cargar los respaldos");
+        setBackups([]);
+        return;
       }
+
+      setBackups(data.data || []);
     } catch (error) {
       console.error("Error fetching backups:", error);
+      setErrorCarga("No se pudieron cargar los respaldos");
+      setBackups([]);
     } finally {
       setLoading(false);
     }
@@ -146,9 +158,13 @@ export default function BackupsPage() {
               <div>
                 <p className="text-sm text-slate-500">Último Respaldo</p>
                 <p className="text-lg font-bold text-slate-900">
-                  {backups.length > 0
-                    ? formatDate(backups[0].creado).split(",")[0]
-                    : "Ninguno"}
+                  {/* Con la consulta fallida no se afirma "Ninguno": eso se
+                      lee como "no hay respaldos" y es justo lo que no sabemos. */}
+                  {errorCarga
+                    ? "Sin datos"
+                    : backups.length > 0
+                      ? formatDate(backups[0].creado).split(",")[0]
+                      : "Ninguno"}
                 </p>
               </div>
             </div>
@@ -216,6 +232,21 @@ export default function BackupsPage() {
             <div className="p-8 text-center">
               <RefreshCw size={24} className="animate-spin mx-auto text-slate-400" />
               <p className="mt-2 text-sm text-slate-500">Cargando respaldos...</p>
+            </div>
+          ) : errorCarga ? (
+            <div className="p-8 text-center">
+              <AlertCircle size={24} className="mx-auto text-red-500" />
+              <p className="mt-2 text-sm font-medium text-red-600">{errorCarga}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                No podemos confirmar si existen respaldos. No crees uno nuevo
+                hasta saberlo: podrías estar tapando el problema.
+              </p>
+              <button
+                onClick={fetchBackups}
+                className="mt-4 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200"
+              >
+                Reintentar
+              </button>
             </div>
           ) : backups.length === 0 ? (
             <div className="p-8 text-center">
