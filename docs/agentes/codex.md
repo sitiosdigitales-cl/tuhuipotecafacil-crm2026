@@ -145,3 +145,10 @@ corregir la cola C-01 en el árbol compartido.
 [build] ocupado — Codex, BUG-015; reanudado después de `6349ef0`.
 
 [build] libre — Codex, BUG-015; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-016] hallazgo — `/api/whatsapp/send` permite enviar
+mensajes arbitrarios y consultar configuración sin sesión; prueba mockeada.
+
+[build] ocupado — Codex, BUG-016.
+
+[build] libre — Codex, BUG-016; build terminó en 0 con variables ficticias.
