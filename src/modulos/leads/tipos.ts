@@ -55,6 +55,6 @@ export interface EjecutivoAsignado {
 }
 
 export interface LeadConEjecutivo {
-  lead: any; // Lead type
+  lead: import("@/tipos").Lead;
   ejecutivo: EjecutivoAsignado | null;
 }

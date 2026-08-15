@@ -4,9 +4,26 @@
  */
 
 import type { CrearLeadInput, EditarLeadInput, FiltrosLead } from "./validaciones";
-import type { Etapa } from "@/tipos";
+import type { Etapa, Lead } from "@/tipos";
+import type { EjecutivoAsignado } from "./tipos";
 
 const API_BASE = "/api/leads";
+
+export type LeadApi = Omit<Lead, "creadoEn"> & { creadoEn: string | Date };
+
+export interface EtapaPipeline {
+  id: string;
+  nombre: string;
+  color: string;
+  orden: number;
+  activa: boolean;
+}
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
 
 // ─── Helpers ───
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
@@ -34,24 +51,24 @@ export async function obtenerLeads(filtros?: FiltrosLead) {
     });
   }
   const queryString = params.toString();
-  return apiRequest<{ success: boolean; data: any[] }>(
+  return apiRequest<RespuestaDatos<LeadApi[]>>(
     `${API_BASE}${queryString ? `?${queryString}` : ""}`
   );
 }
 
 export async function obtenerLeadPorId(id: string) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`);
+  return apiRequest<RespuestaDatos<LeadApi>>(`${API_BASE}/${id}`);
 }
 
 export async function crearLead(data: CrearLeadInput) {
-  return apiRequest<{ success: boolean; data: any }>(API_BASE, {
+  return apiRequest<RespuestaDatos<LeadApi>>(API_BASE, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function editarLead(id: string, data: EditarLeadInput) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`, {
+export async function editarLead(id: string, data: Partial<EditarLeadInput>) {
+  return apiRequest<RespuestaDatos<LeadApi>>(`${API_BASE}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
@@ -66,37 +83,37 @@ export async function eliminarLead(id: string) {
 // ─── Asignación de ejecutivo ───
 
 export async function asignarEjecutivo(leadId: string, ejecutivoId: string) {
-  return editarLead(leadId, { asignadoA: ejecutivoId } as any);
+  return editarLead(leadId, { asignadoA: ejecutivoId });
 }
 
 export async function asignarEjecutivoPorNombre(leadId: string, nombreEjecutivo: string) {
-  return editarLead(leadId, { nombreEjecutivo } as any);
+  return editarLead(leadId, { nombreEjecutivo });
 }
 
 // ─── Movimiento de etapa ───
 
 export async function moverEtapa(leadId: string, nuevaEtapa: Etapa) {
-  return editarLead(leadId, { etapa: nuevaEtapa } as any);
+  return editarLead(leadId, { etapa: nuevaEtapa });
 }
 
 // ─── Búsqueda de ejecutivo ───
 
 export async function buscarEjecutivo(nombre: string) {
   const params = new URLSearchParams({ busqueda: nombre });
-  return apiRequest<{ success: boolean; data: any[] }>(
+  return apiRequest<RespuestaDatos<EjecutivoAsignado[]>>(
     `/api/usuarios?${params.toString()}`
   );
 }
 
 export async function buscarEjecutivoPorId(id: string) {
-  return apiRequest<{ success: boolean; data: any[] }>(
+  return apiRequest<RespuestaDatos<EjecutivoAsignado[]>>(
     `/api/usuarios?id=${id}`
   );
 }
 
 // ─── Webhook (creación externa) ───
 
-export async function crearLeadWebhook(data: Record<string, any>) {
+export async function crearLeadWebhook(data: Record<string, unknown>) {
   return apiRequest<{ success: boolean; message?: string; error?: string }>(
     "/api/webhook/leads",
     {
@@ -109,5 +126,5 @@ export async function crearLeadWebhook(data: Record<string, any>) {
 // ─── Pipeline ───
 
 export async function obtenerEtapasPipeline() {
-  return apiRequest<{ success: boolean; data: any[] }>("/api/pipeline/stages");
+  return apiRequest<RespuestaDatos<EtapaPipeline[]>>("/api/pipeline/stages");
 }

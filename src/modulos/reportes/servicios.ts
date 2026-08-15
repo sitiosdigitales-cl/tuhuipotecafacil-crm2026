@@ -12,7 +12,7 @@ export async function generarReportePipeline() {
   const porOrigen: Record<string, number> = {};
   let montoTotal = 0;
   
-  leads.forEach((lead: any) => {
+  leads.forEach((lead) => {
     porEtapa[lead.etapa] = (porEtapa[lead.etapa] || 0) + 1;
     porOrigen[lead.origen] = (porOrigen[lead.origen] || 0) + 1;
     if (lead.montoSolicitado) montoTotal += lead.montoSolicitado;
@@ -31,8 +31,8 @@ export async function generarReporteConversion() {
   const result = await obtenerLeads();
   const leads = result.data || [];
   
-  const aprobados = leads.filter((l: any) => 
-    ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(l.etapa)
+  const aprobados = leads.filter((lead) =>
+    ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO", "CLIENTE_FINALIZADO"].includes(lead.etapa)
   ).length;
   
   return {
@@ -48,7 +48,7 @@ export async function generarReporteEjecutivos() {
   
   const porEjecutivo: Record<string, { total: number; aprobados: number }> = {};
   
-  leads.forEach((lead: any) => {
+  leads.forEach((lead) => {
     const ejecutivo = lead.nombreEjecutivo || "Sin asignar";
     if (!porEjecutivo[ejecutivo]) {
       porEjecutivo[ejecutivo] = { total: 0, aprobados: 0 };

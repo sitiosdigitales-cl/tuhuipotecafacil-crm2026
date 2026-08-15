@@ -3,9 +3,15 @@
  */
 
 import type { CambiarEstadoDocumentoInput } from "./validaciones";
-import type { HistorialDocumento, EstadisticasDocumentos } from "./tipos";
+import type { DocumentoCompleto, HistorialDocumento, EstadisticasDocumentos } from "./tipos";
 
 const API_BASE = "/api/documentos";
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
 
 // ─── Helpers ───
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
@@ -27,22 +33,22 @@ async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
 
 export async function obtenerDocumentos(leadId?: string) {
   const params = leadId ? `?leadId=${leadId}` : "";
-  return apiRequest<{ success: boolean; data: any[] }>(`${API_BASE}${params}`);
+  return apiRequest<RespuestaDatos<DocumentoCompleto[]>>(`${API_BASE}${params}`);
 }
 
 export async function obtenerDocumentoPorId(id: string) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`);
+  return apiRequest<RespuestaDatos<DocumentoCompleto>>(`${API_BASE}/${id}`);
 }
 
 export async function crearDocumento(data: { leadId: string; nombre: string; tipo: string; banco?: string; fechaEmision?: string; fechaVencimiento?: string }) {
-  return apiRequest<{ success: boolean; data: any }>(API_BASE, {
+  return apiRequest<RespuestaDatos<DocumentoCompleto>>(API_BASE, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function actualizarDocumento(id: string, data: Record<string, any>) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`, {
+export async function actualizarDocumento(id: string, data: Record<string, unknown>) {
+  return apiRequest<RespuestaDatos<DocumentoCompleto>>(`${API_BASE}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });

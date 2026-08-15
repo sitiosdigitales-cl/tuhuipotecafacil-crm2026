@@ -4,8 +4,20 @@
  */
 
 import type { PerfilClienteInput } from "./validaciones";
+import type { LeadApi } from "../leads/servicios";
+import type { DocumentoCompleto } from "../documentos/tipos";
 
 const API_BASE = "/api/leads";
+
+export type DocumentoCliente = Omit<DocumentoCompleto, "estado"> & {
+  estado: DocumentoCompleto["estado"] | "RECIBIDO";
+};
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
 
 // ─── Helpers ───
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
@@ -25,12 +37,12 @@ async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ─── Obtener cliente por ID ───
 export async function obtenerClientePorId(id: string) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`);
+  return apiRequest<RespuestaDatos<LeadApi>>(`${API_BASE}/${id}`);
 }
 
 // ─── Actualizar perfil del cliente ───
 export async function actualizarPerfilCliente(id: string, data: PerfilClienteInput) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`, {
+  return apiRequest<RespuestaDatos<LeadApi>>(`${API_BASE}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
@@ -38,7 +50,7 @@ export async function actualizarPerfilCliente(id: string, data: PerfilClienteInp
 
 // ─── Obtener documentos del cliente ───
 export async function obtenerDocumentosCliente(leadId: string) {
-  return apiRequest<{ success: boolean; data: any[] }>(
+  return apiRequest<RespuestaDatos<DocumentoCliente[]>>(
     `/api/documentos?leadId=${leadId}`
   );
 }
@@ -60,7 +72,7 @@ export async function subirDocumento(leadId: string, archivo: File, nombre: stri
 }
 
 // ─── Solicitar documentos ───
-export async function solicitarDocumentos(leadId: string, documentos: string[], _metodo: string) {
+export async function solicitarDocumentos(leadId: string, documentos: string[], metodo: string) {
   return apiRequest<{ success: boolean }>("/api/email/send", {
     method: "POST",
     body: JSON.stringify({
@@ -69,13 +81,14 @@ export async function solicitarDocumentos(leadId: string, documentos: string[], 
       nombre: "",
       documentos,
       leadId,
+      metodo,
     }),
   });
 }
 
 // ─── Buscar cliente por RUT ───
 export async function buscarClientePorRut(rut: string) {
-  return apiRequest<{ success: boolean; data: any[] }>(
+  return apiRequest<RespuestaDatos<LeadApi[]>>(
     `/api/leads?rut=${encodeURIComponent(rut)}`
   );
 }

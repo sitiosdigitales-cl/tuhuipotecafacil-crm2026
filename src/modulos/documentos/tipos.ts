@@ -38,8 +38,8 @@ export interface HistorialDocumento {
   usuarioId?: string;
   usuarioNombre?: string;
   fecha: string;
-  datosAnteriores?: Record<string, any>;
-  datosNuevos?: Record<string, any>;
+  datosAnteriores?: Record<string, unknown>;
+  datosNuevos?: Record<string, unknown>;
 }
 
 export interface EstadisticasDocumentos {

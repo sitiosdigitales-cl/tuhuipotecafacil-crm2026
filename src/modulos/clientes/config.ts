@@ -68,8 +68,7 @@ export const CLIENTES_DOCUMENTOS_EMPRESA = [
 
 // ─── Función para obtener documentos según situación laboral y crédito ───
 export function obtenerDocumentosRequeridos(
-  situacionLaboral: string,
-  _tipoCredito?: string
+  situacionLaboral: string
 ) {
   let docsBase: readonly { id: string; nombre: string; obligatorio: boolean }[] = [];
   
@@ -94,5 +93,5 @@ export function obtenerDocumentosRequeridos(
 export function tienePermisoCliente(rol: string, accion: string): boolean {
   const permisos = CLIENTES_PERMISOS[accion];
   if (!permisos) return false;
-  return permisos.includes(rol as any);
+  return permisos.some((permiso) => permiso === rol);
 }

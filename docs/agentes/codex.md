@@ -512,3 +512,10 @@ eliminados con tipos compartidos. BUG-037 sigue siendo la única prueba roja.
 
 [calidad · LINT-05C] hecho — portal e integración quedan en 0/0; 12 errores y
 4 warnings eliminados. BUG-037 sigue siendo la única prueba roja.
+
+[build] ocupado — Codex, LINT-06A · servicios operativos.
+
+[build] libre — Codex, LINT-06A · build y typecheck terminaron en 0.
+
+[calidad · LINT-06A] hecho — leads, clientes, documentos, tareas, usuarios y
+reportes quedan en 0/0; 51 errores y 4 warnings eliminados. BUG-037 sigue roja.

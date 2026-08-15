@@ -4,26 +4,23 @@
 
 import { useState, useEffect } from "react";
 import { obtenerClientePorId, obtenerDocumentosCliente } from "./servicios";
+import type { DocumentoCliente } from "./servicios";
+import type { LeadApi } from "../leads/servicios";
 
 /**
  * Hook para cargar datos del cliente
  * @param leadId - ID del lead/cliente
  */
 export function useCliente(leadId: string | null) {
-  const [cliente, setCliente] = useState<any>(null);
+  const [cliente, setCliente] = useState<LeadApi | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!leadId) {
-      setCargando(false);
-      return;
-    }
-
-    async function cargarCliente() {
+    async function cargarCliente(idActual: string) {
       try {
         setCargando(true);
-        const result = await obtenerClientePorId(leadId as string);
+        const result = await obtenerClientePorId(idActual);
         if (result.success) {
           setCliente(result.data);
         }
@@ -34,7 +31,15 @@ export function useCliente(leadId: string | null) {
       }
     }
 
-    cargarCliente();
+    const timeoutId = window.setTimeout(() => {
+      if (!leadId) {
+        setCliente(null);
+        setCargando(false);
+        return;
+      }
+      void cargarCliente(leadId);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [leadId]);
 
   return { cliente, cargando, error, setCliente };
@@ -45,19 +50,14 @@ export function useCliente(leadId: string | null) {
  * @param leadId - ID del lead/cliente
  */
 export function useDocumentosCliente(leadId: string | null) {
-  const [documentos, setDocumentos] = useState<any[]>([]);
+  const [documentos, setDocumentos] = useState<DocumentoCliente[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    if (!leadId) {
-      setCargando(false);
-      return;
-    }
-
-    async function cargarDocumentos() {
+    async function cargarDocumentos(idActual: string) {
       try {
         setCargando(true);
-        const result = await obtenerDocumentosCliente(leadId as string);
+        const result = await obtenerDocumentosCliente(idActual);
         if (result.success) {
           setDocumentos(result.data);
         }
@@ -68,7 +68,15 @@ export function useDocumentosCliente(leadId: string | null) {
       }
     }
 
-    cargarDocumentos();
+    const timeoutId = window.setTimeout(() => {
+      if (!leadId) {
+        setDocumentos([]);
+        setCargando(false);
+        return;
+      }
+      void cargarDocumentos(leadId);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [leadId]);
 
   const documentosAprobados = documentos.filter(

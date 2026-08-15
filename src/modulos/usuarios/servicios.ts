@@ -2,7 +2,29 @@
  * Servicios del módulo Usuarios
  */
 
+import type { EstadoUsuario, Rol } from "@/tipos";
+import type { CrearUsuarioInput, EditarUsuarioInput } from "./validaciones";
+
 const API_BASE = "/api/usuarios";
+
+export interface UsuarioApi {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  rol: Rol;
+  estado: EstadoUsuario;
+  cargo?: string;
+  ultimoAcceso?: string | Date | null;
+  creadoEn: string | Date;
+}
+
+interface RespuestaDatos<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
 
 async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -23,22 +45,22 @@ export async function obtenerUsuarios(filtros?: { busqueda?: string; rol?: strin
   if (filtros?.rol) params.set("rol", filtros.rol);
   if (filtros?.estado) params.set("estado", filtros.estado);
   const qs = params.toString();
-  return apiRequest<{ success: boolean; data: any[] }>(`${API_BASE}${qs ? `?${qs}` : ""}`);
+  return apiRequest<RespuestaDatos<UsuarioApi[]>>(`${API_BASE}${qs ? `?${qs}` : ""}`);
 }
 
 export async function obtenerUsuarioPorId(id: string) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`);
+  return apiRequest<RespuestaDatos<UsuarioApi>>(`${API_BASE}/${id}`);
 }
 
-export async function crearUsuario(data: any) {
-  return apiRequest<{ success: boolean; data: any }>(API_BASE, {
+export async function crearUsuario(data: CrearUsuarioInput) {
+  return apiRequest<RespuestaDatos<UsuarioApi>>(API_BASE, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function editarUsuario(id: string, data: any) {
-  return apiRequest<{ success: boolean; data: any }>(`${API_BASE}/${id}`, {
+export async function editarUsuario(id: string, data: EditarUsuarioInput & { password?: string }) {
+  return apiRequest<RespuestaDatos<UsuarioApi>>(`${API_BASE}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });

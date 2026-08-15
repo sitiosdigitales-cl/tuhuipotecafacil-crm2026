@@ -4,13 +4,13 @@
 
 import { useState, useEffect } from "react";
 import { obtenerDocumentos, obtenerEstadisticasDocumentos } from "./servicios";
-import type { EstadisticasDocumentos } from "./tipos";
+import type { DocumentoCompleto, EstadisticasDocumentos } from "./tipos";
 
 /**
  * Hook para cargar documentos de un lead
  */
 export function useDocumentos(leadId?: string) {
-  const [documentos, setDocumentos] = useState<any[]>([]);
+  const [documentos, setDocumentos] = useState<DocumentoCompleto[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

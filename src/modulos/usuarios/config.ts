@@ -31,5 +31,5 @@ export const USUARIOS_ESTADOS = [
 export function tienePermisoUsuario(rol: string, accion: string): boolean {
   const permisos = USUARIOS_PERMISOS[accion];
   if (!permisos) return false;
-  return permisos.includes(rol as any);
+  return permisos.some((permiso) => permiso === rol);
 }

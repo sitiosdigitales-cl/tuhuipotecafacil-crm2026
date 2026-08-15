@@ -4,6 +4,9 @@
  * y agrega hooks específicos del módulo
  */
 
+import { ETAPAS_CONFIG } from "@/tipos";
+import type { Lead } from "@/tipos";
+
 export { useLeads } from "@/lib/contexts/LeadContext";
 
 /**
@@ -12,7 +15,6 @@ export { useLeads } from "@/lib/contexts/LeadContext";
  * @returns Configuración de la etapa (label, color, etc.)
  */
 export function useEtapaConfig(etapa: string) {
-  const { ETAPAS_CONFIG } = require("@/tipos");
   return ETAPAS_CONFIG[etapa as keyof typeof ETAPAS_CONFIG] || null;
 }
 
@@ -22,7 +24,9 @@ export function useEtapaConfig(etapa: string) {
  * @param nuevaEtapa - Etapa destino
  * @returns true si puede avanzar, false si no
  */
-export function usePuedeAvanzarEtapa(_leadId: string, _nuevaEtapa: string): boolean {
+export function usePuedeAvanzarEtapa(leadId: string, nuevaEtapa: string): boolean {
+  void leadId;
+  void nuevaEtapa;
   // Lógica de validación de avance de etapa
   // Se puede expandir con reglas más complejas
   return true;
@@ -33,7 +37,7 @@ export function usePuedeAvanzarEtapa(_leadId: string, _nuevaEtapa: string): bool
  * @param leads - Array de leads
  * @returns Estadísticas del pipeline
  */
-export function useEstadisticasPipeline(leads: any[]) {
+export function useEstadisticasPipeline(leads: Lead[]) {
   const estadisticas = {
     total: leads.length,
     porEtapa: {} as Record<string, number>,

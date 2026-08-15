@@ -6,7 +6,7 @@ import { useState } from "react";
 import { generarReportePipeline, generarReporteConversion, generarReporteEjecutivos } from "./servicios";
 
 export function useReportePipeline() {
-  const [datos, setDatos] = useState<any>(null);
+  const [datos, setDatos] = useState<Awaited<ReturnType<typeof generarReportePipeline>> | null>(null);
   const [cargando, setCargando] = useState(false);
 
   const cargar = async () => {
@@ -25,7 +25,7 @@ export function useReportePipeline() {
 }
 
 export function useReporteConversion() {
-  const [datos, setDatos] = useState<any>(null);
+  const [datos, setDatos] = useState<Awaited<ReturnType<typeof generarReporteConversion>> | null>(null);
   const [cargando, setCargando] = useState(false);
 
   const cargar = async () => {
@@ -44,7 +44,7 @@ export function useReporteConversion() {
 }
 
 export function useReporteEjecutivos() {
-  const [datos, setDatos] = useState<any>(null);
+  const [datos, setDatos] = useState<Awaited<ReturnType<typeof generarReporteEjecutivos>> | null>(null);
   const [cargando, setCargando] = useState(false);
 
   const cargar = async () => {
