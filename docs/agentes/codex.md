@@ -403,3 +403,10 @@ restante en `src/lib/validaciones-pipeline.ts` no tiene importaciones.
 [build] ocupado — Codex, validación final de BUG-043.
 
 [build] libre — Codex, validación final de BUG-043; build terminó en 0 con variables ficticias.
+
+[build] ocupado — Codex, flujo documental · BUG-044.
+
+[build] libre — Codex, flujo documental · BUG-044; build terminó en 0 con variables ficticias.
+
+[calidad · documentos · BUG-044] hallazgo — `POST /api/documentos` acepta el
+estado inicial del cuerpo y puede crear un documento directamente aprobado.
