@@ -254,3 +254,10 @@ falló al desaparecer `/api/stripe/create-session` durante el build compartido.
 [build] ocupado — Codex, BUG-029; segundo reintento con el árbol estable.
 
 [build] libre — Codex, BUG-029; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-03 · BUG-030] hallazgo — seis dígitos contenidos en el RUT abren
+la ficha completa de otra persona en el portal; prueba de componente aislada.
+
+[build] ocupado — Codex, BUG-030.
+
+[build] libre — Codex, BUG-030; build terminó en 0 con variables ficticias.
