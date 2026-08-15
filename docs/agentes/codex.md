@@ -98,3 +98,10 @@ URLs de archivos de clientes sin sesión.
 [build] ocupado — Codex, BUG-009.
 
 [build] libre — Codex, BUG-009; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-010] hallazgo — `GET /api/comisiones` expone montos y
+asignaciones sin sesión.
+
+[build] ocupado — Codex, BUG-010.
+
+[build] libre — Codex, BUG-010; build terminó en 0 con variables ficticias.
