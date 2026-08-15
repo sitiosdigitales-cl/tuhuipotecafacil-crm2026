@@ -74,6 +74,32 @@ describe("reglas de avance del pipeline", () => {
     }
   );
 
+  it.each([
+    {
+      etapaDestino: "DOCS_COMPLETAS",
+      etiqueta: "docs-completos-pendiente",
+      reglaEsperada: "documentos-completos",
+    },
+    {
+      etapaDestino: "APROBADO",
+      etiqueta: "no-aprobado-banco",
+      reglaEsperada: "aprobacion-banco",
+    },
+  ] as const)(
+    "bloquea $etapaDestino cuando $etiqueta no es la etiqueta requerida",
+    ({ etapaDestino, etiqueta, reglaEsperada }) => {
+      const resultado = validarAvance(
+        leadCompleto({ etiquetas: etiqueta }),
+        etapaDestino
+      );
+
+      expect(resultado.puedeAvanzar).toBe(false);
+      expect(resultado.reglasFallidas.map((regla) => regla.id)).toEqual([
+        reglaEsperada,
+      ]);
+    }
+  );
+
   it.each<Etapa>([
     "NUEVO_LEAD",
     "DOCS_PARCIALES",

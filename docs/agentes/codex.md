@@ -375,3 +375,11 @@ y `/simulador-publico` montan fuera del panel sin depender de sus cinco contexto
 [regresión · proxy · BUG-041] hallazgo — `AGENTE` y `CLIENTE` reciben 307 hacia
 `/dashboard` cuando ya están en `/dashboard`; firma, matcher y las otras 171
 comprobaciones se comportan según la matriz esperada.
+
+[build] ocupado — Codex, CI-03 pipeline · BUG-042.
+
+[build] libre — Codex, CI-03 pipeline · BUG-042; build terminó en 0 con variables ficticias.
+
+[CI-03 · pipeline · BUG-042] hallazgo — una coincidencia parcial de
+`docs-completos` o `aprobado-banco` se cuenta como requisito cumplido; los 23
+casos previos siguen verdes y los dos casos de frontera quedan rojos.
