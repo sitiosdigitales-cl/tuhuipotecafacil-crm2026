@@ -27,7 +27,65 @@ Esto hace la partición disjunta por construcción: **Codex nunca escribe en
 
 ---
 
+## 2bis. MODO LOCAL — vigente ahora
+
+Los dos agentes comparten **un solo working tree**: el mismo clon, el mismo
+directorio. Y `git push` devuelve 403 porque `Godblessdiego` tiene lectura pero
+no escritura sobre `sitiosdigitales-cl/tuhuipotecafacil-crm2026`. `origin/diego`
+no existe y no puede crearse sin ese permiso.
+
+Mientras dure esta situación:
+
+1. **El paso `git pull --rebase origin diego` es un no-op. Sáltalo.** Estaba
+   pensado para dos agentes en clones distintos. En un árbol compartido ya se
+   ven los commits del otro al instante: no hay nada que sincronizar y el
+   comando falla con `couldn't find remote ref diego`.
+2. **`git push` también se salta.** Los commits se acumulan locales y se suben
+   en un solo lote cuando se resuelva el acceso. Nada se pierde.
+3. **Ningún bloqueo de push justifica detener una tarea local.** Si tu tarea no
+   necesita código del otro agente, se hace igual y se commitea.
+
+### Prohibido en árbol compartido
+
+Estos comandos operan sobre todo el directorio y pisan el trabajo sin commitear
+del otro agente, aunque los archivos sean de zonas distintas:
+
+```
+git stash          ← esconde los cambios del otro
+git checkout .     ← los descarta
+git clean          ← borra sus archivos nuevos
+git add -A / .     ← los incluye en tu commit
+git reset --hard   ← los destruye
+```
+
+Para comparar lint antes y después de un cambio, usa `git diff` o revisa el
+archivo commiteado con `git show HEAD:<ruta>`. Nunca `stash`.
+
+> Esto ya pasó: durante la Fase 1, Claude usó `git stash` dos veces para
+> comparar errores de eslint. Si Codex hubiera tenido cambios sin commitear en
+> ese momento, se habrían escondido sin aviso.
+
+### Builds
+
+`npm run build` escribe en `.next/`, que es único para el directorio. Dos builds
+simultáneos se pisan y producen fallos que no corresponden al código.
+
+Antes de compilar, anota `[build] ocupado` en tu bitácora, y `[build] libre` al
+terminar. Si ves la marca del otro agente, espera. Es tosco, pero es el
+mecanismo más simple que funciona sin coordinación en tiempo real.
+
+### Commitea seguido
+
+En árbol compartido, el trabajo sin commitear es el único que corre riesgo.
+Commitea apenas una tarea esté verificada; no acumules cambios en el working
+tree.
+
+---
+
 ## 2. Rama y sincronización
+
+> Esta sección describe el modo con remoto. Mientras rija el **modo local**
+> (sección 2bis), los pasos de `pull` y `push` no aplican.
 
 - Rama única de trabajo: **`diego`**. Nadie hace push a `master`.
 - Nadie usa `git push --force`, ni `reset --hard` sobre commits pusheados, ni
