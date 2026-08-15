@@ -159,3 +159,10 @@ antecedentes financieros y de la propiedad sin sesión.
 [build] ocupado — Codex, BUG-017.
 
 [build] libre — Codex, BUG-017; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-018] hallazgo — `GET /api/tareas` expone trabajo interno,
+responsables y clientes sin sesión.
+
+[build] ocupado — Codex, BUG-018.
+
+[build] libre — Codex, BUG-018; build terminó en 0 con variables ficticias.
