@@ -5,6 +5,23 @@
 
 import type { Lead } from "@/tipos";
 
+/**
+ * ¿El lead tiene exactamente esta etiqueta?
+ *
+ * Las etiquetas se guardan como un texto con valores separados por comas, así
+ * que `String.includes` compara subcadenas y no valores: con `.includes(...)`
+ * una etiqueta `docs-completos-pendiente` daba por cumplido el requisito
+ * `docs-completos`, y `no-aprobado-banco` habilitaba el avance a APROBADO.
+ * Justo al revés de lo que dicen.
+ */
+function tieneEtiqueta(etiquetas: string | undefined, buscada: string): boolean {
+  if (!etiquetas) return false;
+  return etiquetas
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .includes(buscada.toLowerCase());
+}
+
 // ─── Interfaces ───
 export interface ReglaValidacion {
   id: string;
@@ -96,7 +113,7 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       nombre: "Documentación completa",
       descripcion: "Todos los documentos obligatorios deben estar cargados antes de avanzar a esta etapa",
       verificar: (lead) => {
-        return lead.etiquetas?.includes("docs-completos") || lead.etapa === "DOCS_COMPLETAS";
+        return tieneEtiqueta(lead.etiquetas, "docs-completos") || lead.etapa === "DOCS_COMPLETAS";
       },
       obligatoria: true,
     },
@@ -116,7 +133,7 @@ export const REGLAS_POR_ETAPA: Record<string, ReglaValidacion[]> = {
       id: "aprobacion-banco",
       nombre: "Aprobación bancaria",
       descripcion: "El crédito debe tener aprobación del banco",
-      verificar: (lead) => !!lead.etiquetas?.includes("aprobado-banco"),
+      verificar: (lead) => tieneEtiqueta(lead.etiquetas, "aprobado-banco"),
       obligatoria: true,
     },
   ],
