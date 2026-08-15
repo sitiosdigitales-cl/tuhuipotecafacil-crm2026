@@ -5,11 +5,11 @@
 import type { Rol } from "@/tipos";
 
 export const TAREAS_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  crear: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  editar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  eliminar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  cambiarEstado: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
+  ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  crear: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  editar: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  eliminar: ["SUPER_ADMIN", "ADMIN"],
+  cambiarEstado: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
 };
 
 export const TAREAS_ESTADOS = [

@@ -872,8 +872,6 @@ export default function PipelinePage() {
                               background:
                                 user.rol === "ADMIN"
                                   ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                                  : user.rol === "GERENTE"
-                                  ? "linear-gradient(135deg, #d97706, #b45309)"
                                   : "linear-gradient(135deg, #64748b, #475569)",
                             }}
                           >
@@ -921,8 +919,6 @@ export default function PipelinePage() {
                             background:
                               user.rol === "ADMIN"
                                 ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                                : user.rol === "GERENTE"
-                                ? "linear-gradient(135deg, #d97706, #b45309)"
                                 : "linear-gradient(135deg, #64748b, #475569)",
                           }}
                         >

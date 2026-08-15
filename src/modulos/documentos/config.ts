@@ -8,12 +8,12 @@ import type { Rol } from "@/tipos";
 
 // ─── Permisos ───
 export const DOCUMENTOS_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-  subir: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-  eliminar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  gestionarEstado: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  solicitar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  previsualizar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  subir: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  eliminar: ["SUPER_ADMIN", "ADMIN"],
+  gestionarEstado: ["SUPER_ADMIN", "ADMIN"],
+  solicitar: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  previsualizar: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
 };
 
 // ─── Estados de documento ───

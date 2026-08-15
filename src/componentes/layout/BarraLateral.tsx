@@ -54,7 +54,7 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
     titulo: "GENERAL",
     items: [
       { label: "Dashboard", icon: <LayoutDashboard size={17} />, href: "/dashboard" },
-      { label: "Resumen Ejecutivo", icon: <BarChart3 size={17} />, href: "/resumen", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
+      { label: "Resumen Ejecutivo", icon: <BarChart3 size={17} />, href: "/resumen", roles: ["SUPER_ADMIN", "ADMIN"] },
     ],
   },
   {
@@ -63,19 +63,19 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
       { label: "Pipeline Comercial", icon: <GitBranch size={17} />, href: "/pipeline" },
       { label: "Leads", icon: <UserPlus size={17} />, href: "/leads", badge: 56, badgeColor: "bg-blue-500" },
       { label: "Clientes", icon: <Users size={17} />, href: "/clientes" },
-      { label: "Bancos", icon: <Building2 size={17} />, href: "/bancos", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
+      { label: "Bancos", icon: <Building2 size={17} />, href: "/bancos", roles: ["SUPER_ADMIN", "ADMIN"] },
       { label: "Simulador", icon: <Calculator size={17} />, href: "/simulador" },
       { label: "Portal del Cliente", icon: <Globe size={17} />, href: "/portal" },
       { label: "Documentos", icon: <FileText size={17} />, href: "/documentos" },
       { label: "Agenda", icon: <Calendar size={17} />, href: "/agenda" },
       { label: "Actividades", icon: <CheckSquare size={17} />, href: "/actividades", badge: 18, badgeColor: "bg-amber-500" },
       { label: "Conversaciones", icon: <MessageSquare size={17} />, href: "/conversaciones" },
-      { label: "Reportes", icon: <BarChart3 size={17} />, href: "/reportes", roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"] },
+      { label: "Reportes", icon: <BarChart3 size={17} />, href: "/reportes", roles: ["SUPER_ADMIN", "ADMIN"] },
     ],
   },
   {
     titulo: "MARKETING Y REFERIDOS",
-    roles: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+    roles: ["SUPER_ADMIN", "ADMIN"],
     items: [
       { label: "Referidos", icon: <Share2 size={17} />, href: "/referidos" },
       { label: "Campañas", icon: <Target size={17} />, href: "/campanas" },

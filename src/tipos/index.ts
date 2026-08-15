@@ -1,4 +1,4 @@
-export type Rol = "SUPER_ADMIN" | "ADMIN" | "GERENTE" | "AGENTE" | "CLIENTE" | "EJECUTIVO";
+export type Rol = "SUPER_ADMIN" | "ADMIN" | "AGENTE" | "CLIENTE" | "EJECUTIVO";
 
 export type OrigenLead =
   | "WEB"
@@ -291,12 +291,11 @@ export const ESTADOS_USUARIO_CONFIG: Record<EstadoUsuario, { label: string; colo
 };
 
 export const ROLES_CONFIG: Record<Rol, { label: string; color: string; descripcion: string }> = {
-  SUPER_ADMIN: { label: "Super Admin", color: "bg-purple-100 text-purple-700", descripcion: "Acceso total al sistema" },
-  ADMIN: { label: "Administrador", color: "bg-blue-100 text-blue-700", descripcion: "Gestión avanzada" },
-  GERENTE: { label: "Gerente", color: "bg-amber-100 text-amber-700", descripcion: "Supervisión de equipo" },
-  AGENTE: { label: "Agente", color: "bg-slate-100 text-slate-700", descripcion: "Operaciones básicas" },
-  CLIENTE: { label: "Cliente", color: "bg-emerald-100 text-emerald-700", descripcion: "Solo puede ver y editar su perfil y documentos" },
-  EJECUTIVO: { label: "Ejecutivo", color: "bg-cyan-100 text-cyan-700", descripcion: "Ejecutivo comercial" },
+  SUPER_ADMIN: { label: "Super Admin", color: "bg-purple-100 text-purple-700", descripcion: "Control total. Único que administra roles" },
+  ADMIN: { label: "Administrador", color: "bg-blue-100 text-blue-700", descripcion: "Todas las vistas del dashboard. Ve y edita datos, no administra roles" },
+  EJECUTIVO: { label: "Ejecutivo", color: "bg-cyan-100 text-cyan-700", descripcion: "Ejecutivo comercial. Ve todos los leads y clientes" },
+  AGENTE: { label: "Agente de banco", color: "bg-amber-100 text-amber-700", descripcion: "Contraparte del banco. Lee documentos de las solicitudes" },
+  CLIENTE: { label: "Cliente", color: "bg-emerald-100 text-emerald-700", descripcion: "Solo su propio perfil y sus documentos" },
 };
 
 // Tipos para Auditoría

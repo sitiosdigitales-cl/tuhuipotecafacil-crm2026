@@ -5,7 +5,7 @@
 import type { Rol } from "@/tipos";
 
 export const USUARIOS_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN"],
   crear: ["SUPER_ADMIN", "ADMIN"],
   editar: ["SUPER_ADMIN", "ADMIN"],
   eliminar: ["SUPER_ADMIN"],
@@ -17,7 +17,6 @@ export const USUARIOS_PERMISOS: Record<string, Rol[]> = {
 export const USUARIOS_ROLES = [
   { id: "SUPER_ADMIN", label: "Super Admin", color: "#EF4444", descripcion: "Acceso total al sistema" },
   { id: "ADMIN", label: "Administrador", color: "#8B5CF6", descripcion: "Gestión completa del CRM" },
-  { id: "GERENTE", label: "Gerente", color: "#3B82F6", descripcion: "Supervisión y reportes" },
   { id: "AGENTE", label: "Agente", color: "#10B981", descripcion: "Gestión de leads asignados" },
   { id: "EJECUTIVO", label: "Ejecutivo", color: "#F59E0B", descripcion: "Ventas y seguimiento" },
   { id: "CLIENTE", label: "Cliente", color: "#64748B", descripcion: "Portal del cliente" },

@@ -5,7 +5,7 @@
 import type { Rol } from "@/tipos";
 
 export const COMISIONES_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN"],
   crear: ["SUPER_ADMIN", "ADMIN"],
   editar: ["SUPER_ADMIN", "ADMIN"],
   eliminar: ["SUPER_ADMIN"],

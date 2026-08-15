@@ -33,13 +33,13 @@ export const SOLICITUDES_CONFIG = {
   
   // Permisos
   permisos: {
-    ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-    crear: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-    editar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-    cambiarEstado: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+    ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+    crear: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+    editar: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+    cambiarEstado: ["SUPER_ADMIN", "ADMIN"],
     eliminar: ["SUPER_ADMIN", "ADMIN"],
-    asignarBanco: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-    aprobar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+    asignarBanco: ["SUPER_ADMIN", "ADMIN"],
+    aprobar: ["SUPER_ADMIN", "ADMIN"],
   },
 };
 

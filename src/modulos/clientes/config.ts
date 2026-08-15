@@ -7,12 +7,12 @@ import type { Rol } from "@/tipos";
 
 // ─── Permisos ───
 export const CLIENTES_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-  editar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "CLIENTE"],
-  verDocumentos: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-  subirDocumentos: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
-  solicitarDocumentos: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  gestionarEstado: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  editar: ["SUPER_ADMIN", "ADMIN", "CLIENTE"],
+  verDocumentos: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  subirDocumentos: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  solicitarDocumentos: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  gestionarEstado: ["SUPER_ADMIN", "ADMIN"],
 };
 
 // ─── Secciones del perfil ───

@@ -5,9 +5,9 @@
 import type { Rol } from "@/tipos";
 
 export const MARKETING_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  crear: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  editar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN"],
+  crear: ["SUPER_ADMIN", "ADMIN"],
+  editar: ["SUPER_ADMIN", "ADMIN"],
   eliminar: ["SUPER_ADMIN", "ADMIN"],
 };
 

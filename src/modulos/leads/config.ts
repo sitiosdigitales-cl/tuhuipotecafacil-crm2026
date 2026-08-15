@@ -7,13 +7,13 @@ import type { Rol, Etapa, Prioridad } from "@/tipos";
 
 // ─── Permisos por acción ───
 export const LEADS_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  crear: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  editar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  crear: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  editar: ["SUPER_ADMIN", "ADMIN"],
   eliminar: ["SUPER_ADMIN", "ADMIN"],
-  asignar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  cambiarEtapa: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-  verDocumentos: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"],
+  asignar: ["SUPER_ADMIN", "ADMIN"],
+  cambiarEtapa: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+  verDocumentos: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"],
 };
 
 // ─── Configuración de etapas del pipeline ───

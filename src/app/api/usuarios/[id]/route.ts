@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
+  const user = requireRole(request, ["SUPER_ADMIN"]);
   if (!user) return forbidden();
   try {
     const { id } = await params;

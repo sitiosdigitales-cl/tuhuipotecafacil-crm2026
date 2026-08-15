@@ -5,8 +5,8 @@
 import type { Rol } from "@/tipos";
 
 export const REPORTES_PERMISOS: Record<string, Rol[]> = {
-  ver: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
-  exportar: ["SUPER_ADMIN", "ADMIN", "GERENTE"],
+  ver: ["SUPER_ADMIN", "ADMIN"],
+  exportar: ["SUPER_ADMIN", "ADMIN"],
 };
 
 export const REPORTES_TIPOS = [

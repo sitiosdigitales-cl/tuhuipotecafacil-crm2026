@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // CLIENTE no puede eliminar leads
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN", "GERENTE"])) return forbidden();
+  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) return forbidden();
   try {
     const { id } = await params;
     const { error } = await supabase.from("leads").delete().eq("id", id);

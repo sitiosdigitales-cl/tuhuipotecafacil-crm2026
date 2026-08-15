@@ -174,8 +174,6 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
                         ? "linear-gradient(135deg, #9333ea, #7c3aed)"
                         : user.rol === "ADMIN"
                         ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                        : user.rol === "GERENTE"
-                        ? "linear-gradient(135deg, #d97706, #b45309)"
                         : "linear-gradient(135deg, #64748b, #475569)",
                   }}
                 >

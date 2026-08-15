@@ -5,7 +5,7 @@ import { generarToken } from "@/lib/jwt";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 // Roles permitidos para crear usuarios (sin SUPER_ADMIN)
-const ROLES_PERMITIDOS = ["AGENTE", "GERENTE", "ADMIN"];
+const ROLES_PERMITIDOS = ["AGENTE", "ADMIN"];
 
 export async function POST(request: NextRequest) {
   // Solo usuarios autenticados pueden crear nuevos usuarios

@@ -57,8 +57,8 @@ export const COMUNICACIONES_CONFIG = {
   nombre: "Comunicaciones",
   ruta: "/comunicaciones",
   permisos: {
-    ver: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
-    enviar: ["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO"],
+    ver: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
+    enviar: ["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO"],
     eliminar: ["SUPER_ADMIN", "ADMIN"],
   },
 };

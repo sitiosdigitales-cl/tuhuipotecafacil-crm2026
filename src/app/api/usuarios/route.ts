@@ -56,8 +56,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Solo ADMIN y SUPER_ADMIN pueden crear usuarios
-  if (!requireRole(request, ["ADMIN", "SUPER_ADMIN"])) return forbidden();
+  // Solo SUPER_ADMIN. Crear una cuenta es asignar un rol, y ADMIN no
+  // administra roles.
+  if (!requireRole(request, ["SUPER_ADMIN"])) return forbidden();
   try {
     const body = await request.json();
     const { nombre, apellido, email, password, telefono, rol } = body;

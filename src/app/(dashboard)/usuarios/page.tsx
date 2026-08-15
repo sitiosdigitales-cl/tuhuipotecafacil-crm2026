@@ -424,7 +424,6 @@ export default function UsuariosPage() {
           <option value="todos">Todos los roles</option>
           <option value="SUPER_ADMIN">Super Admin</option>
           <option value="ADMIN">Administrador</option>
-          <option value="GERENTE">Gerente</option>
           <option value="AGENTE">Agente</option>
         </select>
         <select
@@ -461,7 +460,6 @@ export default function UsuariosPage() {
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm ${
                     user.rol === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
                     user.rol === 'ADMIN' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
-                    user.rol === 'GERENTE' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
                     'bg-gradient-to-br from-slate-400 to-slate-500'
                   }`}>
                     {user.nombre[0]}{user.apellido[0]}
@@ -655,7 +653,6 @@ export default function UsuariosPage() {
                 <select value={formRol} onChange={(e) => setFormRol(e.target.value as Rol)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
                   <option value="AGENTE">Agente</option>
-                  <option value="GERENTE">Gerente</option>
                   <option value="ADMIN">Administrador</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
@@ -723,7 +720,6 @@ export default function UsuariosPage() {
                 <select value={editRol} onChange={(e) => setEditRol(e.target.value as Rol)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
                   <option value="AGENTE">Agente</option>
-                  <option value="GERENTE">Gerente</option>
                   <option value="ADMIN">Administrador</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
                 </select>

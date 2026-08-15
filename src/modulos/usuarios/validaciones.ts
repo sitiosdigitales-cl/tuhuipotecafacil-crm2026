@@ -5,7 +5,7 @@ export const UsuarioSchema = z.object({
   apellido: z.string().min(1, "Apellido requerido"),
   email: z.string().email("Email inválido"),
   telefono: z.string().optional(),
-  rol: z.enum(["SUPER_ADMIN", "ADMIN", "GERENTE", "AGENTE", "EJECUTIVO", "CLIENTE"]),
+  rol: z.enum(["SUPER_ADMIN", "ADMIN", "AGENTE", "EJECUTIVO", "CLIENTE"]),
   estado: z.enum(["ACTIVO", "INACTIVO", "SUSPENDIDO"]).default("ACTIVO"),
   cargo: z.string().optional(),
 });

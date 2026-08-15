@@ -533,7 +533,6 @@ export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: st
                   >
                     <option value="SUPER_ADMIN">Super Admin</option>
                     <option value="ADMIN">Admin</option>
-                    <option value="GERENTE">Gerente</option>
                     <option value="EJECUTIVO">Ejecutivo</option>
                     <option value="VISOR">Visor</option>
                   </select>
