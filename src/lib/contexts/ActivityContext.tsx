@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 
 export interface Actividad {
   id: string;
@@ -78,13 +78,13 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       .slice(0, limit);
   }, [actividades]);
 
+  const valor = useMemo(
+    () => ({ actividades, agregarActividad, obtenerActividadesLead, obtenerActividadesRecientes }),
+    [actividades, agregarActividad, obtenerActividadesLead, obtenerActividadesRecientes]
+  );
+
   return (
-    <ActivityContext.Provider value={{
-      actividades,
-      agregarActividad,
-      obtenerActividadesLead,
-      obtenerActividadesRecientes,
-    }}>
+    <ActivityContext.Provider value={valor}>
       {children}
     </ActivityContext.Provider>
   );

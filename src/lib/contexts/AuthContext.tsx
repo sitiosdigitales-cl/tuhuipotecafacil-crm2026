@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 
 interface Usuario {
   id: string;
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -58,16 +58,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       return false;
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     fetch("/api/auth/logout", { method: "POST" });
     setUsuario(null);
     setIsAuthenticated(false);
-  };
+  }, []);
+
+  // Sin useMemo, este objeto es nuevo en cada render y React, que compara por
+  // referencia, vuelve a dibujar a todos los consumidores aunque nada cambie.
+  const valor = useMemo(
+    () => ({ isAuthenticated, usuario, login, logout, cargando }),
+    [isAuthenticated, usuario, login, logout, cargando]
+  );
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, usuario, login, logout, cargando }}>
+    <AuthContext.Provider value={valor}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
 
@@ -217,18 +217,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
+  const valor = useMemo(
+    () => ({
+      notificaciones, noLeidas, cargando,
+      crearNotificacion, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion,
+    }),
+    [
+      notificaciones, noLeidas, cargando,
+      crearNotificacion, marcarComoLeida, marcarTodasLeidas, eliminarNotificacion,
+    ]
+  );
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notificaciones,
-        noLeidas,
-        cargando,
-        crearNotificacion,
-        marcarComoLeida,
-        marcarTodasLeidas,
-        eliminarNotificacion,
-      }}
-    >
+    <NotificationContext.Provider value={valor}>
       {children}
     </NotificationContext.Provider>
   );

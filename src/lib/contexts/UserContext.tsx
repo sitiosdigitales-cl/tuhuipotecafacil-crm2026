@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import type { Usuario } from "@/tipos";
 
@@ -75,7 +75,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [authUser, isAuthenticated, usuarios]);
 
-  const cambiarUsuario = async (usuarioId: string) => {
+  const cambiarUsuario = useCallback(async (usuarioId: string) => {
     try {
       const response = await fetch("/api/auth/switch-user", {
         method: "POST",
@@ -100,12 +100,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setUsuarioActual(usuario);
       }
     }
-  };
+  }, [usuarios]);
 
   const esSuperAdmin = usuarioActual.rol === "SUPER_ADMIN";
 
+  const valor = useMemo(
+    () => ({ usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios }),
+    [usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios]
+  );
+
   return (
-    <UserContext.Provider value={{ usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios }}>
+    <UserContext.Provider value={valor}>
       {children}
     </UserContext.Provider>
   );

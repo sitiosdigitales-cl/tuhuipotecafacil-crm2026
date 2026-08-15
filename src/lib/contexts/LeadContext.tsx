@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Lead, Etapa } from "@/tipos";
 
@@ -226,15 +226,37 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const obtenerLeadsPorReferido = useCallback((codigoReferido: string) => leads.filter((l) => l.notas?.includes(codigoReferido)), [leads]);
 
-  // Leads activos por ejecutivo (excluye CIERRE y PERDIDO)
-  const cargaPorEjecutivo = leads.reduce((acc, lead) => {
-    if (!lead.nombreEjecutivo || ETAPAS_INACTIVAS.has(lead.etapa)) return acc;
-    acc[lead.nombreEjecutivo] = (acc[lead.nombreEjecutivo] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Leads activos por ejecutivo (excluye CIERRE y PERDIDO).
+  // Memoizado porque un objeto nuevo aqui invalidaria el valor del contexto en
+  // cada render, que es justo lo que este cambio viene a evitar.
+  const cargaPorEjecutivo = useMemo(
+    () =>
+      leads.reduce((acc, lead) => {
+        if (!lead.nombreEjecutivo || ETAPAS_INACTIVAS.has(lead.etapa)) return acc;
+        acc[lead.nombreEjecutivo] = (acc[lead.nombreEjecutivo] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+    [leads]
+  );
+
+  // El objeto literal inline creaba una referencia nueva en cada render. React
+  // compara por referencia, asi que los 25 componentes que usan useLeads() se
+  // redibujaban cada 30 segundos aunque los datos fueran identicos.
+  const valor = useMemo(
+    () => ({
+      leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo,
+      moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido,
+      cargaPorEjecutivo,
+    }),
+    [
+      leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo,
+      moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido,
+      cargaPorEjecutivo,
+    ]
+  );
 
   return (
-    <LeadContext.Provider value={{ leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo, moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido, cargaPorEjecutivo }}>
+    <LeadContext.Provider value={valor}>
       {children}
     </LeadContext.Provider>
   );
