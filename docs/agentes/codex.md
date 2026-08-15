@@ -84,3 +84,10 @@ marcar como leídas y borrar notificaciones sin sesión.
 [build] ocupado — Codex, BUG-007.
 
 [build] libre — Codex, BUG-007; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-008] hallazgo — el endpoint público
+`/api/notificaciones/test` inserta datos con service role.
+
+[build] ocupado — Codex, BUG-008.
+
+[build] libre — Codex, BUG-008; build terminó en 0 con variables ficticias.
