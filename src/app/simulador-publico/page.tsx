@@ -173,6 +173,11 @@ export default function SimuladorPage() {
 
   // Comparación bancos
   const comparacion = useMemo(() => {
+    // La misma guardia que ya tenía el cálculo principal. Sin ella, un pie
+    // igual al valor de la propiedad dejaba montoCredito en 0 y el CAE salía
+    // NaN. Y un pie mayor producía un dividendo negativo con un CAE de aspecto
+    // razonable, que es peor: no parece roto y se lee como una oferta.
+    if (montoCredito <= 0 || plazo <= 0) return [];
     return BANCOS.map((banco) => {
       const r = banco.tasa / 100 / 12;
       const n = plazo * 12;
@@ -189,6 +194,7 @@ export default function SimuladorPage() {
 
   // Escenarios
   const escenarios = useMemo(() => {
+    if (montoCredito <= 0 || tasaFinal <= 0) return [];
     return [20, 25, 30].map((p) => {
       const r = tasaFinal / 100 / 12;
       const n = p * 12;
