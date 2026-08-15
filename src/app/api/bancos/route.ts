@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -23,6 +25,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
+  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) return forbidden();
   try {
     const body = await request.json();
     const bancoData = {
