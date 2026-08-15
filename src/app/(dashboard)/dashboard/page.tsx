@@ -1,17 +1,35 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { TarjetasKPI } from "@/componentes/dashboard/TarjetasKPI";
 import { GraficoEmbudo } from "@/componentes/dashboard/GraficoEmbudo";
-import { GraficoConversion } from "@/componentes/dashboard/GraficoConversion";
-import { LeadsPorOrigen } from "@/componentes/dashboard/LeadsPorOrigen";
 import { RankingEjecutivos } from "@/componentes/dashboard/RankingEjecutivos";
 import { RendimientoBancos } from "@/componentes/dashboard/RendimientoBancos";
-import { AprobacionesMensuales } from "@/componentes/dashboard/AprobacionesMensuales";
 import { TarjetaComisiones } from "@/componentes/dashboard/TarjetaComisiones";
 import { ActividadTiempoReal } from "@/componentes/dashboard/ActividadTiempoReal";
 import { useUserData } from "@/lib/hooks/useUserData";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import { Users, CheckCircle, DollarSign, TrendingUp } from "lucide-react";
+
+// Los tres graficos son lo unico que arrastra recharts (~400 KB por punto de
+// entrada). Cargarlos aparte los saca del bundle inicial del dashboard: la
+// pagina responde antes y recharts solo baja cuando hay un grafico que pintar.
+const EsqueletoGrafico = () => (
+  <div className="h-[300px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+);
+
+const GraficoConversion = dynamic(
+  () => import("@/componentes/dashboard/GraficoConversion").then((m) => m.GraficoConversion),
+  { ssr: false, loading: EsqueletoGrafico }
+);
+const LeadsPorOrigen = dynamic(
+  () => import("@/componentes/dashboard/LeadsPorOrigen").then((m) => m.LeadsPorOrigen),
+  { ssr: false, loading: EsqueletoGrafico }
+);
+const AprobacionesMensuales = dynamic(
+  () => import("@/componentes/dashboard/AprobacionesMensuales").then((m) => m.AprobacionesMensuales),
+  { ssr: false, loading: EsqueletoGrafico }
+);
 
 export default function DashboardPage() {
   const { usuarioActual, esSuperAdmin, stats, kpis } = useUserData();
