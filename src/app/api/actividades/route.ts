@@ -3,6 +3,7 @@ import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
     try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
