@@ -296,3 +296,10 @@ Storage y base de datos el documento asociado al lead de otro agente.
 [build] ocupado — Codex, cierre BUG-034.
 
 [build] libre — Codex, cierre BUG-034; build terminó en 0 con variables ficticias.
+
+[CI-03 · pipeline] cobertura — reglas obligatorias y etapas sin requisitos
+quedan fijadas con datos sintéticos.
+
+[build] ocupado — Codex, CI-03 pipeline.
+
+[build] libre — Codex, CI-03 pipeline; build terminó en 0 con variables ficticias.
