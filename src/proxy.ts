@@ -38,6 +38,21 @@ const ACCESO: Array<{ prefijo: string; roles: Rol[] }> = [
 /** Resto del panel: equipo comercial. Ni CLIENTE ni AGENTE. */
 const ROLES_PANEL: Rol[] = ["SUPER_ADMIN", "ADMIN", "EJECUTIVO"];
 
+/**
+ * Dónde mandar a cada rol cuando pide una ruta que no le corresponde.
+ *
+ * No puede ser un destino fijo: /dashboard está restringido al equipo
+ * comercial, así que enviar ahí a un AGENTE o a un CLIENTE los dejaba
+ * rebotando contra la misma regla, redirección tras redirección.
+ */
+const INICIO_POR_ROL: Record<Rol, string> = {
+  SUPER_ADMIN: "/dashboard",
+  ADMIN: "/dashboard",
+  EJECUTIVO: "/dashboard",
+  AGENTE: "/documentos",
+  CLIENTE: "/portal-cliente",
+};
+
 const RUTAS_PANEL = [
   "/dashboard", "/pipeline", "/leads", "/clientes", "/solicitudes",
   "/centro-actividad", "/tareas", "/actividades", "/documentos", "/agenda",
@@ -79,10 +94,20 @@ export function proxy(request: NextRequest) {
   const regla = ACCESO.find((r) => pathname.startsWith(r.prefijo));
   const permitidos = regla ? regla.roles : ROLES_PANEL;
 
-  if (!permitidos.includes(sesion.rol as Rol)) {
-    // Sesión válida pero sin permiso: al panel, no al login. Mandarlo a
-    // iniciar sesión sugeriría que el problema es la sesión.
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  const rol = sesion.rol as Rol;
+
+  if (!permitidos.includes(rol)) {
+    // Sesión válida pero sin permiso: a su pantalla de inicio, no al login.
+    // Mandarlo a iniciar sesión sugeriría que el problema es la sesión.
+    const inicio = INICIO_POR_ROL[rol];
+
+    // Si su propio inicio es la ruta que se le está negando, o el rol no
+    // figura en la tabla, no hay a dónde mandarlo sin volver a caer acá.
+    if (!inicio || pathname.startsWith(inicio)) {
+      return new NextResponse("No tienes acceso a esta sección", { status: 403 });
+    }
+
+    return NextResponse.redirect(new URL(inicio, request.url));
   }
 
   return NextResponse.next();
