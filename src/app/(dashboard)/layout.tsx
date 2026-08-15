@@ -7,6 +7,7 @@ import { BarraLateral } from "@/componentes/layout/BarraLateral";
 import { BarraSuperior } from "@/componentes/layout/BarraSuperior";
 import { PanelDerecho } from "@/componentes/layout/PanelDerecho";
 import { BottomNav } from "@/componentes/layout/BottomNav";
+import { Providers } from "../providers";
 
 const RUTAS_FULLSCREEN = ["/pipeline"];
 
@@ -24,13 +25,16 @@ export default function DashboardLayout({
 
   if (esFullscreen) {
     return (
-      <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-900">
-        {children}
-      </div>
+      <Providers>
+        <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-900">
+          {children}
+        </div>
+      </Providers>
     );
   }
 
   return (
+    <Providers>
     <div className="min-h-screen bg-[#F1F5F9] dark:bg-slate-900">
       {/* Sidebar - Fixed en desktop, overlay en móvil */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarAbierto ? "block" : "hidden"}`}>
@@ -95,5 +99,6 @@ export default function DashboardLayout({
         </button>
       )}
     </div>
+    </Providers>
   );
 }

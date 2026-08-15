@@ -1,26 +1,13 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/contexts/AuthContext";
-
+/**
+ * La raíz solo decide a dónde entrar.
+ *
+ * Antes era un componente cliente que montaba AuthProvider para leer la sesión
+ * y redirigir. Ya no hace falta: el proxy verifica el token antes de que la
+ * petición llegue acá, así que a quien no tenga sesión lo manda al login por
+ * su cuenta. Como server component, no baja JavaScript.
+ */
 export default function Home() {
-  const router = useRouter();
-  const { isAuthenticated, cargando } = useAuth();
-
-  useEffect(() => {
-    if (!cargando) {
-      if (isAuthenticated) {
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
-    }
-  }, [isAuthenticated, cargando, router]);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-    </div>
-  );
+  redirect("/dashboard");
 }

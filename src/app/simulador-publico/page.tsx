@@ -2,26 +2,15 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calculator, DollarSign, Building2, Home, Wallet, Shield, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
-import dynamic from "next/dynamic";
-
-// Solo se pintan cuando hay resultado, asi que recharts no tiene por que
-// entrar en la carga inicial de una pagina publica.
-const marco = (alto: string) => () => (
-  <div className={`${alto} w-full rounded-xl bg-slate-100 animate-pulse`} />
-);
-
-const GraficoDistribucion = dynamic(
-  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoDistribucion),
-  { ssr: false, loading: marco("h-full") }
-);
-const GraficoSaldoPendiente = dynamic(
-  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoSaldoPendiente),
-  { ssr: false, loading: marco("h-[180px]") }
-);
-const GraficoCapitalInteres = dynamic(
-  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoCapitalInteres),
-  { ssr: false, loading: marco("h-[180px]") }
-);
+// Gráficos en SVG a mano, sin Recharts. Se importan de forma estática porque
+// ahora pesan unos pocos KB: diferirlos solo agregaba una petición más.
+// Recharts aportaba ~417 KiB a esta ruta pública para dibujar un anillo, una
+// línea y unas barras.
+import {
+  GraficoDistribucion,
+  GraficoSaldoPendiente,
+  GraficoCapitalInteres,
+} from "@/componentes/simulador/GraficosLigeros";
 import { toast } from "sonner";
 import { PreEvaluacionModal } from "@/componentes/simulador/PreEvaluacionModal";
 
