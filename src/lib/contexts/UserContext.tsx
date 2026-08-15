@@ -14,6 +14,24 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+type UsuarioApi = Omit<Usuario, "creadoEn" | "ultimoAcceso"> & {
+  creadoEn?: string | Date;
+  ultimoAcceso?: string | Date;
+};
+
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+}
+
+function normalizarUsuario(usuario: UsuarioApi): Usuario {
+  return {
+    ...usuario,
+    creadoEn: usuario.creadoEn ? new Date(usuario.creadoEn) : new Date(),
+    ultimoAcceso: usuario.ultimoAcceso ? new Date(usuario.ultimoAcceso) : undefined,
+  };
+}
+
 // Usuario por defecto mientras se carga (sin permisos reales)
 const USUARIO_DEFAULT: Usuario = {
   id: "",
@@ -33,13 +51,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const cargarUsuarios = useCallback(async () => {
     try {
       const response = await fetch("/api/usuarios", { credentials: "include" });
-      const data = await response.json();
+      const data = await response.json() as RespuestaApi<UsuarioApi[]>;
       if (data.success && data.data) {
-        setUsuarios(data.data.map((u: any) => ({
-          ...u,
-          creadoEn: u.creadoEn ? new Date(u.creadoEn) : new Date(),
-          ultimoAcceso: u.ultimoAcceso ? new Date(u.ultimoAcceso) : undefined,
-        })));
+        setUsuarios(data.data.map(normalizarUsuario));
       }
     } catch {
       // Silenciar errores de carga de usuarios
@@ -48,12 +62,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Cargar usuarios al montar
   useEffect(() => {
-    cargarUsuarios();
+    const timeout = window.setTimeout(() => void cargarUsuarios(), 0);
+    return () => window.clearTimeout(timeout);
   }, [cargarUsuarios]);
 
   // Sincronizar con el usuario de auth cuando cambie
   useEffect(() => {
-    if (isAuthenticated && authUser) {
+    if (!isAuthenticated || !authUser) return;
+
+    const timeout = window.setTimeout(() => {
       // Buscar el usuario en la lista cargada de la API
       const usuarioEncontrado = usuarios.find(
         (u) => u.email.toLowerCase() === authUser.email.toLowerCase()
@@ -72,7 +89,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
           creadoEn: new Date(),
         });
       }
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [authUser, isAuthenticated, usuarios]);
 
   const cambiarUsuario = useCallback(async (usuarioId: string) => {
@@ -84,11 +103,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ userId: usuarioId }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as RespuestaApi<{ usuario: UsuarioApi }>;
 
       if (data.success && data.data) {
         // Actualizar el usuario actual localmente
-        setUsuarioActual(data.data.usuario);
+        setUsuarioActual(normalizarUsuario(data.data.usuario));
 
         // Recargar la página para aplicar los cambios
         window.location.reload();

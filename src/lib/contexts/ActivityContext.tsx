@@ -11,7 +11,14 @@ export interface Actividad {
   fecha: Date;
   usuario: string;
   usuarioId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+type ActividadApi = Omit<Actividad, "fecha"> & { fecha: string | Date };
+
+interface RespuestaActividades {
+  success: boolean;
+  data?: ActividadApi[];
 }
 
 interface ActivityContextType {
@@ -31,11 +38,11 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     const cargarActividades = async () => {
       try {
         const response = await fetch("/api/actividades?limit=200");
-        const data = await response.json();
+        const data = await response.json() as RespuestaActividades;
         if (data.success && data.data) {
-          setActividades(data.data.map((a: any) => ({
-            ...a,
-            fecha: new Date(a.fecha),
+          setActividades(data.data.map((actividad) => ({
+            ...actividad,
+            fecha: new Date(actividad.fecha),
           })));
         }
       } catch {
@@ -98,8 +105,8 @@ export function useActivities() {
   return context;
 }
 
-export function getIconoActividad(tipo: string): { icono: any; color: string; bg: string } {
-  const config: Record<string, { icono: any; color: string; bg: string }> = {
+export function getIconoActividad(tipo: string): { icono: string; color: string; bg: string } {
+  const config: Record<string, { icono: string; color: string; bg: string }> = {
     llamada: { icono: "Phone", color: "text-emerald-500", bg: "bg-emerald-50" },
     email: { icono: "Mail", color: "text-blue-500", bg: "bg-blue-50" },
     whatsapp: { icono: "MessageSquare", color: "text-green-500", bg: "bg-green-50" },

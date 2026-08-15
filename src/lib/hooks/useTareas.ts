@@ -2,6 +2,35 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { Tarea, EstadoTarea, Prioridad } from "@/tipos";
+import type { TareaApi } from "@/modulos/tareas/servicios";
+
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+}
+
+type TareaRespuesta = TareaApi & {
+  recordatorio?: string | Date;
+  etiquetas?: string | string[];
+  comentarios?: Tarea["comentarios"];
+  historial?: Tarea["historial"];
+};
+
+function normalizarTarea(tarea: TareaRespuesta): Tarea {
+  return {
+    ...tarea,
+    fechaVencimiento: tarea.fechaVencimiento ? new Date(tarea.fechaVencimiento) : undefined,
+    recordatorio: tarea.recordatorio ? new Date(tarea.recordatorio) : undefined,
+    creadoEn: tarea.creadoEn ? new Date(tarea.creadoEn) : new Date(),
+    comentarios: tarea.comentarios ?? [],
+    historial: tarea.historial ?? [],
+    etiquetas: tarea.etiquetas
+      ? typeof tarea.etiquetas === "string"
+        ? tarea.etiquetas.split(",")
+        : tarea.etiquetas
+      : [],
+  };
+}
 
 interface CrearTareaInput {
   titulo: string;
@@ -25,17 +54,9 @@ export function useTareas() {
     try {
       setCargando(true);
       const res = await fetch("/api/tareas");
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<TareaRespuesta[]>;
       if (json.success && json.data) {
-        const tareasFormateadas = json.data.map((t: Record<string, any>) => ({
-          ...t,
-          fechaVencimiento: t.fechaVencimiento ? new Date(t.fechaVencimiento) : undefined,
-          recordatorio: t.recordatorio ? new Date(t.recordatorio) : undefined,
-          creadoEn: t.creadoEn ? new Date(t.creadoEn) : new Date(),
-          comentarios: t.comentarios || [],
-          historial: t.historial || [],
-          etiquetas: t.etiquetas ? (typeof t.etiquetas === "string" ? t.etiquetas.split(",") : t.etiquetas) : [],
-        }));
+        const tareasFormateadas = json.data.map(normalizarTarea);
         setTareas(tareasFormateadas);
       }
     } catch {
@@ -46,7 +67,8 @@ export function useTareas() {
   }, []);
 
   useEffect(() => {
-    cargarTareas();
+    const timeout = window.setTimeout(() => void cargarTareas(), 0);
+    return () => window.clearTimeout(timeout);
   }, [cargarTareas]);
 
   const crearTarea = async (datos: CrearTareaInput) => {
@@ -56,17 +78,11 @@ export function useTareas() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
       });
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<TareaRespuesta>;
       if (json.success && json.data) {
-        setTareas((prev) => [{
-          ...json.data,
-          fechaVencimiento: json.data.fechaVencimiento ? new Date(json.data.fechaVencimiento) : undefined,
-          creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
-          comentarios: [],
-          historial: [],
-          etiquetas: [],
-        }, ...prev]);
-        return json.data;
+        const tarea = normalizarTarea(json.data);
+        setTareas((prev) => [tarea, ...prev]);
+        return tarea;
       }
       return null;
     } catch {

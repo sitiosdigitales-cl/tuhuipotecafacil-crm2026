@@ -17,6 +17,41 @@ export interface Notificacion {
   leadId?: string;
 }
 
+interface NotificacionApi {
+  id: string;
+  tipo?: string;
+  titulo: string;
+  descripcion?: string;
+  leida?: boolean;
+  fecha?: string | Date;
+  creadoen?: string | Date;
+  usuarioId?: string;
+  usuarioid?: string;
+  leadId?: string;
+  leadid?: string;
+  accionUrl?: string;
+  accionurl?: string;
+}
+
+interface RespuestaNotificaciones {
+  success: boolean;
+  data?: NotificacionApi[];
+}
+
+const TIPOS_NOTIFICACION = new Set<Notificacion["tipo"]>([
+  "info",
+  "exito",
+  "advertencia",
+  "error",
+  "sistema",
+]);
+
+function normalizarTipo(tipo?: string): Notificacion["tipo"] {
+  return tipo && TIPOS_NOTIFICACION.has(tipo as Notificacion["tipo"])
+    ? tipo as Notificacion["tipo"]
+    : "sistema";
+}
+
 interface NotificationContextType {
   notificaciones: Notificacion[];
   noLeidas: number;
@@ -66,16 +101,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
 
         const response = await fetch("/api/notificaciones?" + params.toString());
-        const data = await response.json();
+        const data = await response.json() as RespuestaNotificaciones;
         if (data.success && data.data) {
-          setNotificaciones(data.data.map((n: any) => ({
+          setNotificaciones(data.data.map((n) => ({
             id: n.id,
-            tipo: n.tipo || "sistema",
+            tipo: normalizarTipo(n.tipo),
             titulo: n.titulo,
             descripcion: n.descripcion || "",
             leida: n.leida || false,
             fecha: n.fecha ? new Date(n.fecha) : new Date(n.creadoen || Date.now()),
-            icono: ICONOS_POR_TIPO[n.tipo] || "🔔",
+            icono: n.tipo ? ICONOS_POR_TIPO[n.tipo] || "🔔" : "🔔",
             usuarioId: n.usuarioId || n.usuarioid,
             leadId: n.leadId || n.leadid,
             accionUrl: n.accionUrl || n.accionurl,

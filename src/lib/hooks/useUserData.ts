@@ -222,7 +222,7 @@ export function useUserData() {
         icono: "award",
       },
     ];
-  }, [leads, stats]);
+  }, [leads]);
 
   return {
     usuarioActual,

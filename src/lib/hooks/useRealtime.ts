@@ -1,49 +1,51 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type {
+  RealtimePostgresDeletePayload,
+  RealtimePostgresInsertPayload,
+  RealtimePostgresUpdatePayload,
+} from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+
+type RealtimeRow = Record<string, unknown>;
 
 interface UseRealtimeOptions {
   table: string;
   schema?: string;
   filter?: string;
-  onInsert?: (payload: any) => void;
-  onUpdate?: (payload: any) => void;
-  onDelete?: (payload: any) => void;
+  onInsert?: (payload: RealtimePostgresInsertPayload<RealtimeRow>) => void;
+  onUpdate?: (payload: RealtimePostgresUpdatePayload<RealtimeRow>) => void;
+  onDelete?: (payload: RealtimePostgresDeletePayload<RealtimeRow>) => void;
   channelName?: string;
 }
 
 export function useRealtime({ table, schema = "public", filter, onInsert, onUpdate, onDelete, channelName }: UseRealtimeOptions) {
   const callbacksRef = useRef({ onInsert, onUpdate, onDelete });
-  callbacksRef.current = { onInsert, onUpdate, onDelete };
+
+  useEffect(() => {
+    callbacksRef.current = { onInsert, onUpdate, onDelete };
+  }, [onInsert, onUpdate, onDelete]);
 
   useEffect(() => {
     if (!table) return;
 
     const name = channelName || `${table}-realtime-${Date.now()}`;
 
-    const config: Record<string, any> = { schema, table };
-    if (filter) config.filter = filter;
+    const config = { schema, table, ...(filter ? { filter } : {}) };
 
     let channel = supabase.channel(name);
 
-    if (onInsert) {
-      channel = channel.on("postgres_changes" as any, { ...config, event: "INSERT" }, (payload: any) => {
+    channel = channel
+      .on<RealtimeRow>("postgres_changes", { ...config, event: "INSERT" }, (payload) => {
         callbacksRef.current.onInsert?.(payload);
-      }) as typeof channel;
-    }
-
-    if (onUpdate) {
-      channel = channel.on("postgres_changes" as any, { ...config, event: "UPDATE" }, (payload: any) => {
+      })
+      .on<RealtimeRow>("postgres_changes", { ...config, event: "UPDATE" }, (payload) => {
         callbacksRef.current.onUpdate?.(payload);
-      }) as typeof channel;
-    }
-
-    if (onDelete) {
-      channel = channel.on("postgres_changes" as any, { ...config, event: "DELETE" }, (payload: any) => {
+      })
+      .on<RealtimeRow>("postgres_changes", { ...config, event: "DELETE" }, (payload) => {
         callbacksRef.current.onDelete?.(payload);
-      }) as typeof channel;
-    }
+      });
 
     channel.subscribe();
 

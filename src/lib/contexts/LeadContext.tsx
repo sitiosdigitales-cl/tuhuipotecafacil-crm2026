@@ -7,6 +7,24 @@ import type { Lead, Etapa } from "@/tipos";
 // Etapas que NO cuentan como carga activa
 const ETAPAS_INACTIVAS = new Set(["CIERRE", "PERDIDO"]);
 
+type LeadApi = Omit<Lead, "creadoEn"> & {
+  creadoEn?: string | Date;
+  creadoen?: string | Date;
+};
+
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+}
+
+function normalizarLead(lead: LeadApi): Lead {
+  const { creadoen, ...datos } = lead;
+  return {
+    ...datos,
+    creadoEn: new Date(datos.creadoEn ?? creadoen ?? Date.now()),
+  };
+}
+
 interface LeadContextType {
   leads: Lead[];
   agregarLead: (lead: Omit<Lead, "id" | "creadoEn">) => Promise<void>;
@@ -30,12 +48,9 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const cargarLeads = useCallback(async () => {
     try {
       const response = await fetch("/api/leads", { credentials: "include" });
-      const data = await response.json();
+      const data = await response.json() as RespuestaApi<LeadApi[]>;
       if (data.success && data.data && data.data.length > 0) {
-        setLeads(data.data.map((l: any) => ({
-          ...l,
-          creadoEn: new Date(l.creadoEn),
-        })));
+        setLeads(data.data.map(normalizarLead));
       } else {
         setLeads([]);
       }
@@ -47,7 +62,10 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => { cargarLeads(); }, [cargarLeads]);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void cargarLeads(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [cargarLeads]);
 
   // Auto-actualizar cada 30 segundos (fallback)
   useEffect(() => {
@@ -130,7 +148,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const actualizarLead = useCallback(async (id: string, datos: Partial<Lead>) => {
     // Guardar estado anterior para rollback usando functional update
-    let leadsAnteriores: any[] = [];
+    let leadsAnteriores: Lead[] = [];
     
     // Optimistic update con functional update para evitar stale closure
     setLeads((prev) => {

@@ -3,6 +3,28 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Conversacion } from "@/tipos/conversaciones";
 
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+}
+
+type ConversacionApi = Omit<Conversacion, "participantes" | "creadoEn"> & {
+  participantes?: unknown;
+  creadoEn: string | Date;
+};
+
+function normalizarConversacion(conversacion: ConversacionApi): Conversacion {
+  const participantes = Array.isArray(conversacion.participantes)
+    ? conversacion.participantes.filter((id): id is string => typeof id === "string")
+    : [];
+
+  return {
+    ...conversacion,
+    participantes,
+    creadoEn: new Date(conversacion.creadoEn),
+  };
+}
+
 interface UseConversacionesOptions {
   usuarioActualId: string;
 }
@@ -15,11 +37,11 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
     try {
       // Obtener todas las conversaciones
       const res = await fetch(`/api/conversaciones`);
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<ConversacionApi[]>;
       if (json.success && json.data) {
         // Para Super Admin mostrar todas, para otros filtrar por participante
-        const filtradas = json.data.filter((c: any) => {
-          const participantes = Array.isArray(c.participantes) ? c.participantes : [];
+        const filtradas = json.data.map(normalizarConversacion).filter((conversacion) => {
+          const participantes = conversacion.participantes;
           // Mostrar si el usuario es participante O si es Super Admin
           return participantes.includes(usuarioActualId) || participantes.length > 0;
         });
@@ -33,7 +55,8 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
   }, [usuarioActualId]);
 
   useEffect(() => {
-    cargarConversaciones();
+    const timeout = window.setTimeout(() => void cargarConversaciones(), 0);
+    return () => window.clearTimeout(timeout);
   }, [cargarConversaciones]);
 
   const crearConversacion = useCallback(async (datos: {
@@ -51,10 +74,11 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
           creadoPor: usuarioActualId,
         }),
       });
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<ConversacionApi>;
       if (json.success && json.data) {
-        setConversaciones((prev) => [json.data, ...prev]);
-        return json.data;
+        const conversacion = normalizarConversacion(json.data);
+        setConversaciones((prev) => [conversacion, ...prev]);
+        return conversacion;
       }
     } catch {
       // Error silencioso

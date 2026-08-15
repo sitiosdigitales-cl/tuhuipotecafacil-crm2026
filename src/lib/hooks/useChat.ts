@@ -4,6 +4,46 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Mensaje } from "@/tipos/conversaciones";
 
+interface RespuestaApi<T> {
+  success: boolean;
+  data?: T;
+}
+
+interface MensajeApi {
+  id: string;
+  conversacionId?: string;
+  conversacionid?: string;
+  remitenteId?: string;
+  remitenteid?: string;
+  remitenteNombre?: string;
+  remitentenombre?: string;
+  remitenteAvatar?: string;
+  contenido: string;
+  tipo?: Mensaje["tipo"];
+  estado?: Mensaje["estado"];
+  archivoUrl?: string;
+  archivourl?: string;
+  creadoEn?: string | number | Date;
+  creadoen?: string | number | Date;
+  reacciones?: Record<string, string[]>;
+}
+
+function normalizarMensaje(mensaje: MensajeApi): Mensaje {
+  return {
+    id: mensaje.id,
+    conversacionId: mensaje.conversacionId ?? mensaje.conversacionid ?? "",
+    remitenteId: mensaje.remitenteId ?? mensaje.remitenteid ?? "",
+    remitenteNombre: mensaje.remitenteNombre ?? mensaje.remitentenombre ?? "Usuario",
+    remitenteAvatar: mensaje.remitenteAvatar,
+    contenido: mensaje.contenido,
+    tipo: mensaje.tipo ?? "TEXTO",
+    estado: mensaje.estado ?? "ENVIADO",
+    archivoUrl: mensaje.archivoUrl ?? mensaje.archivourl,
+    creadoEn: new Date(mensaje.creadoEn ?? mensaje.creadoen ?? Date.now()),
+    reacciones: mensaje.reacciones,
+  };
+}
+
 interface UseChatOptions {
   conversacionId: string | null;
   usuarioActualId: string;
@@ -20,19 +60,9 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
     setCargando(true);
     try {
       const res = await fetch(`/api/mensajes?conversacionId=${convId}&limite=100`);
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<MensajeApi[]>;
       if (json.success && json.data) {
-        setMensajes(json.data.map((m: Record<string, any>) => ({
-          id: m.id,
-          conversacionId: m.conversacionId || m.conversacionid,
-          remitenteId: m.remitenteId || m.remitenteid,
-          remitenteNombre: m.remitenteNombre || m.remitentenombre,
-          contenido: m.contenido,
-          tipo: m.tipo || "TEXTO",
-          estado: m.estado || "ENVIADO",
-          archivoUrl: m.archivoUrl || m.archivourl,
-          creadoEn: new Date(m.creadoEn || m.creadoen),
-        })));
+        setMensajes(json.data.map(normalizarMensaje));
       }
     } catch {
       setMensajes([]);
@@ -43,11 +73,15 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
 
   // Cargar mensajes cuando cambia la conversación
   useEffect(() => {
-    if (!conversacionId) {
-      setMensajes([]);
-      return;
-    }
-    cargarMensajes(conversacionId);
+    const timeout = window.setTimeout(() => {
+      if (!conversacionId) {
+        setMensajes([]);
+        return;
+      }
+      void cargarMensajes(conversacionId);
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [conversacionId, cargarMensajes]);
 
   // Suscripción Realtime a nuevos mensajes
@@ -64,22 +98,12 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
           table: "mensajes",
         },
         (payload) => {
-          const nuevo = payload.new as Record<string, any>;
+          const nuevo = payload.new as MensajeApi;
 
           // Solo mensajes de esta conversación
-          if (nuevo.conversacionid !== conversacionId) return;
+          if ((nuevo.conversacionId ?? nuevo.conversacionid) !== conversacionId) return;
 
-          const mensajeNuevo: Mensaje = {
-            id: nuevo.id,
-            conversacionId: nuevo.conversacionid,
-            remitenteId: nuevo.remitenteid,
-            remitenteNombre: nuevo.remitentenombre,
-            contenido: nuevo.contenido,
-            tipo: nuevo.tipo || "TEXTO",
-            estado: nuevo.estado || "ENVIADO",
-            archivoUrl: nuevo.archivourl,
-            creadoEn: new Date(nuevo.creadoen),
-          };
+          const mensajeNuevo = normalizarMensaje(nuevo);
 
           setMensajes((prev) => {
             // Deduplicar: no agregar si ya existe (el sender lo tiene por optimistic update)
@@ -127,23 +151,14 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
         }),
       });
 
-      const json = await res.json();
+      const json = await res.json() as RespuestaApi<MensajeApi>;
       if (json.success && json.data) {
+        const mensajeGuardado = normalizarMensaje(json.data);
         // Reemplazar el mensaje temporal con el real
         setMensajes((prev) =>
           prev.map((m) =>
             m.id === mensajeLocal.id
-              ? {
-                  id: json.data.id,
-                  conversacionId: json.data.conversacionid,
-                  remitenteId: json.data.remitenteid,
-                  remitenteNombre: json.data.remitentenombre,
-                  contenido: json.data.contenido,
-                  tipo: json.data.tipo || "TEXTO",
-                  estado: json.data.estado || "ENVIADO",
-                  archivoUrl: json.data.archivourl,
-                  creadoEn: new Date(json.data.creadoen),
-                }
+              ? mensajeGuardado
               : m
           )
         );

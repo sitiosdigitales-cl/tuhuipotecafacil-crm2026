@@ -526,3 +526,11 @@ reportes quedan en 0/0; 51 errores y 4 warnings eliminados. BUG-037 sigue roja.
 
 [calidad · LINT-06B] hecho — módulos auxiliares TypeScript quedan en 0/0;
 42 errores eliminados. Quedan 52 errores y 8 warnings; BUG-037 sigue roja.
+
+[build] ocupado — Codex, LINT-07A · contextos y hooks compartidos.
+
+[build] libre — Codex, LINT-07A · build y typecheck terminaron en 0.
+
+[calidad · LINT-07A] hecho — contextos y hooks compartidos quedan en 0/0;
+30 errores y 2 warnings eliminados. Quedan 22 errores y 6 warnings;
+BUG-037 sigue siendo la única prueba roja (273/274).

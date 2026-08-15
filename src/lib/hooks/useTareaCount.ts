@@ -21,9 +21,12 @@ export function useTareaCount() {
   }, []);
 
   useEffect(() => {
-    cargarCount();
+    const timeout = window.setTimeout(() => void cargarCount(), 0);
     const interval = setInterval(cargarCount, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      window.clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [cargarCount]);
 
   return count;
