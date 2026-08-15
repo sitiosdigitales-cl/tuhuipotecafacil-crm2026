@@ -40,7 +40,7 @@ export async function GET(
 
     if (error) {
       console.error("Error fetching historial:", error);
-      return NextResponse.json({ success: true, data: [], total: 0 });
+      return NextResponse.json({ success: false, error: "No se pudo cargar el historial" }, { status: 500 });
     }
 
     const { data: stats } = await supabase
@@ -69,7 +69,7 @@ export async function GET(
     });
   } catch (err) {
     console.error("Error in historial GET:", err);
-    return NextResponse.json({ success: true, data: [], total: 0 });
+    return NextResponse.json({ success: false, error: "No se pudo cargar el historial" }, { status: 500 });
   }
 }
 

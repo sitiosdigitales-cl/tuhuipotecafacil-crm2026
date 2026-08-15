@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error al consultar usuarios:", error.message, error.details);
-      return NextResponse.json({ success: true, data: [], error: error.message });
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
     const usuarios = (data || []).map((u: any) => ({
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: usuarios });
   } catch (e) {
     console.error("Error interno en GET /api/usuarios:", e);
-    return NextResponse.json({ success: true, data: [] });
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

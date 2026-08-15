@@ -15,12 +15,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
     if (error) {
       console.error("Error al consultar bancos:", error.message);
-      return NextResponse.json({ success: true, data: [] });
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
     const bancos = (data || []).map((b: any) => fromSupabaseColumns(b));
     return NextResponse.json({ success: true, data: bancos });
   } catch (_e) {
-    return NextResponse.json({ success: true, data: [] });
+    return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
   }
 }
 

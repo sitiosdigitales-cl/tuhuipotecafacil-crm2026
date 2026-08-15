@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const limite = parseInt(searchParams.get("limite") || "50");
 
     if (!conversacionId) {
-      return NextResponse.json({ success: true, data: [] });
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
     const { data, error } = await supabase
@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
       .order("creadoen", { ascending: true })
       .limit(limite);
 
-    if (error) return NextResponse.json({ success: true, data: [] });
+    if (error) {
+      console.error("Fallo la consulta:", error.message);
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
+    }
 
     const mensajes = (data || []).map((m: any) => ({
       id: m.id,
@@ -35,8 +38,9 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ success: true, data: mensajes });
-  } catch {
-    return NextResponse.json({ success: true, data: [] });
+  } catch (e) {
+    console.error("Error inesperado:", e);
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

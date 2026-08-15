@@ -17,10 +17,14 @@ export async function GET(request: NextRequest) {
     query = query.order("proximoenvio", { ascending: true });
 
     const { data, error } = await query;
-    if (error) return NextResponse.json({ success: true, data: [] });
+    if (error) {
+      console.error("Fallo la consulta:", error.message);
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
+    }
     return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
-  } catch {
-    return NextResponse.json({ success: true, data: [] });
+  } catch (e) {
+    console.error("Error inesperado:", e);
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

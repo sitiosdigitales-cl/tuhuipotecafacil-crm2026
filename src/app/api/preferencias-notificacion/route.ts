@@ -26,8 +26,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data });
-  } catch {
-    return NextResponse.json({ success: true, data: [] });
+  } catch (e) {
+    console.error("Error inesperado:", e);
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

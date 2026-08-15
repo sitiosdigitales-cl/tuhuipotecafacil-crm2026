@@ -6,10 +6,14 @@ export async function GET(request: NextRequest) {
   if (!requireAuth(request)) return unauthorized();
     try {
     const { data, error } = await supabase.from("integraciones").select("*").order("creadoen", { ascending: false });
-    if (error) return NextResponse.json({ success: true, data: [] });
+    if (error) {
+      console.error("Fallo la consulta:", error.message);
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
+    }
     return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
-  } catch {
-    return NextResponse.json({ success: true, data: [] });
+  } catch (e) {
+    console.error("Error inesperado:", e);
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

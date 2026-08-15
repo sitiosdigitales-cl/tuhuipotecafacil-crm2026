@@ -88,7 +88,14 @@ export async function GET() {
       .list("", { sortBy: { column: "name", order: "desc" } });
 
     if (error) {
-      return NextResponse.json({ success: true, data: [] });
+      // Aquí mentir es especialmente grave: "no hay respaldos" y "no pude
+      // comprobar si hay respaldos" son cosas distintas, y solo una de las dos
+      // deja a alguien tranquilo sin motivo.
+      console.error("No se pudo listar el bucket de respaldos:", error.message);
+      return NextResponse.json(
+        { success: false, error: "No se pudo verificar el estado de los respaldos" },
+        { status: 500 }
+      );
     }
 
     const backups = (files || [])
@@ -103,8 +110,9 @@ export async function GET() {
       });
 
     return NextResponse.json({ success: true, data: backups });
-  } catch {
-    return NextResponse.json({ success: true, data: [] });
+  } catch (e) {
+    console.error("Error inesperado:", e);
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 

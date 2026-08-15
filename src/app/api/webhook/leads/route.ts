@@ -27,8 +27,10 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get("content-type") || "";
 
     // LOG: Body received
+    // Solo el tamaño. El cuerpo trae RUT, renta y teléfono del cliente, y los
+    // logs de Vercel los guarda y los ve cualquiera del equipo con acceso al
+    // panel.
     console.log("Webhook leads - Content-Type:", contentType, "Body length:", rawBody.length);
-    console.log("Webhook leads - Body preview:", rawBody.substring(0, 500));
 
     let body: Record<string, any> = {};
 

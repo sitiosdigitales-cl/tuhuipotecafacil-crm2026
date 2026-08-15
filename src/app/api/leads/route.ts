@@ -46,13 +46,13 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error al obtener leads:", error.message, error.details);
-      return NextResponse.json({ success: true, data: [], error: error.message });
+      return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
   } catch (error) {
     console.error("Error al obtener leads:", error);
-    return NextResponse.json({ success: true, data: [] });
+    return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
   }
 }
 
