@@ -17,3 +17,19 @@ exclusivamente para instalar Vitest y habilitar `npm test`.
 
 [FASE 0 · T-01] hecho — Vitest configurado con jsdom, aliases TypeScript y
 primer test de humo; `package.json` y `package-lock.json` vuelven a congelarse.
+
+[FASE 0 · T-02] en curso — workflow preparado con jobs separados de lint,
+typecheck, build y test para cada push o pull request hacia `diego`.
+
+[build] ocupado — Codex, T-02; validación en copia temporal aislada de HEAD.
+
+[build] libre — Codex, T-02; la copia temporal no pudo compilar porque
+Turbopack rechaza `node_modules` enlazado fuera de su raíz; no hubo build en
+el working tree compartido.
+
+[build] ocupado — Codex, T-02; validación real sobre working tree estable.
+
+[build] libre — Codex, T-02; build, typecheck y test terminaron en 0.
+
+[FASE 0 · T-02] hecho — CI con lint de la zona Codex, typecheck, build y test
+en jobs separados para pushes y pull requests hacia `diego`.
