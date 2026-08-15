@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
-
-// Service role key para bypass de RLS (solo server-side)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
 
 // POST /api/webhook/leads — Endpoint unificado para formularios externos (Elementor, WordPress, etc.)
 // Autenticación: ?secret=<ELEMENTOR_WEBHOOK_SECRET> (opcional si la env var no está configurada)

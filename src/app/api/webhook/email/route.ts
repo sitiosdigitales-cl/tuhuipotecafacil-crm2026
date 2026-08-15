@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { toSupabaseColumns } from "@/lib/supabase";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin, toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
-
-// Service role key para bypass de RLS (solo server-side)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
 
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
 // Soporta: SendGrid Inbound Parse, Mailgun Routes, formato JSON genérico
