@@ -43,17 +43,37 @@ class CRM_Webhook_Connector {
         return '';
     }
     
+    /**
+     * Secreto compartido con el CRM. Nunca se escribe en este archivo:
+     * se define en wp-config.php como
+     *   define('CRM_WEBHOOK_SECRET', '...');
+     * o se guarda como opcion del sitio. Debe coincidir con la variable
+     * ELEMENTOR_WEBHOOK_SECRET configurada en Vercel.
+     */
+    private function get_webhook_secret() {
+        if (defined('CRM_WEBHOOK_SECRET')) {
+            return CRM_WEBHOOK_SECRET;
+        }
+        return get_option('crm_webhook_secret', '');
+    }
+
     private function send_to_crm($data) {
+        $headers = array('Content-Type' => 'application/json');
+
+        // Cabecera, no query param: un secreto en la URL queda en los logs de
+        // acceso, en los proxies intermedios y en la cabecera Referer.
+        $secret = $this->get_webhook_secret();
+        if (!empty($secret)) {
+            $headers['X-Webhook-Secret'] = $secret;
+        }
+
         $args = array(
             'method' => 'POST',
             'timeout' => 30,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'x-vercel-protection-bypass' => 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
-            ),
+            'headers' => $headers,
             'body' => json_encode($data),
         );
-        
+
         $response = wp_remote_post($this->webhook_url, $args);
         
         if (is_wp_error($response)) {

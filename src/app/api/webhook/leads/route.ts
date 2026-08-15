@@ -4,17 +4,21 @@ import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 // POST /api/webhook/leads — Endpoint unificado para formularios externos (Elementor, WordPress, etc.)
-// Autenticación: ?secret=<ELEMENTOR_WEBHOOK_SECRET> (opcional si la env var no está configurada)
+// Autenticación: cabecera X-Webhook-Secret, o ?secret= (obsoleto, solo durante la transición).
 // Soporta: JSON, form-urlencoded, y el formato anidado de Elementor ({fields: {key: {value, raw_value}}})
+//
+// PENDIENTE (SEC-05): el secreto sigue siendo opcional. Volverlo obligatorio
+// corta la captura de leads hasta que el plugin de WordPress esté actualizado
+// y ELEMENTOR_WEBHOOK_SECRET configurada en Vercel. Ver docs/agentes/claude.md.
 export async function POST(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get("secret");
+  // La cabecera es la vía correcta; el query param queda por compatibilidad
+  // porque deja el secreto en logs de acceso, proxies y cabecera Referer.
+  const secret =
+    request.headers.get("x-webhook-secret") ||
+    request.nextUrl.searchParams.get("secret");
   const expectedSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
 
-  // LOG: Request recibido
-  console.log("Webhook leads - Secret:", secret ? "provided" : "none", "Expected:", expectedSecret ? "configured" : "not configured");
-
   if (expectedSecret && secret !== expectedSecret) {
-    console.log("Webhook leads - Secret mismatch");
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
