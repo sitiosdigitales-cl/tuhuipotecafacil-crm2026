@@ -89,8 +89,28 @@ export function obtenerDocumentosCompletos(situacionLaboral: string): DocConfigE
 }
 
 /**
+ * Tipos que aparecen en más de una entrada de la configuración.
+ *
+ * Varios requisitos comparten `tipo` porque solo se distinguen por el año:
+ * `resumen-anual-2026` y `resumen-anual-2025` son ambos RESUMEN_ANUAL_BOLETAS,
+ * igual que los dos balances y las dos declaraciones de renta. Para esos, el
+ * tipo por sí solo no dice cuál de los dos requisitos se está cumpliendo.
+ */
+const TIPOS_AMBIGUOS: Set<string> = (() => {
+  const cuenta = new Map<string, number>();
+  const todas = [
+    ...Object.values(DOCUMENTOS_POR_SITUACION).flat(),
+    ...DOCUMENTOS_PATRIMONIO,
+  ];
+  for (const entrada of todas) {
+    if (entrada.tipo) cuenta.set(entrada.tipo, (cuenta.get(entrada.tipo) || 0) + 1);
+  }
+  return new Set([...cuenta].filter(([, n]) => n > 1).map(([t]) => t));
+})();
+
+/**
  * Busca si un documento subido coincide con una entrada de config.
- * 1. Match por tipo exacto (el campo tipo del doc = tipo del config)
+ * 1. Match por tipo exacto, solo si ese tipo identifica a un único requisito
  * 2. Match por keywords en el nombre del archivo (busca TODOS los grupos)
  * 3. Match por keywords en el campo tipo (puede ser nombre display si se subió con el nombre legible)
  */
@@ -98,8 +118,18 @@ export function buscarDocSubido(
   docSubido: { tipo?: string; nombre?: string },
   configEntry: DocConfigEntry
 ): boolean {
-  // Match por tipo exacto
-  if (docSubido.tipo && configEntry.tipo && docSubido.tipo === configEntry.tipo) return true;
+  // Match por tipo exacto, pero solo cuando ese tipo identifica a un único
+  // requisito. Si lo comparten varios — el mismo documento de distintos años —
+  // aceptarlo daría por cumplidos todos ellos con un solo archivo, y la
+  // solicitud saldría al banco marcada como completa faltando un año.
+  if (
+    docSubido.tipo &&
+    configEntry.tipo &&
+    docSubido.tipo === configEntry.tipo &&
+    !TIPOS_AMBIGUOS.has(configEntry.tipo)
+  ) {
+    return true;
+  }
 
   // Función helper para matchear keywords contra un texto
   const matchKeywords = (texto: string): boolean => {
