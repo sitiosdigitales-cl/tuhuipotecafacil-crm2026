@@ -180,3 +180,10 @@ contactos, mensajes y clientes sin sesión.
 [build] ocupado — Codex, BUG-020.
 
 [build] libre — Codex, BUG-020; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-021] hallazgo — `GET /api/plantillas` expone contenido y
+variables de comunicaciones internas sin sesión.
+
+[build] ocupado — Codex, BUG-021.
+
+[build] libre — Codex, BUG-021; build terminó en 0 con variables ficticias.
