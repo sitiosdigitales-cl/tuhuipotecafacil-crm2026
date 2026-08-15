@@ -63,16 +63,6 @@ const INTEGRACIONES = [
     esWordPress: true,
   },
   {
-    id: "stripe",
-    nombre: "Stripe",
-    descripcion: "Procesa pagos y gestiona comisiones de ejecutivos",
-    categoria: "pagos",
-    icono: CreditCard,
-    color: "from-purple-500 to-indigo-600",
-    conectada: true,
-    features: ["Pagos con tarjeta", "Links de pago", "Comisiones automáticas", "Webhooks"],
-  },
-  {
     id: "google-calendar",
     nombre: "Google Calendar",
     descripcion: "Sincroniza eventos y reuniones con tu calendario de Google",

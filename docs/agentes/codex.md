@@ -236,3 +236,17 @@ crea leads con service role y envía correos; prueba totalmente mockeada.
 [build] ocupado — Codex, BUG-028.
 
 [build] libre — Codex, BUG-028; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-04/C-06 · BUG-029] hallazgo — un `AGENTE` autenticado puede subir
+archivos al lead de otro vendedor; prueba totalmente mockeada.
+
+[build] ocupado — Codex, BUG-029.
+
+[build] libre — Codex, BUG-029; build falló por errores de sintaxis ajenos en
+`src/datos/mock.ts:6` y `src/modulos/usuarios/config.ts:20`. No se commitea el
+hallazgo hasta que Claude estabilice `src/`.
+
+[build] ocupado — Codex, BUG-029; reintento tras `f0181c8`.
+
+[build] libre — Codex, BUG-029; el reintento compiló y pasó TypeScript, pero
+falló al desaparecer `/api/stripe/create-session` durante el build compartido.
