@@ -1,44 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
+import { Resend } from "resend";
 
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
-// Soporta: SendGrid Inbound Parse, Mailgun Routes, formato JSON genérico
+// Fuente: correo entrante de Resend (evento email.received)
 // Crea un lead automáticamente en el CRM
 //
-// Autenticación: cabecera X-Webhook-Secret contra EMAIL_WEBHOOK_SECRET.
-// Es obligatoria: el endpoint escribe en la base con la service role key y
-// dispara correos, así que sin secreto configurado no acepta nada.
+// Autenticación: firma Svix de Resend (svix-id, svix-timestamp, svix-signature)
+// verificada contra RESEND_WEBHOOK_SECRET. Obligatoria: el endpoint escribe en
+// la base con la service role key y dispara correos.
 
-function remitenteAutorizado(request: NextRequest): boolean {
-  const esperado = process.env.EMAIL_WEBHOOK_SECRET;
-  if (!esperado) return false;
-
-  const recibido = request.headers.get("x-webhook-secret");
-  if (!recibido || recibido.length !== esperado.length) return false;
-
-  // Comparación en tiempo constante sin traer crypto: acumula las diferencias
-  // en vez de cortar en el primer byte distinto.
-  let diff = 0;
-  for (let i = 0; i < esperado.length; i++) {
-    diff |= esperado.charCodeAt(i) ^ recibido.charCodeAt(i);
-  }
-  return diff === 0;
+interface EventoResend {
+  type: string;
+  data?: { email_id?: string };
 }
 
-interface EmailData {
+async function verificarEventoResend(
+  request: NextRequest,
+  rawBody: string
+): Promise<EventoResend | null> {
+  const secreto = process.env.RESEND_WEBHOOK_SECRET;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!secreto || !apiKey) return null;
+
+  // Resend entrega vía Svix. El SDK recibe las tres cabeceras ya desarmadas.
+  const headers = {
+    id: request.headers.get("svix-id") ?? "",
+    timestamp: request.headers.get("svix-timestamp") ?? "",
+    signature: request.headers.get("svix-signature") ?? "",
+  };
+  if (!headers.id || !headers.signature) return null;
+
+  try {
+    // verify() lanza si la firma no cuadra o si el evento está fuera de la
+    // ventana de tiempo, que es lo que impide reenviar uno capturado.
+    const resend = new Resend(apiKey);
+    return (await resend.webhooks.verify({
+      payload: rawBody,
+      headers,
+      webhookSecret: secreto,
+    })) as EventoResend;
+  } catch {
+    return null;
+  }
+}
+
+interface CorreoRecibido {
   from?: string;
-  to?: string;
   subject?: string;
   text?: string;
-  html?: string;
-  date?: string;
-  // SendGrid format
-  envelope?: string;
-  // Mailgun format
-  sender?: string;
-  "body-plain"?: string;
-  "body-html"?: string;
+}
+
+async function obtenerCorreoRecibido(emailId: string): Promise<CorreoRecibido | null> {
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { data, error } = await resend.emails.receiving.get(emailId);
+    if (error || !data) {
+      console.error("No se pudo recuperar el correo recibido:", error);
+      return null;
+    }
+    return data as CorreoRecibido;
+  } catch (e) {
+    console.error("Error consultando el correo recibido:", e);
+    return null;
+  }
 }
 
 // Extraer nombre del campo "From" del email
@@ -118,55 +144,42 @@ function extraerContexto(subject: string, body: string): { tipoConsulta: string;
 }
 
 export async function POST(request: NextRequest) {
-  if (!remitenteAutorizado(request)) {
+  const rawBody = await request.text();
+
+  const evento = await verificarEventoResend(request, rawBody);
+  if (!evento) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+
+  // Resend manda varios tipos de evento al mismo endpoint. Los que no son
+  // correo entrante se aceptan y se ignoran: responder error haría que Resend
+  // los reintente en vano.
+  if (evento.type !== "email.received") {
+    return NextResponse.json({ received: true, ignorado: evento.type });
+  }
+
   try {
-    const rawBody = await request.text();
-    const contentType = request.headers.get("content-type") || "";
-
-    let emailData: EmailData = {};
-
-    if (contentType.includes("application/json")) {
-      emailData = JSON.parse(rawBody);
-    } else if (contentType.includes("multipart/form-data")) {
-      // SendGrid Inbound Parse format (multipart)
-      const formData = await request.formData();
-      const get = (key: string) => formData.get(key)?.toString() || "";
-      emailData = {
-        from: get("from"),
-        to: get("to"),
-        subject: get("subject"),
-        text: get("text") || get("body-plain"),
-        html: get("html") || get("body-html"),
-        date: get("date"),
-      };
-    } else if (contentType.includes("application/x-www-form-urlencoded")) {
-      const params = new URLSearchParams(rawBody);
-      emailData = {
-        from: params.get("from") || params.get("sender") || "",
-        to: params.get("to") || "",
-        subject: params.get("subject") || "",
-        text: params.get("text") || params.get("body-plain") || "",
-        html: params.get("html") || params.get("body-html") || "",
-        date: params.get("date") || params.get("timestamp") || "",
-      };
-    } else {
-      // Intentar parsear como JSON genérico
-      try {
-        emailData = JSON.parse(rawBody);
-      } catch {
-        return NextResponse.json({ error: "Formato no soportado" }, { status: 400 });
-      }
+    const emailId = evento.data?.email_id;
+    if (!emailId) {
+      return NextResponse.json({ error: "Evento sin email_id" }, { status: 400 });
     }
 
-    // Normalizar campos (diferentes servicios usan nombres distintos)
-    const from = emailData.from || emailData.sender || "";
-    const subject = emailData.subject || "";
-    const body = emailData.text || emailData["body-plain"] || "";
+    // El webhook trae solo metadatos: ni cuerpo, ni cabeceras, ni adjuntos.
+    // El contenido se pide aparte, y de ahí sale el teléfono y el contexto.
+    const completo = await obtenerCorreoRecibido(emailId);
+    if (!completo) {
+      return NextResponse.json(
+        { error: "No se pudo recuperar el contenido del correo" },
+        { status: 502 }
+      );
+    }
+
+    const from = completo.from || "";
+    const subject = completo.subject || "";
+    const body = completo.text || "";
 
     if (!from) {
-      return NextResponse.json({ error: "Campo 'from' requerido" }, { status: 400 });
+      return NextResponse.json({ error: "Correo sin remitente" }, { status: 400 });
     }
 
     // Extraer datos del email
@@ -199,7 +212,7 @@ export async function POST(request: NextRequest) {
         situacionLaboral: "DEPENDIENTE",
         enDicom: false,
         diasEnEtapa: 0,
-        creadoEn: emailData.date || new Date().toISOString(),
+        creadoEn: new Date().toISOString(),
       }))
       .select()
       .single();

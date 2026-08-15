@@ -289,3 +289,6 @@ por completo el buscador de RUT, sin perder la regresión contra el código viej
 [build] ocupado — Codex, BUG-033.
 
 [build] libre — Codex, BUG-033; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-034] hallazgo — `DELETE /api/documentos/[id]` borra de
+Storage y base de datos el documento asociado al lead de otro agente.
