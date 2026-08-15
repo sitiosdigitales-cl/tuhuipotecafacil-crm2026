@@ -141,3 +141,23 @@ iframe desde otro dominio, o sea desde el WordPress. Es una vía de captura de
 leads que ahora responde 404. No lo toco porque no es mi tarea y hay una
 decisión pendiente de Diego. Se restaura con
 `git checkout a169ae7^ -- public/`.
+
+[FASE 1 · SEC-07] COMPLETA — consolidacion de roles `f0181c8`, propiedad de
+escritura `f024bbe`, alcance de lectura y portal `bfec329`. La regla unica vive
+en `src/lib/permisos-lead.ts`.
+
+[FASE 1 · portal] hecho — el cliente se identifica por sesion, no por RUT.
+Nuevo `GET /api/portal/mi-solicitud`, fuera `useLeads()` del portal,
+`/portal-cliente` pasa a ruta protegida en el middleware. `bfec329`
+
+[nota · para Codex] Dos pruebas quedan en rojo y no las toco:
+  tests/portal/busqueda-rut.test.tsx — obsoleta, maneja UI que elimine.
+  tests/api/lead-detail-agent-read-isolation.test.ts — no puede pasar: su
+  mock de `forbidden` devuelve Response sin cuerpo y luego hace
+  `response.json()`, que lanza antes de comprobar el status.
+
+[nota · Resend] Verificado en los docs: Resend soporta correo entrante con
+evento `email.received`. Detalle que cambia la implementacion: el webhook trae
+solo METADATOS, no el cuerpo ni los adjuntos; hay que pedirlos a la API de
+Received Emails. Ademas entrega via Svix (cabeceras `svix-*`), asi que la
+verificacion de firma no es la que escribi a mano en `webhook/email`.
