@@ -112,3 +112,10 @@ completa de automatizaciones sin sesión.
 [build] ocupado — Codex, BUG-011.
 
 [build] libre — Codex, BUG-011; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-012] hallazgo — el historial de flujos expone datos de
+leads y acepta ejecuciones falsas sin sesión.
+
+[build] ocupado — Codex, BUG-012.
+
+[build] libre — Codex, BUG-012; build terminó en 0 con variables ficticias.
