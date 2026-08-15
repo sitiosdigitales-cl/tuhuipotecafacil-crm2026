@@ -194,3 +194,10 @@ descripciones y URLs internas sin sesión.
 [build] ocupado — Codex, BUG-022.
 
 [build] libre — Codex, BUG-022; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-01 · BUG-023] hallazgo — `GET /api/campanas` expone presupuesto,
+segmentos, ingresos, ROI y métricas sin sesión.
+
+[build] ocupado — Codex, BUG-023.
+
+[build] libre — Codex, BUG-023; build terminó en 0 con variables ficticias.
