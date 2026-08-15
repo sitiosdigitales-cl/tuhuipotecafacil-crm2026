@@ -208,3 +208,10 @@ cualquier firma y permite registrar pagos falsos; prueba totalmente mockeada.
 [build] ocupado — Codex, BUG-024.
 
 [build] libre — Codex, BUG-024; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-06 · BUG-025] hallazgo — un anónimo puede crear checkouts Stripe
+con monto y `comisionId` arbitrarios; prueba totalmente mockeada.
+
+[build] ocupado — Codex, BUG-025.
+
+[build] libre — Codex, BUG-025; build terminó en 0 con variables ficticias.
