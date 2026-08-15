@@ -4,6 +4,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const busqueda = searchParams.get("busqueda") || "";

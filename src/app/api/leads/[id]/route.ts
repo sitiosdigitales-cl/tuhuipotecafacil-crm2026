@@ -4,6 +4,7 @@ import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-aut
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { id } = await params;
     const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
