@@ -1,3 +1,4 @@
+import crypto from "crypto";
 /**
  * Servicio de integración con Stripe
  *
@@ -243,20 +244,40 @@ async function handlePagoFallido(paymentIntent: any) {
 
 // ========== UTILIDADES ==========
 
+// Tolerancia de reloj. Stripe firma con marca de tiempo justamente para que un
+// evento capturado no se pueda reenviar despues.
+const TOLERANCIA_SEGUNDOS = 300;
+
 function verificarFirmaWebhook(body: string, signature: string): boolean {
-  if (!STRIPE_WEBHOOK_SECRET) {
-    return true; // En desarrollo, permitir sin verificar
-  }
+  if (!STRIPE_WEBHOOK_SECRET) return false;
+  if (!signature) return false;
 
-  // En producción, usar crypto para verificar HMAC-SHA256
-  // const crypto = require("crypto");
-  // const expectedSignature = crypto
-  //   .createHmac("sha256", STRIPE_WEBHOOK_SECRET)
-  //   .update(body)
-  //   .digest("hex");
-  // return signature === `v1=${expectedSignature}`;
+  // Formato de Stripe: "t=<timestamp>,v1=<hmac>[,v1=<hmac>...]"
+  const partes = signature.split(",").reduce<Record<string, string[]>>((acc, p) => {
+    const [k, v] = p.split("=");
+    if (k && v) (acc[k] ??= []).push(v);
+    return acc;
+  }, {});
 
-  return true; // Placeholder para desarrollo
+  const timestamp = partes.t?.[0];
+  const firmas = partes.v1;
+  if (!timestamp || !firmas?.length) return false;
+
+  const edad = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(edad) || edad > TOLERANCIA_SEGUNDOS) return false;
+
+  // La firma cubre "<timestamp>.<body>", no solo el cuerpo: eso es lo que ata
+  // el evento a un momento concreto.
+  const esperada = crypto
+    .createHmac("sha256", STRIPE_WEBHOOK_SECRET)
+    .update(`${timestamp}.${body}`, "utf8")
+    .digest("hex");
+
+  const b = Buffer.from(esperada, "utf8");
+  return firmas.some((f) => {
+    const a = Buffer.from(f, "utf8");
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  });
 }
 
 // ========== CREAR LINK DE PAGO RÁPIDO ==========

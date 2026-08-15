@@ -1,3 +1,4 @@
+import crypto from "crypto";
 /**
  * Servicio de WhatsApp Business API
  *
@@ -347,17 +348,24 @@ export function verificarWebhookFirma(
   body: string,
   signature: string | null
 ): boolean {
-  if (!signature || !process.env.WHATSAPP_APP_SECRET) {
-    return true; // Si no hay firma configurada, permitir (para desarrollo)
-  }
+  const secreto = process.env.WHATSAPP_APP_SECRET;
 
-  // En producción, verificar HMAC-SHA256
-  // const crypto = require("crypto");
-  // const expectedSignature = crypto
-  //   .createHmac("sha256", process.env.WHATSAPP_APP_SECRET)
-  //   .update(body)
-  //   .digest("hex");
-  // return signature === `sha256=${expectedSignature}`;
+  // Sin app secret configurado no hay nada contra que verificar. Se permite
+  // para no romper entornos de desarrollo, pero es la unica puerta abierta que
+  // queda: configurar WHATSAPP_APP_SECRET en produccion la cierra.
+  if (!secreto) return false;
+  if (!signature) return false;
 
-  return true; // Placeholder para desarrollo
+  const esperada =
+    "sha256=" +
+    crypto.createHmac("sha256", secreto).update(body, "utf8").digest("hex");
+
+  // timingSafeEqual exige buffers del mismo largo, y lanza si difieren.
+  const a = Buffer.from(signature, "utf8");
+  const b = Buffer.from(esperada, "utf8");
+  if (a.length !== b.length) return false;
+
+  // Comparacion en tiempo constante: un === corriente se detiene en el primer
+  // byte distinto y filtra, por el tiempo de respuesta, cuanto se acerto.
+  return crypto.timingSafeEqual(a, b);
 }
