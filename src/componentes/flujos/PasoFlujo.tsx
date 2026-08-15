@@ -2,17 +2,22 @@
 
 import { GripVertical, Trash2, Zap } from "lucide-react";
 import { ACCIONES_TIPOS } from "@/modulos/automatizacion/config";
+import type {
+  AccionAutomatizacion,
+  ActualizarAccion,
+} from "@/modulos/automatizacion/tipos";
 
 interface PasoFlujoProps {
-  paso: any;
+  paso: AccionAutomatizacion;
   index: number;
   onEliminar: (index: number) => void;
-  onActualizar: (index: number, campo: string, valor: any) => void;
+  onActualizar: ActualizarAccion;
   isDragging?: boolean;
 }
 
 export function PasoFlujo({ paso, index, onEliminar, onActualizar, isDragging }: PasoFlujoProps) {
   const accionConfig = ACCIONES_TIPOS.find((a) => a.id === paso.tipo);
+  const plantilla = paso.configuracion.plantilla;
 
   return (
     <div
@@ -41,9 +46,9 @@ export function PasoFlujo({ paso, index, onEliminar, onActualizar, isDragging }:
         <span className="text-[11px] font-semibold text-slate-700 block">
           {accionConfig?.label || paso.tipo}
         </span>
-        {paso.configuracion?.plantilla && (
+        {typeof plantilla === "string" && plantilla && (
           <span className="text-[10px] text-slate-400 block">
-            Plantilla: {paso.configuracion.plantilla}
+            Plantilla: {plantilla}
           </span>
         )}
       </div>

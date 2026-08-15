@@ -6,13 +6,15 @@ import {
   Mail, MessageSquare, Phone, DollarSign, Building,
   UserPlus, Tag, Bell, Calendar, ClipboardList, RefreshCw,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   TRIGGER_CATEGORIAS,
   ACCIONES_TIPOS,
   TRIGGERS_TIPOS,
 } from "@/modulos/automatizacion/config";
+import type { TriggerAutomatizacion } from "@/modulos/automatizacion/tipos";
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Users, FileText, CheckCircle, AlertTriangle, Clock,
   Mail, MessageSquare, Phone, DollarSign, Building,
   UserPlus, Tag, Bell, Calendar, ClipboardList, RefreshCw,
@@ -20,10 +22,10 @@ const ICON_MAP: Record<string, any> = {
 };
 
 interface TriggerCardProps {
-  trigger: any;
+  trigger: TriggerAutomatizacion;
   onToggleEstado: (id: string) => void;
   onVerDetalle: (id: string) => void;
-  onEditar: (trigger: any) => void;
+  onEditar: (trigger: TriggerAutomatizacion) => void;
   onEliminar: (id: string) => void;
 }
 
@@ -127,7 +129,7 @@ export function TriggerCard({
           {(!trigger.condiciones || trigger.condiciones.length === 0) ? (
             <span className="text-[10px] text-slate-400 italic">Sin condiciones (siempre se ejecuta)</span>
           ) : (
-            (trigger.condiciones || []).map((cond: any, idx: number) => (
+            (trigger.condiciones || []).map((cond, idx) => (
               <span
                 key={idx}
                 className="text-[11px] font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg"
@@ -154,7 +156,7 @@ export function TriggerCard({
           <ArrowRight size={12} className="text-slate-300" />
 
           {/* Acciones */}
-          {(trigger.acciones || []).map((accion: any, idx: number) => {
+          {(trigger.acciones || []).map((accion, idx) => {
             const accionConfig = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
             const AccionIcon = accionConfig ? (ICON_MAP[accionConfig.icono] || Zap) : Zap;
             return (

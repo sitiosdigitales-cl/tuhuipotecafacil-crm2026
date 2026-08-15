@@ -6,15 +6,21 @@ import { TRIGGERS_TIPOS, TRIGGER_CATEGORIAS, CONDICION_OPERADORES, CAMPOS_POR_CA
 import { SelectorAccion } from "./SelectorAccion";
 import { ConfigAccion } from "./ConfigAccion";
 import { toast } from "sonner";
+import type {
+  ActualizarAccion,
+  CondicionAutomatizacion,
+  FlujoAutomatizacion,
+  FormularioAutomatizacion,
+} from "@/modulos/automatizacion/tipos";
 
 interface FlujoEditorPanelProps {
-  flujo: any | null;
-  onGuardar: (data: any) => void;
+  flujo: FlujoAutomatizacion | null;
+  onGuardar: (data: FormularioAutomatizacion) => void;
   onCerrar: () => void;
 }
 
 export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPanelProps) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormularioAutomatizacion>({
     nombre: flujo?.nombre || "",
     descripcion: flujo?.descripcion || "",
     trigger: flujo?.trigger || TRIGGERS_TIPOS[0].id,
@@ -40,14 +46,14 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
   const eliminarCondicion = (idx: number) => {
     setForm((p) => ({
       ...p,
-      condiciones: p.condiciones.filter((_: any, i: number) => i !== idx),
+      condiciones: p.condiciones.filter((_, i) => i !== idx),
     }));
   };
 
-  const actualizarCondicion = (idx: number, campo: string, valor: any) => {
+  const actualizarCondicion = (idx: number, campo: keyof CondicionAutomatizacion, valor: string) => {
     setForm((p) => ({
       ...p,
-      condiciones: p.condiciones.map((c: any, i: number) => i === idx ? { ...c, [campo]: valor } : c),
+      condiciones: p.condiciones.map((condicion, i) => i === idx ? { ...condicion, [campo]: valor } : condicion),
     }));
   };
 
@@ -59,13 +65,18 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
     }));
   };
 
-  const actualizarAccion = (idx: number, campo: string, valor: any) => {
+  const actualizarAccion: ActualizarAccion = (idx, campo, valor) => {
     setForm((p) => ({
       ...p,
-      acciones: p.acciones.map((a: any, i: number) => {
-        if (i !== idx) return a;
-        if (campo === "configuracion") return { ...a, configuracion: valor };
-        return { ...a, [campo]: valor };
+      acciones: p.acciones.map((accion, i) => {
+        if (i !== idx) return accion;
+        if (campo === "configuracion" && typeof valor === "object") {
+          return { ...accion, configuracion: valor };
+        }
+        if (campo === "delay" && typeof valor === "number") {
+          return { ...accion, delay: valor };
+        }
+        return accion;
       }),
     }));
   };
@@ -170,7 +181,7 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
               </div>
             ) : (
               <div className="space-y-2">
-                {form.condiciones.map((cond: any, idx: number) => (
+                {form.condiciones.map((cond, idx) => (
                   <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl">
                     <select
                       value={cond.campo}
@@ -227,7 +238,7 @@ export function FlujoEditorPanel({ flujo, onGuardar, onCerrar }: FlujoEditorPane
               </div>
             ) : (
               <div className="space-y-2">
-                {form.acciones.map((accion: any, idx: number) => (
+                {form.acciones.map((accion, idx) => (
                   <ConfigAccion
                     key={idx}
                     accion={accion}

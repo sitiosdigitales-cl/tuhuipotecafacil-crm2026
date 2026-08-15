@@ -17,6 +17,21 @@ export {
 
 export type { FlujoInput, TriggerInput, PlantillaInput } from "./validaciones";
 
+export type {
+  AccionAutomatizacion,
+  AccionEjecutada,
+  ActualizarAccion,
+  CondicionAutomatizacion,
+  EjecucionAutomatizacion,
+  EstadoAutomatizacion,
+  EstadisticasAutomatizacion,
+  FlujoAutomatizacion,
+  FormularioAutomatizacion,
+  LogicaCondiciones,
+  PlantillaAutomatizacion,
+  TriggerAutomatizacion,
+} from "./tipos";
+
 export {
   obtenerFlujos,
   crearFlujo,

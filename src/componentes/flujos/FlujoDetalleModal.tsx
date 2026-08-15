@@ -3,26 +3,32 @@
 import { useState, useEffect } from "react";
 import { Zap, X, ArrowRight } from "lucide-react";
 import { TRIGGERS_TIPOS, TRIGGER_CATEGORIAS, ACCIONES_TIPOS } from "@/modulos/automatizacion/config";
+import type { FlujoAutomatizacion } from "@/modulos/automatizacion/tipos";
 import { FlujoHistorial } from "./FlujoHistorial";
+
+interface RespuestaFlujos {
+  success: boolean;
+  data?: FlujoAutomatizacion[];
+}
 
 interface FlujoDetalleModalProps {
   flujoId: string;
   onCerrar: () => void;
-  onEditar: (flujo: any) => void;
+  onEditar: (flujo: FlujoAutomatizacion) => void;
 }
 
 export function FlujoDetalleModal({ flujoId, onCerrar, onEditar }: FlujoDetalleModalProps) {
-  const [flujo, setFlujo] = useState<any>(null);
+  const [flujo, setFlujo] = useState<FlujoAutomatizacion | null>(null);
   const [tabActiva, setTabActiva] = useState<"general" | "historial">("general");
 
   useEffect(() => {
     async function cargar() {
       try {
         const res = await fetch("/api/flujos");
-        const json = await res.json();
-        if (json.success) {
-          const found = json.data.find((f: any) => f.id === flujoId);
-          setFlujo(found);
+        const json: RespuestaFlujos = await res.json();
+        if (json.success && json.data) {
+          const found = json.data.find((flujoActual) => flujoActual.id === flujoId);
+          setFlujo(found ?? null);
         }
       } catch {}
     }
@@ -41,6 +47,7 @@ export function FlujoDetalleModal({ flujoId, onCerrar, onEditar }: FlujoDetalleM
 
   const triggerConfig = TRIGGERS_TIPOS.find((t) => t.id === flujo.trigger);
   const categoria = TRIGGER_CATEGORIAS.find((c) => c.id === (flujo.categoria || triggerConfig?.categoria)) || TRIGGER_CATEGORIAS[0];
+  const acciones = flujo.acciones?.length ? flujo.acciones : flujo.pasos ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -109,7 +116,7 @@ export function FlujoDetalleModal({ flujoId, onCerrar, onEditar }: FlujoDetalleM
                     </div>
                     <span className="text-[10px] font-semibold text-slate-600 mt-1">{triggerConfig?.label}</span>
                   </div>
-                  {(flujo.acciones || flujo.pasos || []).map((accion: any, idx: number) => {
+                  {acciones.map((accion, idx) => {
                     const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
                     return (
                       <div key={idx} className="flex items-center gap-1">
@@ -159,7 +166,7 @@ export function FlujoDetalleModal({ flujoId, onCerrar, onEditar }: FlujoDetalleM
                   <p className="text-[10px] text-slate-400 italic">Se ejecuta siempre</p>
                 ) : (
                   <div className="space-y-1">
-                    {flujo.condiciones.map((cond: any, idx: number) => (
+                    {flujo.condiciones.map((cond, idx) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-[11px]">
                         <span className="font-semibold text-slate-600">{cond.campo}</span>
                         <span className="text-slate-400">{cond.operador}</span>
@@ -174,7 +181,7 @@ export function FlujoDetalleModal({ flujoId, onCerrar, onEditar }: FlujoDetalleM
               <div>
                 <h4 className="text-[11px] font-bold text-slate-600 mb-2">Acciones</h4>
                 <div className="space-y-1">
-                  {(flujo.acciones || flujo.pasos || []).map((accion: any, idx: number) => {
+                  {acciones.map((accion, idx) => {
                     const config = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
                     return (
                       <div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">

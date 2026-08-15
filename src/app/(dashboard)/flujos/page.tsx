@@ -7,35 +7,20 @@ import { FlujoCard } from "@/componentes/flujos/FlujoCard";
 import { FlujoEditorPanel } from "@/componentes/flujos/FlujoEditorPanel";
 import { FlujoDetalleModal } from "@/componentes/flujos/FlujoDetalleModal";
 import { useFlujos } from "@/modulos/automatizacion/hooks";
+import type {
+  FlujoAutomatizacion,
+  FormularioAutomatizacion,
+} from "@/modulos/automatizacion/tipos";
 import { toast } from "sonner";
 
 type TabFlujo = "todos" | "activos" | "pausados" | "borrador";
-
-interface Flujo {
-  id: string;
-  nombre?: string;
-  descripcion?: string;
-  trigger?: string;
-  categoria?: string;
-  condiciones?: Record<string, unknown>[];
-  acciones?: Record<string, unknown>[];
-  pasos?: Record<string, unknown>[];
-  logica_condiciones?: string;
-  estado?: string;
-  ejecuciones?: number;
-  exitosas?: number;
-  fallidas?: number;
-  ultimoEjecucion?: string;
-  creadoEn?: string;
-  creadoPor?: string;
-}
 
 export default function FlujosPage() {
   const { flujos, setFlujos, cargando } = useFlujos();
   const [tabActiva, setTabActiva] = useState<TabFlujo>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [editorAbierto, setEditorAbierto] = useState(false);
-  const [flujoEditando, setFlujoEditando] = useState<Flujo | null>(null);
+  const [flujoEditando, setFlujoEditando] = useState<FlujoAutomatizacion | null>(null);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
 
   // Si no hay flujos reales, usar datos de ejemplo
@@ -104,13 +89,13 @@ export default function FlujosPage() {
   };
 
   // Abrir editor
-  const abrirEditor = (flujo?: Flujo) => {
+  const abrirEditor = (flujo?: FlujoAutomatizacion) => {
     setFlujoEditando(flujo || null);
     setEditorAbierto(true);
   };
 
   // Guardar flujo
-  const guardarFlujo = async (data: Omit<Flujo, "id">) => {
+  const guardarFlujo = async (data: FormularioAutomatizacion) => {
     try {
       const url = flujoEditando ? `/api/flujos/${flujoEditando.id}` : "/api/flujos";
       const method = flujoEditando ? "PUT" : "POST";
@@ -259,7 +244,7 @@ export default function FlujosPage() {
 }
 
 // ─── Datos de Ejemplo ───
-const FLUJOS_EJEMPLO = [
+const FLUJOS_EJEMPLO: FlujoAutomatizacion[] = [
   {
     id: "f1",
     nombre: "Bienvenida Nuevo Lead",

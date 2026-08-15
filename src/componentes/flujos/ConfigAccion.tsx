@@ -3,11 +3,23 @@
 import { Zap, ChevronDown, ChevronUp } from "lucide-react";
 import { ACCIONES_TIPOS } from "@/modulos/automatizacion/config";
 import { useState } from "react";
+import type {
+  AccionAutomatizacion,
+  ActualizarAccion,
+} from "@/modulos/automatizacion/tipos";
 
 interface ConfigAccionProps {
-  accion: any;
+  accion: AccionAutomatizacion;
   index: number;
-  onActualizar: (index: number, campo: string, valor: any) => void;
+  onActualizar: ActualizarAccion;
+}
+
+function obtenerValorConfiguracion(
+  configuracion: Record<string, unknown>,
+  campo: string
+): string | number {
+  const valor = configuracion[campo];
+  return typeof valor === "string" || typeof valor === "number" ? valor : "";
 }
 
 export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps) {
@@ -54,7 +66,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-slate-500">Plantilla</label>
                 <select
-                  value={accion.configuracion?.plantilla || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "plantilla")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, plantilla: e.target.value })}
                   className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
                 >
@@ -68,7 +80,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
                 <label className="text-[10px] font-semibold text-slate-500">Asunto</label>
                 <input
                   type="text"
-                  value={accion.configuracion?.asunto || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "asunto")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, asunto: e.target.value })}
                   placeholder="Asunto del email"
                   className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
@@ -82,7 +94,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-slate-500">Plantilla</label>
                 <select
-                  value={accion.configuracion?.plantilla || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "plantilla")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, plantilla: e.target.value })}
                   className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
                 >
@@ -94,7 +106,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
               <div className="space-y-1">
                 <label className="text-[10px] font-semibold text-slate-500">Mensaje</label>
                 <textarea
-                  value={accion.configuracion?.mensaje || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "mensaje")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, mensaje: e.target.value })}
                   placeholder="Mensaje a enviar"
                   rows={2}
@@ -110,7 +122,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
                 <label className="text-[10px] font-semibold text-slate-500">Titulo</label>
                 <input
                   type="text"
-                  value={accion.configuracion?.titulo || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "titulo")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, titulo: e.target.value })}
                   placeholder="Titulo de la tarea"
                   className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
@@ -120,7 +132,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
                 <label className="text-[10px] font-semibold text-slate-500">Asignar a</label>
                 <input
                   type="text"
-                  value={accion.configuracion?.asignadoA || ""}
+                  value={obtenerValorConfiguracion(accion.configuracion, "asignadoA")}
                   onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, asignadoA: e.target.value })}
                   placeholder="Nombre del ejecutivo"
                   className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
@@ -133,7 +145,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
             <div className="space-y-1">
               <label className="text-[10px] font-semibold text-slate-500">Etapa destino</label>
               <select
-                value={accion.configuracion?.etapaDestino || ""}
+                value={obtenerValorConfiguracion(accion.configuracion, "etapaDestino")}
                 onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, etapaDestino: e.target.value })}
                 className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"
               >
@@ -154,7 +166,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
             <div className="space-y-1">
               <label className="text-[10px] font-semibold text-slate-500">Mensaje</label>
               <textarea
-                value={accion.configuracion?.mensaje || ""}
+                value={obtenerValorConfiguracion(accion.configuracion, "mensaje")}
                 onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, mensaje: e.target.value })}
                 placeholder="Mensaje de notificacion"
                 rows={2}
@@ -168,7 +180,7 @@ export function ConfigAccion({ accion, index, onActualizar }: ConfigAccionProps)
               <label className="text-[10px] font-semibold text-slate-500">Etiqueta</label>
               <input
                 type="text"
-                value={accion.configuracion?.etiqueta || ""}
+                value={obtenerValorConfiguracion(accion.configuracion, "etiqueta")}
                 onChange={(e) => onActualizar(index, "configuracion", { ...accion.configuracion, etiqueta: e.target.value })}
                 placeholder="Nombre de la etiqueta"
                 className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-600"

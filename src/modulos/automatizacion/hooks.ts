@@ -4,9 +4,23 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { obtenerFlujos, obtenerTriggers, obtenerPlantillas } from "./servicios";
+import type {
+  EjecucionAutomatizacion,
+  EstadisticasAutomatizacion,
+  FlujoAutomatizacion,
+  PlantillaAutomatizacion,
+  TriggerAutomatizacion,
+} from "./tipos";
+
+interface RespuestaHistorial {
+  success: boolean;
+  data?: EjecucionAutomatizacion[];
+  stats?: EstadisticasAutomatizacion;
+  total?: number;
+}
 
 export function useFlujos() {
-  const [flujos, setFlujos] = useState<any[]>([]);
+  const [flujos, setFlujos] = useState<FlujoAutomatizacion[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -28,7 +42,7 @@ export function useFlujos() {
 }
 
 export function useTriggers() {
-  const [triggers, setTriggers] = useState<any[]>([]);
+  const [triggers, setTriggers] = useState<TriggerAutomatizacion[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -50,7 +64,7 @@ export function useTriggers() {
 }
 
 export function usePlantillas() {
-  const [plantillas, setPlantillas] = useState<any[]>([]);
+  const [plantillas, setPlantillas] = useState<PlantillaAutomatizacion[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -72,14 +86,8 @@ export function usePlantillas() {
 }
 
 export function useTriggerHistorial(triggerId: string | null) {
-  const [historial, setHistorial] = useState<any[]>([]);
-  const [stats, setStats] = useState<{
-    total: number;
-    exitosas: number;
-    fallidas: number;
-    parciales: number;
-    tasaExito: number;
-  } | null>(null);
+  const [historial, setHistorial] = useState<EjecucionAutomatizacion[]>([]);
+  const [stats, setStats] = useState<EstadisticasAutomatizacion | null>(null);
   const [cargando, setCargando] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
@@ -95,11 +103,11 @@ export function useTriggerHistorial(triggerId: string | null) {
     try {
       setCargando(true);
       const res = await fetch(`/api/triggers/${triggerId}/historial?page=${pagina}&limit=20`);
-      const json = await res.json();
+      const json: RespuestaHistorial = await res.json();
       if (json.success) {
-        setHistorial(json.data);
-        setStats(json.stats);
-        setTotal(json.total);
+        setHistorial(json.data ?? []);
+        setStats(json.stats ?? null);
+        setTotal(json.total ?? 0);
       }
     } catch (err) {
       console.error("Error cargando historial:", err);
@@ -109,7 +117,8 @@ export function useTriggerHistorial(triggerId: string | null) {
   }, [triggerId, pagina]);
 
   useEffect(() => {
-    cargar();
+    const timeoutId = window.setTimeout(() => void cargar(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [cargar]);
 
   return {
@@ -123,14 +132,8 @@ export function useTriggerHistorial(triggerId: string | null) {
   };
 }
 export function useFlujoHistorial(flujoId: string | null) {
-  const [historial, setHistorial] = useState<any[]>([]);
-  const [stats, setStats] = useState<{
-    total: number;
-    exitosas: number;
-    fallidas: number;
-    parciales: number;
-    tasaExito: number;
-  } | null>(null);
+  const [historial, setHistorial] = useState<EjecucionAutomatizacion[]>([]);
+  const [stats, setStats] = useState<EstadisticasAutomatizacion | null>(null);
   const [cargando, setCargando] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
@@ -146,11 +149,11 @@ export function useFlujoHistorial(flujoId: string | null) {
     try {
       setCargando(true);
       const res = await fetch(`/api/flujos/${flujoId}/historial?page=${pagina}&limit=20`);
-      const json = await res.json();
+      const json: RespuestaHistorial = await res.json();
       if (json.success) {
-        setHistorial(json.data);
-        setStats(json.stats);
-        setTotal(json.total);
+        setHistorial(json.data ?? []);
+        setStats(json.stats ?? null);
+        setTotal(json.total ?? 0);
       }
     } catch (err) {
       console.error("Error cargando historial:", err);
@@ -160,7 +163,8 @@ export function useFlujoHistorial(flujoId: string | null) {
   }, [flujoId, pagina]);
 
   useEffect(() => {
-    cargar();
+    const timeoutId = window.setTimeout(() => void cargar(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [cargar]);
 
   return {

@@ -6,9 +6,11 @@ import {
   Mail, MessageSquare, Phone, DollarSign, Building,
   UserPlus, Tag, Bell, Calendar, ClipboardList, RefreshCw,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { TRIGGER_CATEGORIAS, ACCIONES_TIPOS, TRIGGERS_TIPOS } from "@/modulos/automatizacion/config";
+import type { FlujoAutomatizacion } from "@/modulos/automatizacion/tipos";
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Users, FileText, CheckCircle, AlertTriangle, Clock,
   Mail, MessageSquare, Phone, DollarSign, Building,
   UserPlus, Tag, Bell, Calendar, ClipboardList, RefreshCw,
@@ -16,10 +18,10 @@ const ICON_MAP: Record<string, any> = {
 };
 
 interface FlujoCardProps {
-  flujo: any;
+  flujo: FlujoAutomatizacion;
   onToggleEstado: (id: string) => void;
   onVerDetalle: (id: string) => void;
-  onEditar: (flujo: any) => void;
+  onEditar: (flujo: FlujoAutomatizacion) => void;
   onEliminar: (id: string) => void;
 }
 
@@ -37,6 +39,7 @@ export function FlujoCard({
   const fallidas = flujo.fallidas || 0;
   const total = exitosas + fallidas;
   const tasaExito = total > 0 ? Math.round((exitosas / total) * 100) : 0;
+  const acciones = flujo.acciones?.length ? flujo.acciones : flujo.pasos ?? [];
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft hover:shadow-md transition-all">
@@ -136,7 +139,7 @@ export function FlujoCard({
           <ArrowRight size={12} className="text-slate-300 flex-shrink-0" />
 
           {/* Acciones */}
-          {(flujo.acciones || flujo.pasos || []).map((accion: any, idx: number) => {
+          {acciones.map((accion, idx) => {
             const accionConfig = ACCIONES_TIPOS.find((a) => a.id === accion.tipo);
             const AccionIcon = accionConfig ? (ICON_MAP[accionConfig.icono] || Zap) : Zap;
             return (
@@ -157,7 +160,7 @@ export function FlujoCard({
                     </span>
                   )}
                 </div>
-                {idx < (flujo.acciones || flujo.pasos || []).length - 1 && (
+                {idx < acciones.length - 1 && (
                   <ArrowRight size={10} className="text-slate-300 flex-shrink-0" />
                 )}
               </div>
@@ -184,7 +187,7 @@ export function FlujoCard({
         </div>
         <span className="text-[11px] text-slate-400">
           {flujo.ultimoEjecucion || flujo.ultimo_ejecucion
-            ? `Ultimo: ${new Date(flujo.ultimoEjecucion || flujo.ultimo_ejecucion).toLocaleDateString("es-CL")}`
+            ? `Ultimo: ${new Date(flujo.ultimoEjecucion ?? flujo.ultimo_ejecucion ?? 0).toLocaleDateString("es-CL")}`
             : "Sin ejecuciones"}
         </span>
       </div>

@@ -1,9 +1,32 @@
 "use client";
 
 import { useFlujoHistorial } from "@/modulos/automatizacion/hooks";
+import type {
+  AccionEjecutada,
+  EjecucionAutomatizacion,
+} from "@/modulos/automatizacion/tipos";
 
 interface FlujoHistorialProps {
   flujoId: string;
+}
+
+function esAccionEjecutada(valor: unknown): valor is AccionEjecutada {
+  if (!valor || typeof valor !== "object") return false;
+  const accion = valor as Record<string, unknown>;
+  return typeof accion.tipo === "string" && typeof accion.estado === "string";
+}
+
+function parseAccionesEjecutadas(
+  valor: EjecucionAutomatizacion["accionesEjecutadas"]
+): AccionEjecutada[] {
+  if (Array.isArray(valor)) return valor.filter(esAccionEjecutada);
+  if (!valor) return [];
+  try {
+    const resultado: unknown = JSON.parse(valor);
+    return Array.isArray(resultado) ? resultado.filter(esAccionEjecutada) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function FlujoHistorial({ flujoId }: FlujoHistorialProps) {
@@ -44,39 +67,42 @@ export function FlujoHistorial({ flujoId }: FlujoHistorialProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {historial.map((ejec: any) => (
-            <div key={ejec.id} className="p-3 bg-slate-50 rounded-xl">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    ejec.estado === "EXITOSO" ? "bg-emerald-100 text-emerald-700" :
-                    ejec.estado === "FALLIDO" ? "bg-red-100 text-red-700" :
-                    "bg-amber-100 text-amber-700"
-                  }`}>
-                    {ejec.estado}
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-700">{ejec.leadNombre || "Sin lead"}</span>
-                </div>
-                <span className="text-[10px] text-slate-400">
-                  {new Date(ejec.ejecutadoEn || ejec.ejecutado_en).toLocaleString("es-CL")}
-                </span>
-              </div>
-              {ejec.accionesEjecutadas && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {JSON.parse(typeof ejec.accionesEjecutadas === "string" ? ejec.accionesEjecutadas : "[]").map((a: any, idx: number) => (
-                    <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded ${
-                      a.estado === "EXITOSO" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+          {historial.map((ejecucion) => {
+            const accionesEjecutadas = parseAccionesEjecutadas(ejecucion.accionesEjecutadas);
+            return (
+              <div key={ejecucion.id} className="p-3 bg-slate-50 rounded-xl">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      ejecucion.estado === "EXITOSO" ? "bg-emerald-100 text-emerald-700" :
+                      ejecucion.estado === "FALLIDO" ? "bg-red-100 text-red-700" :
+                      "bg-amber-100 text-amber-700"
                     }`}>
-                      {a.tipo}: {a.estado}
+                      {ejecucion.estado}
                     </span>
-                  ))}
+                    <span className="text-[11px] font-semibold text-slate-700">{ejecucion.leadNombre || "Sin lead"}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    {new Date(ejecucion.ejecutadoEn || ejecucion.ejecutado_en || 0).toLocaleString("es-CL")}
+                  </span>
                 </div>
-              )}
-              {ejec.errorMensaje && (
-                <p className="text-[10px] text-red-500 mt-1">{ejec.errorMensaje}</p>
-              )}
-            </div>
-          ))}
+                {accionesEjecutadas.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {accionesEjecutadas.map((accion, idx) => (
+                      <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded ${
+                        accion.estado === "EXITOSO" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                      }`}>
+                        {accion.tipo}: {accion.estado}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {ejecucion.errorMensaje && (
+                  <p className="text-[10px] text-red-500 mt-1">{ejecucion.errorMensaje}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

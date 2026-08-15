@@ -498,3 +498,10 @@ usuario quedan en 0/0; 1 error y 25 warnings eliminados. BUG-037 sigue roja.
 
 [calidad · LINT-05A] hecho — 16 componentes base quedan en 0/0; 15 errores y
 11 warnings eliminados. BUG-037 sigue roja y baja a 608.167 bytes.
+
+[build] ocupado — Codex, LINT-05B · automatización.
+
+[build] libre — Codex, LINT-05B · build y typecheck terminaron en 0.
+
+[calidad · LINT-05B] hecho — automatización queda en 0/0; 53 errores
+eliminados con tipos compartidos. BUG-037 sigue siendo la única prueba roja.

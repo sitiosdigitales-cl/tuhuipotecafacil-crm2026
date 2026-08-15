@@ -14,7 +14,7 @@ type EstadoTrigger = "ACTIVO" | "PAUSADO" | "BORRADOR";
 interface CondicionTrigger {
   campo: string;
   operador: string;
-  valor: string;
+  valor?: string;
 }
 
 interface AccionTrigger {

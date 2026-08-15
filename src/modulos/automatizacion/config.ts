@@ -119,7 +119,7 @@ export const CAMPOS_POR_CATEGORIA: Record<string, { id: string; label: string; t
 export function tienePermisoAutomatizacion(rol: string, accion: string): boolean {
   const permisos = AUTOMATIZACION_PERMISOS[accion];
   if (!permisos) return false;
-  return permisos.includes(rol as any);
+  return permisos.some((permiso) => permiso === rol);
 }
 
 // ─── Helpers ───
