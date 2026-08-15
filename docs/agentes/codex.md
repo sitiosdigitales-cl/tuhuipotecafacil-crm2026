@@ -328,3 +328,10 @@ el requisito de otro año cuando ambos comparten `tipo`; datos sintéticos.
 
 [FASE 2 · C-07] hecho — medición independiente confirma 1.248,2 KiB en
 `/simulador-publico`; PERF-01 no redujo la descarga y PERF-02 no se evalúa por bundle.
+
+[build] ocupado — Codex, C-08 · BUG-037.
+
+[build] libre — Codex, C-08 · BUG-037; build terminó en 0 con variables ficticias.
+
+[FASE 2 · C-08 · BUG-037] hallazgo — `/simulador-publico` declara 1.278.179
+bytes de JavaScript frente al presupuesto de 409.600; 78 pruebas verdes y solo esta roja.

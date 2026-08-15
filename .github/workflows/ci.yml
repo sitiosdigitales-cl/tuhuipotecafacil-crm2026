@@ -51,6 +51,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: npm test -- tests/performance/public-route-bundle.test.ts
 
   test:
     name: test
