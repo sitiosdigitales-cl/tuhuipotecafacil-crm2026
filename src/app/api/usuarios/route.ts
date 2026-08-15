@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
-import { requireRole, forbidden } from "@/lib/api-auth";
+import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
+  if (!requireAuth(request)) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
