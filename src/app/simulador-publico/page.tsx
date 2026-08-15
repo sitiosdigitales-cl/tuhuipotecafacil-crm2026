@@ -2,7 +2,26 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calculator, DollarSign, Building2, Home, Wallet, Shield, ChevronDown, Phone, MessageSquare, Info, Copy, BarChart3, GitCompare, Lightbulb } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
+import dynamic from "next/dynamic";
+
+// Solo se pintan cuando hay resultado, asi que recharts no tiene por que
+// entrar en la carga inicial de una pagina publica.
+const marco = (alto: string) => () => (
+  <div className={`${alto} w-full rounded-xl bg-slate-100 animate-pulse`} />
+);
+
+const GraficoDistribucion = dynamic(
+  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoDistribucion),
+  { ssr: false, loading: marco("h-full") }
+);
+const GraficoSaldoPendiente = dynamic(
+  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoSaldoPendiente),
+  { ssr: false, loading: marco("h-[180px]") }
+);
+const GraficoCapitalInteres = dynamic(
+  () => import("@/componentes/simulador/GraficosSimulacion").then((m) => m.GraficoCapitalInteres),
+  { ssr: false, loading: marco("h-[180px]") }
+);
 import { toast } from "sonner";
 import { PreEvaluacionModal } from "@/componentes/simulador/PreEvaluacionModal";
 
@@ -610,14 +629,7 @@ export default function SimuladorPage() {
                     </div>
                   </div>
                   <div className="w-40 h-40 flex-shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={resultado.donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                          {resultado.donutData.map((_: any, i: number) => <Cell key={i} fill={resultado.COLORS[i % resultado.COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 12 }} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <GraficoDistribucion datos={resultado.donutData} colores={resultado.COLORS} formato={fmt} />
                   </div>
                 </div>
               </div>
@@ -626,28 +638,11 @@ export default function SimuladorPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-xl border border-slate-200 p-5">
                   <h4 className="text-xs font-bold text-slate-700 mb-3">Saldo pendiente</h4>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={resultado.chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
-                      <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
-                      <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
-                      <Line type="monotone" dataKey="saldo" stroke="#1E40AF" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <GraficoSaldoPendiente datos={resultado.chartData} plazo={plazo} formato={fmt} />
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-5">
                   <h4 className="text-xs font-bold text-slate-700 mb-3">Capital vs Interés por año</h4>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={resultado.barData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 9 }} interval={Math.floor(plazo / 5)} />
-                      <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
-                      <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
-                      <Bar dataKey="capital" fill="#1E40AF" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="interes" fill="#FFD447" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <GraficoCapitalInteres datos={resultado.barData} plazo={plazo} formato={fmt} />
                 </div>
               </div>
 
