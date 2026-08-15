@@ -268,3 +268,10 @@ los clientes asignados a otros vendedores; prueba con datos sintéticos.
 [build] ocupado — Codex, BUG-031.
 
 [build] libre — Codex, BUG-031; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-04 · BUG-032] hallazgo — `GET /api/leads/[id]` entrega a un
+`AGENTE` la ficha completa de un cliente asignado a otro vendedor.
+
+[build] ocupado — Codex, BUG-032.
+
+[build] libre — Codex, BUG-032; build terminó en 0 con variables ficticias.
