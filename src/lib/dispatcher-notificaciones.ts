@@ -32,6 +32,11 @@ interface DespacharOpts {
   datosEmail?: Record<string, string>;
 }
 
+interface PreferenciaNotificacion {
+  canal: string;
+  habilitado: boolean;
+}
+
 /**
  * Despacha una notificacion por todos los canales habilitados.
  * 1. Resuelve el usuario objetivo (dueno del lead o usuarioIdDirecto)
@@ -120,8 +125,9 @@ async function enviarNotificacionAUsuario(
       .eq("evento", opts.evento);
 
     const prefsMap = new Map<string, boolean>();
-    (prefs || []).forEach((p: any) => {
-      prefsMap.set(p.canal, p.habilitado);
+    const preferencias = (prefs || []) as PreferenciaNotificacion[];
+    preferencias.forEach((preferencia) => {
+      prefsMap.set(preferencia.canal, preferencia.habilitado);
     });
 
     // Si no hay preferencias configuradas, asumir todo habilitado

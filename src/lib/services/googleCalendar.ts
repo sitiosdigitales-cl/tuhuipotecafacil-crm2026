@@ -35,6 +35,55 @@ export interface GoogleCalendarConfig {
   scope: string;
 }
 
+export interface GoogleCalendarApiEvent {
+  id?: string;
+  summary?: string;
+  description?: string;
+  hangoutLink?: string;
+  htmlLink?: string;
+  start?: { dateTime?: string; date?: string; timeZone?: string };
+  end?: { dateTime?: string; date?: string; timeZone?: string };
+}
+
+interface GoogleTokenResponse {
+  access_token?: string;
+  error?: string;
+}
+
+interface GoogleTokenClient {
+  callback: (response: GoogleTokenResponse) => void;
+  requestAccessToken: (options: { prompt?: string }) => void;
+}
+
+interface GoogleApi {
+  load: (module: string, callback: () => void) => void;
+  client: {
+    init: (config: { apiKey: string; discoveryDocs: string[] }) => Promise<void>;
+  };
+}
+
+interface GoogleIdentityServices {
+  accounts: {
+    oauth2: {
+      initTokenClient: (config: {
+        client_id: string;
+        scope: string;
+        callback: (response: GoogleTokenResponse) => void;
+      }) => GoogleTokenClient;
+      revoke: (token: string, callback: () => void) => void;
+    };
+  };
+}
+
+interface GoogleCalendarCreateResponse {
+  id?: string;
+  hangoutLink?: string;
+}
+
+interface GoogleCalendarListResponse {
+  items?: GoogleCalendarApiEvent[];
+}
+
 // Configuración de Google Calendar API
 export const GOOGLE_CONFIG: GoogleCalendarConfig = {
   clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
@@ -46,15 +95,15 @@ export const GOOGLE_CONFIG: GoogleCalendarConfig = {
 // Estado de autenticación
 let gapiLoaded = false;
 let gisLoaded = false;
-let tokenClient: any = null;
+let tokenClient: GoogleTokenClient | null = null;
 let isAuthenticated = false;
 let accessToken: string | null = null;
 
 // Declaraciones de tipos para Google API
 declare global {
   interface Window {
-    gapi: any;
-    google: any;
+    gapi: GoogleApi;
+    google: GoogleIdentityServices;
   }
 }
 
@@ -115,8 +164,8 @@ export async function initGoogleCalendar(): Promise<void> {
       tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CONFIG.clientId,
         scope: GOOGLE_CONFIG.scope,
-        callback: (response: any) => {
-          if (response.error) {
+        callback: (response) => {
+          if (response.error || !response.access_token) {
             console.error("Error de autenticación:", response);
             return;
           }
@@ -152,8 +201,8 @@ export function signInWithGoogle(): Promise<boolean> {
       return;
     }
 
-    tokenClient.callback = (response: any) => {
-      if (response.error) {
+    tokenClient.callback = (response) => {
+      if (response.error || !response.access_token) {
         console.error("Error de autenticación:", response);
         resolve(false);
         return;
@@ -249,7 +298,7 @@ export async function createGoogleCalendarEvent(event: {
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as GoogleCalendarCreateResponse;
 
     if (data.id) {
       // Construir link de Google Calendar
@@ -276,7 +325,7 @@ export async function createGoogleCalendarEvent(event: {
 export async function getGoogleCalendarEvents(
   timeMin: Date,
   timeMax: Date
-): Promise<any[]> {
+): Promise<GoogleCalendarApiEvent[]> {
   if (!isAuthenticated || !accessToken) {
     return [];
   }
@@ -291,7 +340,7 @@ export async function getGoogleCalendarEvents(
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as GoogleCalendarListResponse;
     return data.items || [];
   } catch (error) {
     console.error("Error al obtener eventos:", error);

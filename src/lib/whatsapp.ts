@@ -14,7 +14,16 @@ import { supabase } from "./supabase";
 const WHATSAPP_API_URL = "https://graph.facebook.com/v18.0";
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || "";
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || "";
-const WHATSAPP_BUSINESS_ACCOUNT_ID = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || "";
+
+interface WhatsAppApiResponse {
+  messages?: Array<{ id?: string }>;
+  error?: { message?: string };
+}
+
+interface WhatsAppTemplateComponent {
+  type: "body";
+  parameters: Array<{ type: string; text: string }>;
+}
 
 // Verificar si WhatsApp está configurado
 export function isWhatsAppConfigured(): boolean {
@@ -66,7 +75,7 @@ export async function enviarMensajeWhatsApp(opts: EnviarMensajeOpts): Promise<{ 
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as WhatsAppApiResponse;
 
     if (!response.ok) {
       console.error("Error enviando WhatsApp:", data);
@@ -106,7 +115,7 @@ export async function enviarPlantillaWhatsApp(opts: EnviarPlantillaOpts): Promis
   telefono = telefono.replace("+", "");
 
   try {
-    const components: any[] = [];
+    const components: WhatsAppTemplateComponent[] = [];
 
     // Agregar parámetros si existen
     if (opts.parametros && opts.parametros.length > 0) {
@@ -140,7 +149,7 @@ export async function enviarPlantillaWhatsApp(opts: EnviarPlantillaOpts): Promis
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as WhatsAppApiResponse;
 
     if (!response.ok) {
       console.error("Error enviando plantilla WhatsApp:", data);

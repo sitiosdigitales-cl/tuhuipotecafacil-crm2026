@@ -45,8 +45,8 @@ export function limpiarParaFiltro(texto: string): string {
 }
 
 // Convertir camelCase a minusculas para columnas Supabase
-export function toSupabaseColumns(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
+export function toSupabaseColumns(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     result[key.toLowerCase()] = value;
   }
@@ -54,9 +54,9 @@ export function toSupabaseColumns(obj: Record<string, any>): Record<string, any>
 }
 
 // Convertir minusculas a camelCase para respuesta Supabase
-export function fromSupabaseColumns(obj: Record<string, any>): Record<string, any> {
+export function fromSupabaseColumns(obj: Record<string, unknown>): Record<string, unknown> {
   if (!obj) return obj;
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
   const keyMap: Record<string, string> = {
     nombreejecutivo: "nombreEjecutivo",
     tipocredito: "tipoCredito",
@@ -110,7 +110,7 @@ export function fromSupabaseColumns(obj: Record<string, any>): Record<string, an
   return result;
 }
 
-export function fromSupabaseArray(arr: Record<string, any>[]): Record<string, any>[] {
+export function fromSupabaseArray(arr: Record<string, unknown>[]): Record<string, unknown>[] {
   if (!arr) return [];
   return arr.map(fromSupabaseColumns);
 }

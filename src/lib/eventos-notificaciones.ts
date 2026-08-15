@@ -37,6 +37,36 @@ const TITULO_MAP: Record<string, string> = {
   sistema: "Notificación del sistema",
 };
 
+interface DatosEventoNotificacion {
+  leadNombre?: string;
+  titulo?: string;
+  descripcion?: string;
+  leadId?: string;
+  accionUrl?: string;
+  datosEmail?: Record<string, string>;
+}
+
+function esRegistro(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function esRegistroDeTexto(value: unknown): value is Record<string, string> {
+  return esRegistro(value) && Object.values(value).every((item) => typeof item === "string");
+}
+
+function normalizarDatosEvento(data: unknown): DatosEventoNotificacion {
+  if (!esRegistro(data)) return {};
+
+  return {
+    leadNombre: typeof data.leadNombre === "string" ? data.leadNombre : undefined,
+    titulo: typeof data.titulo === "string" ? data.titulo : undefined,
+    descripcion: typeof data.descripcion === "string" ? data.descripcion : undefined,
+    leadId: typeof data.leadId === "string" ? data.leadId : undefined,
+    accionUrl: typeof data.accionUrl === "string" ? data.accionUrl : undefined,
+    datosEmail: esRegistroDeTexto(data.datosEmail) ? data.datosEmail : undefined,
+  };
+}
+
 /**
  * Inicializar la suscripción del EventBus al dispatcher.
  * Llamar una vez al inicio de la aplicación (server-side).
@@ -44,25 +74,26 @@ const TITULO_MAP: Record<string, string> = {
 export function iniciarEventosNotificaciones(): void {
   // Suscribirse a cada evento del EventBus
   Object.entries(EVENTO_MAP).forEach(([eventoBus, eventoNotif]) => {
-    eventBus.on(eventoBus, async (data: any) => {
+    eventBus.on(eventoBus, async (data) => {
+      const datos = normalizarDatosEvento(data);
       const titulo = TITULO_MAP[eventoNotif] || "Notificación";
 
       let descripcion = "";
-      if (data?.leadNombre) {
-        descripcion = data.leadNombre;
-      } else if (data?.titulo) {
-        descripcion = data.titulo;
-      } else if (data?.descripcion) {
-        descripcion = data.descripcion;
+      if (datos.leadNombre) {
+        descripcion = datos.leadNombre;
+      } else if (datos.titulo) {
+        descripcion = datos.titulo;
+      } else if (datos.descripcion) {
+        descripcion = datos.descripcion;
       }
 
       await despacharNotificacion({
         evento: eventoNotif,
-        leadId: data?.leadId,
+        leadId: datos.leadId,
         titulo,
         descripcion,
-        accionUrl: data?.accionUrl,
-        datosEmail: data?.datosEmail,
+        accionUrl: datos.accionUrl,
+        datosEmail: datos.datosEmail,
       });
     });
   });

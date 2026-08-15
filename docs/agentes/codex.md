@@ -534,3 +534,11 @@ reportes quedan en 0/0; 51 errores y 4 warnings eliminados. BUG-037 sigue roja.
 [calidad · LINT-07A] hecho — contextos y hooks compartidos quedan en 0/0;
 30 errores y 2 warnings eliminados. Quedan 22 errores y 6 warnings;
 BUG-037 sigue siendo la única prueba roja (273/274).
+
+[build] ocupado — Codex, LINT-07B · utilidades e integraciones.
+
+[build] libre — Codex, LINT-07B · build y typecheck terminaron en 0.
+
+[calidad · LINT-07B] hecho — utilidades e integraciones quedan en 0/0;
+17 errores y 1 warning eliminados. Quedan 5 errores y 5 warnings;
+BUG-037 sigue siendo la única prueba roja (273/274).
