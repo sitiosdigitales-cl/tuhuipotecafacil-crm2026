@@ -87,6 +87,35 @@ entra al grafo. `8d0a54b` `40a48cc`
 solo habria invalidado el memo. Premisa de re-render, no de bundling, asi que
 no depende del empaquetador. Sin regresion de lint. `212b8cd`
 
+[FASE 1 · BUG-001..019] hecho — cerrados los 19 hallazgos de Codex en cuatro
+commits. La suite pasa de 17 fallando / 1 pasando a 31 pasando / 0 fallando.
+`6349ef0` `26a0419` `b3d3e6b` `a890590`
+
+  El patron era sistematico, no descuidos sueltos: en 19 archivos el POST ya
+  tenia `requireAuth` y el GET no. Quien escribio esto protegio las escrituras
+  y se olvidó de las lecturas, siempre. En varios el import ya estaba puesto
+  sin usar, y en cinco el parametro se llamaba `_request` con guion bajo de no
+  usado — la firma misma delataba que nadie penso en revisar sesion.
+
+  Tres eran peores que exponer datos, porque permitian ESCRIBIR sin sesion:
+    bancos                   cambiar o borrar tasas de convenio, que es con
+                             lo que el simulador cotiza a los clientes
+    notificaciones           borrar avisos ajenos, sabotaje silencioso
+    whatsapp/send            enviar mensajes desde el numero corporativo
+    flujos/triggers historial  inyectar ejecuciones falsas en la bitacora
+
+  Decision que tome y conviene revisar: en bancos separe lectura de escritura.
+  GET pide sesion; POST, PUT y DELETE piden ademas rol SUPER_ADMIN o ADMIN.
+  No lo invente: sigue el precedente de pipeline/stages y cmf/update, que ya
+  usan esos dos roles para configuracion del sistema. Uso los dos guards en
+  vez de solo requireRole para que sin sesion responda 401 y con sesion sin
+  permiso responda 403; requireRole solo daria 403 en ambos casos.
+
+[nota · proceso] Un build fallo con "Another next build process is already
+running". No era codigo roto: Codex compilaba en paralelo. Es exactamente la
+colision que anticipa la seccion 2bis del PROTOCOLO, y el marcador de bitacora
+sirvio para diagnosticarla en un minuto. La regla funciona.
+
 [nota · fuera de mi tarea] `webhook/leads/route.ts` imprimia con console.log
 los primeros 500 caracteres del cuerpo de cada request. Eso manda RUT, renta y
 telefono a los logs de Vercel. Quite los dos logs del bloque del secreto en
