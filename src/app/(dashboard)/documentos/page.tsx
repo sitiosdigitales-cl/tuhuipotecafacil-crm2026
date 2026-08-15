@@ -47,6 +47,10 @@ interface TipoDocumentoCustom {
   esPersonalizado: boolean;
 }
 
+type DocumentoApi = Omit<DocumentoLead, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
 const estadoConfig: Record<EstadoDoc, { label: string; icono: React.ReactNode; class: string; bg: string; dot: string }> = {
   PENDIENTE: { label: "Pendiente", icono: <Clock size={12} />, class: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
   EN_REVISION: { label: "En Revisión", icono: <AlertCircle size={12} />, class: "text-blue-600", bg: "bg-blue-50", dot: "bg-blue-500" },
@@ -128,7 +132,6 @@ export default function DocumentosPage() {
 
   // Checklist: lead y documentos faltantes para solicitar
   const [checklistLeadId, setChecklistLeadId] = useState<string>("");
-  const [checklistLeadNombre, setChecklistLeadNombre] = useState<string>("");
 
   // Gestión de tipos de documento personalizados
   const [tiposDocumento, setTiposDocumento] = useState<TipoDocumentoCustom[]>(TIPOS_DOCUMENTO_BASE);
@@ -147,9 +150,9 @@ export default function DocumentosPage() {
       const res = await fetch("/api/documentos");
       const json = await res.json();
       if (json.success && json.data) {
-        setDocumentos(json.data.map((d: Record<string, any>) => ({
-          ...d,
-          creadoEn: d.creadoEn ? new Date(d.creadoEn) : new Date(),
+        setDocumentos((json.data as DocumentoApi[]).map((documento) => ({
+          ...documento,
+          creadoEn: documento.creadoEn ? new Date(documento.creadoEn) : new Date(),
         })));
       }
     } catch {
@@ -283,12 +286,12 @@ export default function DocumentosPage() {
     }
   };
 
-  const handleUpload = async (_nuevoDoc: Omit<DocumentoLead, "creadoEn">) => {
+  const handleUpload = async () => {
     // Recargar documentos desde la API para tener datos frescos
     await cargarDocumentos();
   };
 
-  const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"], _comentario?: string) => {
+  const handleCambiarEstado = async (docId: string, nuevoEstado: DocumentoLead["estado"]) => {
     try {
       await fetch(`/api/documentos/${docId}`, {
         method: "PUT",
@@ -307,9 +310,8 @@ export default function DocumentosPage() {
     router.push(`/clientes/${leadId}`);
   };
 
-  const handleSolicitarFaltantesChecklist = (leadId: string, leadNombre: string, _faltantes: string[]) => {
+  const handleSolicitarFaltantesChecklist = (leadId: string) => {
     setChecklistLeadId(leadId);
-    setChecklistLeadNombre(leadNombre);
     setSolicitarOpen(true);
   };
 

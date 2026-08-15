@@ -18,10 +18,32 @@ import {
   CalendarDays,
   ChevronRight,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { toast } from "sonner";
+import type { Actividad } from "@/modulos/actividad";
 
-const ICONOS_TIPO: Record<string, any> = {
+type VistaActividad = "hoy" | "semana" | "todas";
+
+interface TareaActividadApi {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  leadid?: string;
+  leadnombre?: string;
+  fechavencimiento?: string;
+  creadoen?: string;
+  estado?: string;
+  prioridad?: string;
+}
+
+const VISTAS_ACTIVIDAD: { id: VistaActividad; label: string; icono: LucideIcon }[] = [
+  { id: "hoy", label: "Hoy", icono: CalendarDays },
+  { id: "semana", label: "Esta Semana", icono: Calendar },
+  { id: "todas", label: "Todas", icono: FileText },
+];
+
+const ICONOS_TIPO: Record<string, LucideIcon> = {
   tarea: CheckSquare,
   llamada: Phone,
   correo: Mail,
@@ -43,19 +65,19 @@ const COLORES_TIPO: Record<string, string> = {
   recordatorio: "bg-red-100 text-red-600",
 };
 
-const ESTADO_CONFIG: Record<string, { label: string; icono: any; color: string }> = {
+const ESTADO_CONFIG: Record<string, { label: string; icono: LucideIcon; color: string }> = {
   pendiente: { label: "Pendiente", icono: Clock, color: "text-amber-500" },
   completada: { label: "Completada", icono: CheckCircle, color: "text-emerald-500" },
   vencida: { label: "Vencida", icono: AlertTriangle, color: "text-red-500" },
 };
 
 export default function CentroActividadPage() {
-  const [actividades, setActividades] = useState<any[]>([]);
+  const [actividades, setActividades] = useState<Actividad[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
   const [busqueda, setBusqueda] = useState("");
-  const [vistaActiva, setVistaActiva] = useState<"hoy" | "semana" | "todas">("hoy");
+  const [vistaActiva, setVistaActiva] = useState<VistaActividad>("hoy");
 
   useEffect(() => {
     async function cargar() {
@@ -63,17 +85,17 @@ export default function CentroActividadPage() {
         const res = await fetch("/api/tareas", { credentials: "include" });
         const data = await res.json();
         if (data.success) {
-          const tareas = (data.data || []).map((t: any) => ({
-            id: t.id,
+          const tareas = ((data.data || []) as TareaActividadApi[]).map((tarea): Actividad => ({
+            id: tarea.id,
             tipo: "tarea",
-            titulo: t.titulo,
-            descripcion: t.descripcion,
-            leadId: t.leadid,
-            leadNombre: t.leadnombre,
-            fecha: t.fechavencimiento || t.creadoen,
-            estado: t.estado === "COMPLETADA" ? "completada" : t.estado === "VENCIDA" ? "vencida" : "pendiente",
-            prioridad: t.prioridad?.toLowerCase(),
-            created_at: t.creadoen,
+            titulo: tarea.titulo,
+            descripcion: tarea.descripcion,
+            leadId: tarea.leadid,
+            leadNombre: tarea.leadnombre,
+            fecha: tarea.fechavencimiento || tarea.creadoen || new Date().toISOString(),
+            estado: tarea.estado === "COMPLETADA" ? "completada" : tarea.estado === "VENCIDA" ? "vencida" : "pendiente",
+            prioridad: tarea.prioridad === "ALTA" ? "alta" : tarea.prioridad === "MEDIA" ? "media" : tarea.prioridad === "BAJA" ? "baja" : undefined,
+            created_at: tarea.creadoen || new Date().toISOString(),
           }));
           setActividades(tareas);
         }
@@ -196,14 +218,10 @@ export default function CentroActividadPage() {
 
       {/* Vista Tabs */}
       <div className="flex gap-2">
-        {[
-          { id: "hoy", label: "Hoy", icono: CalendarDays },
-          { id: "semana", label: "Esta Semana", icono: Calendar },
-          { id: "todas", label: "Todas", icono: FileText },
-        ].map(({ id, label, icono: Icono }) => (
+        {VISTAS_ACTIVIDAD.map(({ id, label, icono: Icono }) => (
           <button
             key={id}
-            onClick={() => setVistaActiva(id as any)}
+            onClick={() => setVistaActiva(id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               vistaActiva === id
                 ? "bg-blue-600 text-white"

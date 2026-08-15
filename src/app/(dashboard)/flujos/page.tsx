@@ -11,12 +11,31 @@ import { toast } from "sonner";
 
 type TabFlujo = "todos" | "activos" | "pausados" | "borrador";
 
+interface Flujo {
+  id: string;
+  nombre?: string;
+  descripcion?: string;
+  trigger?: string;
+  categoria?: string;
+  condiciones?: Record<string, unknown>[];
+  acciones?: Record<string, unknown>[];
+  pasos?: Record<string, unknown>[];
+  logica_condiciones?: string;
+  estado?: string;
+  ejecuciones?: number;
+  exitosas?: number;
+  fallidas?: number;
+  ultimoEjecucion?: string;
+  creadoEn?: string;
+  creadoPor?: string;
+}
+
 export default function FlujosPage() {
   const { flujos, setFlujos, cargando } = useFlujos();
   const [tabActiva, setTabActiva] = useState<TabFlujo>("todos");
   const [busqueda, setBusqueda] = useState("");
   const [editorAbierto, setEditorAbierto] = useState(false);
-  const [flujoEditando, setFlujoEditando] = useState<any>(null);
+  const [flujoEditando, setFlujoEditando] = useState<Flujo | null>(null);
   const [modalDetalle, setModalDetalle] = useState<string | null>(null);
 
   // Si no hay flujos reales, usar datos de ejemplo
@@ -85,13 +104,13 @@ export default function FlujosPage() {
   };
 
   // Abrir editor
-  const abrirEditor = (flujo?: any) => {
+  const abrirEditor = (flujo?: Flujo) => {
     setFlujoEditando(flujo || null);
     setEditorAbierto(true);
   };
 
   // Guardar flujo
-  const guardarFlujo = async (data: any) => {
+  const guardarFlujo = async (data: Omit<Flujo, "id">) => {
     try {
       const url = flujoEditando ? `/api/flujos/${flujoEditando.id}` : "/api/flujos";
       const method = flujoEditando ? "PUT" : "POST";

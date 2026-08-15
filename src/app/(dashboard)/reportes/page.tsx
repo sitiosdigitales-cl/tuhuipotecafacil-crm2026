@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import type { Lead, Etapa } from "@/tipos";
 
+type LeadApi = Omit<Lead, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
 const COLORES_BANCOS: Record<string, string> = {
   "Banco de Chile": "#E31837", Santander: "#EC0000", Bci: "#003DA5",
   Itaú: "#F7941D", Scotiabank: "#EC111A", BancoEstado: "#00529B",
@@ -53,11 +57,11 @@ export default function ReportesPage() {
         const res = await fetch("/api/leads");
         const json = await res.json();
         if (json.success && json.data) {
-          setLeads(json.data.map((l: Record<string, any>) => ({
-            ...l,
-            creadoEn: l.creadoEn ? new Date(l.creadoEn) : new Date(),
-            montoSolicitado: l.montoSolicitado || 0,
-            valorPropiedad: l.valorPropiedad || 0,
+          setLeads((json.data as LeadApi[]).map((lead) => ({
+            ...lead,
+            creadoEn: lead.creadoEn ? new Date(lead.creadoEn) : new Date(),
+            montoSolicitado: lead.montoSolicitado || 0,
+            valorPropiedad: lead.valorPropiedad || 0,
           })));
         }
       } catch {

@@ -14,9 +14,11 @@ import {
   TrendingUp,
   Calendar,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { formatoMonedaAbreviado, formatoMoneda } from "@/lib/utils";
+import type { Solicitud } from "@/modulos/solicitudes";
 
-const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icono: any }> = {
+const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: string; icono: LucideIcon }> = {
   EN_REVISION: { label: "En Revisión", color: "#F59E0B", bgColor: "bg-amber-50 text-amber-700", icono: Clock },
   ENVIADO_BANCO: { label: "Enviado al Banco", color: "#3B82F6", bgColor: "bg-blue-50 text-blue-700", icono: TrendingUp },
   EN_EVALUACION: { label: "En Evaluación", color: "#8B5CF6", bgColor: "bg-purple-50 text-purple-700", icono: AlertTriangle },
@@ -28,7 +30,7 @@ export default function SolicitudDetallePage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const [solicitud, setSolicitud] = useState<any>(null);
+  const [solicitud, setSolicitud] = useState<Solicitud | null>(null);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {

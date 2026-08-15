@@ -30,6 +30,10 @@ import { formatoMonedaAbreviado } from "@/lib/utils";
 import { useUserData } from "@/lib/hooks/useUserData";
 import type { Etapa, Lead } from "@/tipos";
 
+type LeadApi = Omit<Lead, "creadoEn"> & {
+  creadoEn?: string | Date;
+};
+
 // Colores para gráficos
 const COLORES_CREDITO: Record<string, string> = {
   "Créditos Hipotecarios": "#3B82F6",
@@ -82,9 +86,9 @@ export default function ResumenPage() {
         const res = await fetch("/api/leads");
         const json = await res.json();
         if (json.success && json.data) {
-          setLeads(json.data.map((l: Record<string, any>) => ({
-            ...l,
-            creadoEn: l.creadoEn ? new Date(l.creadoEn) : new Date(),
+          setLeads((json.data as LeadApi[]).map((lead) => ({
+            ...lead,
+            creadoEn: lead.creadoEn ? new Date(lead.creadoEn) : new Date(),
           })));
         }
       } catch {

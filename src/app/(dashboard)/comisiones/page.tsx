@@ -16,8 +16,38 @@ import {
   Send,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 import { toast } from "sonner";
+
+type TabComisiones = "resumen" | "ejecutivos" | "creditos" | "pagos" | "historial";
+
+interface ComisionEjecutivo {
+  id: string;
+  nombre: string;
+  rol: string;
+  avatar: string;
+  color: string;
+  ventas: number;
+  meta: number;
+  montoTotal: number;
+  metaMonto: number;
+  ticketPromedio: number;
+  tasaConversion: number;
+  comisionTotal: number;
+  comisionPagada: number;
+  comisionPendiente: number;
+  porcentajeCobroCliente: number;
+  porcentajeComisionAgente: number;
+}
+
+const TABS_COMISIONES: { id: TabComisiones; label: string; icono: LucideIcon }[] = [
+  { id: "resumen", label: "Resumen", icono: BarChart3 },
+  { id: "ejecutivos", label: "Por Ejecutivo", icono: Users },
+  { id: "creditos", label: "Créditos Aprobados", icono: FileText },
+  { id: "pagos", label: "Pagos", icono: CreditCard },
+  { id: "historial", label: "Historial", icono: Clock },
+];
 
 // Historial de pagos
 const HISTORIAL_PAGOS = [
@@ -41,8 +71,8 @@ const CREDITOS_APROBADOS = [
 ];
 
 export default function ComisionesPage() {
-  const [comisiones, setComisiones] = useState<any[]>([]);
-  const [tabActiva, setTabActiva] = useState<"resumen" | "ejecutivos" | "creditos" | "pagos" | "historial">("resumen");
+  const [comisiones, setComisiones] = useState<ComisionEjecutivo[]>([]);
+  const [tabActiva, setTabActiva] = useState<TabComisiones>("resumen");
   const [modalEditar, setModalEditar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +80,7 @@ export default function ComisionesPage() {
       try {
         const res = await fetch("/api/comisiones");
         const json = await res.json();
-        if (json.success && json.data) setComisiones(json.data);
+        if (json.success && json.data) setComisiones(json.data as ComisionEjecutivo[]);
       } catch { setComisiones([]); }
       finally { /* loaded */ }
     }
@@ -58,11 +88,11 @@ export default function ComisionesPage() {
   }, []);
 
   const stats = useMemo(() => ({
-    totalComisiones: comisiones.reduce((sum: number, e: any) => sum + (e.comisionTotal || 0), 0),
-    totalPagadas: comisiones.reduce((sum: number, e: any) => sum + (e.comisionPagada || 0), 0),
-    totalPendientes: comisiones.reduce((sum: number, e: any) => sum + (e.comisionPendiente || 0), 0),
-    totalVentas: comisiones.reduce((sum: number, e: any) => sum + (e.ventas || 0), 0),
-    promedioConversion: comisiones.length > 0 ? Math.round(comisiones.reduce((sum: number, e: any) => sum + (e.tasaConversion || 0), 0) / comisiones.length) : 0,
+    totalComisiones: comisiones.reduce((sum, ejecutivo) => sum + (ejecutivo.comisionTotal || 0), 0),
+    totalPagadas: comisiones.reduce((sum, ejecutivo) => sum + (ejecutivo.comisionPagada || 0), 0),
+    totalPendientes: comisiones.reduce((sum, ejecutivo) => sum + (ejecutivo.comisionPendiente || 0), 0),
+    totalVentas: comisiones.reduce((sum, ejecutivo) => sum + (ejecutivo.ventas || 0), 0),
+    promedioConversion: comisiones.length > 0 ? Math.round(comisiones.reduce((sum, ejecutivo) => sum + (ejecutivo.tasaConversion || 0), 0) / comisiones.length) : 0,
   }), [comisiones]);
 
   const ejecutivoEditar = comisiones.find((e) => e.id === modalEditar);
@@ -175,18 +205,12 @@ export default function ComisionesPage() {
       {/* Tabs */}
       <div className="bg-white rounded-2xl border border-slate-100/80 p-1.5 shadow-soft">
         <div className="flex gap-1 flex-wrap">
-          {[
-            { id: "resumen", label: "Resumen", icono: BarChart3 },
-            { id: "ejecutivos", label: "Por Ejecutivo", icono: Users },
-            { id: "creditos", label: "Créditos Aprobados", icono: FileText },
-            { id: "pagos", label: "Pagos", icono: CreditCard },
-            { id: "historial", label: "Historial", icono: Clock },
-          ].map((tab) => {
+          {TABS_COMISIONES.map((tab) => {
             const IconoTab = tab.icono;
             return (
               <button
                 key={tab.id}
-                onClick={() => setTabActiva(tab.id as any)}
+                onClick={() => setTabActiva(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-semibold transition-all ${
                   tabActiva === tab.id
                     ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"

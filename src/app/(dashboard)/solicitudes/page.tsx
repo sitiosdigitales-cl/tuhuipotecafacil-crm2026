@@ -13,6 +13,7 @@ import {
   List,
 } from "lucide-react";
 import { formatoMonedaAbreviado } from "@/lib/utils";
+import type { Solicitud } from "@/modulos/solicitudes";
 const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
   EN_REVISION: { label: "En Revisión", color: "#F59E0B", bgColor: "bg-amber-50 text-amber-700" },
   ENVIADO_BANCO: { label: "Enviado al Banco", color: "#3B82F6", bgColor: "bg-blue-50 text-blue-700" },
@@ -29,7 +30,7 @@ const ESTADOS_CONFIG: Record<string, { label: string; color: string; bgColor: st
 
 export default function SolicitudesPage() {
   const router = useRouter();
-  const [solicitudes, setSolicitudes] = useState<any[]>([]);
+  const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
