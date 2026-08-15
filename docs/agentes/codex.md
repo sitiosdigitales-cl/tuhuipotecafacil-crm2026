@@ -410,3 +410,10 @@ restante en `src/lib/validaciones-pipeline.ts` no tiene importaciones.
 
 [calidad · documentos · BUG-044] hallazgo — `POST /api/documentos` acepta el
 estado inicial del cuerpo y puede crear un documento directamente aprobado.
+
+[build] ocupado — Codex, flujo de solicitudes · BUG-045.
+
+[build] libre — Codex, flujo de solicitudes · BUG-045; build terminó en 0 con variables ficticias.
+
+[calidad · solicitudes · BUG-045] hallazgo — el alta no aplica
+`SolicitudSchema`: seis entradas obligatorias o financieras inválidas llegan al guardado.
