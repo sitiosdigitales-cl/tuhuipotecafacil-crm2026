@@ -60,17 +60,20 @@ export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDoc
 
   // Pre-seleccionar lead cuando se abre con leadId
   useEffect(() => {
-    if (open && leadId && leads.length > 0) {
-      const lead = leads.find((l) => l.id === leadId);
-      if (lead) {
-        setLeadSeleccionado(lead);
+    const timer = setTimeout(() => {
+      if (open && leadId && leads.length > 0) {
+        const lead = leads.find((item) => item.id === leadId);
+        if (lead) {
+          setLeadSeleccionado(lead);
+        }
       }
-    }
-    if (!open) {
-      setLeadSeleccionado(null);
-      setEnviado(false);
-      setLinkGenerado("");
-    }
+      if (!open) {
+        setLeadSeleccionado(null);
+        setEnviado(false);
+        setLinkGenerado("");
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, leadId, leads]);
 
   // Estado para documento personalizado

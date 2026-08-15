@@ -12,10 +12,11 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCw,
-  Image,
+  Image as ImageIcon,
   File,
 } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 import type { DocumentoLead } from "@/tipos";
 import { TIPOS_DOCUMENTO_CONFIG } from "@/tipos";
 
@@ -145,9 +146,12 @@ export function VistaPreviaDocumento({
                   title="Vista previa del documento"
                 />
               ) : esImagen ? (
-                <img
+                <Image
                   src={documento.archivoUrl}
                   alt={documento.nombre}
+                  width={700}
+                  height={500}
+                  unoptimized
                   className="max-w-full max-h-[500px] object-contain"
                 />
               ) : (
@@ -171,7 +175,7 @@ export function VistaPreviaDocumento({
                   El archivo aun no ha sido subido al sistema
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[10px] text-slate-500">
-                  <Image size={14} />
+                  <ImageIcon size={14} />
                   <span>{documento.nombre}</span>
                 </div>
               </div>

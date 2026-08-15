@@ -9,7 +9,13 @@ const META_MENSUAL = 180;
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface AprobacionesTooltipProps {
+  active?: boolean;
+  payload?: { payload: { aprobados: number } }[];
+  label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label }: AprobacionesTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     const vsMeta = data.aprobados - META_MENSUAL;

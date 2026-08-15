@@ -27,7 +27,8 @@ interface AreaChatProps {
 
 export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
   const { usuarios, usuarioActual } = useUser();
-  const [conversacion, setConversacion] = useState<Conversacion | null>(null);
+  const [resultadoConversacion, setResultadoConversacion] = useState<{ id: string; data: Conversacion | null } | null>(null);
+  const conversacion = resultadoConversacion?.id === conversacionId ? resultadoConversacion.data : null;
   const [mostrarInfo, setMostrarInfo] = useState(false);
   const [busquedaChat, setBusquedaChat] = useState("");
   const [respondiendoA, setRespondiendoA] = useState<Mensaje | null>(null);
@@ -41,17 +42,17 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
 
   // Cargar datos de la conversación
   useEffect(() => {
-    if (!conversacionId) {
-      setConversacion(null);
-      return;
-    }
+    if (!conversacionId) return;
+    const idConversacion = conversacionId;
+    let cancelado = false;
 
     async function cargarConversacion() {
       try {
-        const res = await fetch(`/api/conversaciones/${conversacionId}`);
+        const res = await fetch(`/api/conversaciones/${idConversacion}`);
         const json = await res.json();
+        if (cancelado) return;
         if (json.success && json.data) {
-          setConversacion({
+          setResultadoConversacion({ id: idConversacion, data: {
             id: json.data.id,
             nombre: json.data.nombre,
             tipo: json.data.tipo,
@@ -61,14 +62,17 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
             esFijo: json.data.esFijo,
             creadoEn: new Date(json.data.creadoEn || Date.now()),
             creadoPor: json.data.creadoPor || "",
-          });
+          } });
+        } else {
+          setResultadoConversacion({ id: idConversacion, data: null });
         }
       } catch {
-        setConversacion(null);
+        if (!cancelado) setResultadoConversacion({ id: idConversacion, data: null });
       }
     }
 
     cargarConversacion();
+    return () => { cancelado = true; };
   }, [conversacionId]);
 
   useEffect(() => {

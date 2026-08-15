@@ -72,7 +72,7 @@ export function GraficoConversion() {
           <YAxis tick={{ fontSize: 9, fill: "#94A3B8" }} domain={[0, 100]} />
           <Tooltip
             contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E2E8F0", padding: "8px 12px" }}
-            formatter={(value: any, name: any, props: any) => [`${value}% (${props?.payload?.leads || 0} leads)`, props?.payload?.etapa || name]}
+            formatter={(value, name, props) => [`${value}% (${props?.payload?.leads || 0} leads)`, props?.payload?.etapa || name]}
           />
           <ReferenceLine y={promedio} stroke="#10B981" strokeDasharray="5 5" label={{ value: `Promedio ${promedio}%`, position: "right", fill: "#10B981", fontSize: 10 }} />
           <Line type="monotone" dataKey="porcentaje" stroke="#3B82F6" strokeWidth={2} dot={{ fill: "#3B82F6", r: 4 }} activeDot={{ r: 6, fill: "#3B82F6" }} />

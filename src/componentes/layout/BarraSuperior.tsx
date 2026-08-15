@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronDown,
   RefreshCw,
+  PanelRightOpen,
 } from "lucide-react";
 import { useUser } from "@/modulos/usuarios";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -105,6 +106,13 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
 
       {/* Sección Derecha */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={onPanelClick}
+          className="lg:hidden w-9 h-9 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl flex items-center justify-center transition-colors"
+          title={panelColapsado ? "Expandir panel lateral" : "Abrir panel lateral"}
+        >
+          <PanelRightOpen size={16} />
+        </button>
         <div className="w-px h-6 bg-slate-200 mx-1" />
 
         {/* Agenda */}

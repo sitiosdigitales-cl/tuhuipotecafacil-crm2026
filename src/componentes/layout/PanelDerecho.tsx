@@ -125,17 +125,26 @@ export function PanelDerecho({ onClose, colapsado = false, onToggleColapsado }: 
       {/* Header con botón de colapsar */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-700 p-3 flex items-center justify-between">
         <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Panel Lateral</span>
-        <button
-          onClick={onToggleColapsado}
-          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-          title={colapsado ? "Expandir panel" : "Contraer panel"}
-        >
-          {colapsado ? (
-            <PanelRightOpen size={16} className="text-slate-500" />
-          ) : (
-            <PanelRightClose size={16} className="text-slate-500" />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            title="Cerrar panel"
+          >
+            <X size={16} className="text-slate-500" />
+          </button>
+          <button
+            onClick={onToggleColapsado}
+            className="hidden lg:block p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            title={colapsado ? "Expandir panel" : "Contraer panel"}
+          >
+            {colapsado ? (
+              <PanelRightOpen size={16} className="text-slate-500" />
+            ) : (
+              <PanelRightClose size={16} className="text-slate-500" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Notificaciones - Conectado al contexto */}

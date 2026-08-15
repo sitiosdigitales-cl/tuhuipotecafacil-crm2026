@@ -141,8 +141,10 @@ export function ActividadTiempoReal() {
   // Generar actividades basadas en los leads reales del contexto
   useEffect(() => {
     if (leads.length === 0) return;
-    const actividadesGeneradas = generarActividadesDesdeLeads(leads);
-    setActividades(actividadesGeneradas);
+    const timer = setTimeout(() => {
+      setActividades(generarActividadesDesdeLeads(leads));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [leads]);
 
   // Simular nuevas actividades cada 45 segundos usando leads reales

@@ -16,7 +16,6 @@ import {
   AlertCircle,
   Loader2,
   Users,
-  Search,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import type { TipoDocumento, DocumentoLead, Lead } from "@/tipos";
@@ -57,15 +56,18 @@ export function SubirDocumento({
 
   // Pre-seleccionar lead cuando se abre con leadId
   useEffect(() => {
-    if (open && leadIdProp && leads.length > 0) {
-      const lead = leads.find((l) => l.id === leadIdProp);
-      if (lead) setLeadSeleccionado(lead);
-    }
-    if (!open) {
-      setLeadSeleccionado(null);
-      setBusquedaLead("");
-      setArchivos([]);
-    }
+    const timer = setTimeout(() => {
+      if (open && leadIdProp && leads.length > 0) {
+        const lead = leads.find((item) => item.id === leadIdProp);
+        if (lead) setLeadSeleccionado(lead);
+      }
+      if (!open) {
+        setLeadSeleccionado(null);
+        setBusquedaLead("");
+        setArchivos([]);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, leadIdProp, leads]);
 
   const leadsFiltrados = useMemo(() => {

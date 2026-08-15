@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -117,7 +117,6 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [direccionTransicion, setDireccionTransicion] = useState<"adelante" | "atras">("adelante");
 
   useEffect(() => {
     if (lead) {
@@ -225,15 +224,12 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     }
   };
 
-  const irAPaso = useCallback((nuevoPaso: number) => {
+  const irAPaso = (nuevoPaso: number) => {
     if (nuevoPaso > paso) {
       if (paso === 1 && !validatePaso1()) return;
-      setDireccionTransicion("adelante");
-    } else {
-      setDireccionTransicion("atras");
     }
     setPaso(nuevoPaso);
-  }, [paso]);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

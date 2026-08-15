@@ -19,15 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface GoogleCalendarIntegrationProps {
-  onEventCreated?: (event: {
-    googleEventId: string;
-    meetLink?: string;
-    calendarLink: string;
-  }) => void;
-}
-
-export function GoogleCalendarIntegration({ onEventCreated }: GoogleCalendarIntegrationProps) {
+export function GoogleCalendarIntegration() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

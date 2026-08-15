@@ -61,7 +61,7 @@ export function ChecklistCliente({
         id: req.id,
         nombre: req.nombre,
         obligatorio: req.obligatorio,
-        estado: docReal ? (docReal.estado as any) : "FALTA",
+        estado: docReal ? docReal.estado : "FALTA",
         documentoReal: docReal,
       };
     });

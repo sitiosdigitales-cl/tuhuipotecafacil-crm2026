@@ -66,7 +66,7 @@ export function LeadsPorOrigen() {
               </Pie>
               <Tooltip
                 contentStyle={{ fontSize: 11, borderRadius: 10, border: "1px solid #E2E8F0", padding: "8px 12px", backgroundColor: "white" }}
-                formatter={(value: any, name: any, props: any) => [`${value} leads (${((Number(value) / total) * 100).toFixed(1)}%)`, props?.payload?.nombre || name]}
+                formatter={(value, name, props) => [`${value} leads (${((Number(value) / total) * 100).toFixed(1)}%)`, props?.payload?.nombre || name]}
               />
             </PieChart>
           </ResponsiveContainer>

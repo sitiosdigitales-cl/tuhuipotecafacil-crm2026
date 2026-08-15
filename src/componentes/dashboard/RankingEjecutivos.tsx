@@ -62,7 +62,8 @@ export function RankingEjecutivos() {
             const ej = ejecutivos[pos];
             if (!ej) return null;
             const heights = ["h-16", "h-20", "h-14"];
-            const icons = [<Medal size={14} />, <Crown size={16} />, <Medal size={14} />];
+            const icons = [Medal, Crown, Medal];
+            const IconoPodio = icons[pos];
             const bgColors = ["from-slate-300 to-slate-400", "from-amber-400 to-amber-500", "from-amber-600 to-amber-700"];
             return (
               <div key={pos} className="flex flex-col items-center">
@@ -71,7 +72,7 @@ export function RankingEjecutivos() {
                 </div>
                 <span className="text-[9px] font-semibold text-slate-700 mb-1">{ej.nombre.split(" ")[0]}</span>
                 <div className={`w-16 ${heights[pos]} bg-gradient-to-br ${bgColors[pos]} rounded-t-lg flex items-center justify-center text-white`}>
-                  {icons[pos]}
+                  <IconoPodio size={pos === 1 ? 16 : 14} />
                 </div>
               </div>
             );

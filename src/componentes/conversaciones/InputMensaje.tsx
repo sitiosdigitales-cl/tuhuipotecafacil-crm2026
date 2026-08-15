@@ -6,7 +6,7 @@ import {
   Paperclip,
   Smile,
   AtSign,
-  Image,
+  Image as ImageIcon,
   Mic,
   Bold,
   Italic,
@@ -197,7 +197,7 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
               className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
               title="Enviar imagen"
             >
-              <Image size={16} />
+              <ImageIcon size={16} />
             </button>
             <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => handleFileSelect(e, "Archivo")} />
             <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, "Imagen")} />
