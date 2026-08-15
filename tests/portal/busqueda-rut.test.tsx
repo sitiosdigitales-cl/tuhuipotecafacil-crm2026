@@ -1,4 +1,11 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { useLeads } = vi.hoisted(() => ({
@@ -65,7 +72,11 @@ describe("búsqueda del portal por RUT", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
-        json: vi.fn().mockResolvedValue({ success: false }),
+        json: vi.fn().mockResolvedValue({
+          error: "No autenticado",
+          success: false,
+        }),
+        ok: false,
       })
     );
   });
@@ -78,15 +89,19 @@ describe("búsqueda del portal por RUT", () => {
   it("rechaza seis dígitos contenidos en el RUT de otra persona", async () => {
     render(<PortalClienteContent />);
 
-    fireEvent.change(screen.getByPlaceholderText("12.345.678-9"), {
-      target: { value: "345678" },
+    await waitFor(() => {
+      expect(screen.queryByText("Cargando tu solicitud…")).toBeNull();
     });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
-    });
+    const inputRut = screen.queryByPlaceholderText("12.345.678-9");
+    if (inputRut) {
+      fireEvent.change(inputRut, { target: { value: "345678" } });
 
-    expect(screen.queryByText("RUT no encontrado")).not.toBeNull();
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+      });
+    }
+
     expect(screen.queryByText(/Hola, Persona/)).toBeNull();
   });
 });

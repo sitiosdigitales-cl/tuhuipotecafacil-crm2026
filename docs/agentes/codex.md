@@ -275,3 +275,10 @@ los clientes asignados a otros vendedores; prueba con datos sintéticos.
 [build] ocupado — Codex, BUG-032.
 
 [build] libre — Codex, BUG-032; build terminó en 0 con variables ficticias.
+
+[FASE 1 · C-03 · BUG-030] ajuste — la prueba acepta que el arreglo elimine
+por completo el buscador de RUT, sin perder la regresión contra el código viejo.
+
+[build] ocupado — Codex, ajuste BUG-030.
+
+[build] libre — Codex, ajuste BUG-030; build terminó en 0 con variables ficticias.
