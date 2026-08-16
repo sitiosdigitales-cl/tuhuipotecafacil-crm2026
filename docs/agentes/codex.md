@@ -737,3 +737,10 @@ destinatario y nombre se derivan de la ficha. Suite completa: 367/367.
 
 [calidad · BUG-068] corregido — WhatsApp exige rol y lead accesible, deriva
 teléfono, acota contenido y no expone IDs del proveedor. Suite: 373/373.
+
+[build] ocupado — Codex, BUG-069 · retirar dispatcher público sin consumidores.
+
+[build] libre — Codex, BUG-069 · build terminó en 0 y la ruta ya no se genera.
+
+[calidad · BUG-069] corregido — dispatcher multicanal queda interno; se retiran
+endpoint y helpers cliente sin consumidores. Suite completa: 374/374.

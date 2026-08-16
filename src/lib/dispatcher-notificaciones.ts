@@ -250,21 +250,6 @@ async function enviarNotificacionEmail(
 }
 
 /**
- * Funcion helper para usar desde el cliente (llama a la API)
- */
-export async function despacharNotificacionClient(opts: DespacharOpts): Promise<void> {
-  try {
-    await fetch("/api/notificaciones/despachar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(opts),
-    });
-  } catch {
-    // Silenciar errores
-  }
-}
-
-/**
  * Envía notificación por WhatsApp al usuario
  */
 async function enviarNotificacionWhatsApp(
