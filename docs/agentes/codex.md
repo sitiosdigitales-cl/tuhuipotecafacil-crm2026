@@ -1067,3 +1067,10 @@ prometer pagos, porcentajes o premios sin política persistida. Suite: 589/589; 
 
 [calidad · BUG-115] corregido — configuración enlaza la exportación real y no
 confirma mantenimiento inexistente. Suite: 590/590; audit: 0.
+
+[build] ocupado — Codex, BUG-116 · permisos de solo lectura.
+
+[build] libre — Codex, BUG-116 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-116] corregido — permisos ya no confirma una matriz local que
+el proxy y las APIs nunca aplicaban. Suite: 592/592; audit: 0.
