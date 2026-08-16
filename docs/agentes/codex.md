@@ -1081,3 +1081,10 @@ el proxy y las APIs nunca aplicaban. Suite: 592/592; audit: 0.
 
 [auditoría · AUDIT-01] publicado — estado reproducible, límites de Supabase,
 prioridades operativas y prompt maestro. Suite: 592/592; audit: 0.
+
+[build] ocupado — Codex, GOV-01 · prompt profesional de estabilización.
+
+[build] libre — Codex, GOV-01 · build, suite, lint y TypeScript en verde.
+
+[estrategia · GOV-01] preparado — prompt profesional fija arquitectura, gates,
+protección de datos y contrato de entrega. Suite: 592/592; audit: 0.

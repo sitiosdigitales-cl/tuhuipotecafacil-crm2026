@@ -1,132 +1,149 @@
-# Prompt maestro · auditoría integral defensiva
+# Prompt maestro · estabilización integral del CRM
 
 ```text
-Trabaja sobre tuhuipotecafacil-crm2026, rama `diego`. Es un CRM hipotecario
-propio y autorizado, con datos reales de clientes chilenos. Tu tarea es control
-de calidad defensivo: encontrar comportamientos incorrectos, demostrar cada uno
-con evidencia reproducible, corregir la causa y dejar la rama verificable.
+<role>
+Actúa como Staff Software Engineer especializado en Next.js 16, TypeScript,
+PostgreSQL, Supabase, autenticación, control de calidad y operación de sistemas
+con datos reales.
 
-CONTRATO OBLIGATORIO
-1. Lee completo `docs/agentes/PROTOCOLO.md` antes de tocar archivos.
-2. Lee todo `AGENTS.md` aplicable y las guías locales de Next.js 16 en
-   `node_modules/next/dist/docs/` antes de modificar Next.
-3. Confirma rama, árbol limpio y remoto; ejecuta `git pull --rebase origin diego`
-   antes de cada tarea.
-4. Nunca uses `git stash`, `git clean`, `git checkout .`, `git add -A`,
-   `git add .` ni `git reset --hard`.
-5. No leas ni imprimas `.env`, tokens, contraseñas, RUT, correos, teléfonos o
-   documentos reales. No toques paneles de Supabase, Vercel o WordPress.
-6. Usa datos sintéticos terminados en `.invalid`. No pruebes contra producción
-   salvo autorización humana explícita para una ruta y un caso concreto.
-7. Un defecto por tarea, prueba y commit. `git add` solo con rutas explícitas.
-8. Mensaje de commit con `Agente: codex` y `Tarea: BUG-XXX`; sin
-   `Co-Authored-By`, firmas de herramientas ni emojis.
+Trabajas sobre tuhuipotecafacil-crm2026, rama diego. Es un CRM hipotecario en
+producción que procesa información personal de clientes chilenos.
+</role>
 
-LENGUAJE
-Redacta como QA: “defecto”, “comportamiento incorrecto”, “la comprobación no se
-aplica”, “la respuesta no corresponde al rol”, “entrada sin sanear”. Describe
-siempre el comportamiento esperado y evita instrucciones de abuso.
+<mission>
+Audita, estabiliza y mejora el repositorio completo hasta obtener un sistema
+reproducible, verificable y apto para una operación real.
 
-FASE A · LÍNEA BASE REPRODUCIBLE
-- Registra commit, versiones, estructura, archivos TS/TSX, líneas, rutas API,
-  pruebas, migraciones y archivos mayores de 700 líneas.
-- Ejecuta y guarda el resultado de:
-  `npm ci`
-  `npm run lint`
-  `npx tsc --noEmit`
-  `npm run build`
-  `npm test`
-  `npm audit --omit=dev --audit-level=moderate`
-  `npm audit --audit-level=high`
-- No arregles todavía: primero distingue fallos previos de regresiones propias.
+No te limites a enumerar defectos: aporta evidencia, agrega pruebas de regresión,
+corrige la causa raíz cuando tu zona de trabajo lo permita y deja instrucciones
+operacionales concretas para todo cambio que requiera intervención humana.
+</mission>
 
-FASE B · AUTENTICACIÓN Y SESIÓN
-- Comprueba login, logout, cookie HttpOnly/Secure/SameSite, expiración, firma,
-  audiencia, emisor, renovación, cuenta inactiva, cambio de rol y revocación.
-- Comprueba límites y concurrencia del contador de intentos.
-- Verifica proxy y API por separado; una pantalla protegida no reemplaza el
-  control del endpoint.
-- Genera una matriz de cada rol contra cada ruta sensible.
-- Si existe service role, demuestra que solo se importa desde módulos
-  `server-only` y nunca llega al bundle ni a logs.
+<context>
+Estado de referencia:
+- 592/592 pruebas pasando.
+- build, lint y typecheck en cero errores.
+- npm audit sin defectos conocidos.
+- 116 hallazgos históricos; no deben presentarse como 116 defectos abiertos.
+- 10 acciones humanas u operacionales pendientes.
+- La autenticación actual usa bcrypt y JWT propio.
+- Supabase se usa principalmente como PostgreSQL y Storage mediante service_role.
+- La cadena actual de migraciones no reconstruye la base completa.
+- La aplicación todavía contiene superficies incompletas o simuladas.
+</context>
 
-FASE C · SUPABASE Y DATOS
-- Revisa esquema, claves, tipos, índices, migraciones idempotentes y políticas.
-- Distingue el modelo actual: Auth/RLS por usuario o servidor con service role.
-- Verifica acceso directo con claves no administrativas solo en una base local o
-  staging autorizado y sin datos reales.
-- Comprueba buckets privados, MIME, tamaño, nombres, propiedad, URLs firmadas y
-  eliminación del objeto junto con su registro.
-- Verifica que listados y operaciones individuales apliquen el mismo alcance.
-- No des por aplicada una migración solo porque existe en Git.
+<source_of_truth>
+1. Lee completamente docs/agentes/PROTOCOLO.md antes de actuar.
+2. Cumple todos los AGENTS.md aplicables.
+3. Para Next.js 16, consulta node_modules/next/dist/docs antes de modificar APIs,
+   proxy, cookies, layouts, caché o componentes cliente/servidor.
+4. El código, las pruebas y el esquema observado prevalecen sobre documentación
+   desactualizada.
+</source_of_truth>
 
-FASE D · REGLAS DE NEGOCIO
-- Pipeline: transiciones válidas, precondiciones y etapas terminales.
-- Comisiones: base, tasa, total, redondeo, estado pagado y edición consistente.
-- Documentos: checklist por tipo de cliente, obligatoriedad y completitud.
-- Solicitudes: propiedad, asignación, cambios de estado y documentos asociados.
-- Respaldos: alcance, retención, error parcial, Storage, copia externa y restore.
-- Usa casos límite chilenos con datos sintéticos: RUT válido/inválido, CLP,
-  fechas y zona `America/Santiago`.
+<non_negotiables>
+- Nunca leas, imprimas o confirmes valores de .env, tokens, cookies, contraseñas,
+  claves privadas ni información personal.
+- No uses datos reales en pruebas, fixtures, logs, seeds o capturas.
+- No ejecutes migraciones, rotaciones de secretos ni cambios desde paneles de
+  producción. Prepara el código y el SQL; una persona autorizada los aplica.
+- No uses git stash, git clean, git checkout ., git add -A, git add . ni
+  git reset --hard.
+- Un objetivo verificable por tarea y un commit por tarea.
+- Usa rutas explícitas en git add.
+- Marca [build] ocupado y [build] libre según el protocolo.
+- No ocultes errores con excepciones globales, mocks permisivos, eslint-disable,
+  any innecesario o reducción artificial de cobertura.
+- No inventes resultados. Distingue siempre entre observado, inferido y pendiente
+  de verificación.
+- Utiliza lenguaje defensivo y de control de calidad: comportamiento esperado,
+  defecto, entrada inesperada y respuesta correspondiente al rol.
+</non_negotiables>
 
-FASE E · TODAS LAS ENTRADAS Y SALIDAS
-- Inventaría cada `request.json()`, `formData()`, query string, webhook y carga.
-- Exige límites de tamaño, esquemas estrictos, catálogos cerrados y mensajes de
-  error sin datos personales.
-- Busca HTML almacenado, URLs, filtros PostgREST construidos como texto, nombres
-  de archivo, redirecciones y contenido enviado a email/WhatsApp.
-- Revisa logs para asegurar que no incluyan cuerpos, credenciales ni identidad.
+<architecture_decisions>
+- Crear entorno local reproducible y un proyecto Supabase de staging separado.
+- Mantener IDs de negocio TEXT y agregar usuarios.auth_user_id UUID.
+- Migrar contraseñas mediante puente just-in-time durante 30 días.
+- Exigir MFA a SUPER_ADMIN y ADMIN.
+- Mantener inicialmente Storage y datos detrás de las APIs del servidor.
+- Introducir RLS por dominios, con denegación predeterminada.
+- Conservar desactivado Realtime hasta probar sus políticas.
+- Ocultar funciones incompletas antes de intentar conectarlas.
+- Usar Cloudflare R2 como destino externo de respaldos.
+- Objetivos operacionales: RPO máximo de 1 hora y RTO máximo de 4 horas.
+</architecture_decisions>
 
-FASE F · INTERFAZ Y REGRESIONES
-- Recorre con navegador en staging: `/login`, rutas públicas, panel, portal,
-  documentos y flujos con dinero.
-- Prueba cada rol y navegación directa, no solo el menú.
-- Detecta datos escritos a mano, cifras simuladas, botones sin API, éxito sin
-  respuesta `2xx`, estados vacíos y errores ocultos.
-- Comprueba teclado, foco, responsive, carga, error y doble envío.
-- No declares validación visual si no hubo navegador disponible.
+<execution_protocol>
+Para cada tarea:
+1. Confirma rama, estado del árbol y protocolo vigente.
+2. Inspecciona implementación, pruebas, tipos, esquema e historial relevante.
+3. Define comportamiento esperado y criterio de aceptación.
+4. Crea o actualiza una prueba que demuestre el comportamiento.
+5. Implementa el cambio mínimo que corrija la causa raíz.
+6. Ejecuta pruebas específicas y luego lint, typecheck, build y suite completa.
+7. Revisa el diff para detectar secretos, PII y cambios ajenos.
+8. Agrega solamente rutas explícitas.
+9. Crea un commit con el formato exigido y Agente: codex.
+10. Sincroniza y publica según docs/agentes/PROTOCOLO.md.
+11. Registra una línea verificable en docs/agentes/codex.md.
+</execution_protocol>
 
-FASE G · ARQUITECTURA Y DEPENDENCIAS
-- Localiza páginas mayores de 700 líneas, duplicación, módulos muertos y dos
-  fuentes de verdad para roles, etapas o columnas.
-- Revisa límites entre `app`, dominio, UI, servidor y clientes externos.
-- Detecta artefactos generados, logs, PHP fuera de `wordpress/` y migraciones
-  divididas entre carpetas.
-- Mide bundle por ruta y confirma que las públicas no carguen dependencias del
-  panel.
-- No actualices dependencias mayores sin una tarea y pruebas específicas.
+<mandatory_workstreams>
+1. Fuente canónica y reproducible del esquema PostgreSQL.
+2. Migraciones aditivas, comprobadas localmente y en staging.
+3. Respaldo externo restaurable y monitoreado.
+4. Migración gradual desde JWT propio hacia Supabase Auth.
+5. MFA administrativo y autorización vigente por solicitud.
+6. RLS y Storage privado comprobados mediante matriz de roles.
+7. Eliminación de estados ficticios y operaciones que aparenten persistencia.
+8. Validación estricta y límites de tamaño en todos los endpoints JSON.
+9. Pruebas de integración, regresión, restauración y navegación por rol.
+</mandatory_workstreams>
 
-REGLA DE HALLAZGO Y CORRECCIÓN
-Para cada comportamiento incorrecto:
-1. Asigna el siguiente `BUG-XXX`.
-2. Crea `docs/hallazgos/BUG-XXX.md` con severidad, archivo, prueba, reproducción,
-   comportamiento esperado, corrección y estado.
-3. Escribe una prueba mínima que falle por la causa real, no por texto frágil si
-   es posible.
-4. Corrige la causa con el menor cambio mantenible.
-5. Ejecuta primero la prueba focal y después todas las compuertas.
-6. Si el arreglo requiere panel, secreto o migración productiva, prepara código
-   y SQL, pero deja la acción humana marcada como pendiente.
-7. Marca `[build] ocupado` en `docs/agentes/codex.md` antes de build y
-   `[build] libre` al terminar.
-8. Commitea y ejecuta `git pull --rebase origin diego && git push origin diego`.
+<finding_policy>
+- No cuentes archivos históricos como defectos actuales.
+- Un defecto nuevo requiere evidencia reproducible y prueba de regresión.
+- Los defectos graves se documentan individualmente usando la plantilla del
+  protocolo: comportamiento esperado, observado, impacto, evidencia, prueba,
+  corrección y estado.
+- No borres la trazabilidad histórica; marca los hallazgos corregidos y
+  verificados.
+</finding_policy>
 
-COMPUERTAS POR TAREA
-- `npm run build`
-- `npm test`
-- `npx eslint <archivos tocados>`
-- `npx tsc --noEmit`
-- `npm audit --audit-level=high`
-- `git diff --check`
+<verification>
+La entrega no está completa hasta demostrar:
+- npm run lint
+- npx tsc --noEmit
+- npm run build
+- npm test
+- npm audit
+- reconstrucción local de Supabase dos veces consecutivas
+- pruebas SQL de RLS para cada rol
+- pruebas del puente de autenticación y MFA
+- restauración de un respaldo en staging dentro del RTO
+- navegación de staging con todos los roles soportados
+</verification>
 
-ENTREGA FINAL
-- No digas “todo seguro”, “cero bugs” ni “producción lista” sin evidencia.
-- Separa: hallazgos históricos, correcciones de código pendientes, acciones
-  humanas, decisiones de producto y deuda arquitectónica.
-- Publica conteos exactos, comandos ejecutados, pruebas HTTP/visuales realmente
-  hechas y límites de la revisión.
-- Entrega una tabla P0/P1/P2, checklist de despliegue, plan de restauración y
-  referencias a archivos con líneas.
-- Si una medición contradice documentación previa, confía en el código y deja
-  registrada la discrepancia.
+<output_contract>
+Después de cada tarea informa:
+- objetivo y resultado;
+- archivos modificados;
+- pruebas y comandos ejecutados;
+- evidencia numérica;
+- riesgos o limitaciones;
+- acción humana pendiente;
+- hash del commit y estado del push.
+
+Si una comprobación falla, detén el commit y reporta la causa exacta.
+</output_contract>
+
+<stop_conditions>
+Detente antes de aplicar un cambio cuando:
+- requiera datos o secretos de producción;
+- exista deriva no explicada entre el esquema remoto y el repositorio;
+- una migración pueda eliminar o transformar datos sin respaldo restaurable;
+- build, typecheck o pruebas no estén en verde;
+- no exista una forma comprobada de reversión;
+- el cambio amplíe permisos respecto del comportamiento vigente.
+</stop_conditions>
 ```
