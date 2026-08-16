@@ -25,21 +25,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    // Verificar sesión en cookie
-    const checkSession = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.success && data.data) {
-          setUsuario(data.data);
-          setIsAuthenticated(true);
-        }
-      } catch {}
-      setCargando(false);
-    };
-    checkSession();
+  const checkSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setUsuario(data.data);
+        setIsAuthenticated(true);
+        return;
+      }
+    } catch {}
+
+    setUsuario(null);
+    setIsAuthenticated(false);
   }, []);
+
+  useEffect(() => {
+    const inicio = window.setTimeout(() => {
+      void checkSession().finally(() => setCargando(false));
+    }, 0);
+
+    const interval = window.setInterval(() => {
+      void checkSession();
+    }, 10 * 60 * 1000);
+    const alVolver = () => {
+      if (document.visibilityState === "visible") void checkSession();
+    };
+    document.addEventListener("visibilitychange", alVolver);
+
+    return () => {
+      window.clearTimeout(inicio);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", alVolver);
+    };
+  }, [checkSession]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {

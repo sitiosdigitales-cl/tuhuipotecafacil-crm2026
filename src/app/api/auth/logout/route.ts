@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { eliminarCookiesSesion } from "@/lib/session-cookie";
 
 export async function POST() {
   const response = NextResponse.json({ success: true });
-  response.cookies.set("crm_token", "", { maxAge: 0, path: "/" });
-  response.cookies.set("auth_token", "", { maxAge: 0, path: "/" });
+  eliminarCookiesSesion(response);
   return response;
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
+import { establecerCookieSesion } from "@/lib/session-cookie";
 
 const MAX_INTENTOS = 5;
 const MINUTOS_BLOQUEO = 15;
@@ -102,26 +103,10 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         usuario: { id: user.id, nombre: user.nombre, apellido: user.apellido, email: user.email, rol: user.rol },
-        token,
       },
     });
 
-    response.cookies.set("crm_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
-
-    // Compatibilidad con cookie antigua
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
+    establecerCookieSesion(response, token);
 
     return response;
   } catch {

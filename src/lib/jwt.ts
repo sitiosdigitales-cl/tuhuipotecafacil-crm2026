@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const JWT_EXPIRES_IN = "24h";
+const JWT_EXPIRES_IN = "30m";
+const JWT_ALGORITHM = "HS256";
+const JWT_AUDIENCE = "tuhuipotecafacil-crm";
+const JWT_ISSUER = "tuhuipotecafacil";
 
 // Se resuelve en cada llamada, no en el ambito de modulo: lanzar al importar
 // romperia `next build`, que corre sin variables de entorno.
@@ -21,7 +24,12 @@ export interface TokenPayload {
 }
 
 export function generarToken(payload: TokenPayload): string {
-  return jwt.sign(payload, obtenerSecreto(), { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, obtenerSecreto(), {
+    algorithm: JWT_ALGORITHM,
+    audience: JWT_AUDIENCE,
+    expiresIn: JWT_EXPIRES_IN,
+    issuer: JWT_ISSUER,
+  });
 }
 
 export function verificarToken(token: string): TokenPayload | null {
@@ -30,7 +38,20 @@ export function verificarToken(token: string): TokenPayload | null {
   // invalido, que es 401.
   const secreto = obtenerSecreto();
   try {
-    return jwt.verify(token, secreto) as TokenPayload;
+    const payload = jwt.verify(token, secreto, {
+      algorithms: [JWT_ALGORITHM],
+      audience: JWT_AUDIENCE,
+      issuer: JWT_ISSUER,
+    });
+    if (
+      typeof payload === "string" ||
+      typeof payload.userId !== "string" ||
+      typeof payload.email !== "string" ||
+      typeof payload.rol !== "string"
+    ) {
+      return null;
+    }
+    return payload as TokenPayload;
   } catch {
     return null;
   }

@@ -59,7 +59,11 @@ describe("rutas fuera del panel después de mover los providers", () => {
     expect(
       screen.getByRole("heading", { name: "Iniciar Sesión" })
     ).toBeTruthy();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/auth/me"));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith("/api/auth/me", {
+        credentials: "include",
+      })
+    );
   });
 
   it("monta /portal-cliente sin los providers del panel", async () => {

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { verificarToken } from "@/lib/jwt";
+import { generarToken, verificarToken } from "@/lib/jwt";
+import {
+  eliminarCookieSesionLegada,
+  eliminarCookiesSesion,
+  establecerCookieSesion,
+  LEGACY_SESSION_COOKIE,
+  SESSION_COOKIE,
+} from "@/lib/session-cookie";
 
 function invalidarSesion(error: string) {
   const response = NextResponse.json(
@@ -8,22 +15,16 @@ function invalidarSesion(error: string) {
     { status: 401 }
   );
 
-  for (const nombre of ["crm_token", "auth_token"]) {
-    response.cookies.set(nombre, "", {
-      httpOnly: true,
-      maxAge: 0,
-      path: "/",
-      sameSite: "lax",
-      secure: true,
-    });
-  }
+  eliminarCookiesSesion(response);
 
   return response;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("crm_token")?.value || request.cookies.get("auth_token")?.value;
+    const token =
+      request.cookies.get(SESSION_COOKIE)?.value ||
+      request.cookies.get(LEGACY_SESSION_COOKIE)?.value;
     if (!token) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
@@ -47,7 +48,17 @@ export async function GET(request: NextRequest) {
       return invalidarSesion("La sesión ya no está vigente");
     }
 
-    return NextResponse.json({ success: true, data });
+    const response = NextResponse.json({ success: true, data });
+    const tokenRenovado = generarToken({
+      userId: data.id,
+      email: data.email,
+      rol: data.rol,
+    });
+    establecerCookieSesion(response, tokenRenovado);
+    if (request.cookies.has(LEGACY_SESSION_COOKIE)) {
+      eliminarCookieSesionLegada(response);
+    }
+    return response;
   } catch {
     return NextResponse.json({ success: false, error: "Error de autenticación" }, { status: 500 });
   }

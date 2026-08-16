@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
 import { requireRole, forbidden } from "@/lib/api-auth";
+import { establecerCookieSesion } from "@/lib/session-cookie";
 
 export async function POST(request: NextRequest) {
   const user = requireRole(request, ["SUPER_ADMIN"]);
@@ -47,26 +48,10 @@ export async function POST(request: NextRequest) {
           email: usuario.email,
           rol: usuario.rol,
         },
-        token,
       },
     });
 
-    // Actualizar cookies
-    response.cookies.set("crm_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
-
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 86400,
-      path: "/",
-    });
+    establecerCookieSesion(response, token);
 
     return response;
   } catch {

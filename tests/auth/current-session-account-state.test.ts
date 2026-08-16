@@ -110,6 +110,8 @@ describe("vigencia de la sesión actual", () => {
     const response = await GET(requestWithRole("EJECUTIVO"));
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("set-cookie")).toBeNull();
+    const setCookie = response.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain("crm_token=");
+    expect(setCookie).toContain("Max-Age=1800");
   });
 });

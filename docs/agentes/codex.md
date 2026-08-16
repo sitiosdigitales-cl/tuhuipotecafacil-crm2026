@@ -691,3 +691,14 @@ enmascara secretos anidados y usa escrituras cerradas. Suite: 343/343.
 
 [calidad · BUG-062] corregido — directorio aplica vistas por rol y el portal
 resuelve únicamente su asesor desde la sesión. Suite completa: 349/349.
+
+[build] ocupado — Codex, BUG-063 · ciclo de vida de la sesión.
+
+[build] libre — Codex, BUG-063 · build y typecheck terminaron en 0.
+
+[build] ocupado — Codex, BUG-063 · revalidación tras ajuste del efecto.
+
+[build] libre — Codex, BUG-063 · revalidación terminó en 0.
+
+[calidad · BUG-063] corregido — JWT de 30 minutos, cookie única `httpOnly`,
+renovación contra cuenta vigente y refresco cada 10 minutos. Suite: 353/353.
