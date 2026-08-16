@@ -1191,3 +1191,14 @@ audit: 0.
 [FASE AUTH · AUTH-02] preparado — modo legacy seguro por defecto, puente JIT
 acotado a 30 días, rollback/reconciliación y tokens solo HttpOnly. Activación
 queda pendiente de completar ciclo de cuentas y MFA. Suite: 632/632; audit: 0.
+
+[FASE AUTH · BUG-123] en curso — CI detectó que la identidad sintética creada
+por Admin API no inicia sesión; se amplía diagnóstico solo con error de datos
+sintéticos, sin credenciales ni PII real.
+
+[build] ocupado — Codex, BUG-123 · diagnóstico del puente Auth local.
+
+[build] libre — Codex, BUG-123 · build terminado.
+
+[FASE AUTH · BUG-123-DIAG] preparado — el ensayo CI informa solo código,
+estado y mensaje truncado del error sintético. Suite: 632/632; audit: 0.

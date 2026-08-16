@@ -26,7 +26,17 @@ let authUserId = null;
 let insertedCrmUser = false;
 
 function assertNoError(error, operation) {
-  if (error) throw new Error(`Falló el ensayo local: ${operation}`);
+  if (!error) return;
+
+  const code = typeof error.code === "string" ? error.code : "sin_codigo";
+  const status = typeof error.status === "number" ? error.status : "sin_estado";
+  const message =
+    typeof error.message === "string"
+      ? error.message.replaceAll(/[\r\n]/g, " ").slice(0, 160)
+      : "sin_mensaje";
+  throw new Error(
+    `Falló el ensayo local: ${operation} (${code}, ${status}, ${message})`,
+  );
 }
 
 try {
