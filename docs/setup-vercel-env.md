@@ -17,6 +17,11 @@
 | `WHATSAPP_VERIFY_TOKEN` | ⚠️ Pendiente | Token para verificar webhook |
 | `WHATSAPP_BUSINESS_ACCOUNT_ID` | ⚠️ Pendiente | ID de la cuenta de WhatsApp Business |
 
+> **Rotación requerida:** versiones anteriores de esta guía y del script manual
+> incluyeron valores concretos para `JWT_SECRET` y `BACKUP_API_KEY`. Como Git
+> conserva historial, esos valores no deben seguir usándose. Genera valores
+> nuevos en Vercel antes del próximo despliegue y elimina los anteriores.
+
 ---
 
 ## Paso 1: Acceder a Vercel
@@ -80,6 +85,19 @@ Este secreto protege el webhook que recibe leads desde formularios Elementor.
 No pongas el secreto en la URL, Elementor ni JavaScript. El plugin lo envía
 desde el servidor en la cabecera `X-Webhook-Secret`.
 
+### 2.4 JWT_SECRET y BACKUP_API_KEY
+
+Genera un valor distinto para cada variable; nunca reutilices uno entre
+autenticación, respaldos y webhooks:
+
+```bash
+openssl rand -hex 32
+```
+
+Guarda cada resultado directamente en Vercel. La documentación, los scripts,
+los mensajes y el repositorio solo deben mencionar el nombre de la variable,
+nunca su valor.
+
 ---
 
 ## Paso 3: Variables Adicionales (Opcionales)
@@ -113,10 +131,10 @@ En Vercel → **Settings** → **Environment Variables**, deberías ver:
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ `https://dcoyjvbhrkarrmetrhiv.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ `sb_publishable_...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ `eyJ...` |
-| `JWT_SECRET` | ✅ `tuhuipotecafacil-secret-key-2026` |
+| `JWT_SECRET` | ✅ Configurado sin mostrar el valor |
 | `RESEND_API_KEY` | ✅ `re_...` |
 | `FROM_EMAIL` | ✅ `CRM <notificaciones@tuhipotecafacil.cl>` |
-| `BACKUP_API_KEY` | ✅ `tuhuipotecafacil-backup-secret-2026` |
+| `BACKUP_API_KEY` | ✅ Configurado sin mostrar el valor |
 | `ELEMENTOR_WEBHOOK_SECRET` | ✅ Configurado sin mostrar el valor |
 
 ---
@@ -158,7 +176,7 @@ curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads" \
 
 ```bash
 curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/backup" \
-  -H "Authorization: Bearer tuhipotecafacil-backup-secret-2026"
+  -H "Authorization: Bearer $BACKUP_API_KEY"
 ```
 
 ---
@@ -188,6 +206,7 @@ curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/backup" \
 ## Checklist Final
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` configurada en Vercel
+- [ ] `JWT_SECRET` y `BACKUP_API_KEY` rotadas con valores distintos
 - [ ] `RESEND_API_KEY` configurada en Vercel
 - [ ] `ELEMENTOR_WEBHOOK_SECRET` configurada en Vercel
 - [ ] Dominio verificado en Resend

@@ -843,3 +843,10 @@ contenido antes de consultar datos o escribir en Storage. Suite: 423/423; audit:
 [calidad · BUG-083] corregido — datos variables codificados, asuntos sin
 caracteres de control, enlaces HTTP(S) y resumen con nodos de texto. Suite:
 432/432; audit: 0.
+
+[build] ocupado — Codex, BUG-084 · secretos versionados y respaldo manual.
+
+[build] libre — Codex, BUG-084 · lint, shell, build y TypeScript terminaron en 0.
+
+[calidad · BUG-084] corregido en repositorio — sin valores concretos ni
+fallback; rotación en Vercel sigue pendiente. Suite: 434/434; audit: 0.
