@@ -786,3 +786,10 @@ con firma de 60 s y revierten objetos huérfanos. Suite: 391/391.
 
 [calidad · BUG-075] preparado — migración para negar roles públicos, vaciar
 Realtime y privatizar Storage; no aplicada a producción. Suite: 393/393.
+
+[build] ocupado — Codex, BUG-076 · dependencias corregidas y auditoría en CI.
+
+[build] libre — Codex, BUG-076 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-076] corregido — Next y cadena transitiva actualizados, paquetes
+obsoletos retirados y auditoría agregada a CI. Suite: 396/396; audit: 0.
