@@ -600,3 +600,10 @@ de leer o crear; seis casos en verde. Suite global mejora a 279/282.
 [build] ocupado — Codex, BUG-050 · validación final del formato.
 
 [build] libre — Codex, BUG-050 · validación final terminó en 0.
+
+[build] ocupado — Codex, BUG-051 · aplicar cartera en lectura y edición de documentos.
+
+[build] libre — Codex, BUG-051 · build y typecheck terminaron en 0.
+
+[calidad · BUG-051] corregido — GET y PUT validan el lead antes de responder
+o modificar; lectura, edición y eliminación relacionadas pasan 3/3. Suite: 281/282.

@@ -4,22 +4,60 @@ import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
+async function obtenerDocumentoYLead(id: string) {
+  const { data: documento, error } = await supabase
+    .from("documentos")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !documento) return { documento: null, lead: null };
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("email, asignadoa")
+    .eq("id", documento.leadid)
+    .single();
+
+  return { documento, lead };
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
-    const { data, error } = await supabase.from("documentos").select("*").eq("id", id).single();
-    if (error || !data) return NextResponse.json({ success: false, error: "No encontrado" }, { status: 404 });
-    return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
+    const { documento, lead } = await obtenerDocumentoYLead(id);
+    if (!documento) {
+      return NextResponse.json(
+        { success: false, error: "No encontrado" },
+        { status: 404 }
+      );
+    }
+    if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
+    return NextResponse.json({
+      success: true,
+      data: fromSupabaseColumns(documento),
+    });
   } catch {
     return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
+    const { documento, lead } = await obtenerDocumentoYLead(id);
+    if (!documento) {
+      return NextResponse.json(
+        { success: false, error: "Documento no encontrado" },
+        { status: 404 }
+      );
+    }
+    if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
+
     const body = await request.json();
     const { data, error } = await supabase
       .from("documentos")
