@@ -579,3 +579,13 @@ establecen que el protocolo gana. Falta habilitar por escrito el modo Codex solo
 [build] ocupado — Codex, registrar transición pendiente a modo solo.
 
 [build] libre — Codex, registro de modo solo · build terminó en 0.
+
+[modo solo] habilitado — Diego autoriza a Codex a asumir código, SQL y pruebas;
+se mantienen commits aislados, validaciones, secretos fuera del repo y no tocar paneles.
+
+[build] ocupado — Codex, MODO-SOLO · actualizar contrato de trabajo.
+
+[build] libre — Codex, MODO-SOLO · build terminó en 0.
+
+[modo solo] contrato actualizado — build verde; suite conserva los nueve casos
+rojos ya registrados en BUG-037, BUG-050 y BUG-051 (273/282).

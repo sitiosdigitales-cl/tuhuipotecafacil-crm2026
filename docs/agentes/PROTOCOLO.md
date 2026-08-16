@@ -6,6 +6,26 @@ contrato entre ambos. **Léelo completo antes de tocar un archivo.**
 Si algo de tu tarea contradice este documento, gana este documento. Si necesitas
 salirte de él, detente y escríbelo en tu bitácora — no improvises.
 
+## 0. MODO CODEX SOLO — vigente
+
+Diego terminó el trabajo en paralelo y autorizó expresamente a Codex a dejar el
+sistema funcional sin esperar a Claude. Mientras esta sección esté vigente:
+
+1. Codex asume ambos roles y puede escribir en todas las zonas de las secciones
+   3 y 10, incluidos `src/**`, `supabase/**`, `prisma/**` y archivos congelados
+   cuando la tarea realmente lo requiera.
+2. Las asignaciones exclusivas a Claude y la prohibición de que Codex modifique
+   código fuente quedan históricas y no bloquean el trabajo. Esta sección
+   prevalece sobre las secciones 1, 3, 4 y las tablas de responsables por fase.
+3. Cada defecto conserva su prueba de regresión. Codex puede demostrarla en
+   rojo y corregir el código en la misma tarea, pero el commit final debe dejar
+   build, typecheck, lint y las pruebas relacionadas en verde.
+4. Se mantienen un commit por tarea, `git pull --rebase`, `git push`, rutas
+   explícitas en `git add`, marcador `[build]`, mensajes `Agente: codex` y todas
+   las prohibiciones sobre secretos, paneles y reescritura destructiva.
+5. Aunque ya no haya otro agente, siguen prohibidos `git stash`, `git clean`,
+   `git checkout .`, `git add -A`, `git add .` y `git reset --hard`.
+
 ---
 
 ## 1. Reparto de roles
