@@ -13,5 +13,17 @@ export function obtenerErrorPoliticaPassword(password: string): string | null {
   if (new TextEncoder().encode(password).byteLength > BCRYPT_MAX_BYTES) {
     return "La contraseña supera el tamaño seguro permitido";
   }
+  if (!/[a-z]/.test(password)) {
+    return "La contraseña debe incluir una letra minúscula";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "La contraseña debe incluir una letra mayúscula";
+  }
+  if (!/\d/.test(password)) {
+    return "La contraseña debe incluir un número";
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return "La contraseña debe incluir un símbolo";
+  }
   return null;
 }

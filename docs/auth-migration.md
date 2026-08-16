@@ -43,6 +43,30 @@ En `supabase/config.toml`, `auth.enable_signup` permanece en `false` para cerrar
 el registro público, mientras `auth.email.enable_signup` permanece en `true`
 para permitir el inicio de sesión de identidades creadas mediante Admin API.
 
+## Ciclo de cuentas
+
+En `bridge` y `required`, las altas administrativas crean primero la identidad
+confirmada de Supabase Auth y después la fila de negocio enlazada. La base deja
+`password` en `NULL`; no conserva un hash duplicado. Si la inserción de negocio
+falla, el servicio intenta retirar la identidad recién creada.
+
+Los cambios de correo, contraseña y estado se sincronizan con la identidad
+enlazada. Ante un rechazo conocido se revierte la actualización de la fila de
+negocio y la interfaz muestra un mensaje neutro. Una cuenta legado sin enlace
+se migra cuando administración fija una contraseña nueva. Desactivar una cuenta
+también suspende su identidad; reactivarla retira esa suspensión.
+
+La eliminación definitiva de una cuenta enlazada permanece bloqueada: la clave
+foránea usa `ON DELETE RESTRICT` y borrar dos sistemas no puede hacerse de forma
+atómica. Por ahora el procedimiento operativo es desactivar. Un proceso de baja
+definitiva necesitará una cola durable y verificación humana antes de habilitar
+esa acción en la interfaz.
+
+`scripts/bootstrap-admin.mjs` sigue el modo configurado. En `legacy` renueva el
+hash bcrypt; en `bridge` o `required` crea, reconcilia o actualiza la identidad
+de Auth, la enlaza con `crm_user_id`, limpia el bloqueo y deja el hash local en
+`NULL`. Nunca toma una identidad cuyo `crm_user_id` pertenezca a otra cuenta.
+
 ## MFA administrativo
 
 En los modos `bridge` y `required`, `SUPER_ADMIN` y `ADMIN` reciben primero una
@@ -61,10 +85,11 @@ staging el enrolamiento y documentar la recuperación de un administrador que
 perdió su autenticador. El código no realiza cambios en el panel ni desactiva
 factores reales automáticamente.
 
-No activar `bridge` todavía en producción: antes deben quedar listos el ciclo
-de altas/cambios de contraseña, MFA administrativo y la validación vigente de
-sesión. El valor por defecto permite desplegar el código sin consultar una
-migración aún no aplicada.
+No activar `bridge` todavía en producción: el ciclo de cuentas y MFA
+administrativo ya están preparados, pero aún faltan la validación vigente de
+sesión en cada solicitud, RLS por dominio y un ensayo autorizado en staging. El
+valor por defecto permite desplegar el código sin consultar una migración aún
+no aplicada.
 
 La aplicación de la migración, la creación de identidades reales y cualquier
 cambio de modo quedan pendientes de staging autorizado.

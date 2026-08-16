@@ -4,6 +4,11 @@ import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import { CrearUsuarioSchema } from "@/modulos/usuarios/validaciones";
+import { obtenerModoSupabaseAuth } from "@/lib/supabase-auth";
+import {
+  crearIdentidadAdministrada,
+  eliminarIdentidadAdministrada,
+} from "@/lib/supabase-auth-accounts";
 
 const MAX_USUARIO_PAYLOAD_BYTES = 8 * 1024;
 
@@ -17,6 +22,15 @@ function invalidPayload(error: unknown) {
   return NextResponse.json(
     { success: false, error: "Solicitud inválida" },
     { status: 400 }
+  );
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505",
   );
 }
 
@@ -120,32 +134,86 @@ export async function POST(request: NextRequest) {
 
   try {
     const { nombre, apellido, email, password, telefono, rol, cargo } = parsedBody.data;
+    const authMode = obtenerModoSupabaseAuth();
 
-    const { data: existente } = await supabase.from("usuarios").select("id").eq("email", email).single();
+    const { data: existente, error: lookupError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+    if (lookupError) {
+      return NextResponse.json(
+        { success: false, error: "No se pudo validar el correo" },
+        { status: 500 },
+      );
+    }
     if (existente) {
       return NextResponse.json({ success: false, error: "Email ya registrado" }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const id = crypto.randomUUID();
+    let authUserId: string | null = null;
+    let storedPassword: string | null = null;
+    if (authMode === "legacy") {
+      storedPassword = await bcrypt.hash(password, 12);
+    } else {
+      const identity = await crearIdentidadAdministrada({
+        crmUserId: id,
+        email,
+        password,
+      });
+      if (identity.status === "email_exists") {
+        return NextResponse.json(
+          { success: false, error: "Email ya registrado" },
+          { status: 409 },
+        );
+      }
+      if (identity.status === "weak_password") {
+        return NextResponse.json(
+          { success: false, error: "La contraseña no cumple la política de acceso" },
+          { status: 400 },
+        );
+      }
+      authUserId = identity.user.id;
+    }
 
     const { data: usuario, error } = await supabase
       .from("usuarios")
       .insert(toSupabaseColumns({
-        id: crypto.randomUUID(),
+        id,
         nombre,
         apellido,
         email,
-        password: hashedPassword,
+        password: storedPassword,
         telefono: telefono || null,
         cargo: cargo || null,
         rol,
         estado: "ACTIVO",
         creadoEn: new Date().toISOString(),
+        ...(authUserId
+          ? {
+              auth_user_id: authUserId,
+              auth_migrated_at: new Date().toISOString(),
+            }
+          : {}),
       }))
       .select("id,nombre,apellido,email,rol,estado,creadoen")
       .single();
 
-    if (error) return NextResponse.json({ success: false, error: "Error al crear usuario" }, { status: 500 });
+    if (error) {
+      if (authUserId) {
+        try {
+          await eliminarIdentidadAdministrada(authUserId);
+        } catch {}
+      }
+      if (isUniqueConstraintError(error)) {
+        return NextResponse.json(
+          { success: false, error: "Email ya registrado" },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ success: false, error: "Error al crear usuario" }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, data: usuario }, { status: 201 });
   } catch {

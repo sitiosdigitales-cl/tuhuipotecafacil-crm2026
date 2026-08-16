@@ -1,11 +1,25 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { from, hash, requireRole } = vi.hoisted(() => ({
+const {
+  actualizarIdentidadAdministrada,
+  crearIdentidadAdministrada,
+  eliminarIdentidadAdministrada,
+  from,
+  hash,
+  obtenerModoSupabaseAuth,
+  requireRole,
+} = vi.hoisted(() => ({
+  actualizarIdentidadAdministrada: vi.fn(),
+  crearIdentidadAdministrada: vi.fn(),
+  eliminarIdentidadAdministrada: vi.fn(),
   from: vi.fn(),
   hash: vi.fn(),
+  obtenerModoSupabaseAuth: vi.fn(),
   requireRole: vi.fn(),
 }));
+
+vi.mock("server-only", () => ({}));
 
 vi.mock("bcryptjs", () => ({
   default: { hash },
@@ -23,6 +37,12 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { from },
   toSupabaseColumns: (row: unknown) => row,
 }));
+vi.mock("@/lib/supabase-auth", () => ({ obtenerModoSupabaseAuth }));
+vi.mock("@/lib/supabase-auth-accounts", () => ({
+  actualizarIdentidadAdministrada,
+  crearIdentidadAdministrada,
+  eliminarIdentidadAdministrada,
+}));
 
 import { POST } from "@/app/api/usuarios/route";
 import { DELETE, PUT } from "@/app/api/usuarios/[id]/route";
@@ -31,7 +51,7 @@ const validUser = {
   apellido: "Pérez",
   email: "Persona@Example.invalid",
   nombre: "Persona",
-  password: "una frase segura de acceso",
+  password: "Una-frase-segura-2026!",
   rol: "EJECUTIVO",
 };
 
@@ -47,12 +67,21 @@ describe("escritura de usuarios", () => {
   beforeEach(() => {
     from.mockReset();
     hash.mockReset();
+    obtenerModoSupabaseAuth.mockReset();
     requireRole.mockReset();
+    actualizarIdentidadAdministrada.mockReset();
+    crearIdentidadAdministrada.mockReset();
+    eliminarIdentidadAdministrada.mockReset();
+    obtenerModoSupabaseAuth.mockReturnValue("legacy");
     requireRole.mockReturnValue({ rol: "SUPER_ADMIN", userId: "admin-uno" });
   });
 
   it.each([
     { body: { ...validUser, password: "muy-corta" }, caseName: "contraseña corta" },
+    { body: { ...validUser, password: "solo-minusculas-2026!" }, caseName: "contraseña sin mayúscula" },
+    { body: { ...validUser, password: "SOLO-MAYUSCULAS-2026!" }, caseName: "contraseña sin minúscula" },
+    { body: { ...validUser, password: "Sin-numeros-suficiente!" }, caseName: "contraseña sin número" },
+    { body: { ...validUser, password: "SinSimboloSeguro2026" }, caseName: "contraseña sin símbolo" },
     { body: { ...validUser, rol: "GERENTE" }, caseName: "rol fuera del catálogo" },
     { body: { ...validUser, email: "correo-invalido" }, caseName: "email inválido" },
   ])("rechaza creación con $caseName", async ({ body }) => {
@@ -148,7 +177,7 @@ describe("escritura de usuarios", () => {
     from
       .mockReturnValueOnce({
         select: vi.fn(() => ({
-          eq: vi.fn(() => ({ single: lookupSingle })),
+          eq: vi.fn(() => ({ maybeSingle: lookupSingle })),
         })),
       })
       .mockReturnValueOnce({ insert });

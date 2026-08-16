@@ -26,4 +26,15 @@ describe("recuperación de la cuenta administradora", () => {
     expect(script).toContain('rol: "SUPER_ADMIN"');
     expect(script).toContain('estado: "ACTIVO"');
   });
+
+  it("sincroniza la recuperación con Supabase Auth fuera del modo legado", () => {
+    const script = source("scripts/bootstrap-admin.mjs");
+
+    expect(script).toContain("SUPABASE_AUTH_MODE");
+    expect(script).toContain("auth.admin.createUser");
+    expect(script).toContain("auth.admin.updateUserById");
+    expect(script).toContain("auth_user_id");
+    expect(script).toContain("auth_migrated_at");
+    expect(script).toContain("password: passwordHash");
+  });
 });

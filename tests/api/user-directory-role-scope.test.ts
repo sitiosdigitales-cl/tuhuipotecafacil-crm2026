@@ -10,6 +10,8 @@ const { eq, from, neq, requireAuth } = vi.hoisted(() => ({
   requireAuth: vi.fn(),
 }));
 
+vi.mock("server-only", () => ({}));
+
 vi.mock("@/lib/api-auth", () => ({
   forbidden: () => new Response(null, { status: 403 }),
   requireAuth,

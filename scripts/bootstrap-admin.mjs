@@ -42,6 +42,14 @@ function validPassword(password, email) {
   return password;
 }
 
+function authMode(env) {
+  const mode = env.SUPABASE_AUTH_MODE?.trim() || "legacy";
+  if (!["legacy", "bridge", "required"].includes(mode)) {
+    throw new Error("SUPABASE_AUTH_MODE no es válido");
+  }
+  return mode;
+}
+
 export function readBootstrapConfig(env = process.env) {
   if (env.BOOTSTRAP_CONFIRM !== CONFIRMATION) {
     throw new Error(`Define BOOTSTRAP_CONFIRM=${CONFIRMATION} para confirmar el cambio`);
@@ -65,26 +73,104 @@ export function readBootstrapConfig(env = process.env) {
     password: validPassword(required(env, "BOOTSTRAP_ADMIN_PASSWORD"), email),
     nombre: validName(required(env, "BOOTSTRAP_ADMIN_NAME"), "BOOTSTRAP_ADMIN_NAME"),
     apellido: validName(required(env, "BOOTSTRAP_ADMIN_LAST_NAME"), "BOOTSTRAP_ADMIN_LAST_NAME"),
+    authMode: authMode(env),
   };
 }
 
-export async function bootstrapAdmin(env = process.env) {
+async function findAuthUserByEmail(supabase, email) {
+  for (let page = 1; page <= 100; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1_000,
+    });
+    if (error) throw new Error("No se pudo consultar el directorio de Auth");
+    const found = data.users.find(
+      (user) => user.email?.toLowerCase() === email.toLowerCase(),
+    );
+    if (found) return found;
+    if (data.users.length < 1_000) return null;
+  }
+  throw new Error("El directorio de Auth excede el límite de recuperación");
+}
+
+async function prepareAuthIdentity(supabase, { crmUserId, authUserId, email, password }) {
+  if (authUserId) {
+    const { error } = await supabase.auth.admin.updateUserById(authUserId, {
+      email,
+      password,
+      email_confirm: true,
+      ban_duration: "none",
+      app_metadata: { crm_user_id: crmUserId },
+    });
+    if (error) throw new Error("No se pudo recuperar la identidad de Auth");
+    return { authUserId, created: false };
+  }
+
+  const created = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    app_metadata: { crm_user_id: crmUserId },
+  });
+  if (!created.error && created.data.user) {
+    return { authUserId: created.data.user.id, created: true };
+  }
+
+  if (!["email_exists", "user_already_exists"].includes(created.error?.code)) {
+    throw new Error("No se pudo crear la identidad de Auth");
+  }
+  const existing = await findAuthUserByEmail(supabase, email);
+  if (!existing || existing.app_metadata?.crm_user_id !== crmUserId) {
+    throw new Error("El correo pertenece a otra identidad de Auth");
+  }
+  const { error } = await supabase.auth.admin.updateUserById(existing.id, {
+    password,
+    email_confirm: true,
+    ban_duration: "none",
+  });
+  if (error) throw new Error("No se pudo recuperar la identidad existente");
+  return { authUserId: existing.id, created: false };
+}
+
+export async function bootstrapAdmin(
+  env = process.env,
+  {
+    clientFactory = createClient,
+    hashPassword = (password) => bcrypt.hash(password, 12),
+  } = {},
+) {
   const config = readBootstrapConfig(env);
-  const supabase = createClient(config.url, config.serviceRoleKey, {
+  const supabase = clientFactory(config.url, config.serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,
       persistSession: false,
     },
   });
-  const passwordHash = await bcrypt.hash(config.password, 12);
 
   const { data: existing, error: lookupError } = await supabase
     .from("usuarios")
-    .select("id")
+    .select(config.authMode === "legacy" ? "id" : "id,auth_user_id")
     .eq("email", config.email)
     .maybeSingle();
   if (lookupError) throw new Error(`No se pudo consultar la cuenta: ${lookupError.message}`);
+
+  const crmUserId = existing?.id || randomUUID();
+  let createdAuthIdentity = false;
+  let authUserId = null;
+  let passwordHash = null;
+  if (config.authMode === "legacy") {
+    passwordHash = await hashPassword(config.password);
+  } else {
+    const identity = await prepareAuthIdentity(supabase, {
+      crmUserId,
+      authUserId: existing?.auth_user_id || null,
+      email: config.email,
+      password: config.password,
+    });
+    authUserId = identity.authUserId;
+    createdAuthIdentity = identity.created;
+  }
 
   const account = {
     nombre: config.nombre,
@@ -95,17 +181,26 @@ export async function bootstrapAdmin(env = process.env) {
     estado: "ACTIVO",
     intentosfallidos: 0,
     suspendidohasta: null,
+    ...(authUserId
+      ? {
+          auth_user_id: authUserId,
+          auth_migrated_at: new Date().toISOString(),
+        }
+      : {}),
   };
 
   const result = existing
     ? await supabase.from("usuarios").update(account).eq("id", existing.id)
     : await supabase.from("usuarios").insert({
-        id: randomUUID(),
+        id: crmUserId,
         ...account,
         creadoen: new Date().toISOString(),
       });
 
   if (result.error) {
+    if (createdAuthIdentity && authUserId) {
+      await supabase.auth.admin.deleteUser(authUserId).catch(() => null);
+    }
     throw new Error(`No se pudo preparar la cuenta: ${result.error.message}`);
   }
   return { created: !existing };

@@ -129,9 +129,12 @@ export default function UsuariosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
+      const data = await res.json().catch(() => null) as { error?: string } | null;
       if (res.ok) {
         setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, estado: nuevoEstado } : u));
         toast.success(nuevoEstado === "ACTIVO" ? "Usuario activado" : "Usuario suspendido");
+      } else {
+        toast.error(data?.error || "No se pudo cambiar el estado");
       }
     } catch {
       toast.error("Error al cambiar estado");
@@ -145,6 +148,7 @@ export default function UsuariosPage() {
     try {
       const url = hardDelete ? `/api/usuarios/${user.id}?hard=true` : `/api/usuarios/${user.id}`;
       const res = await fetch(url, { method: "DELETE", credentials: "include" });
+      const data = await res.json().catch(() => null) as { error?: string } | null;
       if (res.ok) {
         if (hardDelete) {
           setUsuarios((prev) => prev.filter((u) => u.id !== user.id));
@@ -153,8 +157,8 @@ export default function UsuariosPage() {
           setUsuarios((prev) => prev.map((u) => u.id === user.id ? { ...u, estado: "INACTIVO" } : u));
           toast.success(`${user.nombre} desactivado`);
         }
-      } else if (res.status === 403) {
-        toast.error("Solo Super Admin puede eliminar");
+      } else {
+        toast.error(data?.error || "No se pudo actualizar la cuenta");
       }
     } catch {
       toast.error("Error de conexión");
@@ -286,11 +290,12 @@ export default function UsuariosPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: nuevaPassword }),
       });
+      const data = await res.json().catch(() => null) as { error?: string } | null;
       if (res.ok) {
         setModalPasswordOpen(false);
         toast.success(`Contraseña de ${passwordUsuario.nombre} actualizada`);
       } else {
-        setPasswordError("Error al actualizar contraseña");
+        setPasswordError(data?.error || "Error al actualizar contraseña");
       }
     } catch {
       setPasswordError("Error de conexión");
@@ -654,6 +659,7 @@ export default function UsuariosPage() {
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Contraseña *</label>
                 <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder={`${PASSWORD_MIN_CHARACTERS} a ${PASSWORD_MAX_CHARACTERS} caracteres`} minLength={PASSWORD_MIN_CHARACTERS} maxLength={PASSWORD_MAX_CHARACTERS} autoComplete="new-password"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <p className="mt-1 text-[10px] text-slate-400">Incluye mayúscula, minúscula, número y símbolo.</p>
               </div>
               <div>
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono</label>
@@ -776,6 +782,7 @@ export default function UsuariosPage() {
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nueva contraseña *</label>
                 <input type="password" value={nuevaPassword} onChange={(e) => setNuevaPassword(e.target.value)} placeholder={`${PASSWORD_MIN_CHARACTERS} a ${PASSWORD_MAX_CHARACTERS} caracteres`} minLength={PASSWORD_MIN_CHARACTERS} maxLength={PASSWORD_MAX_CHARACTERS} autoComplete="new-password" autoFocus
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <p className="mt-1 text-[10px] text-slate-400">Incluye mayúscula, minúscula, número y símbolo.</p>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">

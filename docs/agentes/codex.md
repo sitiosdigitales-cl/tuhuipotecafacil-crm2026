@@ -1200,6 +1200,19 @@ sintéticos, sin credenciales ni PII real.
 
 [build] libre — Codex, BUG-123 · build terminado.
 
+[FASE AUTH · AUTH-03] verificado — MFA TOTP administrativo, puente Auth y
+reconstrucción doble pasan en CI con 659/659 pruebas.
+
+[build] ocupado — Codex, AUTH-04 · sincronización del ciclo de cuentas.
+
+[build] libre — Codex, AUTH-04 · build terminado.
+
+[FASE AUTH · AUTH-04] preparado — altas, correo, contraseña, estado y
+recuperación administrativa se sincronizan con Supabase Auth en `bridge` y
+`required`, sin hash duplicado; la baja definitiva enlazada queda bloqueada
+hasta contar con un proceso durable. Suite: 686/686; lint/typecheck: 0;
+audit: 0.
+
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 
