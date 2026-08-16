@@ -663,3 +663,10 @@ y roles del módulo en PUT/DELETE. Suite completa: 318/318.
 
 [calidad · BUG-058] corregido — solicitudes nuevas nacen `EN_REVISION`; PUT
 ignora IDs y reserva estado/asignación para administración. Suite: 322/322.
+
+[build] ocupado — Codex, BUG-059 · alcance de conversaciones por participante.
+
+[build] libre — Codex, BUG-059 · build y typecheck terminaron en 0.
+
+[calidad · BUG-059] corregido — conversaciones se limitan por participante,
+rol e identidad de sesión; `SUPER_ADMIN` conserva vista global. Suite: 327/327.

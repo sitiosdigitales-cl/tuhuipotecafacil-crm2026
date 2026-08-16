@@ -39,20 +39,14 @@ export function useConversaciones({ usuarioActualId }: UseConversacionesOptions)
       const res = await fetch(`/api/conversaciones`);
       const json = await res.json() as RespuestaApi<ConversacionApi[]>;
       if (json.success && json.data) {
-        // Para Super Admin mostrar todas, para otros filtrar por participante
-        const filtradas = json.data.map(normalizarConversacion).filter((conversacion) => {
-          const participantes = conversacion.participantes;
-          // Mostrar si el usuario es participante O si es Super Admin
-          return participantes.includes(usuarioActualId) || participantes.length > 0;
-        });
-        setConversaciones(filtradas);
+        setConversaciones(json.data.map(normalizarConversacion));
       }
     } catch {
       setConversaciones([]);
     } finally {
       setCargando(false);
     }
-  }, [usuarioActualId]);
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void cargarConversaciones(), 0);

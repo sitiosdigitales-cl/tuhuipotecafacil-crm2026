@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { normalizarParticipantes } from "@/lib/permisos-conversacion";
+import { COMUNICACIONES_CONFIG } from "@/modulos/comunicaciones";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-    try {
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!COMUNICACIONES_CONFIG.permisos.ver.includes(auth.rol)) {
+    return forbidden();
+  }
+
+  try {
     const { searchParams } = new URL(request.url);
     const participante = searchParams.get("participante");
     const tipo = searchParams.get("tipo");
@@ -12,6 +19,13 @@ export async function GET(request: NextRequest) {
     let query = supabase.from("conversaciones").select("*");
 
     if (tipo) query = query.eq("tipo", tipo);
+    if (auth.rol === "SUPER_ADMIN") {
+      if (participante) {
+        query = query.contains("participantes", [participante]);
+      }
+    } else {
+      query = query.contains("participantes", [auth.userId]);
+    }
 
     const { data, error } = await query;
     if (error) {
@@ -19,24 +33,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    let conversaciones = (data || []).map((c: Record<string, unknown>) => ({
+    const conversaciones = (data || []).map((c: Record<string, unknown>) => ({
       id: c.id,
       nombre: c.nombre,
       tipo: c.tipo,
       descripcion: c.descripcion,
-      participantes: Array.isArray(c.participantes) ? c.participantes : (typeof c.participantes === "string" ? JSON.parse(c.participantes) : []),
+      participantes: normalizarParticipantes(c.participantes),
       mensajesNoLeidos: c.mensajesnoleidos || 0,
       esFijo: c.esfijo || false,
       creadoPor: c.creadopor,
       creadoEn: c.creadoen,
     }));
-
-    // Filtrar por participante si se especifica
-    if (participante) {
-      conversaciones = conversaciones.filter(c => {
-        return c.participantes.includes(participante);
-      });
-    }
 
     return NextResponse.json({ success: true, data: conversaciones });
   } catch (e) {
@@ -46,12 +53,22 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    if (!requireAuth(request)) return unauthorized();
-    try {
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!COMUNICACIONES_CONFIG.permisos.enviar.includes(auth.rol)) {
+    return forbidden();
+  }
+
+  try {
     const body = await request.json();
-    if (!body.nombre || !body.participantes) {
+    if (!body.nombre || !Array.isArray(body.participantes)) {
       return NextResponse.json({ success: false, error: "Nombre y participantes requeridos" }, { status: 400 });
     }
+
+    const participantes = normalizarParticipantes([
+      auth.userId,
+      ...body.participantes,
+    ]);
 
     const { data, error } = await supabase
       .from("conversaciones")
@@ -60,10 +77,10 @@ export async function POST(request: NextRequest) {
         nombre: body.nombre,
         tipo: body.tipo || "DIRECTO",
         descripcion: body.descripcion || null,
-        participantes: body.participantes,
+        participantes,
         mensajesNoLeidos: 0,
         esFijo: body.esFijo || false,
-        creadoPor: body.creadoPor || null,
+        creadoPor: auth.userId,
         creadoEn: new Date().toISOString(),
       }))
       .select()
