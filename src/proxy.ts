@@ -24,6 +24,7 @@ const ACCESO: Array<{ prefijo: string; roles: Rol[] }> = [
   { prefijo: "/integraciones", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/comisiones", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/campanas", roles: ["SUPER_ADMIN", "ADMIN"] },
+  { prefijo: "/biblioteca", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/flujos", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/plantillas", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/triggers", roles: ["SUPER_ADMIN", "ADMIN"] },

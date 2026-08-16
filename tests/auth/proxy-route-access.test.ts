@@ -38,7 +38,7 @@ const ROUTE_ACCESS: Array<{ path: string; roles: Rol[] }> = [
   { path: "/simulador", roles: PANEL_ROLES },
   { path: "/referidos", roles: PANEL_ROLES },
   { path: "/campanas", roles: ADMIN_ROLES },
-  { path: "/biblioteca", roles: PANEL_ROLES },
+  { path: "/biblioteca", roles: ADMIN_ROLES },
   { path: "/flujos", roles: ADMIN_ROLES },
   { path: "/plantillas", roles: ADMIN_ROLES },
   { path: "/triggers", roles: ADMIN_ROLES },
