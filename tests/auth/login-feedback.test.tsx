@@ -94,4 +94,30 @@ describe("respuesta visible del login", () => {
 
     await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/portal-cliente"));
   });
+
+  it.each(["MFA_ENROLL_REQUIRED", "MFA_CHALLENGE_REQUIRED"])(
+    "lleva %s a la verificación en dos pasos",
+    async (code) => {
+      const fetchMock = vi.fn(async (input: string | URL | Request) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url === "/api/auth/me") {
+          return jsonResponse({ success: false, error: "No autenticado" }, 401);
+        }
+        return jsonResponse(
+          {
+            success: false,
+            code,
+            error: "Completa la verificación en dos pasos para continuar.",
+          },
+          202,
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      renderLogin();
+
+      await submitLogin();
+
+      await waitFor(() => expect(routerPush).toHaveBeenCalledWith("/mfa"));
+    },
+  );
 });

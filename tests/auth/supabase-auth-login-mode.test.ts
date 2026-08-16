@@ -8,8 +8,10 @@ const {
   from,
   migrarIdentidadSupabase,
   obtenerModoSupabaseAuth,
+  obtenerRequisitoMfaSupabase,
   puenteSupabaseAuthVigente,
   revocarSesionSupabase,
+  rolRequiereMfa,
   rpc,
 } = vi.hoisted(() => ({
   autenticarIdentidadSupabase: vi.fn(),
@@ -17,8 +19,10 @@ const {
   from: vi.fn(),
   migrarIdentidadSupabase: vi.fn(),
   obtenerModoSupabaseAuth: vi.fn(),
+  obtenerRequisitoMfaSupabase: vi.fn(),
   puenteSupabaseAuthVigente: vi.fn(),
   revocarSesionSupabase: vi.fn(),
+  rolRequiereMfa: vi.fn(),
   rpc: vi.fn(),
 }));
 
@@ -30,6 +34,10 @@ vi.mock("@/lib/supabase-auth", () => ({
   obtenerModoSupabaseAuth,
   puenteSupabaseAuthVigente,
   revocarSesionSupabase,
+}));
+vi.mock("@/lib/supabase-mfa", () => ({
+  obtenerRequisitoMfaSupabase,
+  rolRequiereMfa,
 }));
 
 import { POST } from "@/app/api/auth/login/route";
@@ -83,9 +91,9 @@ function loginRequest() {
   });
 }
 
-function mockQueries(authUserId: string | null) {
+function mockQueries(authUserId: string | null, user = USER) {
   from
-    .mockReturnValueOnce(queryResult({ data: USER, error: null }))
+    .mockReturnValueOnce(queryResult({ data: user, error: null }))
     .mockReturnValueOnce(queryResult({ data: { auth_user_id: authUserId }, error: null }))
     .mockReturnValueOnce(queryResult({ data: null, error: null }));
 }
@@ -97,11 +105,17 @@ beforeEach(() => {
   from.mockReset();
   migrarIdentidadSupabase.mockReset();
   obtenerModoSupabaseAuth.mockReset();
+  obtenerRequisitoMfaSupabase.mockReset();
   puenteSupabaseAuthVigente.mockReset();
   revocarSesionSupabase.mockReset();
+  rolRequiereMfa.mockReset();
   rpc.mockReset();
   compare.mockResolvedValue(true);
+  obtenerRequisitoMfaSupabase.mockResolvedValue("satisfied");
   puenteSupabaseAuthVigente.mockReturnValue(true);
+  rolRequiereMfa.mockImplementation((role: string) =>
+    role === "SUPER_ADMIN" || role === "ADMIN"
+  );
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -203,5 +217,58 @@ describe("modos del login Supabase Auth", () => {
     expect(response.status).toBe(403);
     expect(revocarSesionSupabase).toHaveBeenCalledWith("synthetic-access-token");
     expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it.each([
+    ["enroll", "MFA_ENROLL_REQUIRED"],
+    ["challenge", "MFA_CHALLENGE_REQUIRED"],
+  ] as const)(
+    "retiene la sesión CRM del administrador cuando MFA exige %s",
+    async (requirement, expectedCode) => {
+      obtenerModoSupabaseAuth.mockReturnValue("bridge");
+      mockQueries("10000000-0000-4000-8000-000000000001", {
+        ...USER,
+        rol: "ADMIN",
+      });
+      autenticarIdentidadSupabase.mockResolvedValue({
+        status: "authenticated",
+        authUserId: "10000000-0000-4000-8000-000000000001",
+        session: SESSION,
+      });
+      obtenerRequisitoMfaSupabase.mockResolvedValue(requirement);
+
+      const response = await POST(loginRequest());
+      const payload = await response.json();
+      const cookies = response.headers.get("set-cookie") ?? "";
+
+      expect(response.status).toBe(202);
+      expect(payload.code).toBe(expectedCode);
+      expect(cookies).toContain("crm_token=");
+      expect(cookies).toContain("crm_sb_access=synthetic-access-token");
+      expect(cookies).toContain("Max-Age=0");
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    },
+  );
+
+  it("entrega sesión CRM al administrador que ya alcanzó AAL2", async () => {
+    obtenerModoSupabaseAuth.mockReturnValue("required");
+    mockQueries("10000000-0000-4000-8000-000000000001", {
+      ...USER,
+      rol: "SUPER_ADMIN",
+    });
+    autenticarIdentidadSupabase.mockResolvedValue({
+      status: "authenticated",
+      authUserId: "10000000-0000-4000-8000-000000000001",
+      session: SESSION,
+    });
+
+    const response = await POST(loginRequest());
+    const cookies = response.headers.get("set-cookie") ?? "";
+
+    expect(response.status).toBe(200);
+    expect(obtenerRequisitoMfaSupabase).toHaveBeenCalledWith(
+      "synthetic-access-token",
+    );
+    expect(cookies).toContain("crm_token=");
   });
 });

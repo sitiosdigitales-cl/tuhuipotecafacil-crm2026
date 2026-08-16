@@ -59,9 +59,13 @@ export function eliminarCookieSesionLegada(response: NextResponse): void {
   );
 }
 
-export function eliminarCookiesSesion(response: NextResponse): void {
+export function eliminarCookiesCrm(response: NextResponse): void {
   response.cookies.set(SESSION_COOKIE, "", opcionesCookie(0));
   eliminarCookieSesionLegada(response);
+}
+
+export function eliminarCookiesSesion(response: NextResponse): void {
+  eliminarCookiesCrm(response);
   response.cookies.set(SUPABASE_ACCESS_COOKIE, "", opcionesCookie(0));
   response.cookies.set(SUPABASE_REFRESH_COOKIE, "", opcionesCookie(0));
 }

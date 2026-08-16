@@ -1203,6 +1203,17 @@ sintéticos, sin credenciales ni PII real.
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 
+[FASE AUTH · BUG-123] verificado — puente email/password pasa contra Supabase
+Auth real en CI, incluido reset doble y pgTAP.
+
+[build] ocupado — Codex, AUTH-03 · MFA TOTP obligatorio para administración.
+
+[build] libre — Codex, AUTH-03 · build terminado.
+
+[FASE AUTH · AUTH-03] preparado — `SUPER_ADMIN` y `ADMIN` en modos Supabase
+no reciben sesión CRM antes de TOTP/AAL2; enrolamiento, desafío, UI y ensayo
+real de CI incluidos. Suite: 659/659; lint/typecheck: 0; audit: 0.
+
 [FASE AUTH · BUG-123-DIAG] preparado — el ensayo CI informa solo código,
 estado y mensaje truncado del error sintético. Suite: 632/632; audit: 0.
 

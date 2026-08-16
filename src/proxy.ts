@@ -121,6 +121,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Excluir /api/, /_next/, /favicon y las páginas públicas.
-    "/((?!api/|_next/|favicon|simulador-publico|login|register).*)",
+    "/((?!api/|_next/|favicon|simulador-publico|login|mfa|register).*)",
   ],
 };

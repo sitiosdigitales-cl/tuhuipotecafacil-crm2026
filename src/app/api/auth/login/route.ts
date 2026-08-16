@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import {
+  eliminarCookiesCrm,
   establecerCookiesSupabase,
   establecerCookieSesion,
 } from "@/lib/session-cookie";
@@ -16,6 +17,10 @@ import {
   puenteSupabaseAuthVigente,
   revocarSesionSupabase,
 } from "@/lib/supabase-auth";
+import {
+  obtenerRequisitoMfaSupabase,
+  rolRequiereMfa,
+} from "@/lib/supabase-mfa";
 
 const MAX_LOGIN_PAYLOAD_BYTES = 4 * 1024;
 const LoginInputSchema = z
@@ -234,6 +239,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (authSession && rolRequiereMfa(user.rol)) {
+      const requisitoMfa = await obtenerRequisitoMfaSupabase(
+        authSession.access_token,
+      );
+      if (requisitoMfa !== "satisfied") {
+        await limpiarIntentos(user.id);
+        const code = requisitoMfa === "enroll"
+          ? "MFA_ENROLL_REQUIRED"
+          : "MFA_CHALLENGE_REQUIRED";
+        const response = NextResponse.json(
+          {
+            success: false,
+            code,
+            error: "Completa la verificación en dos pasos para continuar.",
+          },
+          { status: 202 },
+        );
+        eliminarCookiesCrm(response);
+        establecerCookiesSupabase(response, authSession);
+        response.headers.set("Cache-Control", "no-store, max-age=0");
+        return response;
+      }
+    }
+
     await limpiarIntentos(user.id);
 
     const token = generarToken({ userId: user.id, email: user.email, rol: user.rol });
@@ -247,6 +276,7 @@ export async function POST(request: NextRequest) {
 
     establecerCookieSesion(response, token);
     if (authSession) establecerCookiesSupabase(response, authSession);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
 
     return response;
   } catch (error) {

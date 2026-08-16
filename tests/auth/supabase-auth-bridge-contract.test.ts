@@ -59,4 +59,14 @@ describe("contrato del puente de login", () => {
     expect(authSection).toMatch(/enable_signup\s*=\s*false/);
     expect(emailSection).toMatch(/enable_signup\s*=\s*true/);
   });
+
+  it("habilita enrolamiento y verificación TOTP en el entorno local", () => {
+    const config = readFileSync(supabaseConfigPath, "utf8");
+    const totpSection = config.match(
+      /\[auth\.mfa\.totp\]([\s\S]*?)\[auth\.mfa\.phone\]/,
+    )?.[1];
+
+    expect(totpSection).toMatch(/enroll_enabled\s*=\s*true/);
+    expect(totpSection).toMatch(/verify_enabled\s*=\s*true/);
+  });
 });

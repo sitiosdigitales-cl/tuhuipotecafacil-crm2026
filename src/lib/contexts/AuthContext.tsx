@@ -12,6 +12,7 @@ interface Usuario {
 
 interface LoginResult {
   success: boolean;
+  code?: string;
   error?: string;
   usuario?: Usuario;
 }
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return {
         success: false,
+        code: typeof data?.code === "string" ? data.code : undefined,
         error: typeof data?.error === "string"
           ? data.error
           : "No se pudo iniciar sesión. Intenta nuevamente.",

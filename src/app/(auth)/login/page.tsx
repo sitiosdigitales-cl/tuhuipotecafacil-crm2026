@@ -36,6 +36,11 @@ export default function LoginPage() {
           ? "/documentos"
           : "/dashboard";
       router.push(destino);
+    } else if (
+      resultado.code === "MFA_ENROLL_REQUIRED" ||
+      resultado.code === "MFA_CHALLENGE_REQUIRED"
+    ) {
+      router.push("/mfa");
     } else {
       setError(resultado.error || "No se pudo iniciar sesión. Intenta nuevamente.");
       setCargando(false);

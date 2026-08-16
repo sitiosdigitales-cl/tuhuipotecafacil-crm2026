@@ -143,7 +143,7 @@ describe("proxy del panel", () => {
     }
   );
 
-  it.each(["/login", "/register", "/simulador-publico"])(
+  it.each(["/login", "/mfa", "/register", "/simulador-publico"])(
     "no ejecuta el proxy para la ruta pública %s",
     (path) => {
       expect(

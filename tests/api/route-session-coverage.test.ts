@@ -10,6 +10,7 @@ const GUARDIAS_SESION = new Set([
   "authenticateRequest",
   "requireAuth",
   "requireRole",
+  "recuperarContextoMfa",
   "verificarToken",
 ]);
 

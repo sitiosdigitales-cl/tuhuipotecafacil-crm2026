@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -24,6 +24,43 @@ const email = `auth-bridge-${crmUserId}@example.invalid`;
 const password = "Synthetic-auth-bridge-password-2026!";
 let authUserId = null;
 let insertedCrmUser = false;
+
+function decodeBase32(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const normalized = value.toUpperCase().replaceAll(/[^A-Z2-7]/g, "");
+  let bits = 0;
+  let accumulator = 0;
+  const bytes = [];
+
+  for (const character of normalized) {
+    const index = alphabet.indexOf(character);
+    if (index < 0) throw new Error("El secreto TOTP sintético no es Base32");
+    accumulator = (accumulator << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((accumulator >>> bits) & 0xff);
+    }
+  }
+
+  return Buffer.from(bytes);
+}
+
+function currentTotp(secret) {
+  const counter = BigInt(Math.floor(Date.now() / 30_000));
+  const counterBytes = Buffer.alloc(8);
+  counterBytes.writeBigUInt64BE(counter);
+  const digest = createHmac("sha1", decodeBase32(secret))
+    .update(counterBytes)
+    .digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+  return String(binary % 1_000_000).padStart(6, "0");
+}
 
 function assertNoError(error, operation) {
   if (!error) return;
@@ -100,8 +137,33 @@ try {
     throw new Error("La cuenta local no terminó en el estado migrado");
   }
 
+  const enrolled = await auth.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: "Ensayo CI",
+    issuer: "TuHipotecaFacil.cl",
+  });
+  assertNoError(enrolled.error, "crear factor TOTP sintético");
+  if (!enrolled.data || enrolled.data.type !== "totp") {
+    throw new Error("Auth no devolvió el factor TOTP sintético");
+  }
+
+  const verified = await auth.auth.mfa.challengeAndVerify({
+    factorId: enrolled.data.id,
+    code: currentTotp(enrolled.data.totp.secret),
+  });
+  assertNoError(verified.error, "verificar factor TOTP sintético");
+  if (!verified.data) throw new Error("Auth no devolvió la sesión AAL2 sintética");
+
+  const assurance = await auth.auth.mfa.getAuthenticatorAssuranceLevel(
+    verified.data.access_token,
+  );
+  assertNoError(assurance.error, "comprobar nivel AAL2 sintético");
+  if (assurance.data?.currentLevel !== "aal2") {
+    throw new Error("La sesión sintética no alcanzó AAL2");
+  }
+
   const signedOut = await admin.auth.admin.signOut(
-    signedIn.data.session.access_token,
+    verified.data.access_token,
     "global",
   );
   assertNoError(signedOut.error, "revocar la sesión sintética");

@@ -43,6 +43,24 @@ En `supabase/config.toml`, `auth.enable_signup` permanece en `false` para cerrar
 el registro público, mientras `auth.email.enable_signup` permanece en `true`
 para permitir el inicio de sesión de identidades creadas mediante Admin API.
 
+## MFA administrativo
+
+En los modos `bridge` y `required`, `SUPER_ADMIN` y `ADMIN` reciben primero una
+sesión temporal de Supabase. El CRM no emite `crm_token` hasta que esa sesión
+alcanza `aal2` con un factor TOTP. Las cuentas sin factor pasan por `/mfa` para
+escanear el QR; las cuentas enroladas solo ingresan el código de seis dígitos.
+Los factores, desafíos y códigos se validan en Supabase Auth; el navegador no
+recibe la `service_role` ni los tokens en JSON.
+
+El ensayo de CI crea una identidad sintética, enlaza la cuenta, enrola un TOTP,
+genera un código temporal y exige `aal2` antes de limpiar todo. Esto verifica la
+configuración local real, además de las pruebas unitarias.
+
+Antes de activar `bridge` en producción, una persona autorizada debe probar en
+staging el enrolamiento y documentar la recuperación de un administrador que
+perdió su autenticador. El código no realiza cambios en el panel ni desactiva
+factores reales automáticamente.
+
 No activar `bridge` todavía en producción: antes deben quedar listos el ciclo
 de altas/cambios de contraseña, MFA administrativo y la validación vigente de
 sesión. El valor por defecto permite desplegar el código sin consultar una
