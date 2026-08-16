@@ -10,14 +10,17 @@ export async function POST(request: NextRequest) {
   try {
     const resultado = await actualizarTasas();
 
-    return NextResponse.json({
-      success: resultado.exito,
-      data: {
-        registros: resultado.registros,
-        mensaje: resultado.mensaje,
+    return NextResponse.json(
+      {
+        success: resultado.exito,
+        data: {
+          registros: resultado.registros,
+          mensaje: resultado.mensaje,
+        },
+        timestamp: new Date().toISOString(),
       },
-      timestamp: new Date().toISOString(),
-    });
+      { status: resultado.exito ? 200 : 503 }
+    );
   } catch {
     return NextResponse.json(
       { error: "Error al actualizar tasas" },

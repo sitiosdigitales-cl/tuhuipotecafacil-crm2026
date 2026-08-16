@@ -18,8 +18,8 @@ export async function GET(request: Request) {
     });
   } catch {
     return NextResponse.json(
-      { error: "Error al obtener histÃ³rico" },
-      { status: 500 }
+      { success: false, error: "Servicio CMF no configurado" },
+      { status: 503 }
     );
   }
 }

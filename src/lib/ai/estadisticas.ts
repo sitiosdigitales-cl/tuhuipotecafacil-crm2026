@@ -147,6 +147,10 @@ export async function obtenerDatosCMFParaIA(): Promise<string> {
     const histRes = await fetch(`${typeof window !== 'undefined' ? '' : 'http://localhost:3000'}/api/cmf/rates/history?meses=12`);
     const histData = await histRes.json();
 
+    if (!tasaRes.ok || !histRes.ok) {
+      return "\n=== DATOS CMF: No disponibles; no usar estimaciones como datos oficiales ===\n";
+    }
+
     let cmfInfo = "\n=== DATOS DE TASAS CMF ===\n";
 
     if (tasaData.success && tasaData.data) {

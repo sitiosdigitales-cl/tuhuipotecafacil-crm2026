@@ -1234,6 +1234,14 @@ limita la respuesta a 200. Suite: 744/744; build/lint/typecheck: 0; audits: 0.
 eventos aleatorios; muestra solo la bitácora persistida y enlaza cada registro
 con su lead. Suite: 745/745; build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, BUG-132 · tasas CMF sin simulación.
+
+[build] libre — Codex, BUG-132 · build terminado.
+
+[calidad · BUG-132] corregido — endpoints y asistente dejaron de presentar
+tasas fijas como CMF; sin integración oficial responden 503/`SIN_DATOS` y no
+inyectan estimaciones. Suite: 748/748; build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.
