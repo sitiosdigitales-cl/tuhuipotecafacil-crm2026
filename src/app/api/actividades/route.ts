@@ -2,9 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 
+function serializarActividad(actividad: Record<string, unknown>) {
+  return {
+    id: actividad.id,
+    leadId: actividad.leadid,
+    tipo: actividad.tipo,
+    titulo: actividad.titulo,
+    descripcion: actividad.descripcion,
+    fecha: actividad.fecha,
+    usuario: actividad.usuario,
+    usuarioId: actividad.usuarioid,
+    metadata: actividad.metadata,
+  };
+}
+
 export async function GET(request: NextRequest) {
   if (!(await requireAuth(request))) return unauthorized();
-    try {
+  try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
     const limit = parseInt(searchParams.get("limit") || "50");
@@ -21,16 +35,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const actividades = (data || []).map((a: Record<string, unknown>) => ({
-      id: a.id,
-      leadId: a.leadid,
-      tipo: a.tipo,
-      titulo: a.titulo,
-      descripcion: a.descripcion,
-      fecha: a.fecha,
-      usuario: a.usuario,
-      usuarioId: a.usuarioid,
-    }));
+    const actividades = (data || []).map(serializarActividad);
 
     return NextResponse.json({ success: true, data: actividades });
   } catch (e) {
@@ -40,10 +45,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    if (!(await requireAuth(request))) return unauthorized();
-    try {
+  if (!(await requireAuth(request))) return unauthorized();
+  try {
     const body = await request.json();
-    const { leadId, tipo, titulo, descripcion, usuario, usuarioId } = body;
+    const { leadId, tipo, titulo, descripcion, usuario, usuarioId, metadata } = body;
 
     if (!leadId || !tipo || !titulo) {
       return NextResponse.json({ success: false, error: "leadId, tipo y titulo requeridos" }, { status: 400 });
@@ -60,12 +65,21 @@ export async function POST(request: NextRequest) {
         fecha: new Date().toISOString(),
         usuario: usuario || "Sistema",
         usuarioId: usuarioId || null,
+        metadata: metadata || {},
       }))
       .select()
       .single();
 
-    if (error) return NextResponse.json({ success: false, error: "Error al crear actividad" }, { status: 500 });
-    return NextResponse.json({ success: true, data }, { status: 201 });
+    if (error || !data) {
+      return NextResponse.json(
+        { success: false, error: "Error al crear actividad" },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json(
+      { success: true, data: serializarActividad(data) },
+      { status: 201 }
+    );
   } catch {
     return NextResponse.json({ success: false, error: "Error al crear actividad" }, { status: 500 });
   }

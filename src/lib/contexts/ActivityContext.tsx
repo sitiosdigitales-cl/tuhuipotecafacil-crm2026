@@ -14,16 +14,44 @@ export interface Actividad {
   metadata?: Record<string, unknown>;
 }
 
-type ActividadApi = Omit<Actividad, "fecha"> & { fecha: string | Date };
+type ActividadApi = Omit<Actividad, "fecha" | "leadId" | "usuarioId"> & {
+  fecha: string | Date;
+  leadId?: string;
+  leadid?: string;
+  usuarioId?: string;
+  usuarioid?: string;
+};
 
-interface RespuestaActividades {
+interface RespuestaApi<T> {
   success: boolean;
-  data?: ActividadApi[];
+  data?: T;
+  error?: string;
+}
+
+function normalizarActividad(actividad: ActividadApi): Actividad {
+  const {
+    leadid,
+    usuarioid,
+    leadId: leadIdCamel,
+    usuarioId: usuarioIdCamel,
+    ...datos
+  } = actividad;
+  const leadId = leadIdCamel ?? leadid;
+  if (!leadId) throw new Error("La actividad no incluye leadId");
+
+  return {
+    ...datos,
+    leadId,
+    usuarioId: usuarioIdCamel ?? usuarioid,
+    fecha: new Date(actividad.fecha),
+  };
 }
 
 interface ActivityContextType {
   actividades: Actividad[];
-  agregarActividad: (actividad: Omit<Actividad, "id" | "fecha">) => Promise<void>;
+  agregarActividad: (
+    actividad: Omit<Actividad, "id" | "fecha">
+  ) => Promise<Actividad>;
   obtenerActividadesLead: (leadId: string) => Actividad[];
   obtenerActividadesRecientes: (leadId: string, limit?: number) => Actividad[];
 }
@@ -37,13 +65,14 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const cargarActividades = async () => {
       try {
-        const response = await fetch("/api/actividades?limit=200");
-        const data = await response.json() as RespuestaActividades;
-        if (data.success && data.data) {
-          setActividades(data.data.map((actividad) => ({
-            ...actividad,
-            fecha: new Date(actividad.fecha),
-          })));
+        const response = await fetch("/api/actividades?limit=200", {
+          credentials: "include",
+        });
+        const data = (await response.json().catch(() => null)) as
+          | RespuestaApi<ActividadApi[]>
+          | null;
+        if (response.ok && data?.success && data.data) {
+          setActividades(data.data.map(normalizarActividad));
         }
       } catch {
         // Silenciar errores
@@ -53,23 +82,23 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const agregarActividad = useCallback(async (nuevaActividad: Omit<Actividad, "id" | "fecha">) => {
-    // Optimistic update
-    const actividadLocal: Actividad = {
-      ...nuevaActividad,
-      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      fecha: new Date(),
-    };
-    setActividades((prev) => [actividadLocal, ...prev]);
+    const response = await fetch("/api/actividades", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nuevaActividad),
+    });
+    const data = (await response.json().catch(() => null)) as
+      | RespuestaApi<ActividadApi>
+      | null;
 
-    try {
-      await fetch("/api/actividades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevaActividad),
-      });
-    } catch {
-      // La actividad queda en el estado local
+    if (!response.ok || !data?.success || !data.data) {
+      throw new Error(data?.error || "No se pudo registrar la actividad");
     }
+
+    const actividadPersistida = normalizarActividad(data.data);
+    setActividades((prev) => [actividadPersistida, ...prev]);
+    return actividadPersistida;
   }, []);
 
   const obtenerActividadesLead = useCallback((leadId: string) => {

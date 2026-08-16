@@ -218,6 +218,8 @@ export default function LeadsPage() {
           descripcion: `${data.nombre} ${data.apellido} fue actualizado`,
           usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
           usuarioId: usuarioActual?.id || "system",
+        }).catch(() => {
+          toast.warning("El lead se guardó, pero no su actividad");
         });
         toast.success("Lead actualizado", {
           description: `${data.nombre} ${data.apellido} fue actualizado`,
@@ -255,6 +257,8 @@ export default function LeadsPage() {
           descripcion: `${newLead.nombre} ${newLead.apellido} fue agregado al sistema`,
           usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
           usuarioId: usuarioActual?.id || "system",
+        }).catch(() => {
+          toast.warning("El lead se creó, pero no se registró su actividad");
         });
         toast.success("Lead creado", {
           description: `${newLead.nombre} ${newLead.apellido} fue agregado`,

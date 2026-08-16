@@ -1209,6 +1209,15 @@ solo actualizan la interfaz tras confirmación del servidor; IDs persistidos y
 asignaciones estables cubiertos. Suite: 738/738; build/lint/typecheck: 0;
 audits: 0.
 
+[build] ocupado — Codex, BUG-129 · actividades confirmadas por servidor.
+
+[build] libre — Codex, BUG-129 · build terminado.
+
+[calidad · BUG-129] corregido — actividades usan ID y objeto confirmados por
+la API; la ficha de cliente muestra historial real y los fallos secundarios se
+informan sin falsear la acción principal. Suite: 741/741;
+build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

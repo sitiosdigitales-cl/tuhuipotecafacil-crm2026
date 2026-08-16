@@ -50,28 +50,15 @@ import {
 import type { Lead, DocumentoLead, SituacionLaboral, Etapa } from "@/tipos";
 import { obtenerDocumentosCompletos, buscarDocSubido } from "@/modulos/documentos/config";
 import { DocumentoChecklistRow } from "@/componentes/documentos/DocumentoChecklistRow";
+import {
+  formatearTiempoRelativo,
+  getIconoActividad,
+  useActivities,
+} from "@/lib/contexts/ActivityContext";
 
 type DocumentoApi = Omit<DocumentoLead, "creadoEn"> & {
   creadoEn?: string | Date;
 };
-
-interface ActividadCliente {
-  id: string;
-  tipo: string;
-  titulo: string;
-  descripcion: string;
-  fecha: Date;
-  usuario: string;
-}
-
-interface NuevaActividadCliente {
-  leadId: string;
-  tipo: string;
-  titulo: string;
-  descripcion: string;
-  usuario: string;
-  usuarioId?: string;
-}
 
 interface AsesorAsignado {
   id: string;
@@ -109,12 +96,25 @@ const PASOS_PROGRESO = [
   { paso: 6, label: "Aprobado", etapa: "APROBADO" as Etapa },
 ];
 
+const ICONOS_ACTIVIDAD: Record<string, typeof Clock> = {
+  Phone,
+  Mail,
+  MessageSquare,
+  FileText,
+  Calendar,
+  Clock,
+  CheckCircle: Check,
+  ChevronRight: TrendingUp,
+  Edit,
+};
+
 export default function ClientePerfilPage() {
   const router = useRouter();
   const routeParams = useParams();
   const id = routeParams.id as string;
   const { actualizarLead } = useLeads();
   const { usuarioActual } = useUser();
+  const { agregarActividad, obtenerActividadesLead } = useActivities();
   const [lead, setLead] = useState<Lead | null>(null);
   const [cargando, setCargando] = useState(true);
   const [tabActiva, setTabActiva] = useState("resumen");
@@ -232,10 +232,7 @@ export default function ClientePerfilPage() {
     }
   };
 
-  const agregarActividad = (actividad: NuevaActividadCliente) => { void actividad; };
-  const actividades: ActividadCliente[] = [];
-  const getIconoActividad = () => ({ icono: Clock, color: "text-slate-500", bg: "bg-slate-50" });
-  const formatearTiempoRelativo = (fecha: Date) => fecha.toLocaleDateString("es-CL");
+  const actividades = lead ? obtenerActividadesLead(lead.id) : [];
 
   if (cargando) {
     return (
@@ -291,37 +288,43 @@ export default function ClientePerfilPage() {
   const abrirWhatsApp = () => {
     const telefono = lead.telefono?.replace(/\s/g, "").replace("+", "");
     window.open(`https://wa.me/56${telefono?.replace(/^56/, "")}`, "_blank");
-    agregarActividad({
+    void agregarActividad({
       leadId: lead.id,
       tipo: "whatsapp",
       titulo: "Mensaje de WhatsApp",
       descripcion: `Se abrió WhatsApp para contactar a ${lead.nombre}`,
       usuario: usuarioActual?.nombre || "Sistema",
       usuarioId: usuarioActual?.id,
+    }).catch(() => {
+      toast.warning("WhatsApp se abrió, pero no se registró la actividad");
     });
   };
 
   const abrirEmail = () => {
     window.open(`mailto:${lead.email}`, "_blank");
-    agregarActividad({
+    void agregarActividad({
       leadId: lead.id,
       tipo: "email",
       titulo: "Email enviado",
       descripcion: `Se abrió cliente de correo para ${lead.email}`,
       usuario: usuarioActual?.nombre || "Sistema",
       usuarioId: usuarioActual?.id,
+    }).catch(() => {
+      toast.warning("El correo se abrió, pero no se registró la actividad");
     });
   };
 
   const llamar = () => {
     window.open(`tel:${lead.telefono}`, "_blank");
-    agregarActividad({
+    void agregarActividad({
       leadId: lead.id,
       tipo: "llamada",
       titulo: "Llamada telefónica",
       descripcion: `Llamada a ${lead.telefono}`,
       usuario: usuarioActual?.nombre || "Sistema",
       usuarioId: usuarioActual?.id,
+    }).catch(() => {
+      toast.warning("La llamada se abrió, pero no se registró la actividad");
     });
   };
 
@@ -533,8 +536,8 @@ export default function ClientePerfilPage() {
               </h3>
               <div className="space-y-3">
                 {actividades.slice(0, 5).map((actividad) => {
-                  const configIcono = getIconoActividad();
-                  const IconoAct = configIcono.icono;
+                  const configIcono = getIconoActividad(actividad.tipo);
+                  const IconoAct = ICONOS_ACTIVIDAD[configIcono.icono] || Clock;
                   return (
                     <div key={actividad.id} className="flex items-start gap-3">
                       <div className={`w-8 h-8 ${configIcono.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -655,8 +658,8 @@ export default function ClientePerfilPage() {
           </h3>
           <div className="space-y-4">
             {actividades.map((actividad, idx) => {
-              const configIcono = getIconoActividad();
-              const IconoAct = configIcono.icono;
+              const configIcono = getIconoActividad(actividad.tipo);
+              const IconoAct = ICONOS_ACTIVIDAD[configIcono.icono] || Clock;
               return (
                 <div key={actividad.id} className="flex gap-4">
                   <div className="flex flex-col items-center">

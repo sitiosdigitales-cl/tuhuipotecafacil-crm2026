@@ -578,6 +578,8 @@ export default function PipelinePage() {
         descripcion: `${leadMovido.nombre} ${leadMovido.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino}`,
         usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
         usuarioId: usuarioActual?.id || "system",
+      }).catch(() => {
+        toast.warning("La etapa cambió, pero no se registró su actividad");
       });
 
       toast.success(`Lead movido a ${nombreEtapaDestino}`, {
@@ -615,6 +617,8 @@ export default function PipelinePage() {
         descripcion: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino} (avance forzado)`,
         usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
         usuarioId: usuarioActual?.id || "system",
+      }).catch(() => {
+        toast.warning("El avance se guardó, pero no su actividad");
       });
 
       toast.success(`Avance forzado a ${nombreEtapaDestino}`, {
