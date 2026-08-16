@@ -37,6 +37,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { useTareaCount } from "@/modulos/tareas";
 import { LogOut } from "lucide-react";
 import type { Rol } from "@/tipos";
+import { toast } from "sonner";
 
 interface MenuItem {
   label: string;
@@ -266,9 +267,13 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
       {/* Botón Cerrar Sesión */}
       <div className="px-3 pb-2">
         <button
-          onClick={() => {
-            logout();
-            router.push("/login");
+          onClick={async () => {
+            if (await logout()) {
+              router.replace("/login");
+              router.refresh();
+              return;
+            }
+            toast.error("No se pudo cerrar la sesión. Intenta nuevamente.");
           }}
           className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
         >

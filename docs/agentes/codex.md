@@ -1011,3 +1011,10 @@ no presenta controles sin persistencia. Suite: 510/510; audit: 0.
 
 [calidad · BUG-107] corregido — el token de Google no persiste en Web Storage
 ni aparece en respuestas completas de log. Suite: 512/512; audit: 0.
+
+[build] ocupado — Codex, BUG-108 · cierre de sesión confirmado por servidor.
+
+[build] libre — Codex, BUG-108 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-108] corregido — la UI solo limpia y redirige tras confirmar
+que el servidor eliminó la sesión. Suite: 514/514; audit: 0.

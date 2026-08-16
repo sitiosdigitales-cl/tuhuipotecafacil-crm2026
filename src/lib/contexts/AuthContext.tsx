@@ -20,7 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   usuario: Usuario | null;
   login: (email: string, password: string) => Promise<LoginResult>;
-  logout: () => void;
+  logout: () => Promise<boolean>;
   cargando: boolean;
 }
 
@@ -95,10 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    setUsuario(null);
-    setIsAuthenticated(false);
+  const logout = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.success) return false;
+
+      setUsuario(null);
+      setIsAuthenticated(false);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   // Sin useMemo, este objeto es nuevo en cada render y React, que compara por

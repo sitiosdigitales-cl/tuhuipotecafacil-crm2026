@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { ROLES_CONFIG } from "@/tipos";
 import { CampanaNotificaciones } from "@/componentes/notificaciones/CampanaNotificaciones";
 import { CommandPalette } from "@/components/ui/command-palette";
+import { toast } from "sonner";
 
 interface BarraSuperiorProps {
   onMenuClick?: () => void;
@@ -178,7 +179,15 @@ export function BarraSuperior({ onMenuClick, onPanelClick, panelColapsado }: Bar
                   </button>
                   <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
                   <button
-                    onClick={() => { logout(); setMostrarUsuario(false); }}
+                    onClick={async () => {
+                      setMostrarUsuario(false);
+                      if (await logout()) {
+                        router.replace("/login");
+                        router.refresh();
+                        return;
+                      }
+                      toast.error("No se pudo cerrar la sesión. Intenta nuevamente.");
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <LogOut size={14} /> Cerrar Sesión
