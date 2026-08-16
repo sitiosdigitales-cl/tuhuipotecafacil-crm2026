@@ -18,6 +18,7 @@ const EXCEPCIONES_SIN_SESION = new Map<string, string>([
   ["/api/auth/logout#POST", "elimina las cookies de sesión"],
   ["/api/backup#POST", "usa la clave del proceso automático"],
   ["/api/backup#DELETE", "usa la clave del proceso automático"],
+  ["/api/backup/cron#GET", "usa CRON_SECRET de Vercel"],
   ["/api/cmf/rates#GET", "publica tasas de mercado"],
   ["/api/cmf/rates/history#GET", "publica tasas históricas"],
   ["/api/cmf/status#GET", "publica el estado del servicio CMF"],

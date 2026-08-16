@@ -5,7 +5,7 @@
   "regions": ["gru1"],
   "crons": [
     {
-      "path": "/api/backup",
+      "path": "/api/backup/cron",
       "schedule": "0 2 * * *"
     }
   ]

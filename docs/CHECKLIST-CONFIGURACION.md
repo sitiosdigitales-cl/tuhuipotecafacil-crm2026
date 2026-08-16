@@ -6,8 +6,9 @@
 - [x] API de backups funcional (`/api/backup`)
 - [x] Script de backup manual (`scripts/backup-manual.sh`)
 - [x] Página de UI para gestionar backups (`/backups`)
-- [x] Bucket de backups en Supabase
-- [x] Variable `BACKUP_API_KEY` configurada
+- [x] Ruta automática compatible con Vercel Cron (`/api/backup/cron`)
+- [ ] Bucket `backups` verificado en Supabase
+- [ ] Variables `BACKUP_API_KEY` y `CRON_SECRET` verificadas en Vercel
 
 ### Tablas de Base de Datos
 - [x] Script SQL unificado creado (`prisma/run-all-pending.sql`)
@@ -43,6 +44,7 @@ Ir a Vercel → Settings → Environment Variables y agregar:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → service_role |
 | `RESEND_API_KEY` | Resend.com → API Keys |
 | `ELEMENTOR_WEBHOOK_SECRET` | Generar con `openssl rand -hex 32` |
+| `CRON_SECRET` | Generar con `openssl rand -hex 32` |
 
 Después: Redesplegar el proyecto en Vercel.
 

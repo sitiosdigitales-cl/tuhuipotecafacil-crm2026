@@ -11,6 +11,7 @@
 | `RESEND_API_KEY` | ⚠️ Pendiente | API key de Resend (emails) |
 | `FROM_EMAIL` | ✅ Configurada | Email remitente |
 | `BACKUP_API_KEY` | ✅ Configurada | Key para API de backups |
+| `CRON_SECRET` | ⚠️ Pendiente | Firma automática de Vercel Cron |
 | `ELEMENTOR_WEBHOOK_SECRET` | ⚠️ Pendiente | Secret para webhooks |
 | `WHATSAPP_PHONE_NUMBER_ID` | ⚠️ Pendiente | ID del número de teléfono en Meta |
 | `WHATSAPP_ACCESS_TOKEN` | ⚠️ Pendiente | Token de acceso de WhatsApp Business |
@@ -85,7 +86,7 @@ Este secreto protege el webhook que recibe leads desde formularios Elementor.
 No pongas el secreto en la URL, Elementor ni JavaScript. El plugin lo envía
 desde el servidor en la cabecera `X-Webhook-Secret`.
 
-### 2.4 JWT_SECRET y BACKUP_API_KEY
+### 2.4 JWT_SECRET, BACKUP_API_KEY y CRON_SECRET
 
 Genera un valor distinto para cada variable; nunca reutilices uno entre
 autenticación, respaldos y webhooks:
@@ -93,6 +94,10 @@ autenticación, respaldos y webhooks:
 ```bash
 openssl rand -hex 32
 ```
+
+`CRON_SECRET` debe tener al menos 16 caracteres; usa también 32 bytes aleatorios
+para mantener una política uniforme. Vercel lo envía automáticamente como
+`Authorization: Bearer ...` al ejecutar `/api/backup/cron`.
 
 Guarda cada resultado directamente en Vercel. La documentación, los scripts,
 los mensajes y el repositorio solo deben mencionar el nombre de la variable,
@@ -135,6 +140,7 @@ En Vercel → **Settings** → **Environment Variables**, deberías ver:
 | `RESEND_API_KEY` | ✅ `re_...` |
 | `FROM_EMAIL` | ✅ `CRM <notificaciones@tuhipotecafacil.cl>` |
 | `BACKUP_API_KEY` | ✅ Configurado sin mostrar el valor |
+| `CRON_SECRET` | ✅ Configurado sin mostrar el valor |
 | `ELEMENTOR_WEBHOOK_SECRET` | ✅ Configurado sin mostrar el valor |
 
 ---
@@ -179,6 +185,10 @@ curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/backup" \
   -H "Authorization: Bearer $BACKUP_API_KEY"
 ```
 
+Desde el panel, una sesión `ADMIN` o `SUPER_ADMIN` también puede crear y
+eliminar exportaciones. Verifica además en Vercel → Cron Jobs que
+`/api/backup/cron` tenga ejecuciones exitosas.
+
 ---
 
 ## Troubleshooting
@@ -198,15 +208,16 @@ curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/backup" \
 ### Los backups fallan
 
 1. Verifica que `SUPABASE_SERVICE_ROLE_KEY` esté configurada
-2. Verifica que el bucket `backups` exista en Supabase
-3. Revisa los logs en Vercel → **Logs**
+2. Verifica que `BACKUP_API_KEY` y `CRON_SECRET` sean valores distintos
+3. Verifica que el bucket `backups` exista en Supabase
+4. Revisa los logs de la ruta `/api/backup/cron` en Vercel
 
 ---
 
 ## Checklist Final
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` configurada en Vercel
-- [ ] `JWT_SECRET` y `BACKUP_API_KEY` rotadas con valores distintos
+- [ ] `JWT_SECRET`, `BACKUP_API_KEY` y `CRON_SECRET` configuradas con valores distintos
 - [ ] `RESEND_API_KEY` configurada en Vercel
 - [ ] `ELEMENTOR_WEBHOOK_SECRET` configurada en Vercel
 - [ ] Dominio verificado en Resend

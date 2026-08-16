@@ -885,3 +885,10 @@ esquemas antes de todo acceso a datos. Suite: 451/451; audit: 0.
 
 [calidad · BUG-089] corregido — un único portal autenticado, URL productiva
 validada y confirmaciones acordes al canal. Suite: 454/454; audit: 0.
+
+[build] ocupado — Codex, BUG-090 · ejecución manual y automática de respaldos.
+
+[build] libre — Codex, BUG-090 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-090] corregido en código — panel y cron ejecutan la misma
+exportación, sin aceptar resultados parciales. Suite: 460/460; audit: 0.

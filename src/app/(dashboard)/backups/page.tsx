@@ -21,7 +21,7 @@ interface Backup {
 }
 
 async function obtenerBackups(signal?: AbortSignal): Promise<Backup[]> {
-  const response = await fetch("/api/backup", { signal });
+  const response = await fetch("/api/backup", { credentials: "include", signal });
   const data = await response.json().catch(() => null);
 
   if (!response.ok || !data?.success) {
@@ -75,7 +75,10 @@ export default function BackupsPage() {
   const createBackup = async () => {
     setCreating(true);
     try {
-      const response = await fetch("/api/backup", { method: "POST" });
+      const response = await fetch("/api/backup", {
+        credentials: "include",
+        method: "POST",
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -96,6 +99,7 @@ export default function BackupsPage() {
 
     try {
       const response = await fetch(`/api/backup?file=${fileName}`, {
+        credentials: "include",
         method: "DELETE",
       });
       const data = await response.json();
@@ -141,10 +145,10 @@ export default function BackupsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                Respaldo de Base de Datos
+                Exportaciones de Contingencia
               </h1>
               <p className="text-sm text-slate-500">
-                Gestiona los respaldos automáticos del CRM
+                Gestiona exportaciones automáticas de leads y documentos
               </p>
             </div>
           </div>
@@ -158,7 +162,7 @@ export default function BackupsPage() {
                 <HardDrive size={20} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Total Respaldo</p>
+                <p className="text-sm text-slate-500">Total Exportaciones</p>
                 <p className="text-xl font-bold text-slate-900">
                   {backups.length}
                 </p>
@@ -172,7 +176,7 @@ export default function BackupsPage() {
                 <CheckCircle size={20} className="text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Último Respaldo</p>
+                <p className="text-sm text-slate-500">Última Exportación</p>
                 <p className="text-lg font-bold text-slate-900">
                   {/* Con la consulta fallida no se afirma "Ninguno": eso se
                       lee como "no hay respaldos" y es justo lo que no sabemos. */}
@@ -193,7 +197,7 @@ export default function BackupsPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Retención</p>
-                <p className="text-xl font-bold text-slate-900">5 días</p>
+                <p className="text-xl font-bold text-slate-900">5 archivos</p>
               </div>
             </div>
           </div>
@@ -207,7 +211,7 @@ export default function BackupsPage() {
                 Acciones
               </h2>
               <p className="text-sm text-slate-500">
-                Crea un respaldo manual de leads y documentos
+                Crea una exportación manual de leads y documentos
               </p>
             </div>
             <div className="flex gap-3">
@@ -320,9 +324,9 @@ export default function BackupsPage() {
             <div>
               <h4 className="font-medium text-amber-900">Información</h4>
               <ul className="mt-2 text-sm text-amber-700 space-y-1">
-                <li>• Los respaldos incluyen leads y documentos</li>
-                <li>• Se guardan automáticamente en Supabase Storage</li>
-                <li>• Se mantienen solo los últimos 5 días (retención automática)</li>
+                <li>• Las exportaciones incluyen filas de leads y documentos</li>
+                <li>• No incluyen el esquema SQL ni los archivos físicos del bucket</li>
+                <li>• Se guardan en Supabase Storage y se conservan 5 archivos</li>
                 <li>• Para respaldo manual, ejecuta: <code className="bg-amber-100 px-1 rounded">./scripts/backup-manual.sh</code></li>
               </ul>
             </div>
