@@ -77,3 +77,24 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+
+  database:
+    name: database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start local Supabase
+        run: npm run db:start >/dev/null
+      - name: Rebuild schema twice
+        run: |
+          npm run db:reset
+          npm run db:reset
+      - name: Stop local Supabase
+        if: always()
+        run: npm run db:stop >/dev/null 2>&1 || true

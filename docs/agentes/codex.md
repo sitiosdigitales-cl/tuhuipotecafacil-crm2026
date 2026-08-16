@@ -1111,3 +1111,10 @@ hashes; la rotación productiva queda como acción humana. Suite: 593/593; audit
 
 [FASE DB · DB-03] hecho — baseline sin datos crea 27 tablas en dos bases
 PostgreSQL aisladas; falta contrastarla con staging autorizado. Suite: 595/595; audit: 0.
+
+[build] ocupado — Codex, DB-06 · reset real de Supabase en CI.
+
+[build] libre — Codex, DB-06 · build, suite, lint y TypeScript en verde.
+
+[FASE DB · DB-06] preparado — CI levantará Supabase y ejecutará dos resets
+reales por cada push. Suite local: 595/595; audit: 0.
