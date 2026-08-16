@@ -997,3 +997,10 @@ confirma cambios de pago mediante la API. Suite: 507/507; audit: 0.
 
 [calidad · BUG-105] corregido — las campañas reciben fechas válidas para
 ordenar y medir su periodo. Suite: 508/508; audit: 0.
+
+[build] ocupado — Codex, BUG-106 · campañas sin métricas simuladas.
+
+[build] libre — Codex, BUG-106 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-106] corregido — campañas calcula sus métricas desde la API y
+no presenta controles sin persistencia. Suite: 510/510; audit: 0.

@@ -1,851 +1,491 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  DollarSign,
+  Eye,
+  FileText,
+  Loader2,
   Mail,
   MessageSquare,
-  Send,
-  Users,
-  User,
-  Eye,
   MousePointerClick,
-  DollarSign,
-  Calendar,
-  Clock,
-  CheckCircle,
-  Pause,
-  Play,
-  Plus,
-  Search,
-  Download,
-  Target,
-  Edit,
-  FileText,
+  RefreshCw,
+  Send,
   Smartphone,
+  Target,
+  Users,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 import { formatoMoneda, formatoMonedaAbreviado } from "@/lib/utils";
 
-// Datos mock de campañas (fechas fijas para evitar hidratación)
-export const CAMPANAS_MOCK = [
-  {
-    id: "c1",
-    nombre: "Black Friday Hipotecario 2024",
-    tipo: "EMAIL",
-    estado: "ACTIVA",
-    descripcion: "Campaña de ofertas especiales para crédito hipotecario durante el Black Friday",
-    fechaInicio: new Date(2026, 5, 24),
-    fechaFin: new Date(2026, 6, 24),
-    presupuesto: 2500000,
-    gastado: 1800000,
-    audiencia: 5000,
-    enviados: 4200,
-    abiertos: 1680,
-    clics: 420,
-    conversiones: 42,
-    ingresos: 6300000000,
-    roi: 250,
-    segmento: "Leads fríos + Clientes existentes",
-    plantilla: "Oferta Especial Black Friday",
-    creador: "Andrés Pérez",
-    creadoEn: new Date(2026, 5, 19),
-  },
-  {
-    id: "c2",
-    nombre: "Reactivación Leads Q4",
-    tipo: "WHATSAPP",
-    estado: "ACTIVA",
-    descripcion: "Reactivar leads que no han respondido en los últimos 90 días",
-    fechaInicio: new Date(2026, 5, 29),
-    fechaFin: new Date(2026, 6, 29),
-    presupuesto: 1500000,
-    gastado: 800000,
-    audiencia: 3200,
-    enviados: 2800,
-    abiertos: 2240,
-    clics: 560,
-    conversiones: 84,
-    ingresos: 4200000000,
-    roi: 280,
-    segmento: "Leads sin contacto 90+ días",
-    plantilla: "Reactivación Especial",
-    creador: "Carolina Muñoz",
-    creadoEn: new Date(2026, 5, 26),
-  },
-  {
-    id: "c3",
-    nombre: "Programa de Referidos Premium",
-    tipo: "REFERIDO",
-    estado: "ACTIVA",
-    descripcion: "Incentivar a clientes actuales para referir nuevos prospectos",
-    fechaInicio: new Date(2026, 5, 4),
-    fechaFin: new Date(2026, 7, 3),
-    presupuesto: 5000000,
-    gastado: 3200000,
-    audiencia: 1200,
-    enviados: 1200,
-    abiertos: 960,
-    clics: 480,
-    conversiones: 96,
-    ingresos: 7200000000,
-    roi: 225,
-    segmento: "Clientes satisfechos",
-    plantilla: "Invitación Referidos",
-    creador: "Diego Silva",
-    creadoEn: new Date(2026, 4, 30),
-  },
-  {
-    id: "c4",
-    nombre: "Navidad Hipotecaria 2024",
-    tipo: "EMAIL",
-    estado: "PROGRAMADA",
-    descripcion: "Campaña navideña con tasas preferenciales y beneficios exclusivos",
-    fechaInicio: new Date(2026, 6, 19),
-    fechaFin: new Date(2026, 7, 18),
-    presupuesto: 3000000,
-    gastado: 0,
-    audiencia: 8000,
-    enviados: 0,
-    abiertos: 0,
-    clics: 0,
-    conversiones: 0,
-    ingresos: 0,
-    roi: 0,
-    segmento: "Base completa de leads",
-    plantilla: "Oferta Navideña",
-    creador: "Valentina Torres",
-    creadoEn: new Date(2026, 6, 2),
-  },
-  {
-    id: "c5",
-    nombre: "Seguimiento Post Aprobación",
-    tipo: "EMAIL",
-    estado: "PAUSADA",
-    descripcion: "Nurturing para leads que están en evaluación bancaria",
-    fechaInicio: new Date(2026, 5, 14),
-    fechaFin: new Date(2026, 5, 29),
-    presupuesto: 800000,
-    gastado: 650000,
-    audiencia: 1500,
-    enviados: 1200,
-    abiertos: 840,
-    clics: 252,
-    conversiones: 38,
-    ingresos: 2850000000,
-    roi: 340,
-    segmento: "Leads en evaluación bancaria",
-    plantilla: "Seguimiento Crediticio",
-    creador: "Javier Morales",
-    creadoEn: new Date(2026, 5, 9),
-  },
-  {
-    id: "c6",
-    nombre: "Lanzamiento App Móvil",
-    tipo: "SMS",
-    estado: "FINALIZADA",
-    descripcion: "Promoción de descarga de la nueva aplicación móvil",
-    fechaInicio: new Date(2026, 4, 20),
-    fechaFin: new Date(2026, 5, 19),
-    presupuesto: 500000,
-    gastado: 480000,
-    audiencia: 10000,
-    enviados: 9500,
-    abiertos: 5700,
-    clics: 1900,
-    conversiones: 190,
-    ingresos: 950000000,
-    roi: 98,
-    segmento: "Todos los leads activos",
-    plantilla: "Descarga App",
-    creador: "Andrés Pérez",
-    creadoEn: new Date(2026, 4, 15),
-  },
-];
-
-type Campana = (typeof CAMPANAS_MOCK)[number];
-type CampanaApi = Omit<Campana, "fechaInicio" | "fechaFin" | "creadoEn"> & {
-  fechaInicio: string | Date;
-  fechaFin: string | Date;
-  creadoEn: string | Date;
-};
-
-// Estadísticas generales
-const STATS_GLOBALES = {
-  totalCampanas: 6,
-  activas: 2,
-  programadas: 1,
-  pausadas: 1,
-  finalizadas: 2,
-  presupuestoTotal: 13300000,
-  gastadoTotal: 6930000,
-  ingresosTotales: 21500000000,
-  roiGeneral: 208,
-  totalEnviados: 18900,
-  totalAbiertos: 11420,
-  totalClics: 3612,
-  totalConversiones: 360,
-};
-
+type EstadoCampana = "ACTIVA" | "PROGRAMADA" | "PAUSADA" | "FINALIZADA";
+type TipoCampana = "EMAIL" | "WHATSAPP" | "SMS" | "REDES_SOCIALES" | "REFERIDO";
 type TabCampana = "todas" | "activas" | "programadas" | "finalizadas";
+
+interface CampanaApi {
+  id: string;
+  nombre: string;
+  tipo: TipoCampana;
+  estado: EstadoCampana;
+  descripcion?: string | null;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
+  presupuesto?: number | string | null;
+  gastado?: number | string | null;
+  audiencia?: number | string | null;
+  enviados?: number | string | null;
+  abiertos?: number | string | null;
+  clics?: number | string | null;
+  conversiones?: number | string | null;
+  ingresos?: number | string | null;
+  roi?: number | string | null;
+  segmento?: string | null;
+  plantilla?: string | null;
+  creador?: string | null;
+  creadoEn?: string | null;
+}
+
+interface Campana {
+  id: string;
+  nombre: string;
+  tipo: TipoCampana;
+  estado: EstadoCampana;
+  descripcion: string;
+  fechaInicio: Date | null;
+  fechaFin: Date | null;
+  presupuesto: number;
+  gastado: number;
+  audiencia: number;
+  enviados: number;
+  abiertos: number;
+  clics: number;
+  conversiones: number;
+  ingresos: number;
+  roi: number;
+  segmento: string;
+  plantilla: string;
+  creador: string;
+  creadoEn: Date;
+}
+
+interface RespuestaCampanas {
+  success: boolean;
+  data?: CampanaApi[];
+  error?: string;
+}
+
+const estadoConfig: Record<EstadoCampana, { label: string; classes: string }> = {
+  ACTIVA: { label: "Activa", classes: "bg-emerald-50 text-emerald-700" },
+  FINALIZADA: { label: "Finalizada", classes: "bg-slate-100 text-slate-700" },
+  PAUSADA: { label: "Pausada", classes: "bg-amber-50 text-amber-700" },
+  PROGRAMADA: { label: "Programada", classes: "bg-blue-50 text-blue-700" },
+};
+
+const tipoConfig: Record<TipoCampana, { label: string; classes: string; icono: LucideIcon }> = {
+  EMAIL: { label: "Email", classes: "bg-blue-50 text-blue-700", icono: Mail },
+  REFERIDO: { label: "Referidos", classes: "bg-amber-50 text-amber-700", icono: Users },
+  REDES_SOCIALES: { label: "Redes sociales", classes: "bg-pink-50 text-pink-700", icono: Users },
+  SMS: { label: "SMS", classes: "bg-purple-50 text-purple-700", icono: Smartphone },
+  WHATSAPP: { label: "WhatsApp", classes: "bg-green-50 text-green-700", icono: MessageSquare },
+};
+
+function numero(value: number | string | null | undefined): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function fecha(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function porcentaje(parte: number, total: number): number {
+  return total > 0 ? Math.round((parte / total) * 100) : 0;
+}
+
+function normalizarCampana(row: CampanaApi): Campana {
+  return {
+    id: row.id,
+    nombre: row.nombre,
+    tipo: row.tipo,
+    estado: row.estado,
+    descripcion: row.descripcion || "Sin descripción",
+    fechaInicio: fecha(row.fechaInicio),
+    fechaFin: fecha(row.fechaFin),
+    presupuesto: numero(row.presupuesto),
+    gastado: numero(row.gastado),
+    audiencia: numero(row.audiencia),
+    enviados: numero(row.enviados),
+    abiertos: numero(row.abiertos),
+    clics: numero(row.clics),
+    conversiones: numero(row.conversiones),
+    ingresos: numero(row.ingresos),
+    roi: numero(row.roi),
+    segmento: row.segmento || "Sin segmento",
+    plantilla: row.plantilla || "Sin plantilla",
+    creador: row.creador || "Sin responsable",
+    creadoEn: fecha(row.creadoEn) || new Date(0),
+  };
+}
+
+async function solicitarCampanas(signal?: AbortSignal): Promise<Campana[]> {
+  const response = await fetch("/api/campanas", { credentials: "include", signal });
+  const body = (await response.json().catch(() => null)) as RespuestaCampanas | null;
+
+  if (!response.ok || !body?.success || !Array.isArray(body.data)) {
+    throw new Error(body?.error || "No se pudieron cargar las campañas");
+  }
+
+  return body.data.map(normalizarCampana);
+}
 
 export default function CampanasPage() {
   const [campanas, setCampanas] = useState<Campana[]>([]);
   const [tabActiva, setTabActiva] = useState<TabCampana>("todas");
   const [busqueda, setBusqueda] = useState("");
-  const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [modalCrear, setModalCrear] = useState(false);
-  const [modalDetalle, setModalDetalle] = useState<string | null>(null);
-  const ordenarPor = "recientes";
-  const [ahora] = useState(() => Date.now());
+  const [filtroTipo, setFiltroTipo] = useState<TipoCampana | "todos">("todos");
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function cargar() {
-      try {
-        const res = await fetch("/api/campanas");
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const rows = json.data as CampanaApi[];
-          setCampanas(rows.map((campana) => ({
-            ...campana,
-            fechaInicio: new Date(campana.fechaInicio),
-            fechaFin: new Date(campana.fechaFin),
-            creadoEn: new Date(campana.creadoEn),
-          })));
-        }
-      } catch { setCampanas([]); }
+  const cargarCampanas = useCallback(async () => {
+    setCargando(true);
+    setError(null);
+
+    try {
+      setCampanas(await solicitarCampanas());
+    } catch (cause) {
+      setCampanas([]);
+      setError(cause instanceof Error ? cause.message : "No se pudieron cargar las campañas");
+    } finally {
+      setCargando(false);
     }
-    cargar();
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    solicitarCampanas(controller.signal)
+      .then((data) => {
+        setCampanas(data);
+        setError(null);
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        setCampanas([]);
+        setError(cause instanceof Error ? cause.message : "No se pudieron cargar las campañas");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCargando(false);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const stats = useMemo(() => {
+    const total = campanas.reduce(
+      (acumulado, campana) => {
+        acumulado.abiertos += campana.abiertos;
+        acumulado.clics += campana.clics;
+        acumulado.conversiones += campana.conversiones;
+        acumulado.enviados += campana.enviados;
+        acumulado.gastado += campana.gastado;
+        acumulado.ingresos += campana.ingresos;
+        acumulado.presupuesto += campana.presupuesto;
+        acumulado.roi += campana.roi;
+        acumulado.estados[campana.estado] += 1;
+        return acumulado;
+      },
+      {
+        abiertos: 0,
+        clics: 0,
+        conversiones: 0,
+        enviados: 0,
+        gastado: 0,
+        ingresos: 0,
+        presupuesto: 0,
+        roi: 0,
+        estados: { ACTIVA: 0, FINALIZADA: 0, PAUSADA: 0, PROGRAMADA: 0 },
+      }
+    );
+
+    return {
+      ...total,
+      totalCampanas: campanas.length,
+      roiPromedio: campanas.length > 0 ? Math.round(total.roi / campanas.length) : 0,
+    };
+  }, [campanas]);
+
   const campanasFiltradas = useMemo(() => {
-    return campanas.filter((c) => {
-      const coincideTab =
-        tabActiva === "todas" ||
-        (tabActiva === "activas" && c.estado === "ACTIVA") ||
-        (tabActiva === "programadas" && c.estado === "PROGRAMADA") ||
-        (tabActiva === "finalizadas" && (c.estado === "FINALIZADA" || c.estado === "PAUSADA"));
-      const coincideBusqueda =
-        !busqueda ||
-        c.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        c.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-      const coincideTipo = filtroTipo === "todos" || c.tipo === filtroTipo;
-      return coincideTab && coincideBusqueda && coincideTipo;
-    }).sort((a, b) => {
-      if (ordenarPor === "recientes") return b.creadoEn.getTime() - a.creadoEn.getTime();
-      if (ordenarPor === "presupuesto") return b.presupuesto - a.presupuesto;
-      if (ordenarPor === "roi") return b.roi - a.roi;
-      if (ordenarPor === "conversiones") return b.conversiones - a.conversiones;
-      return 0;
-    });
-  }, [campanas, tabActiva, busqueda, filtroTipo, ordenarPor]);
+    const texto = busqueda.trim().toLocaleLowerCase("es-CL");
 
-  const campanaDetalle = campanas.find((campana) => campana.id === modalDetalle);
+    return campanas
+      .filter((campana) => {
+        const coincideTab =
+          tabActiva === "todas" ||
+          (tabActiva === "activas" && campana.estado === "ACTIVA") ||
+          (tabActiva === "programadas" && campana.estado === "PROGRAMADA") ||
+          (tabActiva === "finalizadas" && ["FINALIZADA", "PAUSADA"].includes(campana.estado));
+        const coincideTexto =
+          !texto ||
+          campana.nombre.toLocaleLowerCase("es-CL").includes(texto) ||
+          campana.descripcion.toLocaleLowerCase("es-CL").includes(texto);
+        const coincideTipo = filtroTipo === "todos" || campana.tipo === filtroTipo;
+        return coincideTab && coincideTexto && coincideTipo;
+      })
+      .sort((a, b) => b.creadoEn.getTime() - a.creadoEn.getTime());
+  }, [busqueda, campanas, filtroTipo, tabActiva]);
 
-  const estadoConfig: Record<string, { label: string; color: string; bg: string; icono: React.ReactNode }> = {
-    ACTIVA: { label: "Activa", color: "text-emerald-600", bg: "bg-emerald-50", icono: <Play size={12} /> },
-    PROGRAMADA: { label: "Programada", color: "text-blue-600", bg: "bg-blue-50", icono: <Clock size={12} /> },
-    PAUSADA: { label: "Pausada", color: "text-amber-600", bg: "bg-amber-50", icono: <Pause size={12} /> },
-    FINALIZADA: { label: "Finalizada", color: "text-slate-600", bg: "bg-slate-100", icono: <CheckCircle size={12} /> },
-  };
-
-  const tipoConfig: Record<string, { label: string; color: string; bg: string; icono: React.ReactNode }> = {
-    EMAIL: { label: "Email", color: "text-blue-600", bg: "bg-blue-50", icono: <Mail size={14} /> },
-    WHATSAPP: { label: "WhatsApp", color: "text-green-600", bg: "bg-green-50", icono: <MessageSquare size={14} /> },
-    SMS: { label: "SMS", color: "text-purple-600", bg: "bg-purple-50", icono: <Smartphone size={14} /> },
-    REFERIDO: { label: "Referido", color: "text-amber-600", bg: "bg-amber-50", icono: <Users size={14} /> },
-  };
+  const tabs: { id: TabCampana; label: string; count: number }[] = [
+    { id: "todas", label: "Todas", count: stats.totalCampanas },
+    { id: "activas", label: "Activas", count: stats.estados.ACTIVA },
+    { id: "programadas", label: "Programadas", count: stats.estados.PROGRAMADA },
+    {
+      id: "finalizadas",
+      label: "Finalizadas",
+      count: stats.estados.FINALIZADA + stats.estados.PAUSADA,
+    },
+  ];
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-pink-600 via-rose-500 to-red-600 rounded-2xl p-6 text-white relative overflow-hidden">
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-red-600 p-6 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="relative flex items-center justify-between">
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight mb-1">
-              Campañas de Marketing
-            </h1>
-            <p className="text-pink-200 text-[11px] font-medium">
-              Gestiona y mide el rendimiento de tus campañas
+            <h1 className="text-xl font-bold tracking-tight">Campañas de Marketing</h1>
+            <p className="mt-1 text-[11px] font-medium text-pink-100">
+              Rendimiento calculado desde registros almacenados en el CRM
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{STATS_GLOBALES.totalCampanas}</div>
-              <div className="text-[10px] text-pink-200">Total</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-300">{STATS_GLOBALES.activas}</div>
-              <div className="text-[10px] text-pink-200">Activas</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-300">{STATS_GLOBALES.roiGeneral}%</div>
-              <div className="text-[10px] text-pink-200">ROI</div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => void cargarCampanas()}
+            disabled={cargando}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-[11px] font-semibold transition-colors hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={cargando ? "animate-spin" : ""} />
+            Actualizar
+          </button>
         </div>
-      </div>
+        <div className="relative mt-5 flex gap-7 text-center">
+          <ResumenCabecera label="Total" value={stats.totalCampanas} />
+          <ResumenCabecera label="Activas" value={stats.estados.ACTIVA} />
+          <ResumenCabecera label="ROI promedio" value={`${stats.roiPromedio}%`} />
+        </div>
+      </header>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Send size={18} className="text-blue-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Enviados</span>
-          </div>
-          <div className="text-xl font-bold text-slate-900">{STATS_GLOBALES.totalEnviados.toLocaleString()}</div>
-          <div className="text-[10px] text-slate-400 mt-1">mensajes totales</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <Eye size={18} className="text-emerald-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Tasa Apertura</span>
-          </div>
-          <div className="text-xl font-bold text-emerald-600">
-            {Math.round((STATS_GLOBALES.totalAbiertos / STATS_GLOBALES.totalEnviados) * 100)}%
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">{STATS_GLOBALES.totalAbiertos.toLocaleString()} aperturas</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-              <MousePointerClick size={18} className="text-purple-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Tasa Clics</span>
-          </div>
-          <div className="text-xl font-bold text-purple-600">
-            {Math.round((STATS_GLOBALES.totalClics / STATS_GLOBALES.totalAbiertos) * 100)}%
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">{STATS_GLOBALES.totalClics.toLocaleString()} clics</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-              <Target size={18} className="text-amber-500" />
-            </div>
-            <span className="text-[10px] text-slate-400 font-medium">Conversiones</span>
-          </div>
-          <div className="text-xl font-bold text-amber-600">{STATS_GLOBALES.totalConversiones}</div>
-          <div className="text-[10px] text-slate-400 mt-1">
-            {formatoMonedaAbreviado(STATS_GLOBALES.ingresosTotales)} ingresos
-          </div>
-        </div>
-      </div>
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Métricas de campañas">
+        <Kpi icono={Send} label="Enviados" value={stats.enviados.toLocaleString("es-CL")} detail="mensajes" />
+        <Kpi icono={Eye} label="Tasa apertura" value={`${porcentaje(stats.abiertos, stats.enviados)}%`} detail={`${stats.abiertos.toLocaleString("es-CL")} aperturas`} />
+        <Kpi icono={MousePointerClick} label="Tasa clics" value={`${porcentaje(stats.clics, stats.abiertos)}%`} detail={`${stats.clics.toLocaleString("es-CL")} clics`} />
+        <Kpi icono={Target} label="Conversiones" value={stats.conversiones.toLocaleString("es-CL")} detail={`${formatoMonedaAbreviado(stats.ingresos)} ingresos`} />
+      </section>
 
-      {/* Presupuesto */}
-      <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <DollarSign size={16} className="text-emerald-500" />
-            Presupuesto General
-          </h3>
+      <section className="rounded-2xl border border-slate-100/80 bg-white p-5 shadow-soft">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+            <DollarSign size={16} className="text-emerald-500" /> Presupuesto registrado
+          </h2>
           <span className="text-[11px] font-semibold text-slate-500">
-            {formatoMoneda(STATS_GLOBALES.gastadoTotal)} / {formatoMoneda(STATS_GLOBALES.presupuestoTotal)}
+            {formatoMoneda(stats.gastado)} / {formatoMoneda(stats.presupuesto)}
           </span>
         </div>
-        <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+        <div className="mb-3 h-3 overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all"
-            style={{ width: `${(STATS_GLOBALES.gastadoTotal / STATS_GLOBALES.presupuestoTotal) * 100}%` }}
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+            style={{ width: `${Math.min(100, porcentaje(stats.gastado, stats.presupuesto))}%` }}
           />
         </div>
         <div className="flex items-center justify-between text-[10px] text-slate-400">
-          <span>{Math.round((STATS_GLOBALES.gastadoTotal / STATS_GLOBALES.presupuestoTotal) * 100)}% utilizado</span>
-          <span>{formatoMoneda(STATS_GLOBALES.presupuestoTotal - STATS_GLOBALES.gastadoTotal)} restante</span>
+          <span>{porcentaje(stats.gastado, stats.presupuesto)}% utilizado</span>
+          <span>{formatoMoneda(Math.max(0, stats.presupuesto - stats.gastado))} restante</span>
         </div>
-      </div>
+      </section>
 
-      {/* Filtros y Tabs */}
-      <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-soft">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1.5">
-            {[
-              { id: "todas", label: "Todas", count: STATS_GLOBALES.totalCampanas },
-              { id: "activas", label: "Activas", count: STATS_GLOBALES.activas },
-              { id: "programadas", label: "Programadas", count: STATS_GLOBALES.programadas },
-              { id: "finalizadas", label: "Finalizadas", count: STATS_GLOBALES.finalizadas + STATS_GLOBALES.pausadas },
-            ].map((tab) => (
+      <section className="rounded-2xl border border-slate-100/80 bg-white p-4 shadow-soft">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-1.5">
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setTabActiva(tab.id as TabCampana)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                type="button"
+                onClick={() => setTabActiva(tab.id)}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-[11px] font-semibold transition-all ${
                   tabActiva === tab.id
                     ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
                     : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                 }`}
               >
                 {tab.label}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                  tabActiva === tab.id ? "bg-white/20" : "bg-slate-200"
-                }`}>
+                <span className={`rounded-full px-1.5 py-0.5 ${tabActiva === tab.id ? "bg-white/20" : "bg-slate-200"}`}>
                   {tab.count}
                 </span>
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar campaña..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-48 pl-9 pr-3 py-2 bg-slate-50 border border-slate-200/60 rounded-xl text-[11px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-              />
-            </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              type="search"
+              aria-label="Buscar campaña"
+              placeholder="Buscar campaña..."
+              value={busqueda}
+              onChange={(event) => setBusqueda(event.target.value)}
+              className="h-9 rounded-xl border border-slate-200/60 bg-slate-50 px-3 text-[11px] text-slate-600 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-500/10"
+            />
             <select
+              aria-label="Filtrar por tipo"
               value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              className="h-9 px-3 bg-slate-50 border border-slate-200/60 rounded-xl text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400"
+              onChange={(event) => setFiltroTipo(event.target.value as TipoCampana | "todos")}
+              className="h-9 rounded-xl border border-slate-200/60 bg-slate-50 px-3 text-[11px] text-slate-600 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-500/10"
             >
               <option value="todos">Todos los tipos</option>
-              <option value="EMAIL">Email</option>
-              <option value="WHATSAPP">WhatsApp</option>
-              <option value="SMS">SMS</option>
-              <option value="REFERIDO">Referido</option>
+              {Object.entries(tipoConfig).map(([id, config]) => (
+                <option key={id} value={id}>{config.label}</option>
+              ))}
             </select>
-            <button
-              onClick={() => setModalCrear(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-rose-500 text-white rounded-xl text-[11px] font-semibold hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20"
-            >
-              <Plus size={14} /> Nueva Campaña
-            </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Lista de campañas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {campanasFiltradas.map((campana) => {
-          const configEstado = estadoConfig[campana.estado];
-          const configTipo = tipoConfig[campana.tipo];
-          const porcentajeAvance =
-            campana.fechaInicio && campana.fechaFin
-              ? Math.min(
-                  100,
-                  Math.max(
-                    0,
-                    ((ahora - campana.fechaInicio.getTime()) /
-                      (campana.fechaFin.getTime() - campana.fechaInicio.getTime())) *
-                      100
-                  )
-                )
-              : 0;
-          const tasaApertura =
-            campana.enviados > 0
-              ? Math.round((campana.abiertos / campana.enviados) * 100)
-              : 0;
-          const tasaClics =
-            campana.abiertos > 0
-              ? Math.round((campana.clics / campana.abiertos) * 100)
-              : 0;
-          return (
-            <div
-              key={campana.id}
-              className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft hover:shadow-md transition-all cursor-pointer group"
-              onClick={() => setModalDetalle(campana.id)}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${configTipo.bg}`}
-                  >
-                    <span className={configTipo.color}>{configTipo.icono}</span>
-                  </div>
-                  <div>
-                    <h4 className="text-[13px] font-bold text-slate-800">{campana.nombre}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${configTipo.bg} ${configTipo.color}`}
-                      >
-                        {configTipo.label}
-                      </span>
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${configEstado.bg} ${configEstado.color} flex items-center gap-1`}
-                      >
-                        {configEstado.icono} {configEstado.label}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[11px] font-bold text-slate-700">
-                    {formatoMonedaAbreviado(campana.presupuesto)}
-                  </div>
-                  <div className="text-[11px] text-slate-400">presupuesto</div>
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <p className="text-[10px] text-slate-400 mb-4 line-clamp-2">
-                {campana.descripcion}
-              </p>
-
-              {/* Barra de progreso */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] text-slate-400">Progreso</span>
-                  <span className="text-[11px] font-semibold text-slate-600">
-                    {Math.round(porcentajeAvance)}%
-                  </span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all"
-                    style={{ width: `${porcentajeAvance}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Métricas */}
-              <div className="grid grid-cols-4 gap-3 mb-4">
-                <div className="text-center">
-                  <div className="text-[13px] font-bold text-slate-800">
-                    {campana.enviados.toLocaleString()}
-                  </div>
-                  <div className="text-[11px] text-slate-400">Enviados</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[13px] font-bold text-emerald-600">{tasaApertura}%</div>
-                  <div className="text-[11px] text-slate-400">Apertura</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[13px] font-bold text-blue-600">{tasaClics}%</div>
-                  <div className="text-[11px] text-slate-400">Clics</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[13px] font-bold text-amber-600">{campana.conversiones}</div>
-                  <div className="text-[11px] text-slate-400">Conversiones</div>
-                </div>
-              </div>
-
-              {/* ROI */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400">ROI:</span>
-                  <span
-                    className={`text-[11px] font-bold ${
-                      campana.roi > 0 ? "text-emerald-600" : "text-slate-400"
-                    }`}
-                  >
-                    {campana.roi > 0 ? `${campana.roi}%` : "-"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Eye size={12} className="text-slate-400" />
-                  </button>
-                  <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Edit size={12} className="text-slate-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal Detalle Campaña */}
-      {campanaDetalle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-rose-50 to-pink-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center ${tipoConfig[campanaDetalle.tipo]?.bg}`}
-                  >
-                    <span className={tipoConfig[campanaDetalle.tipo]?.color}>
-                      {tipoConfig[campanaDetalle.tipo]?.icono}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800">{campanaDetalle.nombre}</h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{campanaDetalle.descripcion}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${tipoConfig[campanaDetalle.tipo]?.bg} ${tipoConfig[campanaDetalle.tipo]?.color}`}
-                      >
-                        {tipoConfig[campanaDetalle.tipo]?.label}
-                      </span>
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${estadoConfig[campanaDetalle.estado]?.bg} ${estadoConfig[campanaDetalle.estado]?.color}`}
-                      >
-                        {estadoConfig[campanaDetalle.estado]?.label}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModalDetalle(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-
-            {/* Métricas principales */}
-            <div className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-xl p-4">
-                  <div className="text-[10px] text-blue-500 font-medium mb-1">Enviados</div>
-                  <div className="text-xl font-bold text-blue-700">
-                    {campanaDetalle.enviados.toLocaleString()}
-                  </div>
-                  <div className="text-[10px] text-blue-400">
-                    de {campanaDetalle.audiencia.toLocaleString()}
-                  </div>
-                </div>
-                <div className="bg-emerald-50 rounded-xl p-4">
-                  <div className="text-[10px] text-emerald-500 font-medium mb-1">Aperturas</div>
-                  <div className="text-xl font-bold text-emerald-700">
-                    {campanaDetalle.abiertos.toLocaleString()}
-                  </div>
-                  <div className="text-[10px] text-emerald-400">
-                    {Math.round((campanaDetalle.abiertos / campanaDetalle.enviados) * 100)}% tasa
-                  </div>
-                </div>
-                <div className="bg-purple-50 rounded-xl p-4">
-                  <div className="text-[10px] text-purple-500 font-medium mb-1">Clics</div>
-                  <div className="text-xl font-bold text-purple-700">
-                    {campanaDetalle.clics.toLocaleString()}
-                  </div>
-                  <div className="text-[10px] text-purple-400">
-                    {Math.round((campanaDetalle.clics / campanaDetalle.abiertos) * 100)}% tasa
-                  </div>
-                </div>
-                <div className="bg-amber-50 rounded-xl p-4">
-                  <div className="text-[10px] text-amber-500 font-medium mb-1">Conversiones</div>
-                  <div className="text-xl font-bold text-amber-700">
-                    {campanaDetalle.conversiones}
-                  </div>
-                  <div className="text-[10px] text-amber-400">
-                    {Math.round((campanaDetalle.conversiones / campanaDetalle.clics) * 100)}% tasa
-                  </div>
-                </div>
-              </div>
-
-              {/* ROI y Presupuesto */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-5 border border-emerald-100/50">
-                  <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mb-2">
-                    Retorno de Inversión
-                  </div>
-                  <div className="text-3xl font-bold text-emerald-700">{campanaDetalle.roi}%</div>
-                  <div className="text-[11px] text-emerald-600 mt-1">
-                    {formatoMoneda(campanaDetalle.ingresos)} generados
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-5 border border-blue-100/50">
-                  <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-2">
-                    Presupuesto
-                  </div>
-                  <div className="text-3xl font-bold text-blue-700">
-                    {formatoMonedaAbreviado(campanaDetalle.gastado)}
-                  </div>
-                  <div className="text-[11px] text-blue-600 mt-1">
-                    de {formatoMoneda(campanaDetalle.presupuesto)}
-                  </div>
-                  <div className="h-2 bg-blue-200 rounded-full mt-2 overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{
-                        width: `${(campanaDetalle.gastado / campanaDetalle.presupuesto) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Info adicional */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <Calendar size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Período:</span>
-                    <span className="font-semibold text-slate-700">
-                      {campanaDetalle.fechaInicio.toLocaleDateString("es-CL")} -{" "}
-                      {campanaDetalle.fechaFin.toLocaleDateString("es-CL")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <Users size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Segmento:</span>
-                    <span className="font-semibold text-slate-700">{campanaDetalle.segmento}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <User size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Creado por:</span>
-                    <span className="font-semibold text-slate-700">{campanaDetalle.creador}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <FileText size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Plantilla:</span>
-                    <span className="font-semibold text-slate-700">{campanaDetalle.plantilla}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <Target size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Audiencia:</span>
-                    <span className="font-semibold text-slate-700">
-                      {campanaDetalle.audiencia.toLocaleString()} contactos
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <Clock size={12} className="text-slate-400" />
-                    <span className="text-slate-500">Creado:</span>
-                    <span className="font-semibold text-slate-700">
-                      {campanaDetalle.creadoEn.toLocaleDateString("es-CL")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setModalDetalle(null)}
-                className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cerrar
-              </button>
-              {campanaDetalle.estado === "PROGRAMADA" && (
-                <button className="px-4 py-2 bg-emerald-500 text-white text-[11px] font-semibold rounded-xl hover:bg-emerald-600 transition-colors flex items-center gap-1.5">
-                  <Play size={14} /> Iniciar Campaña
-                </button>
-              )}
-              {campanaDetalle.estado === "ACTIVA" && (
-                <button className="px-4 py-2 bg-amber-500 text-white text-[11px] font-semibold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-1.5">
-                  <Pause size={14} /> Pausar
-                </button>
-              )}
-              <button className="px-4 py-2 bg-rose-500 text-white text-[11px] font-semibold rounded-xl hover:bg-rose-600 transition-colors flex items-center gap-1.5">
-                <Download size={14} /> Exportar Reporte
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Crear Campaña */}
-      {modalCrear && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">Nueva Campaña</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Configura los detalles de tu campaña de marketing
-                  </p>
-                </div>
-                <button
-                  onClick={() => setModalCrear(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Nombre de la Campaña *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Oferta Especial Verano 2025"
-                  className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Descripción</label>
-                <textarea
-                  placeholder="Describe el objetivo de la campaña..."
-                  rows={3}
-                  className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 resize-none transition-all"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-700">Tipo de Campaña</label>
-                  <select className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400">
-                    <option value="EMAIL">Email Marketing</option>
-                    <option value="WHATSAPP">WhatsApp Business</option>
-                    <option value="SMS">SMS</option>
-                    <option value="REFERIDO">Programa de Referidos</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-700">Presupuesto</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-700">Fecha Inicio</label>
-                  <input
-                    type="date"
-                    className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-700">Fecha Fin</label>
-                  <input
-                    type="date"
-                    className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-700">Segmento Objetivo</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Leads fríos, Clientes existentes..."
-                  className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-rose-500/10 focus:border-rose-400 transition-all"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setModalCrear(false)}
-                className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setModalCrear(false)}
-                className="px-5 py-2 bg-rose-500 text-white text-[11px] font-semibold rounded-xl hover:bg-rose-600 transition-colors shadow-md shadow-rose-500/20"
-              >
-                Crear Campaña
-              </button>
-            </div>
-          </div>
-        </div>
+      {cargando ? (
+        <EstadoMensaje icono={Loader2} texto="Cargando campañas..." animado />
+      ) : error ? (
+        <EstadoMensaje icono={Clock3} texto={error} />
+      ) : campanasFiltradas.length === 0 ? (
+        <EstadoMensaje icono={FileText} texto="No hay campañas para este filtro" />
+      ) : (
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2" aria-label="Campañas registradas">
+          {campanasFiltradas.map((campana) => (
+            <CampanaCard key={campana.id} campana={campana} />
+          ))}
+        </section>
       )}
     </div>
   );
 }
 
-// Icono X faltante
-function X({ size, className }: { size: number; className?: string }) {
+function CampanaCard({ campana }: { campana: Campana }) {
+  const tipo = tipoConfig[campana.tipo] || tipoConfig.EMAIL;
+  const estado = estadoConfig[campana.estado] || estadoConfig.PROGRAMADA;
+  const IconoTipo = tipo.icono;
+
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
+    <article className="rounded-2xl border border-slate-100/80 bg-white p-5 shadow-soft">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tipo.classes}`}>
+            <IconoTipo size={17} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-[13px] font-bold text-slate-800">{campana.nombre}</h3>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${tipo.classes}`}>{tipo.label}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${estado.classes}`}>{estado.label}</span>
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-[11px] font-bold text-slate-700">{formatoMonedaAbreviado(campana.presupuesto)}</div>
+          <div className="text-[9px] text-slate-400">presupuesto</div>
+        </div>
+      </div>
+
+      <p className="mt-4 line-clamp-2 text-[10px] text-slate-500">{campana.descripcion}</p>
+
+      <dl className="mt-4 grid grid-cols-4 gap-2 rounded-xl bg-slate-50 p-3 text-center">
+        <Metrica label="Enviados" value={campana.enviados.toLocaleString("es-CL")} />
+        <Metrica label="Apertura" value={`${porcentaje(campana.abiertos, campana.enviados)}%`} />
+        <Metrica label="Clics" value={`${porcentaje(campana.clics, campana.abiertos)}%`} />
+        <Metrica label="Conversiones" value={campana.conversiones.toLocaleString("es-CL")} />
+      </dl>
+
+      <div className="mt-4 grid gap-2 text-[10px] text-slate-500 sm:grid-cols-2">
+        <Info icono={Calendar} texto={periodoCampana(campana)} />
+        <Info icono={Users} texto={campana.segmento} />
+        <Info icono={FileText} texto={campana.plantilla} />
+        <Info icono={CheckCircle2} texto={`${campana.creador} · ROI ${campana.roi}%`} />
+      </div>
+    </article>
+  );
+}
+
+function periodoCampana(campana: Campana): string {
+  if (!campana.fechaInicio && !campana.fechaFin) return "Sin periodo definido";
+  const inicio = campana.fechaInicio?.toLocaleDateString("es-CL") || "Sin inicio";
+  const fin = campana.fechaFin?.toLocaleDateString("es-CL") || "Sin fin";
+  return `${inicio} — ${fin}`;
+}
+
+function ResumenCabecera({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-[10px] text-pink-100">{label}</div>
+    </div>
+  );
+}
+
+function Kpi({
+  icono: Icono,
+  label,
+  value,
+  detail,
+}: {
+  icono: LucideIcon;
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-100/80 bg-white p-4 shadow-soft">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+          <Icono size={18} />
+        </div>
+        <span className="text-[10px] font-medium text-slate-400">{label}</span>
+      </div>
+      <div className="text-xl font-bold text-slate-900">{value}</div>
+      <div className="mt-1 text-[10px] text-slate-400">{detail}</div>
+    </div>
+  );
+}
+
+function Metrica({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[9px] text-slate-400">{label}</dt>
+      <dd className="mt-0.5 text-[12px] font-bold text-slate-700">{value}</dd>
+    </div>
+  );
+}
+
+function Info({ icono: Icono, texto }: { icono: LucideIcon; texto: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-1.5">
+      <Icono size={12} className="shrink-0 text-slate-400" />
+      <span className="truncate">{texto}</span>
+    </div>
+  );
+}
+
+function EstadoMensaje({
+  icono: Icono,
+  texto,
+  animado = false,
+}: {
+  icono: LucideIcon;
+  texto: string;
+  animado?: boolean;
+}) {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100/80 bg-white px-6 text-center shadow-soft">
+      <Icono size={24} className={`text-slate-300 ${animado ? "animate-spin" : ""}`} />
+      <p className="text-[12px] font-medium text-slate-500">{texto}</p>
+    </div>
   );
 }
