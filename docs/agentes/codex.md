@@ -1088,3 +1088,12 @@ prioridades operativas y prompt maestro. Suite: 592/592; audit: 0.
 
 [estrategia · GOV-01] preparado — prompt profesional fija arquitectura, gates,
 protección de datos y contrato de entrega. Suite: 592/592; audit: 0.
+
+[FASE DB · DB-01] package.json descongelado — CLI local y scripts reproducibles.
+
+[build] ocupado — Codex, DB-01 · entorno local Supabase.
+
+[build] libre — Codex, DB-01 · build, suite, lint y TypeScript en verde.
+
+[FASE DB · DB-01] hecho — Supabase CLI 2.114.0 fijado, configuración local
+cerrada y scripts db/typecheck disponibles. Suite: 592/592; audit: 0.
