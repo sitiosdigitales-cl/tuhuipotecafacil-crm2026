@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { AUTOMATIZACION_PERMISOS } from "@/modulos/automatizacion/config";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!AUTOMATIZACION_PERMISOS.editar.some((rol) => rol === auth.rol)) return forbidden();
   const { id } = await params;
   try {
     const body = await request.json();
@@ -16,7 +19,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!AUTOMATIZACION_PERMISOS.eliminar.some((rol) => rol === auth.rol)) return forbidden();
   const { id } = await params;
   try {
     const { error } = await supabase.from("flujos").delete().eq("id", id);

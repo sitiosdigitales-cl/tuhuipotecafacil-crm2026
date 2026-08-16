@@ -1025,3 +1025,10 @@ que el servidor eliminó la sesión. Suite: 514/514; audit: 0.
 
 [calidad · BUG-109] corregido — navegación y cuatro métodos de campañas usan
 la misma matriz administrativa. Suite: 526/526; audit: 0.
+
+[build] ocupado — Codex, BUG-110 · matriz de roles de automatización.
+
+[build] libre — Codex, BUG-110 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-110] corregido — 16 operaciones y tres rutas del panel aplican
+el catálogo administrativo de automatización. Suite: 574/574; audit: 0.

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { AUTOMATIZACION_PERMISOS } from "@/modulos/automatizacion/config";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!AUTOMATIZACION_PERMISOS.ver.some((rol) => rol === auth.rol)) return forbidden();
     try {
     const { data, error } = await supabase.from("plantillas").select("*").order("creadoen", { ascending: false });
     if (error) {
@@ -18,7 +21,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    if (!requireAuth(request)) return unauthorized();
+    const auth = requireAuth(request);
+    if (!auth) return unauthorized();
+    if (!AUTOMATIZACION_PERMISOS.crear.some((rol) => rol === auth.rol)) return forbidden();
     try {
     const body = await request.json();
     const { data, error } = await supabase

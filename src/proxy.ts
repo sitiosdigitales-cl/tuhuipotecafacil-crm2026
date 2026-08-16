@@ -24,6 +24,9 @@ const ACCESO: Array<{ prefijo: string; roles: Rol[] }> = [
   { prefijo: "/integraciones", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/comisiones", roles: ["SUPER_ADMIN", "ADMIN"] },
   { prefijo: "/campanas", roles: ["SUPER_ADMIN", "ADMIN"] },
+  { prefijo: "/flujos", roles: ["SUPER_ADMIN", "ADMIN"] },
+  { prefijo: "/plantillas", roles: ["SUPER_ADMIN", "ADMIN"] },
+  { prefijo: "/triggers", roles: ["SUPER_ADMIN", "ADMIN"] },
 
   // El portal es del cliente; el resto del equipo no lo necesita.
   { prefijo: "/portal-cliente", roles: ["CLIENTE", "SUPER_ADMIN", "ADMIN"] },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { supabase } from "@/lib/supabase";
+import { AUTOMATIZACION_PERMISOS } from "@/modulos/automatizacion/config";
 
 function mapEjecucion(row: Record<string, unknown>) {
   return {
@@ -23,7 +24,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!AUTOMATIZACION_PERMISOS.ver.some((rol) => rol === auth.rol)) return forbidden();
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
@@ -77,7 +80,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!AUTOMATIZACION_PERMISOS.editar.some((rol) => rol === auth.rol)) return forbidden();
   try {
     const { id } = await params;
     const body = await request.json();
