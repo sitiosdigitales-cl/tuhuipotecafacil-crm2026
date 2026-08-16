@@ -1060,3 +1060,10 @@ y no ofrece una imagen que no codifica el enlace. Suite: 588/588; audit: 0.
 
 [calidad · BUG-114] corregido — el seguimiento usa datos reales y deja de
 prometer pagos, porcentajes o premios sin política persistida. Suite: 589/589; audit: 0.
+
+[build] ocupado — Codex, BUG-115 · acciones reales de configuración.
+
+[build] libre — Codex, BUG-115 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-115] corregido — configuración enlaza la exportación real y no
+confirma mantenimiento inexistente. Suite: 590/590; audit: 0.
