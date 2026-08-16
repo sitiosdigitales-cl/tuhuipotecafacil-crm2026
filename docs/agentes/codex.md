@@ -976,3 +976,10 @@ registro; las acciones propias desaparecen de la UI. Suite: 500/500; audit: 0.
 
 [calidad · BUG-102] corregido — la edición usa campos explícitos y recalcula
 el total financiero en servidor. Suite: 504/504; audit: 0.
+
+[build] ocupado — Codex, BUG-103 · contrato camelCase de comisiones.
+
+[build] libre — Codex, BUG-103 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-103] corregido — las filas financieras recuperan el contrato
+camelCase que consume la interfaz. Suite: 505/505; audit: 0.
