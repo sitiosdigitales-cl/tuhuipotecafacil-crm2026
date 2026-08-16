@@ -1209,6 +1209,14 @@ calcula cartera, etapas, bancos y montos mediante `leads.asignadoA`, y retira
 actividad, rendimiento y guardados locales. Suite: 729/729; build/lint/typecheck:
 0; auditorías de dependencias: 0.
 
+[build] ocupado — Codex, BUG-127 · inventario persistido de integraciones.
+
+[build] libre — Codex, BUG-127 · build terminado.
+
+[calidad · BUG-127] corregido — Integraciones consulta el inventario persistido,
+queda en solo lectura y ya no recibe secretos, inventa estados ni crea leads de
+prueba. Suite: 732/732; build/lint/typecheck: 0; auditorías: 0.
+
 [FASE AUTH · AUTH-03] verificado — MFA TOTP administrativo, puente Auth y
 reconstrucción doble pasan en CI con 659/659 pruebas.
 

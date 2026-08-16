@@ -1,558 +1,335 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  MessageSquare,
-  Mail,
-  Globe,
-  CreditCard,
-  Building2,
-  FileText,
-  Calendar,
-  BarChart3,
-  Zap,
-  Settings,
-  Check,
-  X,
-  Copy,
-  Key,
-  Info,
-  Search,
-  Plus,
-  Video,
-  Cloud,
-  Send,
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
   Database,
+  Plug,
+  Search,
+  ShieldCheck,
+  Unplug,
 } from "lucide-react";
-import { WordPressIntegration } from "@/componentes/integraciones/WordPressIntegration";
-import { toast } from "sonner";
 
-// Categorías de integraciones
-const CATEGORIAS = [
-  { id: "todos", nombre: "Todos", icono: Zap, color: "text-slate-500" },
-  { id: "comunicacion", nombre: "Comunicación", icono: MessageSquare, color: "text-green-500" },
-  { id: "bancos", nombre: "Bancos", icono: Building2, color: "text-blue-500" },
-  { id: "pagos", nombre: "Pagos", icono: CreditCard, color: "text-purple-500" },
-  { id: "documentos", nombre: "Documentos", icono: FileText, color: "text-amber-500" },
-  { id: "marketing", nombre: "Marketing", icono: Mail, color: "text-pink-500" },
-  { id: "productividad", nombre: "Productividad", icono: Calendar, color: "text-indigo-500" },
-  { id: "analitica", nombre: "Analítica", icono: BarChart3, color: "text-cyan-500" },
-];
+interface IntegracionPersistida {
+  id: string;
+  nombre: string;
+  tipo: string;
+  proveedor?: string | null;
+  estado: string;
+  ultimaSync?: string | null;
+  syncCount?: number | null;
+  errores?: number | null;
+  creadoEn?: string | null;
+}
 
-// Lista de integraciones
-const INTEGRACIONES = [
-  {
-    id: "whatsapp-business",
-    nombre: "WhatsApp Business",
-    descripcion: "Envía y recibe mensajes de WhatsApp directamente desde el CRM",
-    categoria: "comunicacion",
-    icono: MessageSquare,
-    color: "from-green-400 to-green-600",
-    conectada: true,
-    features: ["Mensajes entrantes", "Mensajes salientes", "Plantillas"],
-  },
-  {
-    id: "wordpress-elementor",
-    nombre: "WordPress + Elementor",
-    descripcion: "Recibe leads automáticamente desde tu página web",
-    categoria: "marketing",
-    icono: Globe,
-    color: "from-blue-600 to-indigo-600",
-    conectada: true,
-    features: ["Webhooks", "Mapeo de campos", "Leads en tiempo real"],
-    esWordPress: true,
-  },
-  {
-    id: "google-calendar",
-    nombre: "Google Calendar",
-    descripcion: "Sincroniza eventos y reuniones con tu calendario de Google",
-    categoria: "productividad",
-    icono: Calendar,
-    color: "from-blue-400 to-blue-600",
-    conectada: true,
-    features: ["Crear eventos", "Google Meet", "Sincronización", "Recordatorios"],
-  },
-  {
-    id: "resend-email",
-    nombre: "Resend",
-    descripcion: "Envía emails transaccionales y de marketing",
-    categoria: "comunicacion",
-    icono: Mail,
-    color: "from-slate-400 to-slate-600",
-    conectada: true,
-    features: ["Emails transaccionales", "Plantillas", "Analytics"],
-  },
-  {
-    id: "supabase",
-    nombre: "Supabase",
-    descripcion: "Base de datos y autenticación en la nube",
-    categoria: "analitica",
-    icono: Database,
-    color: "from-emerald-400 to-emerald-600",
-    conectada: true,
-    features: ["Base de datos", "Auth", "Storage", "Realtime"],
-  },
-  {
-    id: "telegram",
-    nombre: "Telegram",
-    descripcion: "Bot de Telegram para notificaciones",
-    categoria: "comunicacion",
-    icono: Send,
-    color: "from-blue-400 to-blue-500",
-    conectada: false,
-    features: ["Notificaciones", "Chatbot"],
-  },
-  {
-    id: "zoom",
-    nombre: "Zoom",
-    descripcion: "Gestiona reuniones de Zoom desde el CRM",
-    categoria: "comunicacion",
-    icono: Video,
-    color: "from-blue-500 to-blue-600",
-    conectada: false,
-    features: ["Crear reuniones", "Agendar automáticamente"],
-  },
-  {
-    id: "banco-estado",
-    nombre: "Banco Estado",
-    descripcion: "Consulta de productos y tasas",
-    categoria: "bancos",
-    icono: Building2,
-    color: "from-blue-600 to-blue-700",
-    conectada: true,
-    features: ["Tasas en tiempo real", "Simulador"],
-  },
-  {
-    id: "santander",
-    nombre: "Santander",
-    descripcion: "Productos y tasas del Banco Santander",
-    categoria: "bancos",
-    icono: Building2,
-    color: "from-red-500 to-red-600",
-    conectada: false,
-    features: ["Tasas en tiempo real"],
-  },
-  {
-    id: "google-drive",
-    nombre: "Google Drive",
-    descripcion: "Almacenamiento en la nube",
-    categoria: "documentos",
-    icono: Cloud,
-    color: "from-green-400 to-green-500",
-    conectada: false,
-    features: ["Almacenamiento", "Compartir"],
-  },
-  {
-    id: "mailchimp",
-    nombre: "Mailchimp",
-    descripcion: "Email marketing automatizado",
-    categoria: "marketing",
-    icono: Mail,
-    color: "from-yellow-400 to-yellow-500",
-    conectada: false,
-    features: ["Email marketing", "Automatización"],
-  },
-  {
-    id: "google-calendar",
-    nombre: "Google Calendar",
-    descripcion: "Sincronización de eventos",
-    categoria: "productividad",
-    icono: Calendar,
-    color: "from-blue-400 to-blue-500",
-    conectada: false,
-    features: ["Sincronización", "Eventos"],
-  },
-  {
-    id: "zapier",
-    nombre: "Zapier",
-    descripcion: "Automatización entre aplicaciones",
-    categoria: "analitica",
-    icono: Zap,
-    color: "from-orange-400 to-orange-500",
-    conectada: false,
-    features: ["Zaps personalizados", "Miles de integraciones"],
-  },
-];
+interface RespuestaIntegraciones {
+  success: boolean;
+  data?: IntegracionPersistida[];
+}
+
+const ESTADOS_ACTIVOS = new Set(["ACTIVA", "ACTIVO", "CONECTADA"]);
 
 export default function IntegracionesPage() {
-  const [categoriaActiva, setCategoriaActiva] = useState<string>("todos");
+  const [integraciones, setIntegraciones] = useState<IntegracionPersistida[]>([]);
   const [busqueda, setBusqueda] = useState("");
-  const [modalConfig, setModalConfig] = useState<string | null>(null);
-  const [modalApiKeys, setModalApiKeys] = useState(false);
-  const [integracionesState, setIntegracionesState] = useState(INTEGRACIONES);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function cargarIntegraciones() {
+      try {
+        const response = await fetch("/api/integraciones", {
+          credentials: "include",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | RespuestaIntegraciones
+          | null;
+
+        if (!response.ok || !payload?.success || !payload.data) {
+          throw new Error("No se pudo cargar el inventario");
+        }
+
+        if (!cancelado) setIntegraciones(payload.data);
+      } catch {
+        if (!cancelado) setErrorCarga(true);
+      } finally {
+        if (!cancelado) setCargando(false);
+      }
+    }
+
+    void cargarIntegraciones();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const integracionesFiltradas = useMemo(() => {
-    return integracionesState.filter((int) => {
-      const coincideCategoria = categoriaActiva === "todos" || int.categoria === categoriaActiva;
-      const coincideBusqueda = !busqueda ||
-        int.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        int.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-      return coincideCategoria && coincideBusqueda;
-    });
-  }, [categoriaActiva, busqueda, integracionesState]);
+    const termino = busqueda.trim().toLocaleLowerCase("es-CL");
+    if (!termino) return integraciones;
 
-  const stats = useMemo(() => ({
-    total: integracionesState.length,
-    conectadas: integracionesState.filter((i) => i.conectada).length,
-    pendientes: integracionesState.filter((i) => !i.conectada).length,
-  }), [integracionesState]);
-
-  const integracionesConectadas = integracionesState.filter((i) => i.conectada);
-
-  const toggleConexion = (id: string) => {
-    setIntegracionesState((prev) =>
-      prev.map((int) =>
-        int.id === id ? { ...int, conectada: !int.conectada } : int
-      )
+    return integraciones.filter((integracion) =>
+      [
+        integracion.nombre,
+        integracion.tipo,
+        integracion.proveedor || "",
+        integracion.estado,
+      ].some((valor) => valor.toLocaleLowerCase("es-CL").includes(termino))
     );
-    const int = integracionesState.find((i) => i.id === id);
-    if (int) {
-      toast.success(int.conectada ? "Integración desconectada" : "Integración conectada", {
-        description: `${int.nombre} ha sido ${int.conectada ? "desconectada" : "conectada"}`,
-      });
-    }
-  };
+  }, [busqueda, integraciones]);
+
+  const activas = integraciones.filter((integracion) =>
+    ESTADOS_ACTIVOS.has(integracion.estado.toLocaleUpperCase("es-CL"))
+  ).length;
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-600 via-blue-500 to-indigo-600 rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="relative flex items-center justify-between">
+    <div className="space-y-6">
+      <header className="overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-700 via-blue-700 to-indigo-700 p-6 text-white shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight mb-1">Integraciones</h1>
-            <p className="text-blue-200 text-[11px] font-medium">
-              Conecta tu CRM con las herramientas que ya usas
+            <div className="flex items-center gap-2">
+              <Plug size={20} />
+              <h1 className="text-xl font-bold tracking-tight">Integraciones</h1>
+            </div>
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-blue-100">
+              Inventario persistido de conexiones registradas por el equipo.
+              Esta vista no recibe ni muestra credenciales.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <div className="text-[10px] text-blue-200">Disponibles</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-300">{stats.conectadas}</div>
-              <div className="text-[10px] text-blue-200">Conectadas</div>
-            </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-300">{stats.pendientes}</div>
-              <div className="text-[10px] text-blue-200">Pendientes</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Integraciones conectadas */}
-      {integracionesConectadas.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <Check size={16} className="text-emerald-500" />
-              Integraciones Activas
-            </h3>
-            <button
-              onClick={() => setModalApiKeys(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 transition-colors"
-            >
-              <Key size={12} /> API Keys
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {integracionesConectadas.map((int) => {
-              const IconoInt = int.icono;
-              return (
-                <div key={int.id} className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${int.color} rounded-xl flex items-center justify-center text-white shadow-sm`}>
-                    <IconoInt size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-bold text-slate-800 truncate">{int.nombre}</div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                      <span className="text-[9px] text-emerald-600 font-medium">Activa</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setModalConfig(int.id)}
-                    className="p-1.5 hover:bg-white rounded-lg transition-colors"
-                    title="Configurar"
-                  >
-                    <Settings size={12} className="text-slate-400" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Filtros y búsqueda */}
-      <div className="bg-white rounded-2xl border border-slate-100/80 p-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar integración..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-xl text-[12px] text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
+          <div className="grid grid-cols-2 gap-3 sm:min-w-72">
+            <Resumen
+              etiqueta="Registradas"
+              valor={integraciones.length}
+              icono={<Database size={15} />}
+            />
+            <Resumen
+              etiqueta="Activas"
+              valor={activas}
+              icono={<CheckCircle2 size={15} />}
             />
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
-            {CATEGORIAS.map((cat) => {
-              const IconoCat = cat.icono;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategoriaActiva(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all ${
-                    categoriaActiva === cat.id
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  <IconoCat size={12} />
-                  {cat.nombre}
-                </button>
-              );
-            })}
-          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Lista de integraciones */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {integracionesFiltradas.map((int) => {
-          const IconoInt = int.icono;
-          return (
-            <div key={int.id} className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 bg-gradient-to-br ${int.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                    <IconoInt size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800">{int.nombre}</h3>
-                    <p className="text-[10px] text-slate-400">{int.descripcion}</p>
-                  </div>
-                </div>
-                {int.conectada && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 rounded-full">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                    <span className="text-[9px] font-bold text-emerald-700">Activa</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {int.features.map((feature) => (
-                  <span key={feature} className="text-[9px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                    {feature}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {int.conectada ? (
-                  <>
-                    <button
-                      onClick={() => setModalConfig(int.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10px] font-semibold text-slate-700 transition-colors"
-                    >
-                      <Settings size={12} /> Configurar
-                    </button>
-                    <button
-                      onClick={() => toggleConexion(int.id)}
-                      className="px-3 py-2 bg-red-50 hover:bg-red-100 rounded-lg text-[10px] font-semibold text-red-600 transition-colors"
-                    >
-                      Desconectar
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => toggleConexion(int.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-[10px] font-semibold text-white transition-colors shadow-sm shadow-blue-600/20"
-                  >
-                    <Zap size={12} /> Conectar
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal de configuración WordPress */}
-      {modalConfig === "wordpress-elementor" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-3xl mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <Globe size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">WordPress + Elementor</h3>
-                    <p className="text-[11px] text-slate-400">Configuración de integración</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModalConfig(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={16} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <WordPressIntegration />
-            </div>
-            <div className="p-6 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setModalConfig(null)}
-                className="px-5 py-2 bg-blue-600 text-white text-[11px] font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
-              >
-                Cerrar
-              </button>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck size={18} className="mt-0.5 shrink-0 text-blue-700" />
+            <div>
+              <h2 className="text-xs font-bold text-blue-900">
+                Inventario de solo lectura
+              </h2>
+              <p className="mt-1 text-[11px] leading-relaxed text-blue-800/80">
+                La configuración de proveedores y secretos se realiza en sus
+                paneles autorizados y en el gestor de variables del entorno.
+                Una fila registrada no reemplaza una prueba real en staging.
+              </p>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Modal de configuración genérico */}
-      {modalConfig && modalConfig !== "wordpress-elementor" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl overflow-hidden">
-            {(() => {
-              const int = integracionesState.find((i) => i.id === modalConfig);
-              if (!int) return null;
-              const IconoInt = int.icono;
-              return (
-                <>
-                  <div className="p-6 border-b border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 bg-gradient-to-br ${int.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                          <IconoInt size={20} />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-bold text-slate-800">{int.nombre}</h3>
-                          <p className="text-[11px] text-slate-400">{int.descripcion}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setModalConfig(null)}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                      >
-                        <X size={16} className="text-slate-400" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-semibold text-slate-700">API Key</label>
-                      <input
-                        type="password"
-                        placeholder="Ingresa tu API Key"
-                        className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-semibold text-slate-700">API Secret</label>
-                      <input
-                        type="password"
-                        placeholder="Ingresa tu API Secret"
-                        className="w-full h-10 px-3 bg-white border border-slate-200/60 rounded-xl text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
-                      />
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-xl">
-                      <div className="flex items-start gap-2">
-                        <Info size={14} className="text-blue-500 mt-0.5" />
-                        <p className="text-[10px] text-blue-600">
-                          Las credenciales se cifran y almacenan de forma segura.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => setModalConfig(null)}
-                      className="px-4 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => {
-                        toast.success("Configuración guardada");
-                        setModalConfig(null);
-                      }}
-                      className="px-5 py-2 bg-blue-600 text-white text-[11px] font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
-                    >
-                      Guardar
-                    </button>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* Modal API Keys */}
-      {modalApiKeys && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                    <Key size={18} className="text-slate-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800">API Keys</h3>
-                    <p className="text-[11px] text-slate-400">Gestiona las llaves de acceso</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModalApiKeys(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={16} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                <div>
-                  <div className="text-[12px] font-semibold text-slate-700">API Key Principal</div>
-                  <div className="text-[10px] text-slate-400">Creada: 01 Julio 2026</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <code className="text-[11px] font-mono text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
-                    sk_live_••••••••••••••••
-                  </code>
-                  <button
-                    onClick={() => toast.success("API Key copiada")}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <Copy size={14} className="text-slate-400" />
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => toast.success("Nueva API Key generada")}
-                className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-200 rounded-xl text-[11px] font-semibold text-slate-500 hover:border-blue-300 hover:text-blue-500 transition-colors"
-              >
-                <Plus size={14} /> Generar Nueva API Key
-              </button>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <div>
+              <h2 className="text-xs font-bold text-amber-900">
+                WordPress y servicios externos
+              </h2>
+              <p className="mt-1 text-[11px] leading-relaxed text-amber-800/80">
+                El conector WordPress vive en `wordpress/` y usa el webhook del
+                servidor. Las verificaciones de Resend, WhatsApp y respaldos se
+                ejecutan con datos sintéticos antes de habilitarlas en producción.
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">
+              Conexiones registradas
+            </h2>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Estado informado por la tabla `integraciones`.
+            </p>
+          </div>
+          <label className="relative block sm:w-72">
+            <span className="sr-only">Buscar integración</span>
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(event) => setBusqueda(event.target.value)}
+              placeholder="Buscar por nombre, tipo o estado"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-xs text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10"
+            />
+          </label>
+        </div>
+
+        {cargando ? (
+          <div className="flex min-h-48 items-center justify-center text-xs text-slate-500">
+            <div className="mr-3 h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-b-blue-600" />
+            Cargando inventario...
+          </div>
+        ) : errorCarga ? (
+          <EstadoVacio
+            icono={<AlertCircle size={20} />}
+            titulo="No se pudo cargar el inventario"
+            detalle="Revisa la sesión y vuelve a intentar. No se muestra un catálogo alternativo local."
+          />
+        ) : integracionesFiltradas.length === 0 ? (
+          <EstadoVacio
+            icono={<Unplug size={20} />}
+            titulo={integraciones.length === 0 ? "Sin integraciones registradas" : "Sin coincidencias"}
+            detalle={
+              integraciones.length === 0
+                ? "Registra una conexión solo después de configurarla y comprobarla en un entorno controlado."
+                : "Prueba con otro nombre, proveedor, tipo o estado."
+            }
+          />
+        ) : (
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {integracionesFiltradas.map((integracion) => (
+              <TarjetaIntegracion key={integracion.id} integracion={integracion} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
+}
+
+function Resumen({
+  etiqueta,
+  valor,
+  icono,
+}: {
+  etiqueta: string;
+  valor: number;
+  icono: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-center justify-between text-blue-100">
+        <span className="text-[9px] font-bold uppercase tracking-wide">{etiqueta}</span>
+        {icono}
+      </div>
+      <p className="mt-1 text-xl font-bold text-white">{valor}</p>
+    </div>
+  );
+}
+
+function TarjetaIntegracion({
+  integracion,
+}: {
+  integracion: IntegracionPersistida;
+}) {
+  const activa = ESTADOS_ACTIVOS.has(
+    integracion.estado.toLocaleUpperCase("es-CL")
+  );
+  const ultimaSincronizacion = formatearFecha(integracion.ultimaSync);
+
+  return (
+    <article className="rounded-2xl border border-slate-200 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <Plug size={17} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-xs font-bold text-slate-800">
+              {integracion.nombre}
+            </h3>
+            <p className="mt-0.5 truncate text-[10px] text-slate-500">
+              {integracion.proveedor || integracion.tipo}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${
+            activa
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-slate-100 text-slate-600"
+          }`}
+        >
+          {integracion.estado}
+        </span>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+        <Dato etiqueta="Tipo" valor={integracion.tipo} />
+        <Dato
+          etiqueta="Sincronizaciones"
+          valor={String(integracion.syncCount ?? 0)}
+        />
+        <Dato
+          etiqueta="Errores registrados"
+          valor={String(integracion.errores ?? 0)}
+        />
+        <Dato
+          etiqueta="Última sincronización"
+          valor={ultimaSincronizacion}
+          icono={<Clock3 size={11} />}
+        />
+      </dl>
+    </article>
+  );
+}
+
+function Dato({
+  etiqueta,
+  valor,
+  icono,
+}: {
+  etiqueta: string;
+  valor: string;
+  icono?: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[9px] font-medium text-slate-400">{etiqueta}</dt>
+      <dd className="mt-1 flex items-center gap-1 truncate text-[10px] font-semibold text-slate-700">
+        {icono}
+        {valor}
+      </dd>
+    </div>
+  );
+}
+
+function EstadoVacio({
+  icono,
+  titulo,
+  detalle,
+}: {
+  icono: React.ReactNode;
+  titulo: string;
+  detalle: string;
+}) {
+  return (
+    <div className="mt-5 flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 px-6 text-center">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+        {icono}
+      </span>
+      <h3 className="mt-3 text-xs font-bold text-slate-700">{titulo}</h3>
+      <p className="mt-1 max-w-md text-[11px] leading-relaxed text-slate-500">
+        {detalle}
+      </p>
+    </div>
+  );
+}
+
+function formatearFecha(fecha: string | null | undefined): string {
+  if (!fecha) return "Sin registro";
+  const parsed = new Date(fecha);
+  if (Number.isNaN(parsed.getTime())) return "Sin registro";
+  return parsed.toLocaleDateString("es-CL");
 }
