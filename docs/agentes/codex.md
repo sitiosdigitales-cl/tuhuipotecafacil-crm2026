@@ -892,3 +892,10 @@ validada y confirmaciones acordes al canal. Suite: 454/454; audit: 0.
 
 [calidad · BUG-090] corregido en código — panel y cron ejecutan la misma
 exportación, sin aceptar resultados parciales. Suite: 460/460; audit: 0.
+
+[build] ocupado — Codex, BUG-091 · recuperación inicial de SUPER_ADMIN.
+
+[build] libre — Codex, BUG-091 · lint, build, script y TypeScript terminaron en 0.
+
+[calidad · BUG-091] corregido en repositorio — sin cuentas o contraseñas por
+defecto; recuperación local explícita. Suite: 462/462; audit: 0.
