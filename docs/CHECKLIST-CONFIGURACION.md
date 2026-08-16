@@ -42,7 +42,7 @@ Ir a Vercel → Settings → Environment Variables y agregar:
 |----------|-----------------|
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → service_role |
 | `RESEND_API_KEY` | Resend.com → API Keys |
-| `ELEMENTOR_WEBHOOK_SECRET` | Generar: `tuhipotecafacil-webhook-secret-2026` |
+| `ELEMENTOR_WEBHOOK_SECRET` | Generar con `openssl rand -hex 32` |
 
 Después: Redesplegar el proyecto en Vercel.
 

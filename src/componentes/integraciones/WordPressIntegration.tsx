@@ -71,19 +71,14 @@ export function WordPressIntegration() {
   };
 
   const codigoElementor = `
-// En Elementor > Formulario > Configuración > Webhooks:
-// 1. Agrega un nuevo webhook
-// 2. URL: ${webhookUrl}
-// 3. Método: POST
-// 4. Headers: Content-Type: application/json
-
-// Mapeo de campos (en la pestaña "Mapeo"):
-// - Nombre → first_name
-// - Apellido → last_name  
-// - Email → email
-// - Teléfono → phone
-// - RUT → custom_field_rut
-// - Mensaje → message
+// 1. Instala crm-webhook-plugin.php en WordPress.
+// 2. Genera un secreto: openssl rand -hex 32
+// 3. Agrégalo solo en wp-config.php:
+define('CRM_WEBHOOK_SECRET', 'PEGA_AQUI_EL_SECRETO_GENERADO');
+// 4. Configura el mismo valor como ELEMENTOR_WEBHOOK_SECRET en Vercel.
+//
+// El plugin envía ${webhookUrl} desde el servidor con X-Webhook-Secret.
+// No pongas el secreto en Elementor, JavaScript ni en la URL.
   `.trim();
 
   const codigoPHP = `
@@ -92,6 +87,11 @@ export function WordPressIntegration() {
 // Envía el formulario a tu CRM automáticamente
 
 add_action('elementor_pro/forms/submission', function($submission) {
+    if (!defined('CRM_WEBHOOK_SECRET')) {
+        error_log('CRM Webhook no enviado: falta CRM_WEBHOOK_SECRET');
+        return;
+    }
+
     $fields = $submission->get_fields();
     
     $data = array(
@@ -103,9 +103,12 @@ add_action('elementor_pro/forms/submission', function($submission) {
         'mensaje'   => $fields['message'] ?? '',
     );
     
-    wp_remote_post('${apiUrl}', array(
-        'headers' => array('Content-Type' => 'application/json'),
-        'body'    => json_encode($data),
+    wp_remote_post('${webhookUrl}', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Webhook-Secret' => CRM_WEBHOOK_SECRET,
+        ),
+        'body'    => wp_json_encode($data),
     ));
 });
 ?>
@@ -187,24 +190,24 @@ add_action('elementor_pro/forms/submission', function($submission) {
           <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</div>
             <div>
-              <div className="text-[11px] font-bold text-slate-800">Agrega una acción Webhook</div>
-              <div className="text-[10px] text-slate-500">En &ldquo;Agregar acción&rdquo; selecciona &ldquo;Webhook&rdquo;</div>
+              <div className="text-[11px] font-bold text-slate-800">Instala el conector del CRM</div>
+              <div className="text-[10px] text-slate-500">Sube y activa crm-webhook-plugin.php desde el panel de plugins</div>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</div>
             <div>
-              <div className="text-[11px] font-bold text-slate-800">Pega la URL del Webhook</div>
-              <div className="text-[10px] text-slate-500">Copia la URL de arriba y pégala en el campo URL del webhook</div>
+              <div className="text-[11px] font-bold text-slate-800">Configura el secreto compartido</div>
+              <div className="text-[10px] text-slate-500">Define CRM_WEBHOOK_SECRET en wp-config.php y el mismo valor en Vercel</div>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
             <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0">4</div>
             <div>
-              <div className="text-[11px] font-bold text-slate-800">Configura el mapeo de campos</div>
-              <div className="text-[10px] text-slate-500">Asocia cada campo del formulario con los campos del CRM</div>
+              <div className="text-[11px] font-bold text-slate-800">Prueba una entrega real</div>
+              <div className="text-[10px] text-slate-500">Envía el formulario y confirma que el lead aparezca una sola vez</div>
             </div>
           </div>
         </div>
@@ -304,6 +307,7 @@ add_action('elementor_pro/forms/submission', function($submission) {
             <h4 className="text-[11px] font-bold text-amber-800 mb-2">Notas Importantes</h4>
             <ul className="text-[10px] text-amber-700 space-y-1">
               <li>• Asegúrate de que tu sitio WordPress tenga SSL (HTTPS) para que el webhook funcione</li>
+              <li>• Nunca copies el secreto en una URL, Elementor o código que llegue al navegador</li>
               <li>• Los leads llegan a la etapa &ldquo;Nuevo Lead&rdquo; automáticamente</li>
               <li>• Puedes personalizar los campos del formulario en Elementor</li>
               <li>• Si usas otro plugin de formularios (Contact Form 7, WPForms), el código PHP es la mejor opción</li>

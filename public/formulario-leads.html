@@ -467,7 +467,7 @@
   </div>
 
   <script>
-    const WEBHOOK_URL = 'https://tuhuipotecafacil-crm2026.vercel.app/api/webhook/leads';
+    const WEBHOOK_URL = '/api/pre-evaluacion';
     const THANK_YOU_URL = 'https://www.tuhipotecafacil.cl/registro-completo/';
     
     // Formatear RUT automáticamente: 12345678-9 → 12.345.678-9
@@ -590,19 +590,19 @@
       const data = new FormData(form);
       
       const payload = {
-        Nombre: data.get('nombre'),
-        Apellido: data.get('apellido'),
-        Rut: data.get('rut'),
-        Edad: data.get('edad'),
-        'Número de Teléfono': data.get('telefono'),
-        'Correo Electrónico': data.get('email'),
-        '¿Cuál es tu situación laboral?': data.get('situacion_laboral'),
-        '¿Estás actualmente en DICOM?': data.get('en_dicom') === 'si' ? 'Sí' : 'No',
-        'Si estás en DICOM, ¿corresponde?': data.get('dicom_detalle') || '',
-        '¿Cuál es tu renta mensual aproximada?': data.get('renta_mensual') || '',
-        '¿Deseas complementar renta?': data.get('complementar_renta') === 'si' ? 'Sí' : 'No',
-        '¿Qué tipo de crédito buscas?': data.get('tipo_credito'),
-        '¿Cuentas con pie o ahorro inicial?': data.get('cuenta_pie') === 'si' ? 'Sí' : 'No',
+        nombre: data.get('nombre'),
+        apellido: data.get('apellido'),
+        rut: data.get('rut'),
+        edad: data.get('edad'),
+        telefono: data.get('telefono'),
+        email: data.get('email'),
+        situacionLaboral: data.get('situacion_laboral'),
+        dicom: data.get('en_dicom') === 'si' ? 'Sí' : 'No',
+        comentarios: data.get('dicom_detalle') || '',
+        rentaMensual: data.get('renta_mensual') || '',
+        complementarRenta: data.get('complementar_renta') === 'si' ? 'Sí' : 'No',
+        tipoCredito: data.get('tipo_credito'),
+        cuentaPie: data.get('cuenta_pie') === 'si',
       };
       
       try {

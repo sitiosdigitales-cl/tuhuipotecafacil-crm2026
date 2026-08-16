@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CRM Webhook Connector
  * Description: Conecta formularios Elementor al CRM Tu Hipoteca Fácil
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Tu Hipoteca Fácil
  */
 
@@ -18,9 +18,6 @@ class CRM_Webhook_Connector {
     }
     
     public function handle_elementor_form($action, $form_data) {
-        // Obtener los campos del formulario
-        $form_name = $form_data['form_name'];
-        
         // Mapear campos del formulario a campos del CRM
         $crm_data = array(
             'Nombre' => $this->get_field_value($form_data, 'Nombre', 'nombre', 'name'),
@@ -58,26 +55,34 @@ class CRM_Webhook_Connector {
     }
 
     private function send_to_crm($data) {
-        $headers = array('Content-Type' => 'application/json');
-
         // Cabecera, no query param: un secreto en la URL queda en los logs de
         // acceso, en los proxies intermedios y en la cabecera Referer.
         $secret = $this->get_webhook_secret();
-        if (!empty($secret)) {
-            $headers['X-Webhook-Secret'] = $secret;
+        if (empty($secret)) {
+            error_log('CRM Webhook no enviado: falta CRM_WEBHOOK_SECRET');
+            return;
         }
 
         $args = array(
             'method' => 'POST',
             'timeout' => 30,
-            'headers' => $headers,
-            'body' => json_encode($data),
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'X-Webhook-Secret' => $secret,
+            ),
+            'body' => wp_json_encode($data),
         );
 
         $response = wp_remote_post($this->webhook_url, $args);
         
         if (is_wp_error($response)) {
             error_log('CRM Webhook Error: ' . $response->get_error_message());
+            return;
+        }
+
+        $status = wp_remote_retrieve_response_code($response);
+        if ($status < 200 || $status >= 300) {
+            error_log('CRM Webhook rechazado con HTTP ' . $status);
         }
     }
 }

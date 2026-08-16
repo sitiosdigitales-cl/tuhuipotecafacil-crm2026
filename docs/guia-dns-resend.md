@@ -82,27 +82,30 @@ FROM_EMAIL=CRM <notificaciones@tuhipotecafacil.cl>
 
 ### Opción A: Si usas WordPress/Elementor
 
-1. En Elementor → Tu formulario → **Actions After Submit**
-2. Agrega **Webhook**
-3. En el campo Webhook URL, pon:
+1. Instala y activa `crm-webhook-plugin.php`.
+2. Genera un secreto con `openssl rand -hex 32`.
+3. Define el resultado en `wp-config.php`:
    ```
-   https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads?secret=TU_SECRET
+   define('CRM_WEBHOOK_SECRET', 'PEGA_AQUI_EL_SECRETO_GENERADO');
    ```
-4. Configura las variables de entorno en Vercel:
-   - `ELEMENTOR_WEBHOOK_SECRET` = `TU_SECRET` (el mismo que pusiste en la URL)
+4. Configura el mismo valor como `ELEMENTOR_WEBHOOK_SECRET` en Vercel.
+
+El secreto se transmite en `X-Webhook-Secret`; nunca se agrega a la URL.
 
 ### Opción B: Si usas otro builder (Wix, Squarespace, etc.)
 
 Usa **Zapier** o **Make.com** para conectar:
 1. Trigger: Form submission en tu web
 2. Action: POST a `https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads`
-3. Body format: JSON con los campos del formulario
+3. Header: `X-Webhook-Secret`, cargado desde el almacén secreto del proveedor
+4. Body format: JSON con los campos del formulario
 
 ### Opción C: Formulario directo en React/Next.js
 
-Si tu web es Next.js, puedes hacer fetch directo:
+El navegador no puede guardar el secreto del webhook. Usa el endpoint público
+de pre evaluación, que valida y limita sus propios campos:
 ```javascript
-fetch('https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads', {
+fetch('/api/pre-evaluacion', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -110,9 +113,9 @@ fetch('https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads', {
     apellido: 'Pérez',
     email: 'juan@ejemplo.com',
     telefono: '+56912345678',
-    monto_credito: 50000000,
-    tipo_credito: 'Primera Vivienda',
-    situacion_laboral: 'Dependiente'
+    montoSolicitado: 50000000,
+    tipoCredito: 'Primera Vivienda',
+    situacionLaboral: 'DEPENDIENTE'
   })
 })
 ```
@@ -144,12 +147,13 @@ Una vez configurado todo, prueba con curl:
 ```bash
 curl -X POST https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads \
   -H "Content-Type: application/json" \
+  -H "X-Webhook-Secret: $ELEMENTOR_WEBHOOK_SECRET" \
   -d '{
     "nombre": "Test",
     "apellido": "Lead",
     "email": "test@ejemplo.com",
     "telefono": "+56912345678"
-  }`
+  }'
 ```
 
 Deberías recibir: `{"success":true,"message":"Lead creado correctamente"}`

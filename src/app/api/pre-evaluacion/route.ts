@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
         banco: body.banco || null,
         notas: body.comentarios || null,
         edad: body.edad ? parseInt(body.edad) : null,
+        rentaMensual: body.rentaMensual || null,
         complementarRenta: body.complementarRenta === "Sí",
+        cuentaPie: body.cuentaPie === true,
         diasEnEtapa: 0,
       }))
       .select()

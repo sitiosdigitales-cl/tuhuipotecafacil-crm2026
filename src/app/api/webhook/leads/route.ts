@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { enviarEmail } from "@/lib/email";
@@ -16,22 +18,28 @@ function firstText(fields: Record<string, unknown>, keys: string[]): string {
   return "";
 }
 
-// POST /api/webhook/leads — Endpoint unificado para formularios externos (Elementor, WordPress, etc.)
-// Autenticación: cabecera X-Webhook-Secret, o ?secret= (obsoleto, solo durante la transición).
-// Soporta: JSON, form-urlencoded, y el formato anidado de Elementor ({fields: {key: {value, raw_value}}})
-//
-// PENDIENTE (SEC-05): el secreto sigue siendo opcional. Volverlo obligatorio
-// corta la captura de leads hasta que el plugin de WordPress esté actualizado
-// y ELEMENTOR_WEBHOOK_SECRET configurada en Vercel. Ver docs/agentes/claude.md.
-export async function POST(request: NextRequest) {
-  // La cabecera es la vía correcta; el query param queda por compatibilidad
-  // porque deja el secreto en logs de acceso, proxies y cabecera Referer.
-  const secret =
-    request.headers.get("x-webhook-secret") ||
-    request.nextUrl.searchParams.get("secret");
-  const expectedSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
+function secretMatches(provided: string, expected: string): boolean {
+  const providedDigest = createHash("sha256").update(provided).digest();
+  const expectedDigest = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(providedDigest, expectedDigest);
+}
 
-  if (expectedSecret && secret !== expectedSecret) {
+// POST /api/webhook/leads — Endpoint unificado para formularios externos (Elementor, WordPress, etc.)
+// Autenticación: cabecera X-Webhook-Secret, enviada solo desde el servidor WordPress.
+// Soporta: JSON, form-urlencoded, y el formato anidado de Elementor ({fields: {key: {value, raw_value}}})
+export async function POST(request: NextRequest) {
+  const expectedSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
+  if (!expectedSecret || expectedSecret.length < 32) {
+    console.error("ELEMENTOR_WEBHOOK_SECRET no está configurado de forma segura");
+    return NextResponse.json(
+      { error: "Webhook no disponible" },
+      { status: 503 }
+    );
+  }
+
+  const secret = request.headers.get("x-webhook-secret");
+
+  if (!secret || !secretMatches(secret, expectedSecret)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -189,17 +197,6 @@ export async function POST(request: NextRequest) {
     console.error("Error en webhook leads:", err);
     return NextResponse.json({ error: "Error interno", details: String(err) }, { status: 500 });
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
 }
 
 export async function GET() {

@@ -800,3 +800,10 @@ obsoletos retirados y auditoría agregada a CI. Suite: 396/396; audit: 0.
 
 [calidad · BUG-077] corregido — configuración ESM y alias nativos de Vite, sin
 advertencias ni complemento obsoleto. Suite: 397/397; audit: 0.
+
+[build] ocupado — Codex, BUG-078 · secreto obligatorio del webhook de leads.
+
+[build] libre — Codex, BUG-078 · lint, PHP, build y TypeScript terminaron en 0.
+
+[calidad · BUG-078] corregido — webhook servidor a servidor exige secreto fuerte
+en cabecera y el formulario público usa pre evaluación. Suite: 400/400.

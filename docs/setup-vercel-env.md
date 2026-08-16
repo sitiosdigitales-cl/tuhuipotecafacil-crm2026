@@ -61,21 +61,24 @@ Resend es el servicio que usa el CRM para enviar emails (bienvenida, documentos 
 
 Este secreto protege el webhook que recibe leads desde formularios Elementor.
 
-1. Genera un secreto aleatorio (puedes usar esto):
+1. Genera un secreto aleatorio de 32 bytes y guárdalo en el gestor de secretos:
    ```
-   tuhipotecafacil-webhook-2026-$(openssl rand -hex 16)
+   openssl rand -hex 32
    ```
-   O simplemente usa: `tuhipotecafacil-webhook-secret-2026`
 
 2. En Vercel, agrega:
    - **Nombre**: `ELEMENTOR_WEBHOOK_SECRET`
-   - **Valor**: `tuhipotecafacil-webhook-secret-2026`
+   - **Valor**: el resultado completo del comando anterior
    - **Environment**: Production, Preview, Development
 
-3. En tu formulario de Elementor, usa la misma URL:
+3. Instala `crm-webhook-plugin.php` en WordPress y agrega en `wp-config.php`,
+   antes de la línea de cierre, el mismo valor:
    ```
-   https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads?secret=tuhipotecafacil-webhook-secret-2026
+   define('CRM_WEBHOOK_SECRET', 'PEGA_AQUI_EL_SECRETO_GENERADO');
    ```
+
+No pongas el secreto en la URL, Elementor ni JavaScript. El plugin lo envía
+desde el servidor en la cabecera `X-Webhook-Secret`.
 
 ---
 
@@ -114,7 +117,7 @@ En Vercel → **Settings** → **Environment Variables**, deberías ver:
 | `RESEND_API_KEY` | ✅ `re_...` |
 | `FROM_EMAIL` | ✅ `CRM <notificaciones@tuhipotecafacil.cl>` |
 | `BACKUP_API_KEY` | ✅ `tuhuipotecafacil-backup-secret-2026` |
-| `ELEMENTOR_WEBHOOK_SECRET` | ✅ `tuhipotecafacil-webhook-secret-2026` |
+| `ELEMENTOR_WEBHOOK_SECRET` | ✅ Configurado sin mostrar el valor |
 
 ---
 
@@ -140,8 +143,9 @@ Después de agregar las variables, necesitas redesplegar el proyecto:
 ### Probar Webhook
 
 ```bash
-curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads?secret=tuhipotecafacil-webhook-secret-2026" \
+curl -X POST "https://tuhuipotecafacil-crm.vercel.app/api/webhook/leads" \
   -H "Content-Type: application/json" \
+  -H "X-Webhook-Secret: $ELEMENTOR_WEBHOOK_SECRET" \
   -d '{
     "nombre": "Test",
     "apellido": "Webhook",

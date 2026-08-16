@@ -111,18 +111,6 @@ export async function buscarEjecutivoPorId(id: string) {
   );
 }
 
-// ─── Webhook (creación externa) ───
-
-export async function crearLeadWebhook(data: Record<string, unknown>) {
-  return apiRequest<{ success: boolean; message?: string; error?: string }>(
-    "/api/webhook/leads",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-}
-
 // ─── Pipeline ───
 
 export async function obtenerEtapasPipeline() {

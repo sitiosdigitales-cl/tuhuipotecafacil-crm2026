@@ -62,7 +62,6 @@ export {
   moverEtapa,
   buscarEjecutivo,
   buscarEjecutivoPorId,
-  crearLeadWebhook,
   obtenerEtapasPipeline,
 } from "./servicios";
 
