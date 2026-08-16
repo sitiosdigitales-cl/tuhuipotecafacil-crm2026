@@ -1382,3 +1382,11 @@ mantiene cerrado el registro público y se habilita el proveedor de login.
 [build] ocupado — Codex, BUG-123 · proveedor email de Supabase Auth.
 
 [build] libre — Codex, BUG-123 · build terminado.
+
+[build] ocupado — Codex, AUTH-04-DB · contrato pgTAP de recuperación.
+
+[build] libre — Codex, AUTH-04-DB · build terminado.
+
+[FASE AUTH · AUTH-04-DB] preparado — contrato pgTAP cubre columna, tipo,
+permisos, ventana, estado y enlace Auth. Build verde; suite 801/801;
+lint/typecheck: 0; auditorías: 0. Sin Docker local; `database` valida la RPC.
