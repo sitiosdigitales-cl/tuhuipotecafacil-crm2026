@@ -1152,3 +1152,14 @@ regla restrictiva solo a `documentos` y `backups`. Suite: 598/598; audit: 0.
 [FASE BACKUP · BACKUP-01] preparado — workflow horario desactivado por defecto,
 dumps portables, copia íntegra de Storage y cifrado Restic en R2. Activación y
 primera ejecución requieren secrets humanos. Suite: 603/603; audit: 0.
+
+[FASE BACKUP · BACKUP-01] verificado — todas las puertas pasan en CI.
+
+[build] ocupado — Codex, BACKUP-02 · ensayo de restauración en staging.
+
+[build] libre — Codex, BACKUP-02 · build y validaciones terminadas.
+
+[FASE BACKUP · BACKUP-02] preparado — restauración manual exige staging vacío,
+environment protegido y confirmación literal; repone y verifica objetos, mide
+RTO y emite solo recuentos. Ensayo real requiere proyecto humano. Suite:
+608/608; audit: 0.

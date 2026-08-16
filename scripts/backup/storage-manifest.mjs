@@ -234,6 +234,9 @@ export async function verifyStorageBackup(inputDirectory) {
       typeof object.path !== "string" ||
       typeof object.payload !== "string" ||
       typeof object.sha256 !== "string" ||
+      typeof object.contentType !== "string" ||
+      !object.contentType ||
+      object.contentType.length > 255 ||
       !Number.isSafeInteger(object.size) ||
       object.size < 0
     ) {
@@ -278,4 +281,47 @@ export async function verifyStorageBackup(inputDirectory) {
     objectCount: manifest.objectCount,
     totalBytes: manifest.totalBytes,
   };
+}
+
+export async function restoreStorageBackup({
+  client,
+  inputDirectory,
+  upsert = false,
+}) {
+  const verified = await verifyStorageBackup(inputDirectory);
+  const manifest = validateManifest(
+    JSON.parse(
+      await readFile(join(inputDirectory, STORAGE_MANIFEST_FILE), "utf8"),
+    ),
+  );
+
+  for (const [index, object] of manifest.objects.entries()) {
+    const contents = await readFile(
+      join(inputDirectory, OBJECTS_DIRECTORY, object.payload),
+    );
+    const storage = client.storage.from(object.bucket);
+    const { error: uploadError } = await storage.upload(object.path, contents, {
+      contentType: object.contentType,
+      upsert,
+    });
+
+    if (uploadError) {
+      throw new Error(`No se pudo restaurar el objeto ${index + 1}`);
+    }
+
+    const { data, error: downloadError } = await storage.download(object.path);
+    if (downloadError || !data || typeof data.arrayBuffer !== "function") {
+      throw new Error(`No se pudo verificar el objeto restaurado ${index + 1}`);
+    }
+
+    const restoredContents = Buffer.from(await data.arrayBuffer());
+    if (
+      restoredContents.byteLength !== object.size ||
+      sha256(restoredContents) !== object.sha256
+    ) {
+      throw new Error(`Falló la verificación del objeto restaurado ${index + 1}`);
+    }
+  }
+
+  return verified;
 }

@@ -1,0 +1,61 @@
+name: Restore Drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: Restic snapshot ID or latest
+        required: true
+        default: latest
+        type: string
+      confirmation:
+        description: Type RESTORE_EMPTY_STAGING
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    if: vars.ENABLE_RESTORE_DRILLS == 'true' && inputs.confirmation == 'RESTORE_EMPTY_STAGING'
+    environment: staging-restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      TARGET_ENVIRONMENT: staging
+      CONFIRM_RESTORE: ${{ inputs.confirmation }}
+      RESTIC_SNAPSHOT: ${{ inputs.snapshot }}
+      TARGET_SUPABASE_DB_URL: ${{ secrets.TARGET_SUPABASE_DB_URL }}
+      TARGET_SUPABASE_URL: ${{ secrets.TARGET_SUPABASE_URL }}
+      TARGET_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TARGET_SUPABASE_SERVICE_ROLE_KEY }}
+      RESTIC_REPOSITORY: s3:https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com/${{ secrets.R2_BACKUP_BUCKET }}
+      RESTIC_PASSWORD: ${{ secrets.RESTIC_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install restore tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client restic
+      - name: Restore latest encrypted snapshot
+        shell: bash
+        env:
+          RESTORE_REPORT_FILE: ${{ runner.temp }}/restore-report.json
+        run: bash scripts/backup/restore-external-backup.sh
+      - name: Publish non-sensitive RTO report
+        if: success()
+        run: |
+          echo '## Restore drill' >> "$GITHUB_STEP_SUMMARY"
+          cat "${{ runner.temp }}/restore-report.json" >> "$GITHUB_STEP_SUMMARY"

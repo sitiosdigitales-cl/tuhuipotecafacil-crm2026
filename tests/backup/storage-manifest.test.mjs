@@ -8,6 +8,7 @@ import {
   STORAGE_MANIFEST_FILE,
   exportStorageBackup,
   parseBucketList,
+  restoreStorageBackup,
   verifyStorageBackup,
 } from "../../scripts/backup/storage-manifest.mjs";
 
@@ -50,6 +51,35 @@ function fakeClient(filesByBucket) {
               : { data: null, error: { message: "missing" } };
           }),
         };
+      },
+    },
+  };
+}
+
+function fakeWritableClient() {
+  const stored = new Map();
+  return {
+    stored,
+    client: {
+      storage: {
+        from(bucket) {
+          return {
+            upload: vi.fn(async (objectPath, contents, options) => {
+              const identity = `${bucket}\0${objectPath}`;
+              if (stored.has(identity) && !options.upsert) {
+                return { error: { message: "already exists" } };
+              }
+              stored.set(identity, Buffer.from(contents));
+              return { error: null };
+            }),
+            download: vi.fn(async (objectPath) => {
+              const contents = stored.get(`${bucket}\0${objectPath}`);
+              return contents
+                ? { data: new Blob([contents]), error: null }
+                : { data: null, error: { message: "missing" } };
+            }),
+          };
+        },
       },
     },
   };
@@ -131,6 +161,35 @@ describe("manifiesto del respaldo de Storage", () => {
     );
 
     await expect(verifyStorageBackup(directory)).rejects.toThrow("integridad");
+  });
+
+  it("restaura cada objeto y confirma el hash descargándolo", async () => {
+    const directory = await temporaryDirectory();
+    const source = fakeClient({
+      documentos: {
+        "lead-sintetico/archivo.pdf": {
+          contents: Buffer.from("contenido restaurable"),
+          contentType: "application/pdf",
+        },
+      },
+    });
+    await exportStorageBackup({
+      client: source,
+      outputDirectory: directory,
+      buckets: ["documentos"],
+    });
+    const target = fakeWritableClient();
+
+    await expect(
+      restoreStorageBackup({
+        client: target.client,
+        inputDirectory: directory,
+        upsert: true,
+      }),
+    ).resolves.toEqual({ buckets: 1, objectCount: 1, totalBytes: 21 });
+    expect(
+      target.stored.get("documentos\0lead-sintetico/archivo.pdf"),
+    ).toEqual(Buffer.from("contenido restaurable"));
   });
 
   it("rechaza identificadores de bucket con forma de ruta", () => {

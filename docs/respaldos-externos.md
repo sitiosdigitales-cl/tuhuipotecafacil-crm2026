@@ -46,6 +46,20 @@ del repositorio Restic. Configurar notificaciones de GitHub Actions para el
 equipo responsable; una ejecución roja implica incumplimiento potencial del
 RPO de una hora.
 
-La existencia de snapshots no demuestra recuperación. El procedimiento de
-restauración debe ensayarse en un proyecto Supabase de staging vacío antes de
-habilitar este workflow para producción.
+## Ensayo de restauración
+
+`.github/workflows/restore-drill.yml` es exclusivamente manual y usa el
+environment protegido `staging-restore`. El equipo debe configurar revisores,
+los secrets `TARGET_SUPABASE_DB_URL`, `TARGET_SUPABASE_URL` y
+`TARGET_SUPABASE_SERVICE_ROLE_KEY`, y la variable
+`ENABLE_RESTORE_DRILLS=true`.
+
+El destino debe ser un proyecto Supabase de staging nuevo, con cero tablas en
+`public`. El workflow exige escribir `RESTORE_EMPTY_STAGING`, restaura roles,
+esquema y datos en transacciones, repone cada objeto mediante la API de Storage
+y vuelve a descargarlo para comprobar tamaño y SHA-256. Se detiene si el tiempo
+total supera 14.400 segundos, equivalente al RTO máximo de cuatro horas.
+
+La primera ejecución sigue siendo una acción humana: este repositorio no crea
+proyectos, no configura secrets y no ejecuta restauraciones contra producción.
+Guardar el reporte de duración y recuentos en el registro del simulacro.
