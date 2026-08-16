@@ -730,3 +730,10 @@ clave automática usa comparación constante y nombre canónico. Suite: 362/362.
 
 [calidad · BUG-067] corregido — correo operativo exige rol y lead accesible;
 destinatario y nombre se derivan de la ficha. Suite completa: 367/367.
+
+[build] ocupado — Codex, BUG-068 · roles y alcance del envío de WhatsApp.
+
+[build] libre — Codex, BUG-068 · build y TypeScript de Next terminaron en 0.
+
+[calidad · BUG-068] corregido — WhatsApp exige rol y lead accesible, deriva
+teléfono, acota contenido y no expone IDs del proveedor. Suite: 373/373.
