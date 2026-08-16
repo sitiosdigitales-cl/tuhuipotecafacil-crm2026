@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { supabase, fromSupabaseArray } from "@/lib/supabase";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
-    try {
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!["SUPER_ADMIN", "ADMIN"].includes(auth.rol)) return forbidden();
+
+  try {
     const { searchParams } = new URL(request.url);
     const accion = searchParams.get("accion");
     const modulo = searchParams.get("modulo");
@@ -27,37 +30,5 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error("Error inesperado:", e);
     return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-    if (!requireAuth(request)) return unauthorized();
-    try {
-    const body = await request.json();
-    const { data, error } = await supabase
-      .from("auditoria")
-      .insert(toSupabaseColumns({
-        id: crypto.randomUUID(),
-        usuarioId: body.usuarioId,
-        usuarioNombre: body.usuarioNombre,
-        accion: body.accion,
-        modulo: body.modulo,
-        registroId: body.registroId || null,
-        registroNombre: body.registroNombre || null,
-        valorAnterior: body.valorAnterior || null,
-        valorNuevo: body.valorNuevo || null,
-        motivo: body.motivo || null,
-        ip: body.ip || null,
-        navegador: body.navegador || null,
-        dispositivo: body.dispositivo || null,
-        fecha: new Date().toISOString(),
-      }))
-      .select()
-      .single();
-
-    if (error) return NextResponse.json({ success: false, error: "Error al crear registro" }, { status: 500 });
-    return NextResponse.json({ success: true, data }, { status: 201 });
-  } catch {
-    return NextResponse.json({ success: false, error: "Error al crear registro" }, { status: 500 });
   }
 }

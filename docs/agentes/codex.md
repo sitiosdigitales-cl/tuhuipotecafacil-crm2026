@@ -709,3 +709,10 @@ renovación contra cuenta vigente y refresco cada 10 minutos. Suite: 353/353.
 
 [calidad · BUG-064] corregido — se retiran endpoint, selector y fallback local
 de cambio de identidad. Suite completa: 355/355.
+
+[build] ocupado — Codex, BUG-065 · lectura y escritura de auditoría.
+
+[build] libre — Codex, BUG-065 · build y typecheck terminaron en 0.
+
+[calidad · BUG-065] corregido — auditoría queda solo lectura para administración
+y se elimina el POST que aceptaba identidad del cliente. Suite: 358/358.
