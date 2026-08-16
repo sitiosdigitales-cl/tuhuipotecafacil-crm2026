@@ -550,23 +550,29 @@
     function generateSummary() {
       const form = document.getElementById('leadForm');
       const data = new FormData(form);
-      
-      let html = `
-        <p><strong>Nombre:</strong> ${data.get('nombre')} ${data.get('apellido')}</p>
-        <p><strong>Rut:</strong> ${data.get('rut')}</p>
-        <p><strong>Teléfono:</strong> ${data.get('telefono')}</p>
-        <p><strong>Email:</strong> ${data.get('email')}</p>
-        <p><strong>Situación laboral:</strong> ${data.get('situacion_laboral')}</p>
-        <p><strong>Tipo crédito:</strong> ${data.get('tipo_credito')}</p>
-        <p><strong>Edad:</strong> ${data.get('edad')} años</p>
-      `;
-      
-      if (data.get('renta_mensual')) html += `<p><strong>Renta:</strong> ${data.get('renta_mensual')}</p>`;
-      if (data.get('en_dicom') === 'si') html += `<p><strong>DICOM:</strong> Sí - ${data.get('dicom_detalle') || 'Sin detalle'}</p>`;
-      if (data.get('complementar_renta') === 'si') html += `<p><strong>Complementar renta:</strong> Sí</p>`;
-      if (data.get('cuenta_pie') === 'si') html += `<p><strong>Cuenta con pie:</strong> Sí</p>`;
-      
-      document.getElementById('summary').innerHTML = html;
+
+      const summary = document.getElementById('summary');
+      summary.replaceChildren();
+      const addRow = (label, value) => {
+        const paragraph = document.createElement('p');
+        const title = document.createElement('strong');
+        title.textContent = label + ':';
+        paragraph.append(title, document.createTextNode(' ' + String(value ?? '')));
+        summary.appendChild(paragraph);
+      };
+
+      addRow('Nombre', `${data.get('nombre') || ''} ${data.get('apellido') || ''}`.trim());
+      addRow('Rut', data.get('rut'));
+      addRow('Teléfono', data.get('telefono'));
+      addRow('Email', data.get('email'));
+      addRow('Situación laboral', data.get('situacion_laboral'));
+      addRow('Tipo crédito', data.get('tipo_credito'));
+      addRow('Edad', `${data.get('edad') || ''} años`.trim());
+
+      if (data.get('renta_mensual')) addRow('Renta', data.get('renta_mensual'));
+      if (data.get('en_dicom') === 'si') addRow('DICOM', `Sí - ${data.get('dicom_detalle') || 'Sin detalle'}`);
+      if (data.get('complementar_renta') === 'si') addRow('Complementar renta', 'Sí');
+      if (data.get('cuenta_pie') === 'si') addRow('Cuenta con pie', 'Sí');
     }
     
     function showError(msg) {

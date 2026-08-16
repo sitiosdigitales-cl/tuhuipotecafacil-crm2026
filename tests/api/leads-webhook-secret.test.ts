@@ -30,9 +30,13 @@ const validBody = {
   Nombre: "Caso",
 };
 
-function request(url = "http://localhost/api/webhook/leads", secret?: string) {
+function request(
+  url = "http://localhost/api/webhook/leads",
+  secret?: string,
+  body: Record<string, unknown> = validBody
+) {
   return new NextRequest(url, {
-    body: JSON.stringify(validBody),
+    body: JSON.stringify(body),
     headers: {
       "content-type": "application/json",
       ...(secret ? { "x-webhook-secret": secret } : {}),
@@ -93,5 +97,25 @@ describe("secreto del webhook de leads", () => {
     expect(plugin).toContain("X-Webhook-Secret");
     expect(publicForm).toContain("const WEBHOOK_URL = '/api/pre-evaluacion'");
     expect(publicForm).not.toContain("X-Webhook-Secret");
+  });
+
+  it("trata los datos externos como texto dentro del correo", async () => {
+    process.env.ELEMENTOR_WEBHOOK_SECRET = WEBHOOK_SECRET;
+
+    const response = await POST(
+      request(undefined, WEBHOOK_SECRET, {
+        Apellido: "Prueba </td>",
+        "Comentarios adicionales": "Consulta <img src=x>",
+        "Correo Electrónico": "lead@example.invalid",
+        Nombre: "Caso <b>Uno</b>",
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const options = enviarEmail.mock.calls[0]?.[0];
+    expect(options.html).toContain("Caso &lt;b&gt;Uno&lt;/b&gt;");
+    expect(options.html).toContain("Consulta &lt;img src=x&gt;");
+    expect(options.html).not.toContain("<b>Uno</b>");
+    expect(options.html).not.toContain("<img src=x>");
   });
 });

@@ -7,7 +7,7 @@
 
 import { getSupabaseAdmin } from "./supabase-admin";
 import { supabase } from "./supabase";
-import { enviarEmail, EMAIL_TEMPLATES } from "./email";
+import { crearEmailDesdeTemplate, enviarEmail } from "./email";
 import { enviarMensajeWhatsApp, isWhatsAppConfigured } from "./whatsapp";
 
 export type EventoNotificacion =
@@ -227,24 +227,22 @@ async function enviarNotificacionEmail(
     const templateName = templateMap[opts.evento];
     if (!templateName) return;
 
-    const template = EMAIL_TEMPLATES[templateName];
-    if (!template) return;
-
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const urlCompleta = opts.accionUrl ? baseUrl + opts.accionUrl : "";
 
-    const { asunto, contenido } = template({
+    const email = crearEmailDesdeTemplate(templateName, {
+      ...opts.datosEmail,
       nombre: usuario.nombre || "Usuario",
       evento: opts.titulo,
       descripcion: opts.descripcion,
       url: urlCompleta,
-      ...opts.datosEmail,
     });
+    if (!email) return;
 
     await enviarEmail({
       to: usuario.email,
-      subject: asunto,
-      html: contenido,
+      subject: email.asunto,
+      html: email.contenido,
     });
   } catch {
     // Silenciar errores de email

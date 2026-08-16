@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
+import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
 
 // POST /api/pre-evaluacion — Endpoint público para crear leads desde el simulador
 // NO requiere auth (es un formulario público)
@@ -75,9 +76,22 @@ export async function POST(request: NextRequest) {
 
     // Enviar email de notificación al equipo
     try {
+      const safeNombre = escapeHtml(body.nombre);
+      const safeApellido = escapeHtml(body.apellido);
+      const safeRut = escapeHtml(body.rut || "No informado");
+      const safeEmail = escapeHtml(body.email);
+      const safeTelefono = escapeHtml(body.telefono || "No informado");
+      const safeTipoCredito = escapeHtml(body.tipoCredito || "No especificado");
+      const safeMonto = escapeHtml(
+        body.montoSolicitado?.toLocaleString?.("es-CL") ?? body.montoSolicitado
+      );
+      const safeBanco = escapeHtml(body.banco);
+      const safeComentarios = escapeHtml(body.comentarios);
       await enviarEmail({
         to: "contacto@tuhipotecafacil.cl",
-        subject: `🏠 Nueva Pre Evaluación: ${body.nombre} ${body.apellido}`,
+        subject: sanitizeEmailHeader(
+          `🏠 Nueva Pre Evaluación: ${body.nombre} ${body.apellido}`
+        ),
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #1E40AF; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
@@ -86,15 +100,15 @@ export async function POST(request: NextRequest) {
             </div>
             <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
               <table style="width: 100%; font-size: 13px;">
-                <tr><td style="padding: 8px 0; color: #64748b; width: 140px;"><strong>Nombre:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.nombre} ${body.apellido}</td></tr>
-                <tr><td style="padding: 8px 0; color: #64748b;"><strong>RUT:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.rut || "No informado"}</td></tr>
-                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Email:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.email}</td></tr>
-                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Teléfono:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.telefono || "No informado"}</td></tr>
+                <tr><td style="padding: 8px 0; color: #64748b; width: 140px;"><strong>Nombre:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeNombre} ${safeApellido}</td></tr>
+                <tr><td style="padding: 8px 0; color: #64748b;"><strong>RUT:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeRut}</td></tr>
+                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Email:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeEmail}</td></tr>
+                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Teléfono:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeTelefono}</td></tr>
                 <tr><td style="padding: 8px 0; color: #64748b;"><strong>Situación laboral:</strong></td><td style="padding: 8px 0; color: #0f172a;">${sitLaboral}</td></tr>
-                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Tipo crédito:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.tipoCredito || "No especificado"}</td></tr>
-                ${body.montoSolicitado ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Monto estimado:</strong></td><td style="padding: 8px 0; color: #0f172a;">$${body.montoSolicitado.toLocaleString("es-CL")}</td></tr>` : ""}
-                ${body.banco ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Banco preferido:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.banco}</td></tr>` : ""}
-                ${body.comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Comentarios:</strong></td><td style="padding: 8px 0; color: #0f172a;">${body.comentarios}</td></tr>` : ""}
+                <tr><td style="padding: 8px 0; color: #64748b;"><strong>Tipo crédito:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeTipoCredito}</td></tr>
+                ${body.montoSolicitado ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Monto estimado:</strong></td><td style="padding: 8px 0; color: #0f172a;">$${safeMonto}</td></tr>` : ""}
+                ${body.banco ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Banco preferido:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeBanco}</td></tr>` : ""}
+                ${body.comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Comentarios:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeComentarios}</td></tr>` : ""}
               </table>
               <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
                 <a href="https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/leads/${leadId}" style="display: inline-block; background: #1E40AF; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">Ver Lead en el CRM</a>
@@ -110,6 +124,13 @@ export async function POST(request: NextRequest) {
 
     // Enviar email de confirmación al cliente
     try {
+      const safeNombre = escapeHtml(body.nombre);
+      const safeTipoCredito = escapeHtml(
+        body.tipoCredito || "Crédito Hipotecario"
+      );
+      const safeMonto = escapeHtml(
+        body.montoSolicitado?.toLocaleString?.("es-CL") ?? body.montoSolicitado
+      );
       await enviarEmail({
         to: body.email.trim(),
         subject: "¡Recibimos tu solicitud de pre evaluación! - TuHipotecaFacil.cl",
@@ -117,7 +138,7 @@ export async function POST(request: NextRequest) {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #1E40AF, #2563EB); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
               <h1 style="margin: 0; font-size: 22px;">🏠 TuHipotecaFacil.cl</h1>
-              <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">¡Hola ${body.nombre}!</p>
+              <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">¡Hola ${safeNombre}!</p>
             </div>
             <div style="background: #f8fafc; padding: 25px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
               <p style="font-size: 14px; color: #334155; line-height: 1.6;">
@@ -128,8 +149,8 @@ export async function POST(request: NextRequest) {
               </p>
               <div style="background: white; border-radius: 8px; padding: 15px; margin: 20px 0; border: 1px solid #e2e8f0;">
                 <p style="font-size: 12px; color: #64748b; margin: 0;"><strong>Resumen de tu solicitud:</strong></p>
-                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Tipo de crédito: <strong>${body.tipoCredito || "Crédito Hipotecario"}</strong></p>
-                ${body.montoSolicitado ? `<p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Monto estimado: <strong>$${body.montoSolicitado.toLocaleString("es-CL")}</strong></p>` : ""}
+                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Tipo de crédito: <strong>${safeTipoCredito}</strong></p>
+                ${body.montoSolicitado ? `<p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Monto estimado: <strong>$${safeMonto}</strong></p>` : ""}
               </div>
               <p style="font-size: 13px; color: #64748b; line-height: 1.6;">
                 Si tienes alguna consulta, no dudes en escribirnos por WhatsApp al <strong>+56 9 6684 2168</strong>.

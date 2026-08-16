@@ -835,3 +835,11 @@ solo incorpora el resultado persistido. Suite: 410/410; audit: 0.
 
 [calidad · BUG-082] corregido — PDF, imágenes, DOC y DOCX se comprueban por
 contenido antes de consultar datos o escribir en Storage. Suite: 423/423; audit: 0.
+
+[build] ocupado — Codex, BUG-083 · salida HTML de formularios y correos.
+
+[build] libre — Codex, BUG-083 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-083] corregido — datos variables codificados, asuntos sin
+caracteres de control, enlaces HTTP(S) y resumen con nodos de texto. Suite:
+432/432; audit: 0.

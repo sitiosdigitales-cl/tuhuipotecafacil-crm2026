@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
+import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -157,22 +158,32 @@ export async function POST(request: NextRequest) {
 
     // Enviar emails de notificación (no bloquear si falla)
     try {
-      const asunto = `Nuevo Lead: ${nombre} ${apellido} - ${tipoCredito || "Sin tipo"}`;
+      const asunto = sanitizeEmailHeader(
+        `Nuevo Lead: ${nombre} ${apellido} - ${tipoCredito || "Sin tipo"}`
+      );
+      const safeNombre = escapeHtml(nombre);
+      const safeApellido = escapeHtml(apellido);
+      const safeEmail = escapeHtml(email || "No informado");
+      const safeTelefono = escapeHtml(telefono || "No informado");
+      const safeRut = escapeHtml(rut || "No informado");
+      const safeTipoCredito = escapeHtml(tipoCredito || "No informado");
+      const safeRentaMensual = escapeHtml(rentaMensual || "No informado");
+      const safeComentarios = escapeHtml(comentarios);
       const htmlNotificacion = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #1E40AF, #2563EB); color: white; padding: 20px; text-align: center; border-radius: 12px 12px 0 0;">
             <h1 style="margin: 0; font-size: 18px;">🏠 Nuevo Lead - TuHipotecaFacil.cl</h1>
           </div>
           <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0;">
-            <h2 style="color: #1e293b; margin: 0 0 15px;">${nombre} ${apellido}</h2>
+            <h2 style="color: #1e293b; margin: 0 0 15px;">${safeNombre} ${safeApellido}</h2>
             <table style="width: 100%; border-collapse: collapse;">
-              <tr><td style="padding: 8px 0; color: #64748b;">Email:</td><td style="padding: 8px 0; color: #1e293b;">${email || "No informado"}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Teléfono:</td><td style="padding: 8px 0; color: #1e293b;">${telefono || "No informado"}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Rut:</td><td style="padding: 8px 0; color: #1e293b;">${rut || "No informado"}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Tipo crédito:</td><td style="padding: 8px 0; color: #1e293b;">${tipoCredito || "No informado"}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Email:</td><td style="padding: 8px 0; color: #1e293b;">${safeEmail}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Teléfono:</td><td style="padding: 8px 0; color: #1e293b;">${safeTelefono}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Rut:</td><td style="padding: 8px 0; color: #1e293b;">${safeRut}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b;">Tipo crédito:</td><td style="padding: 8px 0; color: #1e293b;">${safeTipoCredito}</td></tr>
               <tr><td style="padding: 8px 0; color: #64748b;">Situación laboral:</td><td style="padding: 8px 0; color: #1e293b;">${sitLaboral}</td></tr>
-              <tr><td style="padding: 8px 0; color: #64748b;">Renta:</td><td style="padding: 8px 0; color: #1e293b;">${normalized["¿Cuál es tu renta mensual aproximada?"] || "No informado"}</td></tr>
-              ${comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;">Comentarios:</td><td style="padding: 8px 0; color: #1e293b;">${comentarios}</td></tr>` : ''}
+              <tr><td style="padding: 8px 0; color: #64748b;">Renta:</td><td style="padding: 8px 0; color: #1e293b;">${safeRentaMensual}</td></tr>
+              ${comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;">Comentarios:</td><td style="padding: 8px 0; color: #1e293b;">${safeComentarios}</td></tr>` : ''}
             </table>
             <div style="margin-top: 20px; text-align: center;">
               <a href="https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/leads" style="background: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver en CRM</a>

@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+import { escapeHtml, safeHttpUrl, sanitizeEmailHeader } from "./html-output";
+
 const resendApiKey = process.env.RESEND_API_KEY || "";
 const fromEmail = process.env.FROM_EMAIL || "CRM <notificaciones@tuhipotecafacil.cl>";
 
@@ -26,8 +28,10 @@ export interface EmailTemplate {
   contenido: string;
 }
 
+export type EmailTemplateData = Record<string, string | string[]>;
+
 // Templates de email predefinidos
-export const EMAIL_TEMPLATES: Record<string, (data: Record<string, string>) => EmailTemplate> = {
+const EMAIL_TEMPLATES: Record<string, (data: Record<string, string>) => EmailTemplate> = {
   bienvenida: (data) => ({
     nombre: "Bienvenida",
     asunto: `¡Bienvenido a Tu Hipoteca Fácil, ${data.nombre}!`,
@@ -187,6 +191,58 @@ export const EMAIL_TEMPLATES: Record<string, (data: Record<string, string>) => E
   }),
 };
 
+function templateDataAsText(data: EmailTemplateData): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value.join(", ") : value,
+    ])
+  );
+}
+
+function safeTemplateData(data: EmailTemplateData): Record<string, string> {
+  const safeData = Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key,
+      Array.isArray(value)
+        ? value.map((item) => escapeHtml(item)).join(", ")
+        : escapeHtml(value),
+    ])
+  );
+
+  if (Array.isArray(data.documentos)) {
+    const items = data.documentos
+      .map((documento) => `<li>${escapeHtml(documento)}</li>`)
+      .join("");
+    safeData.documentos = `<ul style="color: #475569; margin: 0; padding-left: 20px;">${items}</ul>`;
+  }
+
+  for (const key of ["url", "urlPortal"]) {
+    const value = data[key];
+    if (typeof value === "string") {
+      safeData[key] = value ? safeHttpUrl(value) : "";
+    }
+  }
+
+  return safeData;
+}
+
+export function crearEmailDesdeTemplate(
+  templateName: string,
+  data: EmailTemplateData
+): EmailTemplate | null {
+  const template = EMAIL_TEMPLATES[templateName];
+  if (!template) return null;
+
+  const rawTemplate = template(templateDataAsText(data));
+  const safeTemplate = template(safeTemplateData(data));
+  return {
+    nombre: rawTemplate.nombre,
+    asunto: sanitizeEmailHeader(rawTemplate.asunto),
+    contenido: safeTemplate.contenido,
+  };
+}
+
 // Enviar email
 export async function enviarEmail(options: EmailOptions): Promise<boolean> {
   try {
@@ -223,20 +279,18 @@ export async function enviarEmail(options: EmailOptions): Promise<boolean> {
 export async function enviarEmailTemplate(
   templateName: string,
   to: string | string[],
-  data: Record<string, string>
+  data: EmailTemplateData
 ): Promise<boolean> {
-  const template = EMAIL_TEMPLATES[templateName];
-  if (!template) {
+  const email = crearEmailDesdeTemplate(templateName, data);
+  if (!email) {
     console.error("Template no encontrado:", templateName);
     return false;
   }
 
-  const { asunto, contenido } = template(data);
-
   return enviarEmail({
     to,
-    subject: asunto,
-    html: contenido,
+    subject: email.asunto,
+    html: email.contenido,
   });
 }
 
@@ -252,12 +306,11 @@ export async function enviarSolicitudDocumentos(
   documentos: string[],
   leadId: string
 ): Promise<boolean> {
-  const listaDocs = documentos.map((doc) => `<li>${doc}</li>`).join("");
   const urlPortal = `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/portal-cliente?lead=${leadId}`;
 
   return enviarEmailTemplate("documentosPendientes", email, {
     nombre,
-    documentos: `<ul style="color: #475569; margin: 0; padding-left: 20px;">${listaDocs}</ul>`,
+    documentos,
     urlPortal,
   });
 }

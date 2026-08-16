@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
+import { escapeHtml } from "@/lib/html-output";
 import { Resend } from "resend";
 
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
@@ -242,6 +243,9 @@ export async function POST(request: NextRequest) {
 
     // Enviar email de confirmación al remitente
     try {
+      const safeNombre = escapeHtml(nombre);
+      const safeTipoConsulta = escapeHtml(tipoConsulta);
+      const safeSubject = escapeHtml(subject);
       await enviarEmail({
         to: email,
         subject: "¡Hemos recibido tu consulta! - TuHipotecaFacil.cl",
@@ -249,19 +253,19 @@ export async function POST(request: NextRequest) {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #1E40AF, #2563EB); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
               <h1 style="margin: 0; font-size: 22px;">🏠 TuHipotecaFacil.cl</h1>
-              <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">¡Hola ${nombre}!</p>
+              <p style="margin: 8px 0 0; font-size: 14px; opacity: 0.9;">¡Hola ${safeNombre}!</p>
             </div>
             <div style="background: #f8fafc; padding: 25px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
               <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                Hemos recibido tu consulta sobre <strong>${tipoConsulta}</strong> y ya estamos trabajando en ella.
+                Hemos recibido tu consulta sobre <strong>${safeTipoConsulta}</strong> y ya estamos trabajando en ella.
               </p>
               <p style="font-size: 14px; color: #334155; line-height: 1.6;">
                 Nuestro equipo se pondrá en contacto contigo en las próximas <strong>24 horas hábiles</strong>.
               </p>
               <div style="background: white; border-radius: 8px; padding: 15px; margin: 20px 0; border: 1px solid #e2e8f0;">
                 <p style="font-size: 12px; color: #64748b; margin: 0;"><strong>Resumen de tu consulta:</strong></p>
-                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Asunto: <strong>${subject}</strong></p>
-                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Tipo: <strong>${tipoConsulta}</strong></p>
+                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Asunto: <strong>${safeSubject}</strong></p>
+                <p style="font-size: 13px; color: #0f172a; margin: 5px 0 0;">Tipo: <strong>${safeTipoConsulta}</strong></p>
               </div>
               <p style="font-size: 13px; color: #64748b; line-height: 1.6;">
                 Si tienes alguna consulta, escríbenos por WhatsApp al <strong>+56 9 6684 2168</strong>.
