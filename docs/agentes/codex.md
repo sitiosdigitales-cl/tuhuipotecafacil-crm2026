@@ -913,3 +913,10 @@ navega directo según rol. Suite: 464/464; audit: 0.
 
 [calidad · BUG-093] corregido en código — las sesiones exigen una clave de al
 menos 32 caracteres. Suite: 467/467; audit: 0. Rotación productiva pendiente.
+
+[build] ocupado — Codex, BUG-094 · validación de creación y edición de usuarios.
+
+[build] libre — Codex, BUG-094 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-094] corregido — API e interfaz aplican catálogos, JSON acotado
+y contraseña de 15-64 caracteres. Suite: 477/477; audit: 0.

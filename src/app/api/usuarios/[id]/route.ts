@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
+import { EditarUsuarioSchema } from "@/modulos/usuarios/validaciones";
+
+const MAX_USUARIO_PAYLOAD_BYTES = 8 * 1024;
+
+function invalidPayload(error: unknown) {
+  if (error instanceof RequestPayloadError) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: error.status }
+    );
+  }
+  return NextResponse.json(
+    { success: false, error: "Solicitud inválida" },
+    { status: 400 }
+  );
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request);
@@ -47,21 +64,40 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = requireRole(request, ["SUPER_ADMIN"]);
   if (!user) return forbidden();
+
+  let rawBody: unknown;
+  try {
+    rawBody = await parseBoundedJson(request, MAX_USUARIO_PAYLOAD_BYTES);
+  } catch (error) {
+    return invalidPayload(error);
+  }
+
+  const parsedBody = EditarUsuarioSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: parsedBody.error.issues[0]?.message ?? "Datos de usuario inválidos",
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = parsedBody.data;
 
     const updateData: Record<string, unknown> = {};
-    if (body.nombre) updateData.nombre = body.nombre;
-    if (body.apellido) updateData.apellido = body.apellido;
-    if (body.email) updateData.email = body.email.toLowerCase();
+    if (body.nombre !== undefined) updateData.nombre = body.nombre;
+    if (body.apellido !== undefined) updateData.apellido = body.apellido;
+    if (body.email !== undefined) updateData.email = body.email;
     if (body.telefono !== undefined) updateData.telefono = body.telefono;
-    if (body.rol) updateData.rol = body.rol;
-    if (body.estado) updateData.estado = body.estado;
+    if (body.cargo !== undefined) updateData.cargo = body.cargo;
+    if (body.rol !== undefined) updateData.rol = body.rol;
+    if (body.estado !== undefined) updateData.estado = body.estado;
 
-    if (body.password) {
-      const salt = await bcrypt.genSalt(10);
-      updateData.password = await bcrypt.hash(body.password, salt);
+    if (body.password !== undefined) {
+      updateData.password = await bcrypt.hash(body.password, 12);
     }
 
     const { data, error } = await supabase

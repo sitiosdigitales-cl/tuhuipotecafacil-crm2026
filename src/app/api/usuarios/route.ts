@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, limpiarParaFiltro } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
+import { CrearUsuarioSchema } from "@/modulos/usuarios/validaciones";
+
+const MAX_USUARIO_PAYLOAD_BYTES = 8 * 1024;
+
+function invalidPayload(error: unknown) {
+  if (error instanceof RequestPayloadError) {
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: error.status }
+    );
+  }
+  return NextResponse.json(
+    { success: false, error: "Solicitud inválida" },
+    { status: 400 }
+  );
+}
 
 export async function GET(request: NextRequest) {
   const auth = requireAuth(request);
@@ -82,21 +99,34 @@ export async function POST(request: NextRequest) {
   // Solo SUPER_ADMIN. Crear una cuenta es asignar un rol, y ADMIN no
   // administra roles.
   if (!requireRole(request, ["SUPER_ADMIN"])) return forbidden();
+
+  let rawBody: unknown;
   try {
-    const body = await request.json();
-    const { nombre, apellido, email, password, telefono, rol } = body;
+    rawBody = await parseBoundedJson(request, MAX_USUARIO_PAYLOAD_BYTES);
+  } catch (error) {
+    return invalidPayload(error);
+  }
 
-    if (!nombre || !apellido || !email || !password) {
-      return NextResponse.json({ success: false, error: "Campos requeridos faltantes" }, { status: 400 });
-    }
+  const parsedBody = CrearUsuarioSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: parsedBody.error.issues[0]?.message ?? "Datos de usuario inválidos",
+      },
+      { status: 400 }
+    );
+  }
 
-    const { data: existente } = await supabase.from("usuarios").select("id").eq("email", email.toLowerCase()).single();
+  try {
+    const { nombre, apellido, email, password, telefono, rol, cargo } = parsedBody.data;
+
+    const { data: existente } = await supabase.from("usuarios").select("id").eq("email", email).single();
     if (existente) {
       return NextResponse.json({ success: false, error: "Email ya registrado" }, { status: 409 });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const { data: usuario, error } = await supabase
       .from("usuarios")
@@ -104,10 +134,11 @@ export async function POST(request: NextRequest) {
         id: crypto.randomUUID(),
         nombre,
         apellido,
-        email: email.toLowerCase(),
+        email,
         password: hashedPassword,
         telefono: telefono || null,
-        rol: rol || "AGENTE",
+        cargo: cargo || null,
+        rol,
         estado: "ACTIVO",
         creadoEn: new Date().toISOString(),
       }))

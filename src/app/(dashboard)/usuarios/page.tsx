@@ -23,6 +23,11 @@ import { ESTADOS_USUARIO_CONFIG, ROLES_CONFIG } from "@/tipos";
 import { toast } from "sonner";
 import { useUser } from "@/modulos/usuarios";
 import type { Usuario, Rol, EstadoUsuario } from "@/tipos";
+import {
+  obtenerErrorPoliticaPassword,
+  PASSWORD_MAX_CHARACTERS,
+  PASSWORD_MIN_CHARACTERS,
+} from "@/modulos/usuarios/politica-password";
 
 type UsuarioApi = Omit<Usuario, "ultimoAcceso" | "creadoEn"> & {
   ultimoAcceso?: string | Date;
@@ -163,8 +168,9 @@ export default function UsuariosPage() {
       setFormError("Nombre, apellido, email y contraseña son requeridos");
       return;
     }
-    if (formPassword.length < 6) {
-      setFormError("La contraseña debe tener al menos 6 caracteres");
+    const passwordPolicyError = obtenerErrorPoliticaPassword(formPassword);
+    if (passwordPolicyError) {
+      setFormError(passwordPolicyError);
       return;
     }
     setGuardando(true);
@@ -268,8 +274,9 @@ export default function UsuariosPage() {
   const handleRestablecerPassword = async () => {
     if (!passwordUsuario) return;
     setPasswordError("");
-    if (nuevaPassword.length < 6) {
-      setPasswordError("La contraseña debe tener al menos 6 caracteres");
+    const passwordPolicyError = obtenerErrorPoliticaPassword(nuevaPassword);
+    if (passwordPolicyError) {
+      setPasswordError(passwordPolicyError);
       return;
     }
     try {
@@ -645,7 +652,7 @@ export default function UsuariosPage() {
               </div>
               <div>
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Contraseña *</label>
-                <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Mínimo 6 caracteres"
+                <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder={`${PASSWORD_MIN_CHARACTERS} a ${PASSWORD_MAX_CHARACTERS} caracteres`} minLength={PASSWORD_MIN_CHARACTERS} maxLength={PASSWORD_MAX_CHARACTERS} autoComplete="new-password"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
@@ -767,7 +774,7 @@ export default function UsuariosPage() {
               )}
               <div>
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nueva contraseña *</label>
-                <input type="password" value={nuevaPassword} onChange={(e) => setNuevaPassword(e.target.value)} placeholder="Mínimo 6 caracteres" autoFocus
+                <input type="password" value={nuevaPassword} onChange={(e) => setNuevaPassword(e.target.value)} placeholder={`${PASSWORD_MIN_CHARACTERS} a ${PASSWORD_MAX_CHARACTERS} caracteres`} minLength={PASSWORD_MIN_CHARACTERS} maxLength={PASSWORD_MAX_CHARACTERS} autoComplete="new-password" autoFocus
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
             </div>
