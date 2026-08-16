@@ -1053,3 +1053,10 @@ documento sin capacidades y con CSP propia. Suite: 587/587; audit: 0.
 
 [calidad · BUG-113] corregido — referidos conserva cuatro canales funcionales
 y no ofrece una imagen que no codifica el enlace. Suite: 588/588; audit: 0.
+
+[build] ocupado — Codex, BUG-114 · referidos sin recompensas simuladas.
+
+[build] libre — Codex, BUG-114 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-114] corregido — el seguimiento usa datos reales y deja de
+prometer pagos, porcentajes o premios sin política persistida. Suite: 589/589; audit: 0.

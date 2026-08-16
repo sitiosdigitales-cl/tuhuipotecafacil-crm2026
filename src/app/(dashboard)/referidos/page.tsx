@@ -3,39 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Users,
-  Gift,
   TrendingUp,
   DollarSign,
   Copy,
   Check,
-  Share2,
   Mail,
   MessageSquare,
-  Award,
   BarChart3,
   Search,
   Clock,
   CheckCircle,
-  Zap,
-  Percent,
-  Trophy,
-  Medal,
-  Crown,
   LinkIcon,
   UserPlus,
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 
-// Programa de recompensas
-const RECOMPENSAS = [
-  { nivel: 1, nombre: "Bronce", referidos: 1, recompensa: "$ 50.000", icono: Medal, color: "from-amber-600 to-amber-700" },
-  { nivel: 2, nombre: "Plata", referidos: 3, recompensa: "$ 150.000", icono: Award, color: "from-slate-400 to-slate-500" },
-  { nivel: 3, nombre: "Oro", referidos: 5, recompensa: "$ 300.000", icono: Trophy, color: "from-yellow-500 to-yellow-600" },
-  { nivel: 4, nombre: "Diamante", referidos: 10, recompensa: "$ 750.000 + Viaje", icono: Crown, color: "from-purple-500 to-purple-600" },
-];
-
-type TabActiva = "resumen" | "referidos" | "programa";
+type TabActiva = "resumen" | "referidos";
 
 export default function ReferidosPage() {
   const { leads } = useLeads();
@@ -221,7 +205,6 @@ export default function ReferidosPage() {
           {[
             { id: "resumen", label: "Resumen", icono: BarChart3 },
             { id: "referidos", label: "Mis Referidos", icono: Users },
-            { id: "programa", label: "Programa de Recompensas", icono: Gift },
           ].map((tab) => {
             const IconoTab = tab.icono;
             return (
@@ -288,44 +271,6 @@ export default function ReferidosPage() {
               </div>
               <div className="text-2xl font-bold text-amber-600">{formatoMonedaAbreviado(stats.totalMontos)}</div>
               <div className="text-[10px] text-amber-500 mt-1">En créditos solicitados</div>
-            </div>
-          </div>
-
-          {/* Progreso del nivel */}
-          <div className="bg-white rounded-2xl border border-slate-100/80 p-5 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Trophy size={16} className="text-amber-500" />
-              Tu Progreso
-            </h3>
-            <div className="flex items-center gap-4">
-              {RECOMPENSAS.map((nivel) => {
-                const IconoNivel = nivel.icono;
-                const alcanzado = stats.completados >= nivel.referidos;
-                const progreso = Math.min(100, (stats.completados / nivel.referidos) * 100);
-                return (
-                  <div key={nivel.nivel} className="flex-1 text-center">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-2 ${
-                      alcanzado
-                        ? `bg-gradient-to-br ${nivel.color} shadow-lg`
-                        : "bg-slate-100"
-                    }`}>
-                      <IconoNivel size={24} className={alcanzado ? "text-white" : "text-slate-400"} />
-                    </div>
-                    <div className={`text-[11px] font-bold ${alcanzado ? "text-slate-800" : "text-slate-400"}`}>
-                      {nivel.nombre}
-                    </div>
-                    <div className="text-[11px] text-slate-400">{nivel.referidos} referidos</div>
-                    {!alcanzado && (
-                      <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-400 rounded-full" style={{ width: `${progreso}%` }} />
-                      </div>
-                    )}
-                    {alcanzado && (
-                      <CheckCircle size={14} className="text-emerald-500 mx-auto mt-1" />
-                    )}
-                  </div>
-                );
-              })}
             </div>
           </div>
 
@@ -456,104 +401,6 @@ export default function ReferidosPage() {
         </div>
       )}
 
-      {/* Tab Programa de Recompensas */}
-      {tabActiva === "programa" && (
-        <div className="space-y-6">
-          {/* Header del programa */}
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                <Gift size={28} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Programa de Referidos Premium</h3>
-                <p className="text-amber-100 text-[12px] mt-1">
-                  Por cada cliente que refieras y se apruebe su crédito, ganas recompensas increíbles
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Niveles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {RECOMPENSAS.map((nivel) => {
-              const IconoNivel = nivel.icono;
-              const alcanzado = stats.completados >= nivel.referidos;
-              return (
-                <div key={nivel.nivel} className={`bg-white rounded-2xl border p-5 shadow-soft text-center hover:shadow-md transition-shadow ${
-                  alcanzado ? "border-purple-200 ring-2 ring-purple-100" : "border-slate-100/80"
-                }`}>
-                  <div className={`w-16 h-16 bg-gradient-to-br ${nivel.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                    <IconoNivel size={28} className="text-white" />
-                  </div>
-                  <div className="text-lg font-bold text-slate-800 mb-1">Nivel {nivel.nivel}</div>
-                  <div className="text-sm font-semibold text-purple-600 mb-2">{nivel.nombre}</div>
-                  <div className="text-[11px] text-slate-400 mb-3">
-                    {nivel.referidos} referido{nivel.referidos > 1 ? "s" : ""} convertido{nivel.referidos > 1 ? "s" : ""}
-                  </div>
-                  <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-3 border border-purple-100/50">
-                    <div className="text-[10px] text-purple-400 font-medium">Recompensa</div>
-                    <div className="text-sm font-bold text-purple-700">{nivel.recompensa}</div>
-                  </div>
-                  {alcanzado && (
-                    <div className="mt-3 flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-600">
-                      <CheckCircle size={12} /> Alcanzado
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Cómo funciona */}
-          <div className="bg-white rounded-2xl border border-slate-100/80 p-6 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4">¿Cómo funciona?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[
-                { paso: 1, titulo: "Comparte tu link", descripcion: "Envía tu link único por WhatsApp, email o redes sociales", icono: Share2, color: "from-blue-400 to-blue-500" },
-                { paso: 2, titulo: "Amigo se registra", descripcion: "Tu amigo ingresa al link y completa el formulario", icono: Users, color: "from-purple-400 to-purple-500" },
-                { paso: 3, titulo: "Se aprueba crédito", descripcion: "El equipo evalúa y aprueba la solicitud", icono: CheckCircle, color: "from-emerald-400 to-emerald-500" },
-                { paso: 4, titulo: "¡Gana recompensa!", descripcion: "Recibes tu recompensa en dinero o beneficios", icono: Gift, color: "from-amber-400 to-amber-500" },
-              ].map((paso) => {
-                const IconoPaso = paso.icono;
-                return (
-                  <div key={paso.paso} className="text-center">
-                    <div className={`w-14 h-14 bg-gradient-to-br ${paso.color} rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg`}>
-                      <IconoPaso size={22} className="text-white" />
-                    </div>
-                    <div className="text-[10px] text-purple-400 font-bold mb-1">PASO {paso.paso}</div>
-                    <div className="text-[12px] font-bold text-slate-800 mb-1">{paso.titulo}</div>
-                    <div className="text-[10px] text-slate-400">{paso.descripcion}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Beneficios */}
-          <div className="bg-white rounded-2xl border border-slate-100/80 p-6 shadow-soft">
-            <h3 className="text-sm font-bold text-slate-800 mb-4">Beneficios adicionales</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { titulo: "Comisión del 0.5%", descripcion: "Gana el 0.5% del monto del crédito aprobado", icono: Percent, color: "text-emerald-500" },
-                { titulo: "Bonos escalonados", descripcion: "A más referidos, mayores bonos por conversión", icono: TrendingUp, color: "text-blue-500" },
-                { titulo: "Pagos rápidos", descripcion: "Comisiones pagadas en máximo 48 horas", icono: Zap, color: "text-amber-500" },
-              ].map((beneficio, idx) => {
-                const IconoBeneficio = beneficio.icono;
-                return (
-                  <div key={idx} className="flex items-start gap-3 p-4 bg-slate-50/80 rounded-xl">
-                    <IconoBeneficio size={20} className={beneficio.color} />
-                    <div>
-                      <div className="text-[12px] font-bold text-slate-700">{beneficio.titulo}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{beneficio.descripcion}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
