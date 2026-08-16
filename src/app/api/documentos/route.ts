@@ -4,6 +4,7 @@ import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import type { TokenPayload } from "@/lib/jwt";
+import { documentWithProxyUrl } from "@/lib/document-storage";
 
 async function obtenerLead(leadId: string) {
   const { data, error } = await supabase
@@ -72,7 +73,8 @@ export async function GET(request: NextRequest) {
       console.error("Fallo la consulta:", error.message);
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
-    return NextResponse.json({ success: true, data: fromSupabaseArray(data || []) });
+    const documents = fromSupabaseArray(data || []).map(documentWithProxyUrl);
+    return NextResponse.json({ success: true, data: documents });
   } catch (e) {
     console.error("Error inesperado:", e);
     return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
         // revisado. Aprobar es una decisión de una persona y va por el PUT,
         // que sí comprueba quién la toma.
         estado: "PENDIENTE",
-        archivoUrl: body.archivoUrl || null,
+        archivoUrl: null,
         creadoEn: new Date().toISOString(),
       }))
       .select()

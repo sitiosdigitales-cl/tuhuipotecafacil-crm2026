@@ -3,6 +3,10 @@ import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase
 import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
+import {
+  documentStoragePath,
+  documentWithProxyUrl,
+} from "@/lib/document-storage";
 
 async function obtenerDocumentoYLead(id: string) {
   const { data: documento, error } = await supabase
@@ -37,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
     return NextResponse.json({
       success: true,
-      data: fromSupabaseColumns(documento),
+      data: documentWithProxyUrl(fromSupabaseColumns(documento)),
     });
   } catch {
     return NextResponse.json({ success: false, error: "Error" }, { status: 500 });
@@ -59,6 +63,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
 
     const body = await request.json();
+    delete body.archivoUrl;
+    delete body.archivourl;
+    delete body.leadId;
+    delete body.leadid;
+    delete body.id;
     const { data, error } = await supabase
       .from("documentos")
       .update(toSupabaseColumns(body))
@@ -84,7 +93,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }).catch(() => {});
     }
 
-    return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
+    return NextResponse.json({
+      success: true,
+      data: documentWithProxyUrl(fromSupabaseColumns(data)),
+    });
   } catch {
     return NextResponse.json({ success: false, error: "Error al actualizar" }, { status: 500 });
   }
@@ -118,7 +130,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     // Eliminar archivo de Storage si existe
     if (doc?.archivourl) {
-      const filePath = doc.archivourl.split("/documentos/")[1];
+      const filePath = documentStoragePath(doc.archivourl);
       if (filePath) {
         await supabase.storage.from("documentos").remove([filePath]);
       }

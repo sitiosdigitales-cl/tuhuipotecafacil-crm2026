@@ -772,3 +772,10 @@ leads, chat y actividades actualizan por polling. Suite: 385/385.
 
 [calidad · BUG-073] corregido — todas las APIs usan fachada `server-only` y
 service role lazy; no queda cliente anónimo operativo. Suite: 385/385.
+
+[build] ocupado — Codex, BUG-074 · documentos privados con proxy firmado.
+
+[build] libre — Codex, BUG-074 · build y TypeScript de Next terminaron en 0.
+
+[calidad · BUG-074] corregido — documentos guardan rutas privadas, usan proxy
+con firma de 60 s y revierten objetos huérfanos. Suite: 391/391.

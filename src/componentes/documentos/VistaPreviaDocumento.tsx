@@ -63,8 +63,8 @@ export function VistaPreviaDocumento({
   };
 
   // Detectar tipo de archivo
-  const esPDF = documento.archivoUrl?.toLowerCase().endsWith(".pdf");
-  const esImagen = /\.(jpg|jpeg|png|gif|webp)$/i.test(documento.archivoUrl || "");
+  const esPDF = documento.nombre.toLowerCase().endsWith(".pdf");
+  const esImagen = /\.(jpg|jpeg|png|gif|webp)$/i.test(documento.nombre);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

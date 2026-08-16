@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
+import { documentExtension, documentProxyUrl } from "@/lib/document-storage";
 
 // POST /api/portal/upload - Subida de documentos desde el portal del cliente.
 //
@@ -21,20 +22,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Archivo y leadId requeridos" }, { status: 400 });
     }
 
-    if (archivo.size > 10 * 1024 * 1024) {
+    if (archivo.size === 0 || archivo.size > 10 * 1024 * 1024) {
       return NextResponse.json({ success: false, error: "El archivo supera los 10MB" }, { status: 400 });
     }
 
-    const tiposPermitidos = [
-      "application/pdf",
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-    if (!tiposPermitidos.includes(archivo.type)) {
+    const extension = documentExtension(archivo.type);
+    if (!extension) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
+    }
+    const nombreArchivo = archivo.name.trim().replace(/[\u0000-\u001f\u007f]/g, "");
+    if (!nombreArchivo || nombreArchivo.length > 255) {
+      return NextResponse.json({ success: false, error: "Nombre de archivo no válido" }, { status: 400 });
     }
 
     // Verificar que el lead existe y que quien sube puede tocarlo
@@ -51,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     // Subir archivo a Supabase Storage
     const docId = crypto.randomUUID();
-    const extension = archivo.name.split(".").pop() || "bin";
     const filePath = leadId + "/" + docId + "." + extension;
 
     const { error: uploadError } = await supabase.storage
@@ -63,38 +60,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error al subir archivo" }, { status: 500 });
     }
 
-    // Obtener URL publica
-    const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(filePath);
-
     // Guardar referencia en la tabla documentos
     const { error: dbError } = await supabase.from("documentos").insert(toSupabaseColumns({
       id: docId,
       leadId,
-      nombre: archivo.name,
+      nombre: nombreArchivo,
       tipo: tipo || "OTRO",
       estado: "PENDIENTE",
-      archivoUrl: urlData?.publicUrl || null,
+      archivoUrl: filePath,
       creadoEn: new Date().toISOString(),
     }));
 
     if (dbError) {
       console.error("Error guardando referencia en DB:", JSON.stringify(dbError));
-      // Retornar el error para debug
-      return NextResponse.json({
-        success: false,
-        error: `Archivo subido pero error guardando registro: ${dbError.message || dbError.code || "unknown"}`,
-        storageUrl: urlData?.publicUrl,
-      }, { status: 500 });
+      await supabase.storage.from("documentos").remove([filePath]);
+      return NextResponse.json(
+        { success: false, error: "Error al guardar documento" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       data: {
         id: docId,
-        nombre: archivo.name,
+        nombre: nombreArchivo,
         tipo: tipo || "documento",
         tamano: archivo.size,
-        archivoUrl: urlData?.publicUrl || null,
+        archivoUrl: documentProxyUrl(docId, filePath),
         fechaSubida: new Date().toISOString(),
       },
     });
