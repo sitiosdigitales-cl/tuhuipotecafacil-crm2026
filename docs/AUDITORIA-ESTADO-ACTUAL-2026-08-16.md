@@ -105,7 +105,7 @@ Fuentes oficiales:
 - [Supabase Auth con SSR y Next.js](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs)
 - [Buckets públicos y privados](https://supabase.com/docs/guides/storage/buckets/fundamentals)
 
-`supabase/migrations/20260816_lock_down_anon_and_storage.sql` prepara un modo
+`supabase/migrations/20260816000000_lock_down_anon_and_storage.sql` prepara un modo
 servidor: revoca acceso de `anon`/`authenticated`, deja `service_role`, retira
 Realtime y vuelve privados los buckets. No se aplicó desde este repositorio y
 no debe darse por vigente hasta probarlo primero en staging y luego en el panel

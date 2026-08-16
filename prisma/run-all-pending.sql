@@ -1,6 +1,6 @@
 DO $obsolete_sql$
 BEGIN
-  RAISE EXCEPTION 'SQL obsoleto: use supabase/migrations/20260816_lock_down_anon_and_storage.sql y docs/supabase-hardening.md';
+  RAISE EXCEPTION 'SQL obsoleto: use supabase/migrations/20260816000000_lock_down_anon_and_storage.sql y docs/supabase-hardening.md';
 END
 $obsolete_sql$;
 

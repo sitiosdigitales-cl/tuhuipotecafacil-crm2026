@@ -1,6 +1,6 @@
 # Cierre de acceso público en Supabase
 
-La migración `supabase/migrations/20260816_lock_down_anon_and_storage.sql` está
+La migración `supabase/migrations/20260816000000_lock_down_anon_and_storage.sql` está
 preparada, pero **no fue aplicada a producción por Codex**. Requiere acceso al
 proyecto Supabase y una ventana de verificación humana.
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationPath = join(
   process.cwd(),
-  "supabase/migrations/20260816_lock_down_anon_and_storage.sql"
+  "supabase/migrations/20260816000000_lock_down_anon_and_storage.sql"
 );
 
 describe("migración de cierre del Data API", () => {

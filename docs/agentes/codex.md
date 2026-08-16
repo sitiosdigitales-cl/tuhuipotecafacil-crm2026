@@ -1118,3 +1118,10 @@ PostgreSQL aisladas; falta contrastarla con staging autorizado. Suite: 595/595; 
 
 [FASE DB · DB-06] preparado — CI levantará Supabase y ejecutará dos resets
 reales por cada push. Suite local: 595/595; audit: 0.
+
+[build] ocupado — Codex, BUG-118 · versiones únicas de migraciones.
+
+[build] libre — Codex, BUG-118 · build, suite, lint y TypeScript en verde.
+
+[FASE DB · BUG-118] corregido — todas las migraciones usan timestamps únicos
+de 14 dígitos; CI volverá a ejecutar el reset real. Suite: 596/596; audit: 0.
