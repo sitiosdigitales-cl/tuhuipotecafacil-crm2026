@@ -642,3 +642,10 @@ si difieren responde 401 y borra ambas cookies. Suite completa: 296/296.
 
 [calidad · BUG-055] corregido — colección de documentos valida `leadId` y
 filtra listados por cartera para AGENTE/CLIENTE. Suite completa: 302/302.
+
+[build] ocupado — Codex, BUG-056 · aplicar roles y cartera en solicitudes.
+
+[build] libre — Codex, BUG-056 · build y typecheck terminaron en 0.
+
+[calidad · BUG-056] corregido — solicitudes aplica permiso de creación y
+filtra AGENTE/CLIENTE por sus leads. Suite completa: 308/308.
