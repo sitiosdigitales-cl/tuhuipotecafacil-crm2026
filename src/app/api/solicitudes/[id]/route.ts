@@ -1,15 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, fromSupabaseColumns, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
+import { SOLICITUDES_CONFIG } from "@/modulos/solicitudes";
+
+async function obtenerSolicitudYLead(id: string) {
+  const { data: solicitud, error } = await supabase
+    .from("solicitudes")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !solicitud) return { lead: null, solicitud: null };
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("email,asignadoa")
+    .eq("id", solicitud.lead_id)
+    .single();
+
+  return { lead, solicitud };
+}
 
 // GET /api/solicitudes/[id]
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { id } = await params;
-    const { data, error } = await supabase.from("solicitudes").select("*").eq("id", id).single();
-    if (error || !data) return NextResponse.json({ success: false, error: "Solicitud no encontrada" }, { status: 404 });
-    return NextResponse.json({ success: true, data: fromSupabaseColumns(data) });
+    const { lead, solicitud } = await obtenerSolicitudYLead(id);
+    if (!solicitud) {
+      return NextResponse.json(
+        { success: false, error: "Solicitud no encontrada" },
+        { status: 404 }
+      );
+    }
+    if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
+    return NextResponse.json({
+      success: true,
+      data: fromSupabaseColumns(solicitud),
+    });
   } catch {
     return NextResponse.json({ success: false, error: "Error al obtener solicitud" }, { status: 500 });
   }
@@ -19,9 +49,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request);
   if (!auth) return unauthorized();
+  if (!SOLICITUDES_CONFIG.permisos.editar.includes(auth.rol)) {
+    return forbidden();
+  }
 
   try {
     const { id } = await params;
+    const { lead, solicitud } = await obtenerSolicitudYLead(id);
+    if (!solicitud) {
+      return NextResponse.json(
+        { success: false, error: "Solicitud no encontrada" },
+        { status: 404 }
+      );
+    }
+    if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
+
     const body = await request.json();
 
     const updateData: Record<string, unknown> = {};
@@ -70,6 +112,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request);
   if (!auth) return unauthorized();
+  if (!SOLICITUDES_CONFIG.permisos.eliminar.includes(auth.rol)) {
+    return forbidden();
+  }
 
   try {
     const { id } = await params;

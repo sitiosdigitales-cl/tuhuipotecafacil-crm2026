@@ -649,3 +649,10 @@ filtra listados por cartera para AGENTE/CLIENTE. Suite completa: 302/302.
 
 [calidad · BUG-056] corregido — solicitudes aplica permiso de creación y
 filtra AGENTE/CLIENTE por sus leads. Suite completa: 308/308.
+
+[build] ocupado — Codex, BUG-057 · roles y cartera en detalle de solicitudes.
+
+[build] libre — Codex, BUG-057 · build y typecheck terminaron en 0.
+
+[calidad · BUG-057] corregido — detalle de solicitudes aplica cartera en GET/PUT
+y roles del módulo en PUT/DELETE. Suite completa: 318/318.
