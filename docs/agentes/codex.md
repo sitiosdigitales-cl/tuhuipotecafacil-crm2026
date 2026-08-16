@@ -1226,6 +1226,14 @@ build/lint/typecheck: 0; audits: 0.
 aplican la propiedad del lead según rol; la colección filtra IDs en consulta y
 limita la respuesta a 200. Suite: 744/744; build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, BUG-131 · actividad real del dashboard.
+
+[build] libre — Codex, BUG-131 · build terminado.
+
+[calidad · BUG-131] corregido — el dashboard dejó de fabricar contactos y
+eventos aleatorios; muestra solo la bitácora persistida y enlaza cada registro
+con su lead. Suite: 745/745; build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.
