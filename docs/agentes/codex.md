@@ -1200,6 +1200,14 @@ sintéticos, sin credenciales ni PII real.
 
 [build] libre — Codex, BUG-123 · build terminado.
 
+[build] ocupado — Codex, AUTH-04-BASE · verificación independiente del flujo de recuperación.
+
+[build] libre — Codex, AUTH-04-BASE · build terminado.
+
+[FASE AUTH · AUTH-04-BASE] hecho — commit de Claude integrado por avance directo y
+verificado independientemente. Build verde; suite 801/801; lint/typecheck: 0;
+auditorías: 0.
+
 [build] ocupado — Codex, BUG-128 · mutaciones de leads confirmadas por servidor.
 
 [build] libre — Codex, BUG-128 · build terminado.
