@@ -1004,3 +1004,10 @@ ordenar y medir su periodo. Suite: 508/508; audit: 0.
 
 [calidad · BUG-106] corregido — campañas calcula sus métricas desde la API y
 no presenta controles sin persistencia. Suite: 510/510; audit: 0.
+
+[build] ocupado — Codex, BUG-107 · token OAuth de Google solo en memoria.
+
+[build] libre — Codex, BUG-107 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-107] corregido — el token de Google no persiste en Web Storage
+ni aparece en respuestas completas de log. Suite: 512/512; audit: 0.

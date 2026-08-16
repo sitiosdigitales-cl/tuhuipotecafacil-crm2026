@@ -166,21 +166,17 @@ export async function initGoogleCalendar(): Promise<void> {
         scope: GOOGLE_CONFIG.scope,
         callback: (response) => {
           if (response.error || !response.access_token) {
-            console.error("Error de autenticación:", response);
+            console.error("Error de autenticación de Google Calendar");
             return;
           }
           accessToken = response.access_token;
           isAuthenticated = true;
-          localStorage.setItem("google_access_token", response.access_token);
         },
       });
 
-      // Verificar si ya hay token guardado
-      const savedToken = localStorage.getItem("google_access_token");
-      if (savedToken) {
-        accessToken = savedToken;
-        isAuthenticated = true;
-      }
+      // Elimina el valor que guardaban versiones anteriores. El token OAuth
+      // vive solo en memoria y se solicita otra vez después de recargar.
+      localStorage.removeItem("google_access_token");
 
       resolve();
     });
@@ -203,13 +199,12 @@ export function signInWithGoogle(): Promise<boolean> {
 
     tokenClient.callback = (response) => {
       if (response.error || !response.access_token) {
-        console.error("Error de autenticación:", response);
+        console.error("Error de autenticación de Google Calendar");
         resolve(false);
         return;
       }
       accessToken = response.access_token;
       isAuthenticated = true;
-      localStorage.setItem("google_access_token", response.access_token);
       resolve(true);
     };
 
