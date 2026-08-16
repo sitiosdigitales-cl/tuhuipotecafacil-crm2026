@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { COMISIONES_PERMISOS } from "@/modulos/comisiones/config";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!COMISIONES_PERMISOS.editar.some((rol) => rol === auth.rol)) {
+    return forbidden();
+  }
   const { id } = await params;
   try {
     const body = await request.json();
@@ -16,7 +21,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!COMISIONES_PERMISOS.eliminar.some((rol) => rol === auth.rol)) {
+    return forbidden();
+  }
   const { id } = await params;
   try {
     const { error } = await supabase.from("comisiones").delete().eq("id", id);

@@ -614,3 +614,10 @@ o modificar; lectura, edición y eliminación relacionadas pasan 3/3. Suite: 281
 
 [rendimiento · BUG-037] corregido — presupuesto conserva 400 KiB y mide solo
 JS atribuible a la ruta: 151.542 bytes. Suite completa verde: 282/282.
+
+[build] ocupado — Codex, BUG-052 · matriz de roles en comisión individual.
+
+[build] libre — Codex, BUG-052 · build y typecheck terminaron en 0.
+
+[calidad · BUG-052] corregido — edición y eliminación de comisiones usan el
+catálogo de permisos; nueve casos verdes. Suite completa: 291/291.
