@@ -157,14 +157,13 @@ cuerpo grande y una prueba de campo inesperado.
 Estas superficies no deben presentarse como terminadas aunque el build esté
 verde:
 
-- El detalle de usuario muestra actividad y rendimiento mensual escritos en el
-  código; dos formularios anuncian guardado sin persistir sus cambios.
 - La entrega de Resend requiere una prueba real de staging.
 
-Configuración y plantillas ya aplican esa decisión: la primera conserva
-notificaciones y pipeline persistidos; la segunda es un catálogo de solo
-lectura. Para el módulo restante la decisión debe seguir siendo binaria: conectarlo
-con validación y pruebas, o retirarlo temporalmente de la navegación. Mantener
+Configuración, plantillas y detalle de usuario ya aplican esa decisión: la
+primera conserva notificaciones y pipeline persistidos; la segunda es un
+catálogo de solo lectura; el tercero calcula la cartera real por identificador
+y no ofrece formularios locales. Toda superficie nueva debe seguir una decisión
+binaria: conectarse con validación y pruebas, o permanecer oculta. Mantener
 controles que parecen funcionales es peor que mostrar “no disponible”.
 
 ## Orden de carpetas

@@ -1200,6 +1200,15 @@ sintéticos, sin credenciales ni PII real.
 
 [build] libre — Codex, BUG-123 · build terminado.
 
+[build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
+
+[build] libre — Codex, BUG-126 · build terminado.
+
+[calidad · BUG-126] corregido — el detalle de usuario queda en solo lectura,
+calcula cartera, etapas, bancos y montos mediante `leads.asignadoA`, y retira
+actividad, rendimiento y guardados locales. Suite: 729/729; build/lint/typecheck:
+0; auditorías de dependencias: 0.
+
 [FASE AUTH · AUTH-03] verificado — MFA TOTP administrativo, puente Auth y
 reconstrucción doble pasan en CI con 659/659 pruebas.
 

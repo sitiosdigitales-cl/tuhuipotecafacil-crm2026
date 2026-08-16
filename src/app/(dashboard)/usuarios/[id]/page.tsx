@@ -1,670 +1,509 @@
 "use client";
 
-import { useState, useMemo, use, useEffect } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from "recharts";
-import {
-  Phone,
+  ArrowLeft,
+  BriefcaseBusiness,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
   Mail,
-  MessageSquare,
-  Calendar,
-  Clock,
-  Shield,
+  Phone,
+  ShieldCheck,
+  UserRound,
   Users,
-  FileText,
-  Activity,
-  Key,
-  X,
-  Save,
-  Lock,
-  Percent,
 } from "lucide-react";
-import { ETAPAS_CONFIG } from "@/tipos";
-import { ROLES_CONFIG } from "@/tipos";
-import { formatoMonedaAbreviado, formatoMoneda } from "@/lib/utils";
-import { toast } from "sonner";
-import type { Usuario, Etapa } from "@/tipos";
-import { useLeads } from "@/lib/contexts/LeadContext";
-import { PerfilProfesional } from "@/componentes/usuarios/PerfilProfesional";
 
-// Actividad mock del usuario
-function generarActividadUsuario() {
-  const hoy = new Date();
-  return [
-    { id: "a1", tipo: "llamada", titulo: "Llamada de seguimiento", descripcion: `Contacto con cliente sobre documentos`, fecha: new Date(hoy.getTime() - 3600000), icono: Phone, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { id: "a2", tipo: "whatsapp", titulo: "Mensaje enviado", descripcion: "Recordatorio de reunión", fecha: new Date(hoy.getTime() - 86400000), icono: MessageSquare, color: "text-green-500", bg: "bg-green-50" },
-    { id: "a3", tipo: "email", titulo: "Email de propuesta", descripcion: "Envío de condiciones crediticias", fecha: new Date(hoy.getTime() - 172800000), icono: Mail, color: "text-blue-500", bg: "bg-blue-50" },
-    { id: "a4", tipo: "reunion", titulo: "Reunión completada", descripcion: "Firma de documentos", fecha: new Date(hoy.getTime() - 259200000), icono: Calendar, color: "text-purple-500", bg: "bg-purple-50" },
-    { id: "a5", tipo: "documento", titulo: "Documento aprobado", descripcion: "Cédula de identidad verificada", fecha: new Date(hoy.getTime() - 345600000), icono: FileText, color: "text-amber-500", bg: "bg-amber-50" },
-  ];
+import { useLeads } from "@/lib/contexts/LeadContext";
+import { formatoMonedaAbreviado } from "@/lib/utils";
+import {
+  ESTADOS_USUARIO_CONFIG,
+  ETAPAS_CONFIG,
+  ROLES_CONFIG,
+} from "@/tipos";
+import type { EstadoUsuario, Etapa, Rol } from "@/tipos";
+
+interface UsuarioApi {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string | null;
+  rol: Rol;
+  estado: EstadoUsuario;
+  cargo?: string | null;
+  creadoEn?: string | Date | null;
 }
 
-// Datos de rendimiento mensual del usuario
-const RENDIMIENTO_MENSUAL = [
-  { mes: "Ene", leads: 12, aprobados: 4, monto: 320 },
-  { mes: "Feb", leads: 15, aprobados: 5, monto: 410 },
-  { mes: "Mar", leads: 18, aprobados: 6, monto: 480 },
-  { mes: "Abr", leads: 14, aprobados: 5, monto: 390 },
-  { mes: "May", leads: 20, aprobados: 8, monto: 640 },
-  { mes: "Jun", leads: 22, aprobados: 9, monto: 720 },
-  { mes: "Jul", leads: 19, aprobados: 7, monto: 560 },
-  { mes: "Ago", leads: 16, aprobados: 6, monto: 480 },
-  { mes: "Sep", leads: 24, aprobados: 10, monto: 800 },
-  { mes: "Oct", leads: 28, aprobados: 12, monto: 960 },
-  { mes: "Nov", leads: 25, aprobados: 11, monto: 880 },
-  { mes: "Dic", leads: 21, aprobados: 9, monto: 720 },
-];
+type UsuarioDetalle = Omit<UsuarioApi, "creadoEn"> & {
+  creadoEn: Date | null;
+};
 
-export default function UsuarioPerfilPage({ params }: { params: Promise<{ id: string }> }) {
+interface RespuestaUsuario {
+  success: boolean;
+  data?: UsuarioApi;
+}
+
+const ETAPAS_APROBADAS = new Set<Etapa>([
+  "APROBADO",
+  "FIRMA_DIGITAL",
+  "NOTARIA",
+  "CREDITO_PAGADO",
+  "CLIENTE_FINALIZADO",
+]);
+
+const ETAPAS_CERRADAS = new Set<Etapa>([
+  "CREDITO_PAGADO",
+  "CLIENTE_FINALIZADO",
+]);
+
+function normalizarUsuario(usuario: UsuarioApi): UsuarioDetalle {
+  const fecha = usuario.creadoEn ? new Date(usuario.creadoEn) : null;
+  return {
+    ...usuario,
+    creadoEn: fecha && !Number.isNaN(fecha.getTime()) ? fecha : null,
+  };
+}
+
+export default function UsuarioPerfilPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { id } = use(params);
   const { leads } = useLeads();
-  const esSuperAdmin = true;
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuario, setUsuario] = useState<UsuarioDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(false);
 
   useEffect(() => {
+    let cancelado = false;
+
     async function cargarUsuario() {
       try {
-        const res = await fetch(`/api/usuarios/${id}`, { credentials: "include" });
-        const json = await res.json();
-        if (json.success && json.data) {
-          setUsuario({
-            ...json.data,
-            ultimoAcceso: json.data.ultimoAcceso ? new Date(json.data.ultimoAcceso) : undefined,
-            creadoEn: json.data.creadoEn ? new Date(json.data.creadoEn) : new Date(),
-          });
+        const response = await fetch(`/api/usuarios/${id}`, {
+          credentials: "include",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | RespuestaUsuario
+          | null;
+
+        if (!response.ok || !payload?.success || !payload.data) {
+          throw new Error("No se pudo cargar el usuario");
         }
+
+        if (!cancelado) setUsuario(normalizarUsuario(payload.data));
       } catch {
-        setUsuario(null);
+        if (!cancelado) setErrorCarga(true);
       } finally {
-        setCargando(false);
+        if (!cancelado) setCargando(false);
       }
     }
-    cargarUsuario();
+
+    void cargarUsuario();
+    return () => {
+      cancelado = true;
+    };
   }, [id]);
 
-  const [editarPerfilOpen, setEditarPerfilOpen] = useState(false);
-  const [configuracionOpen, setConfiguracionOpen] = useState(false);
-  const [editarNombre, setEditarNombre] = useState("");
-  const [editarApellido, setEditarApellido] = useState("");
-  const [editarEmail, setEditarEmail] = useState("");
-  const [editarTelefono, setEditarTelefono] = useState("");
-  const [editarRol, setEditarRol] = useState("");
-
-  // Las claves son los cinco roles vigentes. Tenía GERENTE y VISOR, que ya no
-  // existen en el tipo `Rol`, y le faltaba AGENTE. Como la vista recorre este
-  // objeto y busca cada clave en ROLES_CONFIG, los roles muertos salían sin
-  // nombre y el que faltaba no salía.
-  const [comisionesPorRol, setComisionesPorRol] = useState({
-    SUPER_ADMIN: { cobroCliente: 0, comisionAgente: 0 },
-    ADMIN: { cobroCliente: 5, comisionAgente: 10 },
-    EJECUTIVO: { cobroCliente: 7, comisionAgente: 15 },
-    AGENTE: { cobroCliente: 0, comisionAgente: 0 },
-    CLIENTE: { cobroCliente: 0, comisionAgente: 0 },
-  });
-
-  // Guardar perfil
-  const guardarPerfil = () => {
-    toast.success("Perfil actualizado", {
-      description: `${editarNombre} ${editarApellido} fue actualizado`,
-    });
-    setEditarPerfilOpen(false);
-  };
-
-  // Guardar configuración de comisiones
-  const guardarComisiones = () => {
-    toast.success("Configuración de comisiones actualizada", {
-      description: "Los porcentajes por rol han sido guardados",
-    });
-    setConfiguracionOpen(false);
-  };
-
-  // Leads asignados al usuario (simulado - usando nombre del ejecutivo)
   const leadsAsignados = useMemo(() => {
     if (!usuario) return [];
-    return leads.filter((l) => l.nombreEjecutivo === `${usuario.nombre} ${usuario.apellido}`);
+    return leads.filter((lead) => lead.asignadoA === usuario.id);
   }, [leads, usuario]);
 
-  // Estadísticas del usuario
-  const stats = useMemo(() => {
-    const totalLeads = leadsAsignados.length;
-    const aprobados = leadsAsignados.filter((l) => ["APROBADO", "FIRMA_DIGITAL", "NOTARIA"].includes(l.etapa)).length;
-    const enPipeline = leadsAsignados.filter((l) => !["CLIENTE_FINALIZADO", "CREDITO_PAGADO"].includes(l.etapa)).length;
-    const montoTotal = leadsAsignados.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
-    const tasaConversion = totalLeads > 0 ? ((aprobados / totalLeads) * 100).toFixed(1) : "0";
-    const ticketPromedio = aprobados > 0 ? montoTotal / aprobados : 0;
+  const estadisticas = useMemo(() => {
+    const total = leadsAsignados.length;
+    const enGestion = leadsAsignados.filter(
+      (lead) => !ETAPAS_CERRADAS.has(lead.etapa)
+    ).length;
+    const aprobados = leadsAsignados.filter((lead) =>
+      ETAPAS_APROBADAS.has(lead.etapa)
+    ).length;
+    const montoSolicitado = leadsAsignados.reduce(
+      (totalMonto, lead) => totalMonto + (lead.montoSolicitado || 0),
+      0
+    );
+    const promedioSolicitado = total > 0 ? montoSolicitado / total : 0;
 
-    // Leads por etapa
-    const porEtapa: Record<string, number> = {};
-    leadsAsignados.forEach((l) => {
-      porEtapa[l.etapa] = (porEtapa[l.etapa] || 0) + 1;
-    });
-
-    // Leads por banco
-    const porBanco: Record<string, number> = {};
-    leadsAsignados.forEach((l) => {
-      if (l.banco) porBanco[l.banco] = (porBanco[l.banco] || 0) + 1;
-    });
-
-    // Leads por origen
-    const porOrigen: Record<string, number> = {};
-    leadsAsignados.forEach((l) => {
-      porOrigen[l.origen] = (porOrigen[l.origen] || 0) + 1;
-    });
-
-    return { totalLeads, aprobados, enPipeline, montoTotal, tasaConversion, ticketPromedio, porEtapa, porBanco, porOrigen };
+    return {
+      total,
+      enGestion,
+      aprobados,
+      montoSolicitado,
+      promedioSolicitado,
+    };
   }, [leadsAsignados]);
 
-  const actividad = useMemo(() => generarActividadUsuario(), []);
-  const rolConfig = ROLES_CONFIG[usuario?.rol || "AGENTE"];
+  const etapas = useMemo(() => {
+    const conteo = leadsAsignados.reduce<Record<Etapa, number>>(
+      (acumulado, lead) => {
+        acumulado[lead.etapa] = (acumulado[lead.etapa] || 0) + 1;
+        return acumulado;
+      },
+      {} as Record<Etapa, number>
+    );
 
-  // Datos para gráficos
-  const datosEtapa = useMemo(() => {
-    return Object.entries(stats.porEtapa).map(([etapa, cantidad]) => ({
-      nombre: ETAPAS_CONFIG[etapa as Etapa]?.label || etapa,
-      valor: cantidad,
-      color: ETAPAS_CONFIG[etapa as Etapa]?.color || "#64748B",
-    }));
-  }, [stats]);
+    return Object.entries(conteo)
+      .map(([etapa, cantidad]) => ({
+        etapa: etapa as Etapa,
+        cantidad,
+        ...ETAPAS_CONFIG[etapa as Etapa],
+      }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+  }, [leadsAsignados]);
 
-  const datosBanco = useMemo(() => {
-    return Object.entries(stats.porBanco).map(([banco, cantidad]) => ({
-      nombre: banco.length > 10 ? banco.substring(0, 10) + "..." : banco,
-      valor: cantidad,
-    }));
-  }, [stats]);
+  const bancos = useMemo(() => {
+    const conteo = leadsAsignados.reduce<Record<string, number>>(
+      (acumulado, lead) => {
+        const banco = lead.banco?.trim() || "Sin banco registrado";
+        acumulado[banco] = (acumulado[banco] || 0) + 1;
+        return acumulado;
+      },
+      {}
+    );
+
+    return Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+  }, [leadsAsignados]);
 
   if (cargando) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-72 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-b-blue-600" />
         <span className="ml-3 text-sm text-slate-500">Cargando usuario...</span>
       </div>
     );
   }
 
-  if (!usuario) {
+  if (errorCarga || !usuario) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
-          <Users size={24} className="text-slate-300" />
+      <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+          <Users size={22} className="text-slate-400" />
         </div>
-        <h2 className="text-sm font-bold text-slate-600 mb-1">Usuario no encontrado</h2>
-        <p className="text-[11px] text-slate-400 mb-4">El usuario que buscas no existe.</p>
-        <button onClick={() => router.push("/usuarios")} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold">
-          Volver a Usuarios
+        <h1 className="text-base font-bold text-slate-800">
+          No fue posible cargar el usuario
+        </h1>
+        <p className="mt-1 max-w-sm text-xs text-slate-500">
+          La cuenta no existe o tu rol no permite consultar este perfil.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/usuarios")}
+          className="mt-5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+        >
+          Volver a usuarios
         </button>
       </div>
     );
   }
 
+  const rol = ROLES_CONFIG[usuario.rol];
+  const estado = ESTADOS_USUARIO_CONFIG[usuario.estado];
+  const maximoEtapa = Math.max(...etapas.map((item) => item.cantidad), 1);
+
   return (
-    <div className="space-y-5">
-      {/* Perfil Profesional */}
-      <PerfilProfesional
-        usuario={usuario}
-        onActualizar={(datos) => {
-          setUsuario({ ...usuario, ...datos });
-          toast.success("Perfil actualizado");
-        }}
-        esPropioPerfil={true}
-      />
+    <div className="space-y-6">
+      <button
+        type="button"
+        onClick={() => router.push("/usuarios")}
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 transition-colors hover:text-slate-800"
+      >
+        <ArrowLeft size={14} /> Volver a usuarios
+      </button>
 
-      {/* Stats del perfil */}
-      <div className="grid grid-cols-5 gap-3">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 border border-blue-100/50">
-          <div className="text-[9px] text-blue-500 font-medium uppercase tracking-wider mb-1">Total Leads</div>
-          <div className="text-lg font-bold text-blue-700">{stats.totalLeads}</div>
-          <div className="text-[10px] text-blue-500 font-medium">asignados</div>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-3 border border-emerald-100/50">
-          <div className="text-[9px] text-emerald-500 font-medium uppercase tracking-wider mb-1">Aprobados</div>
-          <div className="text-lg font-bold text-emerald-700">{stats.aprobados}</div>
-          <div className="text-[10px] text-emerald-500 font-medium">créditos</div>
-        </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 border border-purple-100/50">
-          <div className="text-[9px] text-purple-500 font-medium uppercase tracking-wider mb-1">Monto Total</div>
-              <div className="text-lg font-bold text-purple-700">{formatoMonedaAbreviado(stats.montoTotal)}</div>
-              <div className="text-[10px] text-purple-500 font-medium">financiado</div>
-            </div>
-            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-3 border border-amber-100/50">
-              <div className="text-[9px] text-amber-500 font-medium uppercase tracking-wider mb-1">Conversión</div>
-              <div className="text-lg font-bold text-amber-700">{stats.tasaConversion}%</div>
-              <div className="text-[10px] text-amber-500 font-medium">tasa</div>
-            </div>
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-3 border border-indigo-100/50">
-              <div className="text-[9px] text-indigo-500 font-medium uppercase tracking-wider mb-1">Ticket Prom.</div>
-              <div className="text-lg font-bold text-indigo-700">{formatoMonedaAbreviado(stats.ticketPromedio)}</div>
-              <div className="text-[10px] text-indigo-500 font-medium">por crédito</div>
-            </div>
-          </div>
-
-      {/* Contenido */}
-      <div className="grid grid-cols-3 gap-5">
-        {/* Columna Izquierda */}
-        <div className="col-span-2 space-y-5">
-          {/* Rendimiento Mensual */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-900">Rendimiento Mensual</h3>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span className="text-[9px] text-slate-500">Leads</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  <span className="text-[9px] text-slate-500">Aprobados</span>
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="h-24 bg-gradient-to-r from-blue-700 via-indigo-600 to-violet-600" />
+        <div className="px-5 pb-6 sm:px-7">
+          <div className="-mt-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex min-w-0 items-end gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-slate-900 text-2xl font-bold text-white shadow-lg">
+                {usuario.nombre[0]}
+                {usuario.apellido[0]}
+              </div>
+              <div className="min-w-0 pb-1">
+                <h1 className="truncate text-xl font-bold text-slate-900 sm:text-2xl">
+                  {usuario.nombre} {usuario.apellido}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${rol.color}`}>
+                    {rol.label}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${estado.color}`}>
+                    {estado.label}
+                  </span>
                 </div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={RENDIMIENTO_MENSUAL}>
-                <defs>
-                  <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorAprobados" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="mes" tick={{ fontSize: 10, fill: "#94A3B8" }} />
-                <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "11px" }} />
-                <Area type="monotone" dataKey="leads" stroke="#3B82F6" fill="url(#colorLeads)" strokeWidth={2} />
-                <Area type="monotone" dataKey="aprobados" stroke="#10B981" fill="url(#colorAprobados)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
+
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 sm:max-w-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                Vista informativa
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-blue-700/80">
+                Muestra datos persistidos. La edición administrativa se realiza
+                desde el listado de usuarios cuando el rol lo permite.
+              </p>
+            </div>
           </div>
 
-          {/* Leads Asignados */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-900">Leads Asignados ({leadsAsignados.length})</h3>
-              <button className="text-[10px] text-blue-600 font-semibold hover:text-blue-700">Ver todos →</button>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <DatoCuenta
+              icono={<Mail size={15} />}
+              etiqueta="Email"
+              valor={usuario.email}
+              href={`mailto:${usuario.email}`}
+            />
+            <DatoCuenta
+              icono={<Phone size={15} />}
+              etiqueta="Teléfono"
+              valor={usuario.telefono || "No disponible para este rol"}
+              href={usuario.telefono ? `tel:${usuario.telefono}` : undefined}
+            />
+            <DatoCuenta
+              icono={<BriefcaseBusiness size={15} />}
+              etiqueta="Cargo"
+              valor={usuario.cargo || "No registrado"}
+            />
+            <DatoCuenta
+              icono={<CalendarDays size={15} />}
+              etiqueta="Miembro desde"
+              valor={usuario.creadoEn?.toLocaleDateString("es-CL") || "No disponible"}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <Metrica
+          etiqueta="Leads asignados"
+          valor={String(estadisticas.total)}
+          detalle="por identificador de usuario"
+          icono={<UserRound size={16} />}
+          color="blue"
+        />
+        <Metrica
+          etiqueta="En gestión"
+          valor={String(estadisticas.enGestion)}
+          detalle="sin etapa de cierre"
+          icono={<Users size={16} />}
+          color="indigo"
+        />
+        <Metrica
+          etiqueta="Aprobados"
+          valor={String(estadisticas.aprobados)}
+          detalle="aprobación o etapa posterior"
+          icono={<CheckCircle2 size={16} />}
+          color="emerald"
+        />
+        <Metrica
+          etiqueta="Monto solicitado"
+          valor={formatoMonedaAbreviado(estadisticas.montoSolicitado)}
+          detalle="suma de la cartera"
+          icono={<CircleDollarSign size={16} />}
+          color="amber"
+        />
+        <Metrica
+          etiqueta="Solicitud promedio"
+          valor={formatoMonedaAbreviado(estadisticas.promedioSolicitado)}
+          detalle="por lead asignado"
+          icono={<CircleDollarSign size={16} />}
+          color="violet"
+        />
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Leads asignados</h2>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Cartera vinculada a la cuenta mediante su identificador estable.
+              </p>
             </div>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {leadsAsignados.slice(0, 8).map((lead) => {
-                const config = ETAPAS_CONFIG[lead.etapa];
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600">
+              {leadsAsignados.length}
+            </span>
+          </div>
+
+          {leadsAsignados.length === 0 ? (
+            <EstadoVacio texto="No hay leads vinculados a esta cuenta." />
+          ) : (
+            <div className="mt-4 divide-y divide-slate-100">
+              {leadsAsignados.slice(0, 12).map((lead) => {
+                const etapa = ETAPAS_CONFIG[lead.etapa];
                 return (
-                  <div
+                  <button
                     key={lead.id}
+                    type="button"
                     onClick={() => router.push(`/clientes/${lead.id}`)}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100/80 transition-colors cursor-pointer"
+                    className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-slate-50"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white text-[10px] font-bold">
-                      {lead.nombre[0]}{lead.apellido[0]}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-[10px] font-bold text-white">
+                      {lead.nombre[0]}
+                      {lead.apellido[0]}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-semibold text-slate-800 truncate">{lead.nombre} {lead.apellido}</div>
-                      <div className="text-[9px] text-slate-400">{lead.rut}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-800">
+                        {lead.nombre} {lead.apellido}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                        {lead.banco || "Sin banco registrado"}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-bold text-slate-800">{formatoMonedaAbreviado(lead.montoSolicitado || 0)}</div>
-                      <div className="flex items-center gap-1 justify-end">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config?.color }} />
-                        <span className="text-[8px] text-slate-500">{config?.label}</span>
-                      </div>
+                      <p className="text-[11px] font-bold text-slate-800">
+                        {formatoMonedaAbreviado(lead.montoSolicitado || 0)}
+                      </p>
+                      <p className="mt-0.5 text-[9px] font-medium" style={{ color: etapa.color }}>
+                        {etapa.label}
+                      </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
+              {leadsAsignados.length > 12 && (
+                <p className="pt-3 text-center text-[10px] text-slate-500">
+                  Se muestran los primeros 12 registros.
+                </p>
+              )}
             </div>
-          </div>
+          )}
+        </section>
 
-          {/* Leads por Banco */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <h3 className="text-sm font-bold text-slate-900 mb-4">Rendimiento por Banco</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={datosBanco}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="nombre" tick={{ fontSize: 9, fill: "#94A3B8" }} />
-                <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "11px" }} />
-                <Bar dataKey="valor" fill="#3B82F6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Columna Derecha */}
-        <div className="space-y-5">
-          {/* Información Personal */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Users size={16} className="text-slate-500" />
-              Información Personal
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Mail size={14} className="text-slate-400" />
-                <div>
-                  <div className="text-[9px] text-slate-400">Email</div>
-                  <div className="text-[11px] font-semibold text-slate-800">{usuario.email}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Phone size={14} className="text-slate-400" />
-                <div>
-                  <div className="text-[9px] text-slate-400">Teléfono</div>
-                  <div className="text-[11px] font-semibold text-slate-800">{usuario.telefono || "No registrado"}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Shield size={14} className="text-slate-400" />
-                <div>
-                  <div className="text-[9px] text-slate-400">Rol</div>
-                  <div className="text-[11px] font-semibold text-slate-800">{rolConfig.label}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Clock size={14} className="text-slate-400" />
-                <div>
-                  <div className="text-[9px] text-slate-400">Último Acceso</div>
-                  <div className="text-[11px] font-semibold text-slate-800">
-                    {usuario.ultimoAcceso ? usuario.ultimoAcceso.toLocaleDateString("es-CL") : "Nunca"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                <Calendar size={14} className="text-slate-400" />
-                <div>
-                  <div className="text-[9px] text-slate-400">Miembro desde</div>
-                  <div className="text-[11px] font-semibold text-slate-800">{usuario.creadoEn.toLocaleDateString("es-CL")}</div>
-                </div>
-              </div>
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-blue-600" />
+              <h2 className="text-sm font-bold text-slate-900">Cartera por etapa</h2>
             </div>
-          </div>
-
-          {/* Actividad Reciente */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Activity size={16} className="text-slate-500" />
-              Actividad Reciente
-            </h3>
-            <div className="space-y-3">
-              {actividad.map((act, i) => (
-                <div key={act.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-lg ${act.bg} flex items-center justify-center`}>
-                      <act.icono size={14} className={act.color} />
+            {etapas.length === 0 ? (
+              <EstadoVacio texto="Sin etapas para resumir." />
+            ) : (
+              <div className="mt-4 space-y-3">
+                {etapas.map((item) => (
+                  <div key={item.etapa}>
+                    <div className="flex items-center justify-between gap-3 text-[10px]">
+                      <span className="truncate font-medium text-slate-600">{item.label}</span>
+                      <span className="font-bold text-slate-800">{item.cantidad}</span>
                     </div>
-                    {i < actividad.length - 1 && <div className="w-px flex-1 bg-slate-200 mt-1" />}
-                  </div>
-                  <div className="flex-1 pb-2">
-                    <div className="text-[10px] font-semibold text-slate-800">{act.titulo}</div>
-                    <div className="text-[9px] text-slate-500">{act.descripcion}</div>
-                    <div className="text-[8px] text-slate-400 mt-0.5">
-                      {act.fecha.toLocaleDateString("es-CL")} • {act.fecha.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          backgroundColor: item.color,
+                          width: `${(item.cantidad / maximoEtapa) * 100}%`,
+                        }}
+                      />
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Distribución por Etapa */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <h3 className="text-sm font-bold text-slate-900 mb-4">Distribución por Etapa</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={datosEtapa}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={70}
-                  paddingAngle={3}
-                  dataKey="valor"
-                >
-                  {datosEtapa.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "11px" }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-1 mt-2">
-              {datosEtapa.slice(0, 6).map((item) => (
-                <div key={item.nombre} className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-[8px] text-slate-500 truncate">{item.nombre}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Seguridad */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100/80">
-            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Key size={16} className="text-slate-500" />
-              Seguridad
-            </h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${usuario.dosFA ? "bg-emerald-500" : "bg-slate-300"}`} />
-                  <span className="text-[10px] text-slate-600">Autenticación 2FA</span>
-                </div>
-                <span className={`text-[9px] font-semibold ${usuario.dosFA ? "text-emerald-600" : "text-slate-400"}`}>
-                  {usuario.dosFA ? "Activa" : "Inactiva"}
-                </span>
+                ))}
               </div>
-              <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-100 rounded-xl text-[10px] text-slate-600 font-medium hover:bg-slate-200 transition-colors">
-                <Key size={12} /> Cambiar Contraseña
-              </button>
-            </div>
-          </div>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900">Distribución por banco</h2>
+            {bancos.length === 0 ? (
+              <EstadoVacio texto="Sin bancos para resumir." />
+            ) : (
+              <div className="mt-4 space-y-2.5">
+                {bancos.map(([banco, cantidad]) => (
+                  <div
+                    key={banco}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5"
+                  >
+                    <span className="truncate text-[11px] font-medium text-slate-600">{banco}</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-800">
+                      {cantidad}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Modal Editar Perfil */}
-      {editarPerfilOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
-            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-800">Editar Perfil</h3>
-                <button onClick={() => setEditarPerfilOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
-                  <X size={18} className="text-slate-400" />
-                </button>
-              </div>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Nombre</label>
-                  <input
-                    type="text"
-                    value={editarNombre}
-                    onChange={(e) => setEditarNombre(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Apellido</label>
-                  <input
-                    type="text"
-                    value={editarApellido}
-                    onChange={(e) => setEditarApellido(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Email</label>
-                <input
-                  type="email"
-                  value={editarEmail}
-                  onChange={(e) => setEditarEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Teléfono</label>
-                <input
-                  type="tel"
-                  value={editarTelefono}
-                  onChange={(e) => setEditarTelefono(e.target.value)}
-                  placeholder="+56 9 XXXX XXXX"
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                />
-              </div>
-              {esSuperAdmin && (
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
-                  <select
-                    value={editarRol}
-                    onChange={(e) => setEditarRol(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                  >
-                    {(Object.keys(ROLES_CONFIG) as Array<keyof typeof ROLES_CONFIG>).map((r) => (
-                      <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => setEditarPerfilOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-semibold hover:bg-slate-200 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={guardarPerfil}
-                  className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Save size={14} /> Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+function DatoCuenta({
+  icono,
+  etiqueta,
+  valor,
+  href,
+}: {
+  icono: React.ReactNode;
+  etiqueta: string;
+  valor: string;
+  href?: string;
+}) {
+  const contenido = (
+    <>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+        {icono}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+          {etiqueta}
+        </span>
+        <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-700">
+          {valor}
+        </span>
+      </span>
+    </>
+  );
 
-      {/* Modal Configuración (Solo Super Admin) */}
-      {configuracionOpen && esSuperAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-lg mx-4 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-indigo-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Shield size={18} className="text-purple-600" />
-                  <h3 className="text-base font-bold text-slate-800">Configuración del Sistema</h3>
-                </div>
-                <button onClick={() => setConfiguracionOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg">
-                  <X size={18} className="text-slate-400" />
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1">Configuración general de comisiones por rol de usuario</p>
-            </div>
-            <div className="p-5">
-              <div className="mb-4 p-3 bg-purple-50 rounded-xl border border-purple-100">
-                <div className="flex items-center gap-2">
-                  <Lock size={12} className="text-purple-500" />
-                  <span className="text-[10px] font-semibold text-purple-700">Solo Super Admin puede modificar esta configuración</span>
-                </div>
-              </div>
+  return href ? (
+    <a href={href} className="flex min-w-0 items-center gap-3 rounded-xl bg-slate-50 p-3 hover:bg-slate-100">
+      {contenido}
+    </a>
+  ) : (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl bg-slate-50 p-3">
+      {contenido}
+    </div>
+  );
+}
 
-              <div className="space-y-4">
-                <h4 className="text-[11px] font-bold text-slate-700 flex items-center gap-2">
-                  <Percent size={14} className="text-emerald-500" />
-                  Comisiones por Rol
-                </h4>
+const COLORES_METRICA = {
+  blue: "bg-blue-50 text-blue-700 border-blue-100",
+  indigo: "bg-indigo-50 text-indigo-700 border-indigo-100",
+  emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  amber: "bg-amber-50 text-amber-700 border-amber-100",
+  violet: "bg-violet-50 text-violet-700 border-violet-100",
+} as const;
 
-                {Object.entries(comisionesPorRol).map(([rol, config]) => {
-                  const rolInfo = ROLES_CONFIG[rol as keyof typeof ROLES_CONFIG];
-                  return (
-                    <div key={rol} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${rolInfo?.color || "bg-slate-100 text-slate-600"}`}>
-                          {rolInfo?.label || rol}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[9px] text-slate-500 mb-1 block">% Cobro al Cliente</label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              value={config.cobroCliente}
-                              onChange={(e) => setComisionesPorRol((prev) => ({
-                                ...prev,
-                                [rol]: { ...prev[rol as keyof typeof prev], cobroCliente: Number(e.target.value) }
-                              }))}
-                              min="0"
-                              max="15"
-                              step="0.5"
-                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[9px] text-slate-500 mb-1 block">% Comisión Agente</label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              value={config.comisionAgente}
-                              onChange={(e) => setComisionesPorRol((prev) => ({
-                                ...prev,
-                                [rol]: { ...prev[rol as keyof typeof prev], comisionAgente: Number(e.target.value) }
-                              }))}
-                              min="0"
-                              max="50"
-                              step="5"
-                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
-                          </div>
-                        </div>
-                      </div>
-                      {config.cobroCliente > 0 && config.comisionAgente > 0 && (
-                        <div className="mt-2 text-[9px] text-slate-500">
-                          Ejemplo con crédito de $100.000.000: Empresa cobra ${formatoMoneda(100000000 * config.cobroCliente / 100)} → Agente recibe ${formatoMoneda(100000000 * config.cobroCliente / 100 * config.comisionAgente / 100)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+function Metrica({
+  etiqueta,
+  valor,
+  detalle,
+  icono,
+  color,
+}: {
+  etiqueta: string;
+  valor: string;
+  detalle: string;
+  icono: React.ReactNode;
+  color: keyof typeof COLORES_METRICA;
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${COLORES_METRICA[color]}`}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[9px] font-bold uppercase tracking-wide opacity-75">{etiqueta}</p>
+        {icono}
+      </div>
+      <p className="mt-2 text-lg font-bold">{valor}</p>
+      <p className="mt-0.5 text-[9px] font-medium opacity-70">{detalle}</p>
+    </div>
+  );
+}
 
-              <div className="flex gap-3 pt-5">
-                <button
-                  onClick={() => setConfiguracionOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-semibold hover:bg-slate-200 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={guardarComisiones}
-                  className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl text-[11px] font-semibold hover:bg-purple-600 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Save size={14} /> Guardar Configuración
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+function EstadoVacio({ texto }: { texto: string }) {
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-[11px] text-slate-500">
+      {texto}
     </div>
   );
 }
