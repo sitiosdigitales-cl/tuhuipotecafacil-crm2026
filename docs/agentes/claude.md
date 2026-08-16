@@ -304,3 +304,16 @@ ese endpoint responde 405 en vez de canjear. `Referrer-Policy: no-referrer` y
   `callback#GET` pasa a `#POST`, la URL esperada del correo, y la suite del
   callback pasa de GET+query a POST+cuerpo. Las pruebas NUEVAS (fragmento,
   replaceState, piso de tiempo, liberacion de turno) son de Codex.
+
+[FASE AUTH · AUTH-04-TIEMPO] hecho — piso de 1.000 ms con `performance.now`,
+que es monotonico; `Date.now` salta si alguien corrige la hora del sistema y
+podia devolver una espera negativa o eterna. Lo esperan los seis desenlaces que
+dependen de la cuenta: inexistente, inactiva, no enlazada, en espera, envio
+aceptado y el catch posterior a la consulta. El error de formato NO lo espera —
+no depende de que la cuenta exista y retrasarlo solo castiga a quien escribio
+mal el correo.
+
+  Efecto colateral para Codex: `tests/auth/recuperacion-solicitud-neutra.test.ts`
+  pasa de 7 ms a ~7 s porque cada caso paga el piso. Sigue bajo el limite de 5 s
+  por prueba, pero si le molesta el reloj real, `esperarPisoRespuesta` acepta el
+  piso por parametro.

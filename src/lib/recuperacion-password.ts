@@ -19,6 +19,30 @@ export const RECUPERACION_VENTANA_SEGUNDOS = 15 * 60;
 export const RECUPERACION_ESPERA_SEGUNDOS = 15 * 60;
 
 /**
+ * Piso de latencia para todo desenlace que dependa de la cuenta.
+ *
+ * El cuerpo de la respuesta ya es idéntico exista o no la cuenta, pero el
+ * tiempo no lo era: una cuenta real gasta `generateLink` más el envío por
+ * Resend, y una inventada respondía de inmediato. Esa diferencia basta para
+ * averiguar qué correos pertenecen al equipo, que es justo lo que la respuesta
+ * neutra intenta esconder.
+ */
+export const PISO_RESPUESTA_RECUPERACION_MS = 1_000;
+
+/**
+ * Espera hasta completar el piso, medido con reloj monotónico: `performance.now`
+ * no salta si alguien corrige la hora del sistema, `Date.now` sí.
+ */
+export async function esperarPisoRespuesta(
+  inicioMonotonico: number,
+  pisoMs = PISO_RESPUESTA_RECUPERACION_MS,
+): Promise<void> {
+  const restante = pisoMs - (performance.now() - inicioMonotonico);
+  if (restante <= 0) return;
+  await new Promise((resolve) => setTimeout(resolve, restante));
+}
+
+/**
  * La misma frase para todos los desenlaces de la solicitud: cuenta que no
  * existe, cuenta inhabilitada, cuenta sin identidad en Auth, espera vigente o
  * correo enviado. Cualquier diferencia convierte este formulario en un
