@@ -857,3 +857,10 @@ fallback; rotación en Vercel sigue pendiente. Suite: 434/434; audit: 0.
 
 [calidad · BUG-085] corregido — política única comprobada con `next start`:
 panel DENY, formulario limitado y APIs sin CORS global. Suite: 437/437; audit: 0.
+
+[build] ocupado — Codex, BUG-086 · códigos de referido comprobables.
+
+[build] libre — Codex, BUG-086 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-086] corregido — códigos firmados, usuario activo comprobado y
+atribución persistida. Suite: 444/444; audit: 0.

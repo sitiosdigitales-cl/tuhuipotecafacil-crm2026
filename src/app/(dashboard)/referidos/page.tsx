@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Gift,
@@ -24,7 +24,6 @@ import {
   LinkIcon,
   UserPlus,
 } from "lucide-react";
-import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import { Download, QrCode } from "lucide-react";
@@ -40,13 +39,45 @@ const RECOMPENSAS = [
 type TabActiva = "resumen" | "referidos" | "programa";
 
 export default function ReferidosPage() {
-  const { usuarioActual } = useUser();
-  const { leads, obtenerCodigoReferido } = useLeads();
+  const { leads } = useLeads();
 
   const [tabActiva, setTabActiva] = useState<TabActiva>("resumen");
   const [busqueda, setBusqueda] = useState("");
   const [copiado, setCopiado] = useState(false);
   const [mostrarQR, setMostrarQR] = useState(false);
+  const [codigoReferido, setCodigoReferido] = useState("");
+  const [linkReferido, setLinkReferido] = useState("");
+  const [codigoError, setCodigoError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function cargarCodigo() {
+      try {
+        const response = await fetch("/api/referidos/codigo", {
+          credentials: "include",
+          signal: controller.signal,
+        });
+        const resultado = await response.json() as {
+          success: boolean;
+          data?: { codigo?: string };
+        };
+        if (!response.ok || !resultado.success || !resultado.data?.codigo) {
+          throw new Error("Código no disponible");
+        }
+        setCodigoReferido(resultado.data.codigo);
+        setLinkReferido(
+          `${window.location.origin}/referir/${encodeURIComponent(resultado.data.codigo)}`
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setCodigoError("No se pudo cargar tu código de referido");
+      }
+    }
+
+    void cargarCodigo();
+    return () => controller.abort();
+  }, []);
 
   // Generar QR simple como SVG
   const generarQR = (texto: string) => {
@@ -96,10 +127,6 @@ export default function ReferidosPage() {
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
-  // Obtener código único del usuario actual
-  const codigoReferido = obtenerCodigoReferido(usuarioActual.id);
-  const linkReferido = `https://tuhipotecafacil.cl/referir/${codigoReferido}`;
-
   // Leads referidos por este usuario
   const leadsReferidos = useMemo(() => {
     return leads.filter((l) => l.codigoReferido === codigoReferido);
@@ -129,23 +156,27 @@ export default function ReferidosPage() {
   }, [leadsReferidos, busqueda]);
 
   const copiarLink = () => {
+    if (!linkReferido) return;
     navigator.clipboard.writeText(linkReferido);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   };
 
   const copiarCodigo = () => {
+    if (!codigoReferido) return;
     navigator.clipboard.writeText(codigoReferido);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   };
 
   const compartirWhatsApp = () => {
+    if (!linkReferido || !codigoReferido) return;
     const mensaje = `Hola! Te invito a conocer TuHipotecaFacil. Usa mi código de referido ${codigoReferido} o haz clic en este enlace: ${linkReferido}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, "_blank");
   };
 
   const compartirEmail = () => {
+    if (!linkReferido || !codigoReferido) return;
     const asunto = "Te invito a TuHipotecaFacil";
     const cuerpo = `Hola!\n\nTe invito a conocer TuHipotecaFacil, tu plataforma de créditos hipotecarios.\n\nUsa mi código de referido: ${codigoReferido}\nO haz clic en este enlace: ${linkReferido}\n\nSaludos!`;
     window.open(`mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`, "_blank");
@@ -198,10 +229,13 @@ export default function ReferidosPage() {
 
         <div className="mt-4 flex items-center gap-3">
           <div className="flex-1 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200/60">
-            <span className="text-[12px] text-slate-600 font-mono break-all">{linkReferido}</span>
+            <span className="text-[12px] text-slate-600 font-mono break-all">
+              {codigoError || linkReferido || "Cargando enlace..."}
+            </span>
           </div>
           <button
             onClick={copiarLink}
+            disabled={!linkReferido}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-[11px] font-semibold transition-all ${
               copiado
                 ? "bg-emerald-500 text-white"
@@ -216,24 +250,24 @@ export default function ReferidosPage() {
         <div className="mt-4 flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200/60">
             <span className="text-[10px] text-slate-400">Código:</span>
-            <span className="text-[12px] font-bold text-purple-600 font-mono">{codigoReferido}</span>
-            <button onClick={copiarCodigo} className="p-1 hover:bg-slate-100 rounded transition-colors">
+            <span className="text-[12px] font-bold text-purple-600 font-mono">{codigoReferido || "Cargando..."}</span>
+            <button disabled={!codigoReferido} onClick={copiarCodigo} className="p-1 hover:bg-slate-100 rounded transition-colors disabled:opacity-40">
               <Copy size={10} className="text-slate-400" />
             </button>
           </div>
           <div className="flex-1" />
-          <button onClick={compartirWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-[11px] font-semibold hover:bg-green-600 transition-colors">
+          <button disabled={!linkReferido} onClick={compartirWhatsApp} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-[11px] font-semibold hover:bg-green-600 transition-colors disabled:opacity-40">
             <MessageSquare size={13} /> WhatsApp
           </button>
-          <button onClick={compartirEmail} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors">
+          <button disabled={!linkReferido} onClick={compartirEmail} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl text-[11px] font-semibold hover:bg-blue-600 transition-colors disabled:opacity-40">
             <Mail size={13} /> Email
           </button>
-          <button onClick={() => setMostrarQR(!mostrarQR)} className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-xl text-[11px] font-semibold hover:bg-slate-800 transition-colors">
+          <button disabled={!linkReferido} onClick={() => setMostrarQR(!mostrarQR)} className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-xl text-[11px] font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40">
             <QrCode size={13} /> QR
           </button>
         </div>
         
-        {mostrarQR && (
+        {mostrarQR && linkReferido && (
           <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200/60">
             <div className="flex items-center gap-4">
               <div id="qr-container" className="bg-white p-3 rounded-lg shadow-sm">

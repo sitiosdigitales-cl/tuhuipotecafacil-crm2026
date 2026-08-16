@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
+import {
+  ReferralCodeConfigurationError,
+  resolveReferralCode,
+} from "@/lib/referral-code";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,9 +17,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar el usuario que posee este codigo
-    // En produccion, buscar en tabla de codigos de referido
-    // Por ahora, crear el lead directamente
+    const propietario = await resolveReferralCode(codigo);
+    if (!propietario) {
+      return NextResponse.json(
+        { success: false, error: "Código de referido inválido" },
+        { status: 400 }
+      );
+    }
 
     const leadId = crypto.randomUUID();
     
@@ -31,7 +39,9 @@ export async function POST(request: NextRequest) {
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
         codigoReferido: codigo,
-        notas: `Referido via enlace - Codigo: ${codigo}`,
+        referidoPor: propietario.id,
+        referidoPorNombre: `${propietario.nombre} ${propietario.apellido}`.trim(),
+        notas: "Registro recibido mediante el programa de referidos",
         diasEnEtapa: 0,
         situacionLaboral: "DEPENDIENTE",
         enDicom: false,
@@ -47,8 +57,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: { id: data.id } });
   } catch (error) {
+    if (error instanceof ReferralCodeConfigurationError) {
+      return NextResponse.json(
+        { success: false, error: "El programa de referidos no está configurado" },
+        { status: 503 }
+      );
+    }
     console.error("Error al registrar referido:", error);
     return NextResponse.json(
       { success: false, error: "Error interno" },

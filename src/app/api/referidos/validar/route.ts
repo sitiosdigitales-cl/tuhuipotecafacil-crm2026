@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  ReferralCodeConfigurationError,
+  resolveReferralCode,
+} from "@/lib/referral-code";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -8,14 +12,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ valido: false, error: "Codigo requerido" });
   }
 
-  // Validar formato del codigo (REF-XXX-XXXXXX)
-  const formatoValido = /^REF-[A-Z]{3}-[A-Z0-9]{6}$/.test(codigo);
-  
-  if (!formatoValido) {
-    return NextResponse.json({ valido: false, error: "Formato de codigo invalido" });
+  try {
+    const propietario = await resolveReferralCode(codigo);
+    return NextResponse.json({ valido: Boolean(propietario) });
+  } catch (error) {
+    if (error instanceof ReferralCodeConfigurationError) {
+      return NextResponse.json(
+        { valido: false, error: "El programa de referidos no está configurado" },
+        { status: 503 }
+      );
+    }
+    console.error("Error al validar código de referido:", error);
+    return NextResponse.json(
+      { valido: false, error: "No se pudo validar el código" },
+      { status: 500 }
+    );
   }
-
-  // En produccion, aqui se verificaria contra la base de datos
-  // Por ahora, validamos el formato y asumimos que es valido
-  return NextResponse.json({ valido: true, codigo });
 }

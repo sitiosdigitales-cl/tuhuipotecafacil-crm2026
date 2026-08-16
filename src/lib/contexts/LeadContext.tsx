@@ -32,8 +32,6 @@ interface LeadContextType {
   asignarEjecutivo: (leadId: string, nombreEjecutivo: string) => Promise<void>;
   moverEtapa: (leadId: string, nuevaEtapa: Etapa) => Promise<void>;
   cargando: boolean;
-  obtenerCodigoReferido: (usuarioId: string) => string;
-  obtenerLeadsPorReferido: (codigoReferido: string) => Lead[];
   cargaPorEjecutivo: Record<string, number>;
 }
 
@@ -182,18 +180,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     await actualizarLead(leadId, { etapa: nuevaEtapa, diasEnEtapa: 0 });
   }, [actualizarLead]);
 
-  const obtenerCodigoReferido = useCallback((usuarioId: string) => {
-    if (!usuarioId) return "";
-    const storageKey = `crm_codigo_ref_${usuarioId}`;
-    const existente = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
-    if (existente) return existente;
-    const nuevo = `REF-${usuarioId.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    if (typeof window !== "undefined") localStorage.setItem(storageKey, nuevo);
-    return nuevo;
-  }, []);
-
-  const obtenerLeadsPorReferido = useCallback((codigoReferido: string) => leads.filter((l) => l.notas?.includes(codigoReferido)), [leads]);
-
   // Leads activos por ejecutivo (excluye CIERRE y PERDIDO).
   // Memoizado porque un objeto nuevo aqui invalidaria el valor del contexto en
   // cada render, que es justo lo que este cambio viene a evitar.
@@ -213,13 +199,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const valor = useMemo(
     () => ({
       leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo,
-      moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido,
-      cargaPorEjecutivo,
+      moverEtapa, cargando, cargaPorEjecutivo,
     }),
     [
       leads, agregarLead, actualizarLead, eliminarLead, asignarEjecutivo,
-      moverEtapa, cargando, obtenerCodigoReferido, obtenerLeadsPorReferido,
-      cargaPorEjecutivo,
+      moverEtapa, cargando, cargaPorEjecutivo,
     ]
   );
 
