@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, toSupabaseColumns } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { Resend } from "resend";
 
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     const leadId = crypto.randomUUID();
+    const supabaseAdmin = getSupabaseAdmin();
 
     // Crear lead en Supabase (usar admin para bypass RLS)
     const { error } = await supabaseAdmin

@@ -12,12 +12,6 @@ export const supabase = createClient(
   supabaseKey || "placeholder-key"
 );
 
-// Cliente admin con service role (bypass RLS) - solo server-side
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-export const supabaseAdmin = serviceKey
-  ? createClient(supabaseUrl || "https://placeholder.supabase.co", serviceKey)
-  : supabase;
-
 /**
  * Limpia un texto antes de interpolarlo en un filtro `.or()` de PostgREST.
  *

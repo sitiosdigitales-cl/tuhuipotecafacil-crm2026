@@ -5,7 +5,8 @@
  * y envía notificaciones por los canales habilitados.
  */
 
-import { supabase, supabaseAdmin } from "./supabase";
+import { getSupabaseAdmin } from "./supabase-admin";
+import { supabase } from "./supabase";
 import { enviarEmail, EMAIL_TEMPLATES } from "./email";
 import { enviarMensajeWhatsApp, isWhatsAppConfigured } from "./whatsapp";
 
@@ -173,6 +174,7 @@ async function crearNotificacionInApp(opts: {
   accionUrl?: string;
 }): Promise<void> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin.from("notificaciones").insert({
       id: crypto.randomUUID(),
       tipo: opts.tipo,
@@ -187,8 +189,8 @@ async function crearNotificacionInApp(opts: {
     if (error) {
       console.error("Error creando notificacion in-app:", JSON.stringify(error));
     }
-  } catch {
-    // Silenciar errores de notificacion in-app
+  } catch (error) {
+    console.error("No se pudo crear la notificación interna:", error);
   }
 }
 

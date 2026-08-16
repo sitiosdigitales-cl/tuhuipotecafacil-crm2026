@@ -6,8 +6,11 @@ const { enviarEmail, from } = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
+vi.mock("@/lib/supabase-admin", () => ({
+  getSupabaseAdmin: () => ({ from }),
+}));
+
 vi.mock("@/lib/supabase", () => ({
-  supabaseAdmin: { from },
   toSupabaseColumns: (row: unknown) => row,
 }));
 

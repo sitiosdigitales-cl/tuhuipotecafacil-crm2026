@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     const leadId = crypto.randomUUID();
+    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin.from("leads").insert({
       id: leadId,
       nombre,

@@ -751,3 +751,10 @@ endpoint y helpers cliente sin consumidores. Suite completa: 374/374.
 
 [calidad · BUG-070] corregido — bandeja deriva usuario desde sesión, elimina
 Realtime directo y el servidor notifica cambios de perfil. Suite: 380/380.
+
+[build] ocupado — Codex, BUG-071 · cliente Supabase admin solo servidor.
+
+[build] libre — Codex, BUG-071 · build y TypeScript de Next terminaron en 0.
+
+[calidad · BUG-071] corregido — service role vive en módulo `server-only` y
+falla cerrado sin configuración; nunca reutiliza anon. Suite: 383/383.
