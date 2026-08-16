@@ -677,3 +677,10 @@ rol e identidad de sesión; `SUPER_ADMIN` conserva vista global. Suite: 327/327.
 
 [calidad · BUG-060] corregido — mensajes validan rol, conversación y autoría;
 remitente y reacciones se derivan de la sesión. Suite completa: 336/336.
+
+[build] ocupado — Codex, BUG-061 · roles y secretos de integraciones.
+
+[build] libre — Codex, BUG-061 · build y typecheck terminaron en 0.
+
+[calidad · BUG-061] corregido — integraciones exige rol administrativo,
+enmascara secretos anidados y usa escrituras cerradas. Suite: 343/343.
