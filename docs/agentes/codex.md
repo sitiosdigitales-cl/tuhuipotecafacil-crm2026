@@ -1218,6 +1218,14 @@ la API; la ficha de cliente muestra historial real y los fallos secundarios se
 informan sin falsear la acción principal. Suite: 741/741;
 build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, BUG-130 · alcance de actividades por cartera.
+
+[build] libre — Codex, BUG-130 · build terminado.
+
+[calidad · BUG-130] corregido — el historial y la creación de actividades
+aplican la propiedad del lead según rol; la colección filtra IDs en consulta y
+limita la respuesta a 200. Suite: 744/744; build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

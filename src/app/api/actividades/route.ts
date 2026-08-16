@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { puedeAccederLead } from "@/lib/permisos-lead";
+import type { TokenPayload } from "@/lib/jwt";
+
+async function obtenerLead(leadId: string) {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id,email,asignadoa")
+    .eq("id", leadId)
+    .single();
+
+  return error ? null : data;
+}
+
+async function obtenerIdsLeadsPermitidos(
+  auth: TokenPayload
+): Promise<string[] | null> {
+  if (["SUPER_ADMIN", "ADMIN", "EJECUTIVO"].includes(auth.rol)) {
+    return null;
+  }
+
+  let query = supabase.from("leads").select("id");
+  if (auth.rol === "AGENTE") {
+    query = query.eq("asignadoa", auth.userId);
+  } else if (auth.rol === "CLIENTE") {
+    query = query.eq("email", auth.email.toLowerCase());
+  } else {
+    return [];
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error("No se pudo resolver la cartera de actividades");
+  return (data ?? []).map((lead) => lead.id);
+}
 
 function serializarActividad(actividad: Record<string, unknown>) {
   return {
@@ -17,17 +50,42 @@ function serializarActividad(actividad: Record<string, unknown>) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await requireAuth(request))) return unauthorized();
+  const auth = await requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limitSolicitado = Number(searchParams.get("limit") || "50");
+    const limit = Number.isInteger(limitSolicitado) && limitSolicitado > 0
+      ? Math.min(limitSolicitado, 200)
+      : 50;
 
-    let query = supabase.from("actividades").select("*").order("fecha", { ascending: false }).limit(limit);
+    if (leadId) {
+      const lead = await obtenerLead(leadId);
+      if (!lead) {
+        return NextResponse.json(
+          { success: false, error: "Lead no encontrado" },
+          { status: 404 }
+        );
+      }
+      if (!puedeAccederLead(auth, lead)) return forbidden();
+    }
+
+    let query = supabase.from("actividades").select("*");
 
     if (leadId) {
       query = query.eq("leadid", leadId);
+    } else {
+      const idsPermitidos = await obtenerIdsLeadsPermitidos(auth);
+      if (idsPermitidos !== null) {
+        if (idsPermitidos.length === 0) {
+          return NextResponse.json({ success: true, data: [] });
+        }
+        query = query.in("leadid", idsPermitidos);
+      }
     }
+
+    query = query.order("fecha", { ascending: false }).limit(limit);
 
     const { data, error } = await query;
     if (error) {
@@ -45,7 +103,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await requireAuth(request))) return unauthorized();
+  const auth = await requireAuth(request);
+  if (!auth) return unauthorized();
   try {
     const body = await request.json();
     const { leadId, tipo, titulo, descripcion, usuario, usuarioId, metadata } = body;
@@ -53,6 +112,15 @@ export async function POST(request: NextRequest) {
     if (!leadId || !tipo || !titulo) {
       return NextResponse.json({ success: false, error: "leadId, tipo y titulo requeridos" }, { status: 400 });
     }
+
+    const lead = await obtenerLead(leadId);
+    if (!lead) {
+      return NextResponse.json(
+        { success: false, error: "Lead no encontrado" },
+        { status: 404 }
+      );
+    }
+    if (!puedeAccederLead(auth, lead)) return forbidden();
 
     const { data, error } = await supabase
       .from("actividades")
