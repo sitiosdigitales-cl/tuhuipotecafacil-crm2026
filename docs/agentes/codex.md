@@ -564,3 +564,10 @@ BUG-037 sigue siendo la única prueba roja (273/274).
 
 [calidad · BUG-050] hallazgo — GET y POST `/api/comisiones` responden 200/201
 a EJECUTIVO, AGENTE y CLIENTE; seis casos rojos. Suite: 273/280, incluido BUG-037.
+
+[build] ocupado — Codex, BUG-051 · documentos de otra cartera.
+
+[build] libre — Codex, BUG-051 · build terminó en 0.
+
+[calidad · BUG-051] hallazgo — GET y PUT `/api/documentos/[id]` responden 200
+para un lead asignado a otro agente; dos casos rojos. Suite: 273/282.
