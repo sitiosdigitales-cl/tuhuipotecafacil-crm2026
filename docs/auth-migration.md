@@ -43,6 +43,31 @@ En `supabase/config.toml`, `auth.enable_signup` permanece en `false` para cerrar
 el registro público, mientras `auth.email.enable_signup` permanece en `true`
 para permitir el inicio de sesión de identidades creadas mediante Admin API.
 
+## Vigencia por solicitud
+
+Todos los endpoints protegidos esperan una validación central antes de usar el
+rol o el identificador. En `required`, y para una cuenta ya enlazada en
+`bridge`, el servidor envía el access token a `auth.getUser`, resuelve la fila
+por `auth_user_id` y exige que estado, correo, `crm_user_id` y rol sigan
+coincidiendo. `SUPER_ADMIN` y `ADMIN` deben conservar `aal2`. Dos guardias del
+mismo request comparten el resultado, pero nunca se reutiliza entre requests.
+
+Durante `bridge`, un JWT legado solo mantiene convivencia si la cuenta todavía
+no tiene enlace y no es administrativa. En `legacy` se conserva el contrato
+anterior para poder desplegar el código antes de aplicar la migración.
+
+`/api/auth/me` rota los tokens mediante el refresh HttpOnly, vuelve a validar la
+cuenta y envía `Cache-Control: no-store`. Puede recuperar una sesión cuyo access
+token venció mientras el refresh siga vigente. `/api/auth/logout` revoca solo la
+sesión actual y limpia las cuatro cookies incluso si el proveedor no responde.
+
+Supabase no invalida retroactivamente un access JWT ya emitido al cerrar una
+sesión; puede seguir verificando hasta su `exp`. El entorno versionado limita ese
+margen a 900 segundos y CI comprueba la vigencia real. Replicar `jwt_expiry =
+900` en un proyecto alojado es una acción humana de configuración, primero en
+staging. Referencias: [validación con `getUser`](https://supabase.com/docs/reference/javascript/auth-getuser),
+[cierre y vigencia de access tokens](https://supabase.com/docs/guides/auth/signout).
+
 ## Ciclo de cuentas
 
 En `bridge` y `required`, las altas administrativas crean primero la identidad
@@ -85,11 +110,10 @@ staging el enrolamiento y documentar la recuperación de un administrador que
 perdió su autenticador. El código no realiza cambios en el panel ni desactiva
 factores reales automáticamente.
 
-No activar `bridge` todavía en producción: el ciclo de cuentas y MFA
-administrativo ya están preparados, pero aún faltan la validación vigente de
-sesión en cada solicitud, RLS por dominio y un ensayo autorizado en staging. El
-valor por defecto permite desplegar el código sin consultar una migración aún
-no aplicada.
+No activar `bridge` todavía en producción: ciclo de cuentas, MFA administrativo
+y validación vigente por solicitud ya están preparados, pero aún faltan RLS por
+dominio y un ensayo autorizado en staging. El valor por defecto permite
+desplegar el código sin consultar una migración aún no aplicada.
 
 La aplicación de la migración, la creación de identidades reales y cualquier
 cambio de modo quedan pendientes de staging autorizado.

@@ -13,6 +13,11 @@ const GUARDIAS_SESION = new Set([
   "recuperarContextoMfa",
   "verificarToken",
 ]);
+const GUARDIAS_ASINCRONAS = new Set([
+  "requireAuth",
+  "requireRole",
+  "recuperarContextoMfa",
+]);
 
 const EXCEPCIONES_SIN_SESION = new Map<string, string>([
   ["/api/auth/login#POST", "inicia la sesión"],
@@ -37,6 +42,7 @@ const EXCEPCIONES_SIN_SESION = new Map<string, string>([
 interface RouteHandler {
   id: string;
   guardias: string[];
+  guardiasSinAwait: string[];
 }
 
 function listarRoutes(directorio: string): string[] {
@@ -47,18 +53,26 @@ function listarRoutes(directorio: string): string[] {
   });
 }
 
-function obtenerLlamadas(nodo: ts.Node): Set<string> {
+function obtenerLlamadas(nodo: ts.Node) {
   const llamadas = new Set<string>();
+  const guardiasSinAwait = new Set<string>();
 
   function visitar(actual: ts.Node) {
     if (ts.isCallExpression(actual) && ts.isIdentifier(actual.expression)) {
-      llamadas.add(actual.expression.text);
+      const nombre = actual.expression.text;
+      llamadas.add(nombre);
+      if (
+        GUARDIAS_ASINCRONAS.has(nombre) &&
+        !ts.isAwaitExpression(actual.parent)
+      ) {
+        guardiasSinAwait.add(nombre);
+      }
     }
     ts.forEachChild(actual, visitar);
   }
 
   visitar(nodo);
-  return llamadas;
+  return { llamadas, guardiasSinAwait };
 }
 
 function obtenerHandlers(archivo: string): RouteHandler[] {
@@ -81,10 +95,11 @@ function obtenerHandlers(archivo: string): RouteHandler[] {
     );
     if (!exportado) continue;
 
-    const llamadas = obtenerLlamadas(nodo.body);
+    const { llamadas, guardiasSinAwait } = obtenerLlamadas(nodo.body);
     handlers.push({
       id: `${ruta}#${nodo.name.text}`,
       guardias: [...GUARDIAS_SESION].filter((guardia) => llamadas.has(guardia)),
+      guardiasSinAwait: [...guardiasSinAwait],
     });
   }
 
@@ -111,5 +126,13 @@ describe("cobertura de sesión de endpoints", () => {
     ).map((handler) => handler.id);
 
     expect(sinComprobacion).toEqual([]);
+  });
+
+  it("espera todas las comprobaciones asíncronas antes de usar sus claims", () => {
+    const sinAwait = HANDLERS.flatMap((handler) =>
+      handler.guardiasSinAwait.map((guardia) => `${handler.id}:${guardia}`)
+    );
+
+    expect(sinAwait).toEqual([]);
   });
 });

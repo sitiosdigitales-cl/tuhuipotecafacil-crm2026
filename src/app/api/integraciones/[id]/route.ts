@@ -5,7 +5,7 @@ import { camposEditablesIntegracion } from "@/lib/integraciones";
 import { tienePermisoConfig } from "@/modulos/configuracion/config";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!tienePermisoConfig(auth.rol, "gestionarIntegraciones")) {
     return forbidden();
@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!tienePermisoConfig(auth.rol, "gestionarIntegraciones")) {
     return forbidden();

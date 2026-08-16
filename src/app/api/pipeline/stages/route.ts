@@ -22,7 +22,7 @@ let etapasEnMemoria = [
 export async function GET(request: NextRequest) {
   // Los metodos de escritura ya pedian rol; la lectura no pedia nada y
   // devolvia el flujo completo del CRM a cualquiera.
-  if (!requireAuth(request)) return unauthorized();
+  if (!(await requireAuth(request))) return unauthorized();
   // Intentar cargar desde la base de datos
   let etapasDB: typeof etapasEnMemoria = [];
   try {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) {
+  if (!(await requireRole(request, ["SUPER_ADMIN", "ADMIN"]))) {
     return forbidden();
   }
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) {
+  if (!(await requireRole(request, ["SUPER_ADMIN", "ADMIN"]))) {
     return forbidden();
   }
 
@@ -140,7 +140,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) {
+  if (!(await requireRole(request, ["SUPER_ADMIN", "ADMIN"]))) {
     return forbidden();
   }
 

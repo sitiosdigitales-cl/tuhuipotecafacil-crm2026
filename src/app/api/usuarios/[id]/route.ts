@@ -69,7 +69,7 @@ async function revertirUsuario(id: string, values: Record<string, unknown>) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   const vistaAdministrativa = ["SUPER_ADMIN", "ADMIN"].includes(auth.rol);
   if (!vistaAdministrativa && !["EJECUTIVO", "AGENTE"].includes(auth.rol)) {
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = requireRole(request, ["SUPER_ADMIN"]);
+  const user = await requireRole(request, ["SUPER_ADMIN"]);
   if (!user) return forbidden();
 
   let rawBody: unknown;
@@ -269,7 +269,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = requireRole(request, ["SUPER_ADMIN"]);
+  const user = await requireRole(request, ["SUPER_ADMIN"]);
   if (!user) return forbidden();
   try {
     const { id } = await params;

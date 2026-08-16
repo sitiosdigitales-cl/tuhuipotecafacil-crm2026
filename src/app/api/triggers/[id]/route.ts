@@ -4,7 +4,7 @@ import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { AUTOMATIZACION_PERMISOS } from "@/modulos/automatizacion/config";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!AUTOMATIZACION_PERMISOS.editar.some((rol) => rol === auth.rol)) return forbidden();
   const { id } = await params;
@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!AUTOMATIZACION_PERMISOS.eliminar.some((rol) => rol === auth.rol)) return forbidden();
   const { id } = await params;

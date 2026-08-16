@@ -8,6 +8,8 @@ const { from } = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
+vi.mock("server-only", () => ({}));
+
 vi.mock("@/lib/supabase", () => ({
   supabase: { from },
 }));

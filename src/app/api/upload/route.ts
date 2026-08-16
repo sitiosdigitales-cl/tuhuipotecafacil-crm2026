@@ -10,7 +10,7 @@ import {
 } from "@/lib/document-storage";
 
 export async function POST(request: NextRequest) {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     if (!auth) return unauthorized();
     try {
     const formData = await request.formData();

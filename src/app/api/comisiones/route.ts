@@ -4,7 +4,7 @@ import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { COMISIONES_PERMISOS } from "@/modulos/comisiones/config";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMISIONES_PERMISOS.ver.some((rol) => rol === auth.rol)) {
     return forbidden();
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMISIONES_PERMISOS.crear.some((rol) => rol === auth.rol)) {
     return forbidden();

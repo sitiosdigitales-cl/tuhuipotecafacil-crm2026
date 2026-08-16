@@ -73,6 +73,9 @@ confirma casillas que dependan de paneles o secretos.
 ## Autenticación y acceso
 
 - [ ] Completar la migración gradual a Supabase Auth.
+- [ ] Replicar en staging la configuración versionada de Auth, incluido
+  `jwt_expiry = 900`, y confirmar el valor efectivo antes de habilitar
+  `SUPABASE_AUTH_MODE=bridge`.
 - [ ] Exigir MFA a `SUPER_ADMIN` y `ADMIN`.
 - [ ] Probar revocación, recuperación y cambio de rol por solicitud.
 - [ ] Verificar RLS por dominio con la matriz completa de roles.

@@ -155,7 +155,7 @@ export async function revocarSesionSupabase(
   accessToken: string,
   adminClient = getSupabaseAdmin(),
 ): Promise<void> {
-  const { error } = await adminClient.auth.admin.signOut(accessToken, "global");
+  const { error } = await adminClient.auth.admin.signOut(accessToken, "local");
   if (error) throw new Error("No se pudo revocar la sesión de Supabase Auth");
 }
 

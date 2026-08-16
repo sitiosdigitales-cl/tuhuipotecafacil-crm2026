@@ -35,7 +35,7 @@ function isUniqueConstraintError(error: unknown) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   const vistaAdministrativa = ["SUPER_ADMIN", "ADMIN"].includes(auth.rol);
   if (!vistaAdministrativa && !["EJECUTIVO", "AGENTE"].includes(auth.rol)) {
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   // Solo SUPER_ADMIN. Crear una cuenta es asignar un rol, y ADMIN no
   // administra roles.
-  if (!requireRole(request, ["SUPER_ADMIN"])) return forbidden();
+  if (!(await requireRole(request, ["SUPER_ADMIN"]))) return forbidden();
 
   let rawBody: unknown;
   try {

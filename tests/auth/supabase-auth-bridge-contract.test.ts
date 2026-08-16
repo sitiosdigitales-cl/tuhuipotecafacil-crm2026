@@ -60,6 +60,15 @@ describe("contrato del puente de login", () => {
     expect(emailSection).toMatch(/enable_signup\s*=\s*true/);
   });
 
+  it("acota a quince minutos los access tokens del entorno versionado", () => {
+    const config = readFileSync(supabaseConfigPath, "utf8");
+    const authSection = config.match(/\[auth\]([\s\S]*?)\[auth\.rate_limit\]/)?.[1];
+    const expiry = Number(authSection?.match(/jwt_expiry\s*=\s*(\d+)/)?.[1]);
+
+    expect(expiry).toBeGreaterThanOrEqual(300);
+    expect(expiry).toBeLessThanOrEqual(900);
+  });
+
   it("habilita enrolamiento y verificación TOTP en el entorno local", () => {
     const config = readFileSync(supabaseConfigPath, "utf8");
     const totpSection = config.match(

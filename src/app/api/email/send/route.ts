@@ -125,7 +125,7 @@ async function getLead(leadId: string): Promise<LeadEmail | null> {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
 
   let body: unknown;
@@ -284,7 +284,7 @@ function emailResult(resultado: boolean) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_OPERACIONALES.has(auth.rol)) return forbidden();
 

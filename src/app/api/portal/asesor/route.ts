@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 const ROLES_PORTAL = ["CLIENTE", "SUPER_ADMIN", "ADMIN"];
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_PORTAL.includes(auth.rol)) return forbidden();
 

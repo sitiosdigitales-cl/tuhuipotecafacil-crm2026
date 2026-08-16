@@ -24,9 +24,12 @@ export function establecerCookiesSupabase(
   response: NextResponse,
   session: Session,
 ): void {
+  const remainingSeconds = session.expires_at
+    ? session.expires_at - Math.floor(Date.now() / 1_000)
+    : session.expires_in;
   const accessMaxAge = Math.max(
     60,
-    Math.min(session.expires_in, SUPABASE_ACCESS_MAX_AGE_SECONDS),
+    Math.min(remainingSeconds, SUPABASE_ACCESS_MAX_AGE_SECONDS),
   );
   response.cookies.set(
     SUPABASE_ACCESS_COOKIE,

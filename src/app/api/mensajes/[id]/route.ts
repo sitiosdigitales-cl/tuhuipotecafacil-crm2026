@@ -38,7 +38,7 @@ function normalizarReacciones(value: unknown): Record<string, string[]> {
 
 // PUT /api/mensajes/[id] — Actualizar mensaje (contenido, reacciones, respondiendoA)
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMUNICACIONES_CONFIG.permisos.enviar.includes(auth.rol)) {
     return forbidden();
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 // DELETE /api/mensajes/[id] — Eliminar mensaje (soft delete: contenido vacío + tipo SISTEMA)
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMUNICACIONES_CONFIG.permisos.enviar.includes(auth.rol)) {
     return forbidden();

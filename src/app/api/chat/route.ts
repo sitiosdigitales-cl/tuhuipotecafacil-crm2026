@@ -146,7 +146,7 @@ async function parseBody(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = requireAuth(request);
+  const session = await requireAuth(request);
   if (!session) return unauthorized();
   if (!INTERNAL_ROLES.has(session.rol)) return forbidden();
 

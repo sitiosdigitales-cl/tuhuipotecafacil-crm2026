@@ -3,7 +3,7 @@ import { supabase, fromSupabaseArray } from "@/lib/supabase";
 import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!["SUPER_ADMIN", "ADMIN"].includes(auth.rol)) return forbidden();
 

@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, TokenPayload } from "./jwt";
+import type { TokenPayload } from "./jwt";
+import { validarSesionSolicitud } from "./request-session";
 
-export function requireAuth(request: NextRequest): TokenPayload | null {
-  return authenticateRequest(request);
+const requestAuthCache = new WeakMap<NextRequest, Promise<TokenPayload | null>>();
+
+function obtenerSesion(request: NextRequest): Promise<TokenPayload | null> {
+  const cached = requestAuthCache.get(request);
+  if (cached) return cached;
+  const validation = validarSesionSolicitud(request);
+  requestAuthCache.set(request, validation);
+  return validation;
 }
 
-export function requireRole(request: NextRequest, roles: string[]): TokenPayload | null {
-  const auth = authenticateRequest(request);
+export function requireAuth(request: NextRequest): Promise<TokenPayload | null> {
+  return obtenerSesion(request);
+}
+
+export async function requireRole(
+  request: NextRequest,
+  roles: string[],
+): Promise<TokenPayload | null> {
+  const auth = await obtenerSesion(request);
   if (!auth) return null;
   if (!roles.includes(auth.rol)) return null;
   return auth;

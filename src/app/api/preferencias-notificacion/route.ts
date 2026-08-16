@@ -4,7 +4,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     if (!auth) return unauthorized();
 
     const { searchParams } = new URL(request.url);
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     if (!auth) return unauthorized();
 
     const body = await request.json();

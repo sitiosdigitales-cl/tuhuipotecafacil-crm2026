@@ -5,7 +5,7 @@ import { actualizarTasas } from "@/lib/cmf/service";
 
 // POST /api/cmf/update - Forzar actualización de tasas (solo ADMIN+)
 export async function POST(request: NextRequest) {
-  const user = requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
+  const user = await requireRole(request, ["SUPER_ADMIN", "ADMIN"]);
   if (!user) return forbidden();
   try {
     const resultado = await actualizarTasas();

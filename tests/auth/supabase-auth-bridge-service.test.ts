@@ -234,7 +234,7 @@ describe("servicio del puente Supabase Auth", () => {
     expect(admin.rpc).toHaveBeenCalledWith("liberar_migracion_auth", expect.any(Object));
   });
 
-  it("revoca globalmente una sesión que no debe entregarse", async () => {
+  it("revoca solo la sesión que no debe entregarse", async () => {
     const signOut = vi.fn().mockResolvedValue({ data: null, error: null });
     const admin = {
       auth: { admin: { signOut } },
@@ -242,6 +242,6 @@ describe("servicio del puente Supabase Auth", () => {
 
     await revocarSesionSupabase("synthetic-access-token", admin);
 
-    expect(signOut).toHaveBeenCalledWith("synthetic-access-token", "global");
+    expect(signOut).toHaveBeenCalledWith("synthetic-access-token", "local");
   });
 });

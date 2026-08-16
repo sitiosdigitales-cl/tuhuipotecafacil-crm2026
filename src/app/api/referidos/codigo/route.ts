@@ -10,7 +10,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 const ROLES_CON_REFERIDOS = new Set(["SUPER_ADMIN", "ADMIN", "EJECUTIVO"]);
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_CON_REFERIDOS.has(auth.rol)) return forbidden();
 

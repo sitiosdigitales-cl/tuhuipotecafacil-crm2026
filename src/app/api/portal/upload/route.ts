@@ -14,7 +14,7 @@ import {
 // documentos de cualquier persona. El RUT no sirve como credencial, en Chile
 // es un dato que cualquiera puede obtener o deducir.
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   try {
     const formData = await request.formData();

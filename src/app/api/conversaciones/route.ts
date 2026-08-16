@@ -5,7 +5,7 @@ import { normalizarParticipantes } from "@/lib/permisos-conversacion";
 import { COMUNICACIONES_CONFIG } from "@/modulos/comunicaciones";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMUNICACIONES_CONFIG.permisos.ver.includes(auth.rol)) {
     return forbidden();
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMUNICACIONES_CONFIG.permisos.enviar.includes(auth.rol)) {
     return forbidden();

@@ -4,7 +4,7 @@ import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { AUTOMATIZACION_PERMISOS } from "@/modulos/automatizacion/config";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!AUTOMATIZACION_PERMISOS.ver.some((rol) => rol === auth.rol)) return forbidden();
     try {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const auth = requireAuth(request);
+    const auth = await requireAuth(request);
     if (!auth) return unauthorized();
     if (!AUTOMATIZACION_PERMISOS.crear.some((rol) => rol === auth.rol)) return forbidden();
     try {

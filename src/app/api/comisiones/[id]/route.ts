@@ -8,7 +8,7 @@ import { ActualizarComisionSchema } from "@/modulos/comisiones/validaciones";
 const MAX_COMISION_PAYLOAD_BYTES = 8 * 1024;
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMISIONES_PERMISOS.editar.some((rol) => rol === auth.rol)) {
     return forbidden();
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!COMISIONES_PERMISOS.eliminar.some((rol) => rol === auth.rol)) {
     return forbidden();

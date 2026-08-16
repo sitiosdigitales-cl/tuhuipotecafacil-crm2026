@@ -5,7 +5,7 @@ import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   try {
     const { id } = await params;
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   try {
     const { id } = await params;
@@ -196,7 +196,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   // CLIENTE no puede eliminar leads
-  if (!requireRole(request, ["SUPER_ADMIN", "ADMIN"])) return forbidden();
+  if (!(await requireRole(request, ["SUPER_ADMIN", "ADMIN"]))) return forbidden();
   try {
     const { id } = await params;
     const { error } = await supabase.from("leads").delete().eq("id", id);

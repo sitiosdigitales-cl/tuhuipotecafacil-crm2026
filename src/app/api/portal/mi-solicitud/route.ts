@@ -9,7 +9,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 // persona. El identificador ahora es la sesión, no un dato que el visitante
 // escribe.
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
 
   const { data, error } = await supabase

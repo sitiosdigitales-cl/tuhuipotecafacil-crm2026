@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import { supabase } from "@/lib/supabase";
-import { generarToken, verificarToken } from "@/lib/jwt";
+import { generarToken } from "@/lib/jwt";
+import { renovarSesionSupabaseSolicitud } from "@/lib/request-session";
 import {
   eliminarCookieSesionLegada,
   eliminarCookiesSesion,
+  establecerCookiesSupabase,
   establecerCookieSesion,
   LEGACY_SESSION_COOKIE,
-  SESSION_COOKIE,
+  SUPABASE_ACCESS_COOKIE,
+  SUPABASE_REFRESH_COOKIE,
 } from "@/lib/session-cookie";
+import { obtenerModoSupabaseAuth } from "@/lib/supabase-auth";
 
 function invalidarSesion(error: string) {
   const response = NextResponse.json(
@@ -22,14 +27,21 @@ function invalidarSesion(error: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token =
-      request.cookies.get(SESSION_COOKIE)?.value ||
-      request.cookies.get(LEGACY_SESSION_COOKIE)?.value;
-    if (!token) {
-      return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
+    const authMode = obtenerModoSupabaseAuth();
+    const hasSupabaseAccess = request.cookies.has(SUPABASE_ACCESS_COOKIE);
+    const hasSupabaseRefresh = request.cookies.has(SUPABASE_REFRESH_COOKIE);
+    const usesSupabaseSession = authMode !== "legacy" && hasSupabaseRefresh;
+    if (authMode !== "legacy" && hasSupabaseAccess && !hasSupabaseRefresh) {
+      return invalidarSesion("La sesión de acceso está incompleta");
     }
 
-    const payload = verificarToken(token);
+    const renewed = usesSupabaseSession
+      ? await renovarSesionSupabaseSolicitud(request)
+      : null;
+    if (usesSupabaseSession && !renewed) {
+      return invalidarSesion("La sesión ya no está vigente");
+    }
+    const payload = renewed?.payload ?? await requireAuth(request);
     if (!payload) {
       return invalidarSesion("Token inválido o expirado");
     }
@@ -55,9 +67,11 @@ export async function GET(request: NextRequest) {
       rol: data.rol,
     });
     establecerCookieSesion(response, tokenRenovado);
+    if (renewed) establecerCookiesSupabase(response, renewed.session);
     if (request.cookies.has(LEGACY_SESSION_COOKIE)) {
       eliminarCookieSesionLegada(response);
     }
+    response.headers.set("Cache-Control", "no-store, max-age=0");
     return response;
   } catch {
     return NextResponse.json({ success: false, error: "Error de autenticación" }, { status: 500 });

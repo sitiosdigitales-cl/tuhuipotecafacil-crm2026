@@ -8,7 +8,7 @@ import {
 import { tienePermisoConfig } from "@/modulos/configuracion/config";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!tienePermisoConfig(auth.rol, "gestionarIntegraciones")) {
     return forbidden();
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!tienePermisoConfig(auth.rol, "gestionarIntegraciones")) {
     return forbidden();

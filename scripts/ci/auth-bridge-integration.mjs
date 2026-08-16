@@ -162,11 +162,28 @@ try {
     throw new Error("La sesión sintética no alcanzó AAL2");
   }
 
+  const jwtClaims = JSON.parse(
+    Buffer.from(verified.data.access_token.split(".")[1], "base64url").toString("utf8"),
+  );
+  if (
+    typeof jwtClaims.iat !== "number" ||
+    typeof jwtClaims.exp !== "number" ||
+    jwtClaims.exp - jwtClaims.iat > 900
+  ) {
+    throw new Error("El access token sintético supera la vigencia esperada");
+  }
+
   const signedOut = await admin.auth.admin.signOut(
     verified.data.access_token,
-    "global",
+    "local",
   );
   assertNoError(signedOut.error, "revocar la sesión sintética");
+  const refreshedAfterLogout = await auth.auth.refreshSession({
+    refresh_token: verified.data.refresh_token,
+  });
+  if (!refreshedAfterLogout.error) {
+    throw new Error("El refresh token sintético siguió vigente después del cierre");
+  }
 
   console.log("Auth bridge integration: OK");
 } finally {

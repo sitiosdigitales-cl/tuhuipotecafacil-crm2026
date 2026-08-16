@@ -26,17 +26,17 @@ function apiKeyProcesoValida(request: NextRequest): boolean {
   return timingSafeEqual(hashConfigurada, hashEntregada);
 }
 
-function autorizarOperacion(request: NextRequest): Response | null {
+async function autorizarOperacion(request: NextRequest): Promise<Response | null> {
   if (apiKeyProcesoValida(request)) return null;
 
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_ADMINISTRATIVOS.has(auth.rol)) return forbidden();
   return null;
 }
 
 export async function POST(request: NextRequest) {
-  const denegada = autorizarOperacion(request);
+  const denegada = await autorizarOperacion(request);
   if (denegada) return denegada;
 
   try {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_ADMINISTRATIVOS.has(auth.rol)) return forbidden();
 
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const denegada = autorizarOperacion(request);
+  const denegada = await autorizarOperacion(request);
   if (denegada) return denegada;
 
   const fileName = new URL(request.url).searchParams.get("file");

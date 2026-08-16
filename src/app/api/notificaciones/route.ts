@@ -51,7 +51,7 @@ async function readBody(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
 
   const { searchParams } = new URL(request.url);
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_CREACION.has(auth.rol)) return forbidden();
 
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
 
   const body = await readBody(request);
@@ -185,7 +185,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
 
   const id = new URL(request.url).searchParams.get("id")?.trim();

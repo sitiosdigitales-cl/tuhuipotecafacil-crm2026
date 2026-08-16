@@ -4,7 +4,7 @@ import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   try {
     const { searchParams } = new URL(request.url);
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  if (!(await requireAuth(request))) return unauthorized();
   try {
     const body = await request.json();
     if (!body.nombre || !body.apellido) {

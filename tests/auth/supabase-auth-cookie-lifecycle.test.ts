@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   eliminarCookiesSesion,
@@ -17,6 +17,10 @@ const SESSION = {
 } as Session;
 
 describe("cookies del puente Supabase Auth", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("guarda ambos tokens como HttpOnly con vigencias acotadas", () => {
     const response = NextResponse.json({ success: true });
     establecerCookiesSupabase(response, SESSION);
@@ -28,6 +32,19 @@ describe("cookies del puente Supabase Auth", () => {
     expect(cookies).toContain("Max-Age=604800");
     expect(cookies.match(/HttpOnly/g)).toHaveLength(2);
     expect(cookies.match(/Priority=high/g)).toHaveLength(2);
+  });
+
+  it("no extiende la cookie de acceso más allá del vencimiento del token", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-16T00:00:00.000Z"));
+    const response = NextResponse.json({ success: true });
+
+    establecerCookiesSupabase(response, {
+      ...SESSION,
+      expires_at: Math.floor(Date.now() / 1_000) + 120,
+    });
+
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=120");
   });
 
   it("el cierre elimina también las cookies de Supabase", () => {

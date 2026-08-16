@@ -45,7 +45,7 @@ async function obtenerSolicitudYLead(id: string) {
 
 // GET /api/solicitudes/[id]
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   try {
     const { id } = await params;
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // PUT /api/solicitudes/[id]
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!SOLICITUDES_CONFIG.permisos.editar.includes(auth.rol)) {
     return forbidden();
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 // DELETE /api/solicitudes/[id]
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!SOLICITUDES_CONFIG.permisos.eliminar.includes(auth.rol)) {
     return forbidden();

@@ -1213,6 +1213,18 @@ recuperación administrativa se sincronizan con Supabase Auth en `bridge` y
 hasta contar con un proceso durable. Suite: 686/686; lint/typecheck: 0;
 audit: 0.
 
+[FASE AUTH · AUTH-04] verificado — ciclo de cuentas, reconstrucción doble y
+puente Auth real pasan en CI.
+
+[build] ocupado — Codex, AUTH-05 · vigencia de sesión por solicitud.
+
+[build] libre — Codex, AUTH-05 · build terminado.
+
+[FASE AUTH · AUTH-05] preparado — los 111 guardias API validan de forma
+asíncrona la sesión Supabase, cuenta vigente y AAL2 administrativo; `/me` rota
+refresh/access, `/logout` revoca la sesión actual y el access JWT local dura
+como máximo 15 minutos. Suite: 709/709; lint/typecheck: 0; audit: 0.
+
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 

@@ -77,7 +77,7 @@ async function getLead(leadId: string): Promise<LeadWhatsApp | null> {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_OPERACIONALES.has(auth.rol)) return forbidden();
 
@@ -178,7 +178,7 @@ async function sendTemplate(body: Record<string, unknown>, telefono: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = requireAuth(request);
+  const auth = await requireAuth(request);
   if (!auth) return unauthorized();
   if (!ROLES_ADMINISTRATIVOS.has(auth.rol)) return forbidden();
 
