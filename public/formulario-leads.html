@@ -469,6 +469,25 @@
   <script>
     const WEBHOOK_URL = '/api/pre-evaluacion';
     const THANK_YOU_URL = 'https://www.tuhipotecafacil.cl/registro-completo/';
+    const ALLOWED_PARENT_ORIGINS = new Set([
+      window.location.origin,
+      'https://tuhipotecafacil.cl',
+      'https://www.tuhipotecafacil.cl',
+    ]);
+    const PARENT_ORIGIN = (() => {
+      try {
+        const origin = new URL(document.referrer).origin;
+        return ALLOWED_PARENT_ORIGINS.has(origin) ? origin : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    function notifyParent(message) {
+      if (window.parent !== window && PARENT_ORIGIN) {
+        window.parent.postMessage(message, PARENT_ORIGIN);
+      }
+    }
     
     // Formatear RUT automáticamente: 12345678-9 → 12.345.678-9
     function formatRut(value) {
@@ -543,7 +562,7 @@
       // Auto-resize iframe después de cambiar de paso
       setTimeout(() => {
         const height = document.body.scrollHeight;
-        window.parent.postMessage({ type: 'resize', height: height }, '*');
+        notifyParent({ type: 'resize', height: height });
       }, 100);
     }
     
