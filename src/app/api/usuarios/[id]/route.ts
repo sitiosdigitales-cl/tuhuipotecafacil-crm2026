@@ -87,6 +87,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = parsedBody.data;
 
+    if (
+      id === user.userId &&
+      ((body.rol !== undefined && body.rol !== user.rol) ||
+        (body.estado !== undefined && body.estado !== "ACTIVO"))
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No puedes degradar ni inhabilitar tu propia cuenta",
+        },
+        { status: 409 }
+      );
+    }
+
     const updateData: Record<string, unknown> = {};
     if (body.nombre !== undefined) updateData.nombre = body.nombre;
     if (body.apellido !== undefined) updateData.apellido = body.apellido;
@@ -119,6 +133,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!user) return forbidden();
   try {
     const { id } = await params;
+    if (id === user.userId) {
+      return NextResponse.json(
+        { success: false, error: "No puedes eliminar tu propia cuenta" },
+        { status: 409 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const hardDelete = searchParams.get("hard") === "true";
 

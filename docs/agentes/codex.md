@@ -962,3 +962,10 @@ logs no incluyen destinatarios ni respuestas completas. Suite: 493/493; audit: 0
 
 [calidad · BUG-100] corregido — correo, leads y WhatsApp cortan cuerpos grandes
 antes de verificar o persistir. Suite: 496/496; audit: 0.
+
+[build] ocupado — Codex, BUG-101 · protección de la propia cuenta SUPER_ADMIN.
+
+[build] libre — Codex, BUG-101 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-101] corregido — la cuenta actual conserva su rol, estado y
+registro; las acciones propias desaparecen de la UI. Suite: 500/500; audit: 0.

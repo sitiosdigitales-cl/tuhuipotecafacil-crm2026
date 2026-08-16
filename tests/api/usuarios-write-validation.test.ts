@@ -25,7 +25,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 import { POST } from "@/app/api/usuarios/route";
-import { PUT } from "@/app/api/usuarios/[id]/route";
+import { DELETE, PUT } from "@/app/api/usuarios/[id]/route";
 
 const validUser = {
   apellido: "Pérez",
@@ -88,6 +88,32 @@ describe("escritura de usuarios", () => {
     );
 
     expect(response.status).toBe(415);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { body: { rol: "ADMIN" }, caseName: "degradar su rol" },
+    { body: { estado: "SUSPENDIDO" }, caseName: "suspender su cuenta" },
+    { body: { estado: "INACTIVO" }, caseName: "inhabilitar su cuenta" },
+  ])("impide al SUPER_ADMIN $caseName", async ({ body }) => {
+    const response = await PUT(
+      jsonRequest("/api/usuarios/admin-uno", "PUT", body),
+      { params: Promise.resolve({ id: "admin-uno" }) }
+    );
+
+    expect(response.status).toBe(409);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("impide al SUPER_ADMIN eliminar su propia cuenta", async () => {
+    const response = await DELETE(
+      new NextRequest("http://localhost/api/usuarios/admin-uno", {
+        method: "DELETE",
+      }),
+      { params: Promise.resolve({ id: "admin-uno" }) }
+    );
+
+    expect(response.status).toBe(409);
     expect(from).not.toHaveBeenCalled();
   });
 

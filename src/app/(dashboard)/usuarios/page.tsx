@@ -36,7 +36,7 @@ type UsuarioApi = Omit<Usuario, "ultimoAcceso" | "creadoEn"> & {
 
 export default function UsuariosPage() {
   const router = useRouter();
-  const { esSuperAdmin } = useUser();
+  const { esSuperAdmin, usuarioActual } = useUser();
   const [ahora] = useState(() => Date.now());
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -519,7 +519,7 @@ export default function UsuariosPage() {
                         <Lock size={13} className="text-amber-500" /> Restablecer contraseña
                       </button>
                       <div className="border-t border-slate-100 my-1" />
-                      {user.estado === "ACTIVO" ? (
+                      {user.id !== usuarioActual.id && (user.estado === "ACTIVO" ? (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleCambiarEstado(user.id, "SUSPENDIDO"); setMenuAbierto(null); }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-red-600 hover:bg-red-50 transition-colors"
@@ -533,8 +533,8 @@ export default function UsuariosPage() {
                         >
                           <UserCheck size={13} /> Activar
                         </button>
-                      )}
-                      {esSuperAdmin && (
+                      ))}
+                      {esSuperAdmin && user.id !== usuarioActual.id && (
                         <>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEliminar(user, false); setMenuAbierto(null); }}
@@ -729,7 +729,7 @@ export default function UsuariosPage() {
               </div>
               <div>
                 <label className="text-[10px] font-semibold text-slate-600 mb-1 block">Rol</label>
-                <select value={editRol} onChange={(e) => setEditRol(e.target.value as Rol)}
+                <select value={editRol} onChange={(e) => setEditRol(e.target.value as Rol)} disabled={editandoUsuario.id === usuarioActual.id}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-medium">
                   {(Object.keys(ROLES_CONFIG) as Rol[]).map((r) => (
                     <option key={r} value={r}>{ROLES_CONFIG[r].label}</option>
