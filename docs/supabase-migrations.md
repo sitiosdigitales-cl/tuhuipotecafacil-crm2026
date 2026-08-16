@@ -17,6 +17,8 @@ npm run db:stop
 
 Un reset debe crear 27 tablas públicas y dejar vacías las tablas de clientes y
 usuarios. Ejecutar el reset dos veces antes de aceptar una nueva migración.
+Las pruebas también validan el puente estructural descrito en
+`docs/auth-migration.md`; el reset no crea identidades ni contraseñas.
 
 ## Staging nuevo
 

@@ -1173,3 +1173,11 @@ RTO y emite solo recuentos. Ensayo real requiere proyecto humano. Suite:
 [operación · BUG-122] corregido — la guía histórica ya no contiene una receta
 ejecutable y el checklist separa evidencia de acciones humanas. Suite: 610/610;
 audit: 0.
+
+[build] ocupado — Codex, AUTH-01 · esquema del puente Supabase Auth.
+
+[build] libre — Codex, AUTH-01 · build y validaciones terminadas.
+
+[FASE AUTH · AUTH-01] preparado — identidad UUID única, claim temporal y
+finalización que retira el hash legado; login aún no cambia. Suite: 612/612;
+audit: 0.
