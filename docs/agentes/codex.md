@@ -1104,3 +1104,10 @@ cerrada y scripts db/typecheck disponibles. Suite: 592/592; audit: 0.
 
 [FASE DB · BUG-117] corregido — la cadena activa ya no siembra cuentas ni
 hashes; la rotación productiva queda como acción humana. Suite: 593/593; audit: 0.
+
+[build] ocupado — Codex, DB-03 · baseline reproducible del esquema.
+
+[build] libre — Codex, DB-03 · build, suite, lint y TypeScript en verde.
+
+[FASE DB · DB-03] hecho — baseline sin datos crea 27 tablas en dos bases
+PostgreSQL aisladas; falta contrastarla con staging autorizado. Suite: 595/595; audit: 0.

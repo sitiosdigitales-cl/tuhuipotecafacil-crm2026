@@ -1,0 +1,3 @@
+-- El entorno local parte sin cuentas ni datos de clientes.
+-- Las cuentas de desarrollo se crean con scripts/bootstrap-admin.mjs usando
+-- valores sintéticos entregados por variables de entorno.
