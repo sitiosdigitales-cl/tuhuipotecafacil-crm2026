@@ -36,21 +36,19 @@ async function registrarIntentoFallido(id: string, intentosPrevios: number) {
       ? new Date(Date.now() + MINUTOS_BLOQUEO * 60_000).toISOString()
       : null;
 
-  // Si las columnas aun no existen, el update falla y se ignora: nunca puede
-  // impedir un login legitimo.
-  await supabase
+  const { error } = await supabase
     .from("usuarios")
     .update({ intentosfallidos: intentos, suspendidohasta: bloqueo })
-    .eq("id", id)
-    .then(undefined, () => {});
+    .eq("id", id);
+  if (error) throw new Error(`No se pudo registrar el intento fallido: ${error.message}`);
 }
 
 async function limpiarIntentos(id: string) {
-  await supabase
+  const { error } = await supabase
     .from("usuarios")
     .update({ intentosfallidos: 0, suspendidohasta: null })
-    .eq("id", id)
-    .then(undefined, () => {});
+    .eq("id", id);
+  if (error) throw new Error(`No se pudo limpiar el contador de acceso: ${error.message}`);
 }
 
 export async function POST(request: NextRequest) {
@@ -141,7 +139,11 @@ export async function POST(request: NextRequest) {
     establecerCookieSesion(response, token);
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error(
+      "Error en POST /api/auth/login:",
+      error instanceof Error ? error.message : "Error desconocido"
+    );
     return NextResponse.json({ success: false, error: "Error en login" }, { status: 500 });
   }
 }

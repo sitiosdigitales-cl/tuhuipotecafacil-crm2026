@@ -927,3 +927,10 @@ y contraseña de 15-64 caracteres. Suite: 477/477; audit: 0.
 
 [calidad · BUG-095] corregido — login acepta solo JSON válido de hasta 4 KiB
 y normaliza el correo antes de consultar. Suite: 484/484; audit: 0.
+
+[build] ocupado — Codex, BUG-096 · persistencia del límite de intentos de login.
+
+[build] libre — Codex, BUG-096 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-096] corregido en código — un fallo al guardar o limpiar el
+contador cierra el login y queda registrado. Suite: 487/487; audit: 0.
