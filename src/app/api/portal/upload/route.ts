@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
-import { documentExtension, documentProxyUrl } from "@/lib/document-storage";
+import {
+  documentContentMatchesMimeType,
+  documentExtension,
+  documentProxyUrl,
+} from "@/lib/document-storage";
 
 // POST /api/portal/upload - Subida de documentos desde el portal del cliente.
 //
@@ -14,11 +18,11 @@ export async function POST(request: NextRequest) {
   if (!auth) return unauthorized();
   try {
     const formData = await request.formData();
-    const archivo = formData.get("archivo") as File;
-    const leadId = formData.get("leadId") as string;
-    const tipo = formData.get("tipo") as string;
+    const archivo = formData.get("archivo");
+    const leadId = formData.get("leadId");
+    const tipo = formData.get("tipo");
 
-    if (!archivo || !leadId) {
+    if (!(archivo instanceof File) || typeof leadId !== "string" || !leadId.trim()) {
       return NextResponse.json({ success: false, error: "Archivo y leadId requeridos" }, { status: 400 });
     }
 
@@ -29,6 +33,12 @@ export async function POST(request: NextRequest) {
     const extension = documentExtension(archivo.type);
     if (!extension) {
       return NextResponse.json({ success: false, error: "Tipo de archivo no permitido" }, { status: 400 });
+    }
+    if (!(await documentContentMatchesMimeType(archivo))) {
+      return NextResponse.json(
+        { success: false, error: "El contenido no corresponde al tipo de archivo" },
+        { status: 400 }
+      );
     }
     const nombreArchivo = archivo.name.trim().replace(/[\u0000-\u001f\u007f]/g, "");
     if (!nombreArchivo || nombreArchivo.length > 255) {
@@ -65,7 +75,7 @@ export async function POST(request: NextRequest) {
       id: docId,
       leadId,
       nombre: nombreArchivo,
-      tipo: tipo || "OTRO",
+      tipo: typeof tipo === "string" && tipo ? tipo : "OTRO",
       estado: "PENDIENTE",
       archivoUrl: filePath,
       creadoEn: new Date().toISOString(),
@@ -85,7 +95,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: docId,
         nombre: nombreArchivo,
-        tipo: tipo || "documento",
+        tipo: typeof tipo === "string" && tipo ? tipo : "documento",
         tamano: archivo.size,
         archivoUrl: documentProxyUrl(docId, filePath),
         fechaSubida: new Date().toISOString(),

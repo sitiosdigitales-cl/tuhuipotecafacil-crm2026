@@ -828,3 +828,10 @@ observaciones, autor y fecha quedan controlados. Suite: 409/409.
 
 [calidad · BUG-081] corregido — upload es la única escritura y la interfaz
 solo incorpora el resultado persistido. Suite: 410/410; audit: 0.
+
+[build] ocupado — Codex, BUG-082 · contenido real de documentos subidos.
+
+[build] libre — Codex, BUG-082 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-082] corregido — PDF, imágenes, DOC y DOCX se comprueban por
+contenido antes de consultar datos o escribir en Storage. Suite: 423/423; audit: 0.
