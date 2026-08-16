@@ -7,6 +7,7 @@ import {
   buscarCuentaRecuperable,
   emitirTokenRecuperacion,
   esperarPisoRespuesta,
+  liberarEnvioRecuperacion,
   MENSAJE_NEUTRO_RECUPERACION,
   RECUPERACION_VENTANA_SEGUNDOS,
   reclamarEnvioRecuperacion,
@@ -72,6 +73,11 @@ export async function POST(request: NextRequest) {
   // depende de que la cuenta exista, así que retrasarlo solo castigaría a quien
   // se equivocó escribiendo.
   const inicio = performance.now();
+  // Fuera del try para que el catch pueda soltarlo: si algo revienta después de
+  // reclamarlo, quien pidió la recuperación no puede quedar esperando quince
+  // minutos por un correo que nunca salió.
+  let cuentaId: string | null = null;
+  let turno: string | null = null;
 
   try {
     const cuenta = await buscarCuentaRecuperable(email);
@@ -83,19 +89,38 @@ export async function POST(request: NextRequest) {
       return respuestaNeutra(inicio);
     }
 
-    if (!(await reclamarEnvioRecuperacion(cuenta.id))) {
+    const reserva = await reclamarEnvioRecuperacion(cuenta.id);
+    if (!reserva.concedido) return respuestaNeutra(inicio);
+    cuentaId = cuenta.id;
+    turno = reserva.identificador;
+
+    const tokenHash = await emitirTokenRecuperacion(email);
+    if (!tokenHash) {
+      // Nada salió, así que el turno no puede seguir consumido.
+      await liberarEnvioRecuperacion(cuentaId, turno);
+      console.error(
+        "[recuperacion] Supabase Auth no emitió el enlace; turno liberado para reintento",
+      );
       return respuestaNeutra(inicio);
     }
 
-    const tokenHash = await emitirTokenRecuperacion(email);
-    if (!tokenHash) return respuestaNeutra(inicio);
-
-    await enviarEmailRecuperacion(
+    const entregado = await enviarEmailRecuperacion(
       cuenta.email,
       cuenta.nombre,
       urlCanjeRecuperacion(tokenHash),
       Math.round(RECUPERACION_VENTANA_SEGUNDOS / 60),
     );
+
+    if (!entregado) {
+      // Resend rechazó, o no hay `RESEND_API_KEY`. La respuesta pública sigue
+      // siendo la neutra —no hay forma de avisar sin delatar que la cuenta
+      // existe—, así que la única señal posible es esta, y va sin correo, sin
+      // nombre y sin identificador de la persona.
+      await liberarEnvioRecuperacion(cuentaId, turno);
+      console.error(
+        "[recuperacion] El proveedor no aceptó la entrega; turno liberado para reintento",
+      );
+    }
 
     return respuestaNeutra(inicio);
   } catch (error) {
@@ -107,6 +132,7 @@ export async function POST(request: NextRequest) {
       "Error en POST /api/auth/recuperacion:",
       error instanceof Error ? error.message : "Error desconocido",
     );
+    if (cuentaId) await liberarEnvioRecuperacion(cuentaId, turno);
     await esperarPisoRespuesta(inicio);
     return sinCache(
       NextResponse.json(

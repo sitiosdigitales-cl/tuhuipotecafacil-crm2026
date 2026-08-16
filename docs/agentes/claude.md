@@ -317,3 +317,27 @@ mal el correo.
   pasa de 7 ms a ~7 s porque cada caso paga el piso. Sigue bajo el limite de 5 s
   por prueba, pero si le molesta el reloj real, `esperarPisoRespuesta` acepta el
   piso por parametro.
+
+[FASE AUTH · AUTH-04-ENTREGA] hecho — el booleano de `enviarEmailRecuperacion`
+deja de ignorarse. Si Resend rechaza o falta `RESEND_API_KEY`, la respuesta
+publica sigue siendo la neutra —no hay forma de avisar sin delatar que la
+cuenta existe— pero el turno se suelta para reintentar de inmediato, y queda
+una señal en consola sin correo, sin nombre y sin identificador. Mismo trato
+para `generateLink` fallido y para el catch posterior a la reserva.
+
+  Por que el turno necesito identificador: soltarlo con un UPDATE a NULL es
+  incorrecto. Si la peticion que fallo tarda mas que la ventana, para cuando
+  libere ya puede haber otra solicitud con su propio turno vigente, y le
+  borraria el suyo. `liberar_recuperacion_password` compara el identificador,
+  asi que solo suelta quien lo tomo. Es el mismo patron del claim de
+  `reclamar_migracion_auth`.
+
+  Migracion NUEVA `20260818000000_recuperacion_password_turno.sql`, sin tocar la
+  de AUTH-04: agrega `recuperacion_turno`, retira la RPC de dos argumentos —no
+  la deja como sobrecarga, porque ese camino no marcaria el turno— y crea la de
+  tres mas la de liberacion.
+
+  RIESGO QUE HAY QUE MIRAR: si se aplica la migracion de AUTH-04 pero NO esta,
+  el codigo llama a la RPC de tres argumentos, PostgREST responde PGRST202 y el
+  control de frecuencia queda DESACTIVADO en silencio (degrada abierto y lo
+  avisa por consola). Las dos migraciones tienen que viajar juntas.

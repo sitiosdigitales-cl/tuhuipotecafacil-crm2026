@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { applicationBaseUrl } from "./application-url";
@@ -138,19 +140,33 @@ export async function buscarCuentaRecuperable(
   return (data as CuentaSolicitud | null) ?? null;
 }
 
+export interface TurnoRecuperacion {
+  concedido: boolean;
+  /** `null` cuando el turno no se registró y por lo tanto no hay qué liberar. */
+  identificador: string | null;
+}
+
 /**
- * Reserva el turno de envío. Devuelve `false` cuando la cuenta ya recibió un
+ * Reserva el turno de envío. No lo concede cuando la cuenta ya recibió un
  * correo dentro de la ventana, para que un tercero no pueda inundar el buzón
  * de alguien del equipo repitiendo el formulario.
+ *
+ * El identificador que devuelve es lo que permite soltarlo después sin pisar
+ * el turno de otra solicitud.
  */
 export async function reclamarEnvioRecuperacion(
   usuarioId: string,
   adminClient: SupabaseClient = getSupabaseAdmin(),
   esperaSegundos = RECUPERACION_ESPERA_SEGUNDOS,
-): Promise<boolean> {
+  identificador: string = randomUUID(),
+): Promise<TurnoRecuperacion> {
   const { data, error } = await adminClient.rpc(
     "reclamar_recuperacion_password",
-    { p_usuario_id: usuarioId, p_espera_segundos: esperaSegundos },
+    {
+      p_usuario_id: usuarioId,
+      p_espera_segundos: esperaSegundos,
+      p_turno: identificador,
+    },
   );
   if (error) {
     // La migración puede no estar aplicada todavía. Degradar sin espera deja
@@ -158,11 +174,38 @@ export async function reclamarEnvioRecuperacion(
     // recuperar su cuenta, que es peor.
     if (funcionInexistente(error)) {
       console.warn("[recuperacion] Sin control de frecuencia: falta la migración");
-      return true;
+      return { concedido: true, identificador: null };
     }
     throw new Error("No se pudo registrar la solicitud de recuperación");
   }
-  return data === true;
+  return {
+    concedido: data === true,
+    identificador: data === true ? identificador : null,
+  };
+}
+
+/**
+ * Suelta el turno para que la persona pueda reintentar de inmediato cuando el
+ * correo no llegó a salir. Nunca lanza: se llama en caminos donde el error ya
+ * ocurrió y la respuesta pública tiene que seguir siendo la neutra de siempre.
+ */
+export async function liberarEnvioRecuperacion(
+  usuarioId: string,
+  identificador: string | null,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<void> {
+  if (!identificador) return;
+  try {
+    const { error } = await adminClient.rpc("liberar_recuperacion_password", {
+      p_usuario_id: usuarioId,
+      p_turno: identificador,
+    });
+    if (error) throw error;
+  } catch {
+    // El turno vence solo al cumplirse la ventana. Una liberación fallida
+    // retrasa el reintento, no lo impide, y no debe cambiar la respuesta.
+    console.error("[recuperacion] No se pudo liberar el turno tras un envío fallido");
+  }
 }
 
 /**
