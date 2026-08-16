@@ -1135,3 +1135,10 @@ de 14 dígitos; CI volverá a ejecutar el reset real. Suite: 596/596; audit: 0.
 [FASE DB · BUG-119] corregido — el contador de intentos de login ahora usa una
 operación PostgreSQL atómica, restringida al backend y probada también con
 llamadas simultáneas. Suite: 597/597; audit: 0.
+
+[build] ocupado — Codex, BUG-120 · alcance de políticas de Storage.
+
+[build] libre — Codex, BUG-120 · build y validaciones terminadas.
+
+[FASE DB · BUG-120] corregido — Storage conserva políticas ajenas y aplica una
+regla restrictiva solo a `documentos` y `backups`. Suite: 598/598; audit: 0.

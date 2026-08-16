@@ -27,7 +27,9 @@ La migración:
 - concede las operaciones de la aplicación a `service_role`;
 - retira todas las tablas `public` de `supabase_realtime`;
 - vuelve privados `documentos` y `backups`, limita documentos a 10 MB y MIME
-  conocidos, y elimina las políticas antiguas de Storage.
+  conocidos;
+- conserva las políticas de otros buckets y agrega una regla restrictiva que
+  impide a `anon` y `authenticated` operar sobre los dos buckets del CRM.
 
 ## Verificación posterior
 
@@ -41,6 +43,12 @@ select schemaname, tablename, policyname
 from pg_policies
 where schemaname = 'public';
 
+select policyname, permissive, roles, cmd, qual, with_check
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects'
+  and policyname = 'crm_private_buckets_server_only';
+
 select id, public, file_size_limit, allowed_mime_types
 from storage.buckets
 where id in ('documentos', 'backups');
@@ -51,7 +59,8 @@ where pubname = 'supabase_realtime' and schemaname = 'public';
 ```
 
 Resultado esperado: todas las tablas con `rowsecurity = true`, ninguna política
-en `public`, ambos buckets privados y cero tablas públicas en Realtime.
+en `public`, la política restrictiva de Storage presente, ambos buckets privados
+y cero tablas públicas en Realtime.
 
 Después repetir el smoke test. Un fallo general de las APIs normalmente indica
 que falta o es incorrecta `SUPABASE_SERVICE_ROLE_KEY`; se corrige el entorno,

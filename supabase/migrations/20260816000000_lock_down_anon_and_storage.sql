@@ -119,22 +119,14 @@ UPDATE storage.buckets
 SET public = false
 WHERE id = 'backups';
 
-DO $$
-DECLARE
-  storage_policy record;
-BEGIN
-  FOR storage_policy IN
-    SELECT policyname
-    FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-  LOOP
-    EXECUTE format(
-      'DROP POLICY IF EXISTS %I ON storage.objects',
-      storage_policy.policyname
-    );
-  END LOOP;
-END
-$$;
+DROP POLICY IF EXISTS crm_private_buckets_server_only ON storage.objects;
+
+CREATE POLICY crm_private_buckets_server_only
+ON storage.objects
+AS RESTRICTIVE
+FOR ALL
+TO anon, authenticated
+USING (bucket_id NOT IN ('documentos', 'backups'))
+WITH CHECK (bucket_id NOT IN ('documentos', 'backups'));
 
 COMMIT;

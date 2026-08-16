@@ -28,8 +28,9 @@ describe("migración de cierre del Data API", () => {
     );
     expect(sql).toContain("pg_publication_tables");
     expect(sql).toContain("ALTER PUBLICATION supabase_realtime DROP TABLE");
+    expect(sql).toMatch(/CREATE POLICY[\s\S]+AS RESTRICTIVE/i);
     expect(sql).toMatch(
-      /FROM pg_policies[\s\S]+schemaname = 'storage'[\s\S]+DROP POLICY IF EXISTS/i
+      /bucket_id\s+NOT IN\s*\(\s*'documentos'\s*,\s*'backups'\s*\)/i
     );
     expect(sql).not.toMatch(/USING\s*\(\s*true\s*\)/i);
     expect(sql).not.toMatch(/WITH CHECK\s*\(\s*true\s*\)/i);
