@@ -621,3 +621,10 @@ JS atribuible a la ruta: 151.542 bytes. Suite completa verde: 282/282.
 
 [calidad · BUG-052] corregido — edición y eliminación de comisiones usan el
 catálogo de permisos; nueve casos verdes. Suite completa: 291/291.
+
+[build] ocupado — Codex, BUG-053 · retirar alta duplicada que cambia la sesión.
+
+[build] libre — Codex, BUG-053 · build y typecheck terminaron en 0.
+
+[auth · BUG-053] corregido — se retira `/api/auth/register`; el alta queda en
+`POST /api/usuarios` y ya no cambia la sesión administradora. Suite: 292/292.
