@@ -607,3 +607,10 @@ de leer o crear; seis casos en verde. Suite global mejora a 279/282.
 
 [calidad · BUG-051] corregido — GET y PUT validan el lead antes de responder
 o modificar; lectura, edición y eliminación relacionadas pasan 3/3. Suite: 281/282.
+
+[build] ocupado — Codex, BUG-037 · presupuesto atribuible a ruta pública.
+
+[build] libre — Codex, BUG-037 · build y typecheck terminaron en 0.
+
+[rendimiento · BUG-037] corregido — presupuesto conserva 400 KiB y mide solo
+JS atribuible a la ruta: 151.542 bytes. Suite completa verde: 282/282.

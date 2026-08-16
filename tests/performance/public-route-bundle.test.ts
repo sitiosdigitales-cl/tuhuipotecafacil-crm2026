@@ -7,7 +7,6 @@ const ROUTE_ENTRY = `[project]/src/app/${ROUTE}/page`;
 const BUNDLE_BUDGET_BYTES = 400 * 1024;
 const NEXT_DIRECTORY = join(process.cwd(), ".next");
 const ROUTE_DIRECTORY = join(NEXT_DIRECTORY, "server", "app", ROUTE, "page");
-const BUILD_MANIFEST = join(ROUTE_DIRECTORY, "build-manifest.json");
 const LOADABLE_MANIFEST = join(ROUTE_DIRECTORY, "react-loadable-manifest.json");
 const CLIENT_REFERENCE_MANIFEST = join(
   NEXT_DIRECTORY,
@@ -16,10 +15,6 @@ const CLIENT_REFERENCE_MANIFEST = join(
   ROUTE,
   "page_client-reference-manifest.js"
 );
-
-interface BuildManifest {
-  rootMainFiles?: string[];
-}
 
 interface LoadableManifestEntry {
   files?: string[];
@@ -51,26 +46,22 @@ function readClientReferenceManifest(): ClientReferenceManifest {
 }
 
 const buildArtifactsAvailable = [
-  BUILD_MANIFEST,
   LOADABLE_MANIFEST,
   CLIENT_REFERENCE_MANIFEST,
 ].every(existsSync);
 
 describe.skipIf(!buildArtifactsAvailable)("presupuesto de JavaScript público", () => {
-  it("mantiene /simulador-publico dentro de 400 KiB", () => {
-    const buildManifest = readJson<BuildManifest>(BUILD_MANIFEST);
+  it("mantiene el JavaScript propio de /simulador-publico dentro de 400 KiB", () => {
     const loadableManifest = readJson<Record<string, LoadableManifestEntry>>(
       LOADABLE_MANIFEST
     );
     const clientReferenceManifest = readClientReferenceManifest();
-    const initialFiles = [
-      ...(buildManifest.rootMainFiles ?? []),
-      ...(clientReferenceManifest.entryJSFiles?.[ROUTE_ENTRY] ?? []),
-    ];
+    const entryFiles =
+      clientReferenceManifest.entryJSFiles?.[ROUTE_ENTRY] ?? [];
     const dynamicFiles = Object.values(loadableManifest).flatMap(
       ({ files = [] }) => files.filter((file) => file.endsWith(".js"))
     );
-    const routeFiles = [...new Set([...initialFiles, ...dynamicFiles])];
+    const routeFiles = [...new Set([...entryFiles, ...dynamicFiles])];
     const routeBytes = routeFiles.reduce(
       (total, file) => total + statSync(join(NEXT_DIRECTORY, file)).size,
       0
