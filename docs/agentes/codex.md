@@ -983,3 +983,10 @@ el total financiero en servidor. Suite: 504/504; audit: 0.
 
 [calidad · BUG-103] corregido — las filas financieras recuperan el contrato
 camelCase que consume la interfaz. Suite: 505/505; audit: 0.
+
+[build] ocupado — Codex, BUG-104 · comisiones sin datos de demostración.
+
+[build] libre — Codex, BUG-104 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-104] corregido — comisiones muestra solo filas persistidas y
+confirma cambios de pago mediante la API. Suite: 507/507; audit: 0.
