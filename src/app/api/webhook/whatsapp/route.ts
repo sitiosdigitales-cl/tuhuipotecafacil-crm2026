@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
 import { procesarMensajeRecibido, verificarWebhookFirma } from "@/lib/whatsapp";
+
+const MAX_WHATSAPP_WEBHOOK_BYTES = 256 * 1024;
 
 // GET /api/webhook/whatsapp — Verificación del webhook (Meta lo llama para verificar)
 export async function GET(request: NextRequest) {
@@ -20,8 +23,20 @@ export async function GET(request: NextRequest) {
 
 // POST /api/webhook/whatsapp — Recibe mensajes de WhatsApp
 export async function POST(request: NextRequest) {
+  let rawBody: string;
   try {
-    const rawBody = await request.text();
+    rawBody = await readBoundedText(request, MAX_WHATSAPP_WEBHOOK_BYTES);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  }
+
+  try {
     const signature = request.headers.get("x-hub-signature-256");
 
     // Verificar firma (opcional en desarrollo)

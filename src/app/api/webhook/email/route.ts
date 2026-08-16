@@ -3,7 +3,10 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/html-output";
+import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
 import { Resend } from "resend";
+
+const MAX_EMAIL_WEBHOOK_BYTES = 256 * 1024;
 
 // POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
 // Fuente: correo entrante de Resend (evento email.received)
@@ -146,7 +149,18 @@ function extraerContexto(subject: string, body: string): { tipoConsulta: string;
 }
 
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedText(request, MAX_EMAIL_WEBHOOK_BYTES);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  }
 
   const evento = await verificarEventoResend(request, rawBody);
   if (!evento) {

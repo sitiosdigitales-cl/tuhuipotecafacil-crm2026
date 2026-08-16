@@ -10,7 +10,10 @@ export class RequestPayloadError extends Error {
   }
 }
 
-async function readBody(request: Request, maxBytes: number): Promise<string> {
+export async function readBoundedText(
+  request: Request,
+  maxBytes: number
+): Promise<string> {
   const declaredLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
     throw new RequestPayloadError("El cuerpo supera el tamaño permitido", 413);
@@ -60,7 +63,7 @@ export async function parseBoundedJson(
     throw new RequestPayloadError("Content-Type debe ser application/json", 415);
   }
 
-  const text = await readBody(request, maxBytes);
+  const text = await readBoundedText(request, maxBytes);
   try {
     return JSON.parse(text);
   } catch {

@@ -5,6 +5,9 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
+import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
+
+const MAX_LEADS_WEBHOOK_BYTES = 64 * 1024;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -44,8 +47,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  let rawBody: string;
   try {
-    const rawBody = await request.text();
+    rawBody = await readBoundedText(request, MAX_LEADS_WEBHOOK_BYTES);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  }
+
+  try {
     const contentType = request.headers.get("content-type") || "";
 
     // LOG: Body received
@@ -139,7 +154,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Error guardando lead:", error);
-      return NextResponse.json({ error: "Error al guardar lead", details: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
     }
 
     // Notificacion in-app via dispatcher
@@ -206,7 +221,7 @@ export async function POST(request: NextRequest) {
 
   } catch (err) {
     console.error("Error en webhook leads:", err);
-    return NextResponse.json({ error: "Error interno", details: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 

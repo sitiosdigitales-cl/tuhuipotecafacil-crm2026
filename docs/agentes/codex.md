@@ -955,3 +955,10 @@ teléfono, contenido ni identificadores del proveedor. Suite: 491/491; audit: 0.
 
 [calidad · BUG-099] corregido — la entrega usa `{ error }` de Resend y sus
 logs no incluyen destinatarios ni respuestas completas. Suite: 493/493; audit: 0.
+
+[build] ocupado — Codex, BUG-100 · límites de cuerpos en webhooks externos.
+
+[build] libre — Codex, BUG-100 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-100] corregido — correo, leads y WhatsApp cortan cuerpos grandes
+antes de verificar o persistir. Suite: 496/496; audit: 0.
