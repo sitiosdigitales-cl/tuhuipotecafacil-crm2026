@@ -1181,3 +1181,13 @@ audit: 0.
 [FASE AUTH · AUTH-01] preparado — identidad UUID única, claim temporal y
 finalización que retira el hash legado; login aún no cambia. Suite: 612/612;
 audit: 0.
+
+[FASE AUTH · AUTH-01] verificado — reconstrucción doble y pgTAP pasan en CI.
+
+[build] ocupado — Codex, AUTH-02 · login just-in-time con Supabase Auth.
+
+[build] libre — Codex, AUTH-02 · build y validaciones terminadas.
+
+[FASE AUTH · AUTH-02] preparado — modo legacy seguro por defecto, puente JIT
+acotado a 30 días, rollback/reconciliación y tokens solo HttpOnly. Activación
+queda pendiente de completar ciclo de cuentas y MFA. Suite: 632/632; audit: 0.

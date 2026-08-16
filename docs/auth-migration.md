@@ -23,5 +23,26 @@ lee contraseñas y no cambia por sí sola el comportamiento del login.
 7. Pasar a modo obligatorio y retirar los hashes restantes mediante un proceso
    humano revisado; nunca con una actualización masiva sin recuperación.
 
+## Modos del login
+
+- Sin `SUPABASE_AUTH_MODE`, el valor efectivo es `legacy`: no se consultan las
+  columnas nuevas ni Supabase Auth.
+- `bridge` autentica primero el hash existente, reclama la fila, crea o
+  reconcilia Auth, valida la sesión y solo entonces retira el hash. Exige
+  `SUPABASE_AUTH_BRIDGE_DEADLINE` como fecha ISO futura.
+- `required` acepta únicamente cuentas ya enlazadas. Una cuenta pendiente recibe
+  un código de recuperación y nunca vuelve automáticamente al hash.
+
+Los modos `bridge` y `required` requieren `NEXT_PUBLIC_SUPABASE_ANON_KEY` en el
+servidor. Los access y refresh tokens quedan exclusivamente en cookies HttpOnly;
+la respuesta JSON conserva solo el perfil permitido. El refresh token vence en
+el navegador a los siete días y la sesión propia del CRM mantiene su máximo de
+treinta minutos durante la convivencia.
+
+No activar `bridge` todavía en producción: antes deben quedar listos el ciclo
+de altas/cambios de contraseña, MFA administrativo y la validación vigente de
+sesión. El valor por defecto permite desplegar el código sin consultar una
+migración aún no aplicada.
+
 La aplicación de la migración, la creación de identidades reales y cualquier
 cambio de modo quedan pendientes de staging autorizado.

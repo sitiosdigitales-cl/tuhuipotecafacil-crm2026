@@ -97,6 +97,22 @@ jobs:
           npm run db:reset
       - name: Test database rules
         run: npm run db:test
+      - name: Test Auth bridge against local services
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_file="$RUNNER_TEMP/supabase-local.env"
+          cleanup() {
+            find "$status_file" -maxdepth 0 -type f -delete 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          umask 077
+          npx supabase status -o env > "$status_file"
+          source "$status_file"
+          SUPABASE_URL="$API_URL" \
+          SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            node scripts/ci/auth-bridge-integration.mjs
       - name: Stop local Supabase
         if: always()
         run: npm run db:stop >/dev/null 2>&1 || true

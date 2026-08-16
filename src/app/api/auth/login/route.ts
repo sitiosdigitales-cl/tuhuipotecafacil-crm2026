@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
-import { establecerCookieSesion } from "@/lib/session-cookie";
+import {
+  establecerCookiesSupabase,
+  establecerCookieSesion,
+} from "@/lib/session-cookie";
+import {
+  autenticarIdentidadSupabase,
+  migrarIdentidadSupabase,
+  obtenerModoSupabaseAuth,
+  puenteSupabaseAuthVigente,
+  revocarSesionSupabase,
+} from "@/lib/supabase-auth";
 
 const MAX_LOGIN_PAYLOAD_BYTES = 4 * 1024;
 const LoginInputSchema = z
@@ -42,7 +53,18 @@ async function limpiarIntentos(id: string) {
   if (error) throw new Error(`No se pudo limpiar el contador de acceso: ${error.message}`);
 }
 
+async function obtenerAuthUserId(id: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("auth_user_id")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(`No se pudo consultar la identidad Auth: ${error.message}`);
+  return typeof data?.auth_user_id === "string" ? data.auth_user_id : null;
+}
+
 export async function POST(request: NextRequest) {
+  let issuedAuthSession: Session | null = null;
   let rawBody: unknown;
   try {
     rawBody = await parseBoundedJson(request, MAX_LOGIN_PAYLOAD_BYTES);
@@ -70,6 +92,7 @@ export async function POST(request: NextRequest) {
   const { email, password } = parsedBody.data;
 
   try {
+    const authMode = obtenerModoSupabaseAuth();
     // Solo las columnas necesarias. select("*") traía también el hash de todas
     // las demás columnas a memoria sin motivo.
     const { data: user, error } = await supabase
@@ -97,10 +120,104 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const passwordValido = await bcrypt.compare(password, user.password);
-    if (!passwordValido) {
-      await registrarIntentoFallido(user.id);
-      return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
+    let authSession: Session | null = null;
+    let authUserId: string | null = null;
+    if (authMode !== "legacy" || user.password == null) {
+      authUserId = await obtenerAuthUserId(user.id);
+    }
+
+    if (authUserId) {
+      const authenticated = await autenticarIdentidadSupabase({
+        email,
+        password,
+        expectedAuthUserId: authUserId,
+      });
+      if (authenticated.status !== "authenticated") {
+        await registrarIntentoFallido(user.id);
+        return NextResponse.json(
+          { success: false, error: "Credenciales inválidas" },
+          { status: 401 },
+        );
+      }
+      authSession = authenticated.session;
+      issuedAuthSession = authenticated.session;
+    } else {
+      if (typeof user.password !== "string") {
+        throw new Error("La cuenta no conserva una credencial utilizable");
+      }
+
+      const passwordValido = await bcrypt.compare(password, user.password);
+      if (!passwordValido) {
+        await registrarIntentoFallido(user.id);
+        return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
+      }
+
+      // La contraseña ya fue validada, por lo que esta respuesta no permite
+      // distinguir correos existentes. Una cuenta inactiva no debe crear una
+      // identidad nueva ni retirar su hash durante el puente.
+      if (user.estado !== "ACTIVO") {
+        return NextResponse.json(
+          { success: false, error: "Esta cuenta no está habilitada. Habla con un administrador." },
+          { status: 403 },
+        );
+      }
+
+      if (authMode === "required") {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "AUTH_MIGRATION_REQUIRED",
+            error: "Esta cuenta requiere recuperación antes de iniciar sesión.",
+          },
+          { status: 403 },
+        );
+      }
+
+      if (authMode === "bridge") {
+        if (!puenteSupabaseAuthVigente()) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: "AUTH_MIGRATION_EXPIRED",
+              error: "El período de migración terminó. Solicita recuperación de cuenta.",
+            },
+            { status: 403 },
+          );
+        }
+
+        const migrated = await migrarIdentidadSupabase({
+          identity: { id: user.id, email: user.email },
+          password,
+        });
+        if (migrated.status === "busy") {
+          return NextResponse.json(
+            { success: false, error: "La cuenta se está actualizando. Intenta nuevamente." },
+            { status: 503 },
+          );
+        }
+        if (migrated.status === "password_upgrade_required") {
+          return NextResponse.json(
+            {
+              success: false,
+              code: "PASSWORD_UPGRADE_REQUIRED",
+              error: "La contraseña debe actualizarse antes de migrar la cuenta.",
+            },
+            { status: 409 },
+          );
+        }
+        if (migrated.status === "identity_conflict") {
+          return NextResponse.json(
+            {
+              success: false,
+              code: "AUTH_IDENTITY_CONFLICT",
+              error: "La identidad requiere revisión administrativa.",
+            },
+            { status: 409 },
+          );
+        }
+        authSession = migrated.session;
+        issuedAuthSession = migrated.session;
+      }
     }
 
     // Solo entra una cuenta ACTIVA. El estado se leía y no se usaba, así que
@@ -110,6 +227,7 @@ export async function POST(request: NextRequest) {
     // Se comprueba DESPUÉS de la contraseña a propósito: si respondiera antes,
     // el mensaje distinto delataría qué correos existen en el sistema.
     if (user.estado !== "ACTIVO") {
+      if (authSession) await revocarSesionSupabase(authSession.access_token);
       return NextResponse.json(
         { success: false, error: "Esta cuenta no está habilitada. Habla con un administrador." },
         { status: 403 }
@@ -128,9 +246,18 @@ export async function POST(request: NextRequest) {
     });
 
     establecerCookieSesion(response, token);
+    if (authSession) establecerCookiesSupabase(response, authSession);
 
     return response;
   } catch (error) {
+    if (issuedAuthSession) {
+      try {
+        await revocarSesionSupabase(issuedAuthSession.access_token);
+      } catch {
+        // No se devuelve ni se registra el token. El error original conserva
+        // prioridad y la falta de cookie impide reutilizar esta sesión.
+      }
+    }
     console.error(
       "Error en POST /api/auth/login:",
       error instanceof Error ? error.message : "Error desconocido"

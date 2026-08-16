@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("server-only", () => ({}));
+
 import { generarToken } from "@/lib/jwt";
 
 const { compare, from } = vi.hoisted(() => ({
