@@ -8,6 +8,23 @@ import {
   documentWithProxyUrl,
 } from "@/lib/document-storage";
 
+const ROLES_GESTION_DOCUMENTOS = new Set([
+  "SUPER_ADMIN",
+  "ADMIN",
+  "EJECUTIVO",
+  "AGENTE",
+]);
+const ESTADOS_DOCUMENTO = new Set([
+  "PENDIENTE",
+  "EN_REVISION",
+  "APROBADO",
+  "RECHAZADO",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 async function obtenerDocumentoYLead(id: string) {
   const { data: documento, error } = await supabase
     .from("documentos")
@@ -51,6 +68,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request);
   if (!auth) return unauthorized();
+  if (!ROLES_GESTION_DOCUMENTOS.has(auth.rol)) return forbidden();
   try {
     const { id } = await params;
     const { documento, lead } = await obtenerDocumentoYLead(id);
@@ -62,22 +80,45 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
 
-    const body = await request.json();
-    delete body.archivoUrl;
-    delete body.archivourl;
-    delete body.leadId;
-    delete body.leadid;
-    delete body.id;
+    const parsedBody: unknown = await request.json();
+    if (!isRecord(parsedBody) || !ESTADOS_DOCUMENTO.has(String(parsedBody.estado))) {
+      return NextResponse.json(
+        { success: false, error: "Estado de documento inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      parsedBody.observaciones !== undefined &&
+      (typeof parsedBody.observaciones !== "string" ||
+        parsedBody.observaciones.length > 2_000)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Observaciones inválidas" },
+        { status: 400 }
+      );
+    }
+
+    const estado = String(parsedBody.estado);
+    const updateData: Record<string, unknown> = {
+      aprobadoEn: estado === "APROBADO" ? new Date().toISOString() : null,
+      aprobadoPor: estado === "APROBADO" ? auth.userId : null,
+      estado,
+    };
+    if (typeof parsedBody.observaciones === "string") {
+      updateData.observaciones = parsedBody.observaciones.trim() || null;
+    }
+
     const { data, error } = await supabase
       .from("documentos")
-      .update(toSupabaseColumns(body))
+      .update(toSupabaseColumns(updateData))
       .eq("id", id)
       .select()
       .single();
     if (error) return NextResponse.json({ success: false, error: "Error al actualizar" }, { status: 500 });
 
     // Notificacion si cambio el estado del documento
-    if (body.estado && data) {
+    if (data) {
       const estadoLabels: Record<string, string> = {
         APROBADO: "aprobado",
         RECHAZADO: "rechazado",
@@ -88,7 +129,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         evento: "documento_estado",
         leadId: data.leadid,
         titulo: "Estado de documento actualizado",
-        descripcion: data.nombre + " esta " + (estadoLabels[body.estado] || body.estado),
+        descripcion: data.nombre + " esta " + (estadoLabels[estado] || estado),
         accionUrl: "/documentos",
       }).catch(() => {});
     }
@@ -105,6 +146,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(request);
   if (!auth) return unauthorized();
+  if (!ROLES_GESTION_DOCUMENTOS.has(auth.rol)) return forbidden();
   try {
     const { id } = await params;
 

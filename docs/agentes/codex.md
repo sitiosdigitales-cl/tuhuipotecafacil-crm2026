@@ -814,3 +814,10 @@ en cabecera y el formulario público usa pre evaluación. Suite: 400/400.
 
 [calidad · BUG-079] corregido — roles internos, validación, cuota, timeout,
 presupuesto, stream UI y contexto sin identificadores. Suite: 406/406.
+
+[build] ocupado — Codex, BUG-080 · mutaciones controladas de documentos.
+
+[build] libre — Codex, BUG-080 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-080] corregido — solo roles internos revisan o eliminan; estado,
+observaciones, autor y fecha quedan controlados. Suite: 409/409.
