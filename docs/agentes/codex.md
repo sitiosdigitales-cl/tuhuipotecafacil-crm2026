@@ -1142,3 +1142,13 @@ llamadas simultáneas. Suite: 597/597; audit: 0.
 
 [FASE DB · BUG-120] corregido — Storage conserva políticas ajenas y aplica una
 regla restrictiva solo a `documentos` y `backups`. Suite: 598/598; audit: 0.
+
+[FASE DB · BUG-120] verificado — reconstrucción doble y pgTAP pasan en CI.
+
+[build] ocupado — Codex, BACKUP-01 · respaldo externo cifrado en R2.
+
+[build] libre — Codex, BACKUP-01 · build y validaciones terminadas.
+
+[FASE BACKUP · BACKUP-01] preparado — workflow horario desactivado por defecto,
+dumps portables, copia íntegra de Storage y cifrado Restic en R2. Activación y
+primera ejecución requieren secrets humanos. Suite: 603/603; audit: 0.

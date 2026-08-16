@@ -1,0 +1,125 @@
+name: External Backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: vars.ENABLE_EXTERNAL_BACKUPS == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_BACKUP_BUCKETS: documentos,backups
+      RESTIC_REPOSITORY: s3:https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com/${{ secrets.R2_BACKUP_BUCKET }}
+      RESTIC_PASSWORD: ${{ secrets.RESTIC_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate backup configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            SUPABASE_DB_URL SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY
+            RESTIC_REPOSITORY RESTIC_PASSWORD AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+          )
+          for variable in "${required[@]}"; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "Missing required configuration: $variable" >&2
+              exit 1
+            fi
+          done
+      - name: Install Restic
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes restic
+      - name: Prepare private workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          backup_dir="$(mktemp -d)"
+          chmod 700 "$backup_dir"
+          mkdir -p "$backup_dir/database" "$backup_dir/storage"
+          echo "BACKUP_DIR=$backup_dir" >> "$GITHUB_ENV"
+      - name: Dump database roles
+        run: |
+          npx supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            --file "$BACKUP_DIR/database/roles.sql" \
+            --role-only
+      - name: Dump database schema
+        run: |
+          npx supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            --file "$BACKUP_DIR/database/schema.sql"
+      - name: Dump database data
+        run: |
+          npx supabase db dump \
+            --db-url "$SUPABASE_DB_URL" \
+            --file "$BACKUP_DIR/database/data.sql" \
+            --data-only \
+            --use-copy
+      - name: Export private Storage
+        run: node scripts/backup/export-storage.mjs "$BACKUP_DIR/storage"
+      - name: Verify backup contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$BACKUP_DIR/database/roles.sql"
+          test -s "$BACKUP_DIR/database/schema.sql"
+          test -s "$BACKUP_DIR/database/data.sql"
+          node scripts/backup/verify-storage.mjs "$BACKUP_DIR/storage"
+          cd "$BACKUP_DIR/database"
+          sha256sum roles.sql schema.sql data.sql > checksums.sha256
+          sha256sum --check checksums.sha256
+          printf '{"format":"tuhuipotecafacil-database-backup","version":1,"createdAt":"%s","commit":"%s","runId":"%s"}\n' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_SHA" "$GITHUB_RUN_ID" \
+            > metadata.json
+      - name: Initialize encrypted R2 repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! restic cat config >/dev/null 2>&1; then
+            restic init
+          fi
+      - name: Store encrypted snapshot in R2
+        run: restic backup "$BACKUP_DIR" --tag crm --tag hourly
+      - name: Check repository metadata
+        run: restic check
+      - name: Apply retention
+        run: |
+          restic forget \
+            --tag crm \
+            --keep-hourly 48 \
+            --keep-daily 14 \
+            --keep-weekly 8 \
+            --keep-monthly 12 \
+            --prune
+      - name: Remove private workspace
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${BACKUP_DIR:-}" && -d "$BACKUP_DIR" ]]; then
+            find "$BACKUP_DIR" -mindepth 1 -delete
+            rmdir "$BACKUP_DIR"
+          fi
