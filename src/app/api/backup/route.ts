@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { supabase } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 
 const DIAS_RETENCION = 5;
+const NOMBRE_BACKUP = /^backup-\d{4}-\d{2}-\d{2}\.json$/;
+
+function apiKeyProcesoValida(request: NextRequest): boolean {
+  const configurada = process.env.BACKUP_API_KEY;
+  const authorization = request.headers.get("authorization");
+  if (!configurada || !authorization?.startsWith("Bearer ")) return false;
+
+  const entregada = authorization.slice("Bearer ".length);
+  const hashConfigurada = createHash("sha256").update(configurada).digest();
+  const hashEntregada = createHash("sha256").update(entregada).digest();
+  return timingSafeEqual(hashConfigurada, hashEntregada);
+}
 
 export async function POST(request: NextRequest) {
   // Verificar API key para seguridad
-  const authHeader = request.headers.get("authorization");
-  const backupApiKey = process.env.BACKUP_API_KEY;
-
-  if (!backupApiKey || authHeader !== "Bearer " + backupApiKey) {
+  if (!apiKeyProcesoValida(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -85,7 +95,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   // Listar los respaldos revela cada cuanto se respalda y desde cuando
   // existe el sistema. POST y DELETE ya pedian la BACKUP_API_KEY.
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  if (!["SUPER_ADMIN", "ADMIN"].includes(auth.rol)) return forbidden();
   try {
     const { data: files, error } = await supabase.storage
       .from("backups")
@@ -122,10 +134,7 @@ export async function GET(request: NextRequest) {
 
 // DELETE - Eliminar un respaldo especifico
 export async function DELETE(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const backupApiKey = process.env.BACKUP_API_KEY;
-
-  if (!backupApiKey || authHeader !== "Bearer " + backupApiKey) {
+  if (!apiKeyProcesoValida(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -137,7 +146,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   // Validar que sea un archivo de backup
-  if (!fileName.startsWith("backup-") || !fileName.endsWith(".json")) {
+  if (!NOMBRE_BACKUP.test(fileName)) {
     return NextResponse.json({ error: "Nombre de archivo invalido" }, { status: 400 });
   }
 

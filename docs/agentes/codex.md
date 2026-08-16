@@ -716,3 +716,10 @@ de cambio de identidad. Suite completa: 355/355.
 
 [calidad · BUG-065] corregido — auditoría queda solo lectura para administración
 y se elimina el POST que aceptaba identidad del cliente. Suite: 358/358.
+
+[build] ocupado — Codex, BUG-066 · roles y nombres de backups.
+
+[build] libre — Codex, BUG-066 · build y typecheck terminaron en 0.
+
+[calidad · BUG-066] corregido — inventario de backups exige administración;
+clave automática usa comparación constante y nombre canónico. Suite: 362/362.
