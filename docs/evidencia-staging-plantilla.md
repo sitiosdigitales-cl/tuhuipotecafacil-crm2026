@@ -40,6 +40,7 @@ objetos ni capturas de datos.
 | `DB-03` | pendiente | | |
 | `AUTH-01` | pendiente | | |
 | `AUTH-02` | pendiente | | |
+| `AUTH-04` | pendiente | | |
 | `RLS-01` | pendiente | | |
 | `STO-01` | pendiente | | |
 | `APP-01` | pendiente | | |

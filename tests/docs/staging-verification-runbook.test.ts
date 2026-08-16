@@ -13,6 +13,7 @@ const evidenceTemplate = read("docs/evidencia-staging-plantilla.md");
 const backupRunbook = read("docs/respaldos-externos.md");
 const workflow = read(".github/workflows/staging-validation.yml");
 const emptyStagingGuard = read("scripts/ci/assert-empty-staging.mjs");
+const recoveryIntegration = read("scripts/ci/recovery-integration.mjs");
 
 const requiredGates = [
   "REL-01",
@@ -25,6 +26,7 @@ const requiredGates = [
   "DB-03",
   "AUTH-01",
   "AUTH-02",
+  "AUTH-04",
   "RLS-01",
   "STO-01",
   "APP-01",
@@ -67,12 +69,39 @@ describe("contrato de evidencia de staging", () => {
     expect(workflow).toContain("ENABLE_STAGING_VALIDATION");
     expect(workflow).toContain("assert-empty-staging.mjs");
     expect(workflow).toContain("auth-bridge-integration.mjs");
+    expect(workflow).toContain("recovery-integration.mjs");
     expect(workflow).toContain("rls-domain-integration.mjs");
     expect(workflow.indexOf("assert-empty-staging.mjs")).toBeLessThan(
       workflow.indexOf("auth-bridge-integration.mjs"),
     );
+    expect(workflow.indexOf("assert-empty-staging.mjs")).toBeLessThan(
+      workflow.indexOf("recovery-integration.mjs"),
+    );
+    expect(workflow.indexOf("recovery-integration.mjs")).toBeLessThan(
+      workflow.lastIndexOf("assert-empty-staging.mjs"),
+    );
     expect(workflow).not.toContain("db push");
     expect(workflow).not.toContain("schedule:");
+  });
+
+  it("restringe la recuperación remota al staging sintético confirmado", () => {
+    expect(recoveryIntegration).toContain("RECOVERY_INTEGRATION_TARGET");
+    expect(recoveryIntegration).toContain("synthetic-staging");
+    expect(recoveryIntegration).toContain("VERIFY_EMPTY_SYNTHETIC_STAGING");
+    expect(recoveryIntegration).toContain("@example.invalid");
+    expect(workflow).toContain(
+      "RECOVERY_INTEGRATION_CONFIRMATION: VERIFY_EMPTY_SYNTHETIC_STAGING",
+    );
+    expect(runbook).toContain("nueve archivos");
+  });
+
+  it("documenta las variables y el corte seguro de required", () => {
+    for (const variable of ["APP_URL", "RESEND_API_KEY", "FROM_EMAIL"]) {
+      expect(checklist).toContain(`\`${variable}\``);
+    }
+    expect(checklist).toMatch(
+      /No activar `SUPABASE_AUTH_MODE=required`[\s\S]+sin `auth_user_id`/,
+    );
   });
 
   it("detiene la validación ante datos o identidades existentes", () => {

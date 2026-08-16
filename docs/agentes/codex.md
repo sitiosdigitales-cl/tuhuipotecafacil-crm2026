@@ -1401,3 +1401,14 @@ lint/typecheck: 0; auditorías: 0. Sin Docker local; `database` valida la RPC.
 [FASE AUTH · AUTH-04-E2E] preparado — CI canjea un token real una sola vez,
 cambia la contraseña con Admin API y exige revocación de ambos refresh tokens.
 Build verde; suite 801/801; lint/typecheck: 0; auditorías: 0.
+
+[FASE AUTH · AUTH-04-E2E] verificado — CI `31961530223` pasó el flujo real de
+recuperación contra Supabase local y los seis jobs completos.
+
+[build] ocupado — Codex, AUTH-04-OPS · gates operacionales de recuperación.
+
+[build] libre — Codex, AUTH-04-OPS · build terminado.
+
+[FASE AUTH · AUTH-04-OPS] preparado — staging protegido repite recuperación,
+verifica limpieza y exige configuración de URL/correo y corte seguro de
+`required`. Build verde; suite 804/804; lint/typecheck: 0; auditorías: 0.

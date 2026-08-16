@@ -70,8 +70,17 @@ jobs:
         run: node scripts/ci/assert-empty-staging.mjs
       - name: Validate Auth bridge and MFA
         run: node scripts/ci/auth-bridge-integration.mjs
+      - name: Require empty staging before recovery
+        run: node scripts/ci/assert-empty-staging.mjs
+      - name: Validate password recovery
+        env:
+          RECOVERY_INTEGRATION_TARGET: synthetic-staging
+          RECOVERY_INTEGRATION_CONFIRMATION: VERIFY_EMPTY_SYNTHETIC_STAGING
+        run: node scripts/ci/recovery-integration.mjs
       - name: Validate domain RLS matrix
         run: node scripts/ci/rls-domain-integration.mjs
+      - name: Verify synthetic cleanup
+        run: node scripts/ci/assert-empty-staging.mjs
       - name: Publish non-sensitive evidence
         if: success()
         run: |
@@ -79,5 +88,6 @@ jobs:
           echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo '- Empty synthetic staging preflight: OK' >> "$GITHUB_STEP_SUMMARY"
           echo '- Auth bridge and MFA: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Password recovery provider flow: OK' >> "$GITHUB_STEP_SUMMARY"
           echo '- Domain RLS matrix: OK' >> "$GITHUB_STEP_SUMMARY"
           echo '- Test data: synthetic and cleaned by the validation scripts' >> "$GITHUB_STEP_SUMMARY"

@@ -54,9 +54,10 @@ estado inicial del destino de restauración, no el contenido posterior.
 | `RES-02` | El destino restaurado queda eliminado o purgado | fecha y aprobación de cierre | responsable Supabase |
 | `DB-01` | `staging-validation` parte sin tablas de aplicación ni datos reales | recuento de tablas previo y declaración de datos sintéticos | operador |
 | `DB-02` | El dry-run lista exactamente las migraciones esperadas | salida saneada de `db push --dry-run --linked` | operador + revisor |
-| `DB-03` | Las ocho migraciones quedan aplicadas en orden | `migration list --linked` y SHA | operador + revisor |
+| `DB-03` | Las nueve migraciones quedan aplicadas en orden | `migration list --linked` y SHA | operador + revisor |
 | `AUTH-01` | Config efectiva coincide con el contrato de Auth | valores no secretos y URL de staging | responsable Supabase |
 | `AUTH-02` | Puente, TOTP, AAL2 y revocación pasan con identidad sintética | run `Staging Validation` verde | ingeniería |
+| `AUTH-04` | Recuperación cambia la credencial y retira refresh tokens anteriores | CI local, run `Staging Validation` y smoke de correo verdes | ingeniería + correo |
 | `RLS-01` | Matriz de cinco roles, cuenta inactiva y no enlazada pasa | mismo run y resumen RLS | ingeniería |
 | `STO-01` | `documentos` y `backups` son privados y con límites esperados | consulta saneada y prueba de subida/descarga sintética | operador |
 | `APP-01` | El CRM de staging ejecuta exactamente el SHA aprobado | URL de deployment y SHA | responsable de despliegue |
@@ -65,9 +66,9 @@ estado inicial del destino de restauración, no el contenido posterior.
 | `WEB-01` | Cada webhook acepta firma válida y rechaza firma incorrecta | casos sintéticos y códigos HTTP | responsable de integración |
 | `GO-01` | Todos los gates P0 pertenecen al mismo SHA | acta go/no-go con reversión | responsable del cambio |
 
-`AUTH-04`, recuperación de contraseña, es una tarea de código separada. Su
-casilla se marca cuando el commit y CI estén verdes; el recorrido real se agrega
-a `APP-02` antes de avanzar a producción.
+`AUTH-04` exige tres capas para el mismo commit: proveedor local en CI, proveedor
+alojado en `Staging Validation` y entrega real a un buzón sintético durante
+`APP-02`/`MAIL-01`. Ninguna capa por sí sola cierra el gate.
 
 ## Fase 1 · Congelar el candidato
 
@@ -117,7 +118,7 @@ npx supabase migration list --linked
 npx supabase db push --dry-run --linked
 ```
 
-El revisor compara el dry-run con los ocho archivos de
+El revisor compara el dry-run con los nueve archivos de
 `supabase/migrations/`. Si aparece una migración inesperada, una tabla previa o
 una diferencia no explicada, se detiene. Solo entonces el operador ejecuta:
 
@@ -157,12 +158,15 @@ confirmación `VERIFY_SYNTHETIC_STAGING`. El workflow:
   leads, documentos, tareas o comisiones existentes;
 - crea identidades y filas con dominios `.invalid` e identificadores aleatorios;
 - comprueba puente Auth, TOTP, AAL2, expiración y revocación;
+- canjea una recuperación una sola vez, cambia la contraseña y retira los
+  refresh tokens emitidos antes del cambio;
 - comprueba la matriz RLS, denegación por defecto y escrituras reservadas al
   servidor;
-- elimina identidades y filas sintéticas en bloques `finally`.
+- elimina identidades y filas sintéticas en bloques `finally` y vuelve a exigir
+  staging vacío al terminar.
 
-Solo un run verde cierra `AUTH-02` y `RLS-01`. Un run sin job, omitido o
-cancelado no es evidencia.
+Solo un run verde cierra `AUTH-02` y `RLS-01`, y satisface la parte automatizada
+de `AUTH-04`. Un run sin job, omitido o cancelado no es evidencia.
 
 ## Fase 5 · Despliegue y smoke
 
@@ -191,7 +195,10 @@ Además:
 5. enviar un mensaje y confirmar persistencia después de recargar;
 6. desactivar una cuenta sintética y confirmar que su siguiente solicitud no
    conserva acceso;
-7. solicitar recuperación de contraseña cuando `AUTH-04` esté integrado.
+7. solicitar recuperación, abrir el enlace, cambiar la contraseña y confirmar
+   que la anterior ya no inicia sesión ni el enlace vuelve a canjearse;
+8. confirmar que el callback final no muestra el token en query, fragmento ni
+   historial visible después del canje.
 
 `APP-02` exige resultado esperado/observado por fila y revisión independiente.
 No usar RUT, correo, documento ni nombre de una persona real.
@@ -199,11 +206,13 @@ No usar RUT, correo, documento ni nombre de una persona real.
 ## Fase 6 · Servicios y go/no-go
 
 1. Probar Resend hacia un buzón sintético controlado (`MAIL-01`).
-2. Probar cada webhook con payload sintético y ambas firmas (`WEB-01`).
-3. Confirmar buckets privados y una carga/descarga sintética (`STO-01`).
-4. Confirmar dos administradores recuperables (`ADM-01`) y rotación (`SEC-01`).
-5. Revisar que `REL-01` a `APP-02` correspondan al mismo SHA.
-6. Registrar responsable, ventana, observación y reversión (`GO-01`).
+2. Confirmar `APP_URL`, `RESEND_API_KEY` y `FROM_EMAIL` en el entorno protegido,
+   sin copiar sus valores a la evidencia (`AUTH-04`).
+3. Probar cada webhook con payload sintético y ambas firmas (`WEB-01`).
+4. Confirmar buckets privados y una carga/descarga sintética (`STO-01`).
+5. Confirmar dos administradores recuperables (`ADM-01`) y rotación (`SEC-01`).
+6. Revisar que `REL-01` a `APP-02` correspondan al mismo SHA.
+7. Registrar responsable, ventana, observación y reversión (`GO-01`).
 
 Producción permanece fuera de este runbook. Su aplicación es humana y solo se
 evalúa después de cerrar todos los gates P0 en staging.
@@ -216,8 +225,9 @@ Detener el procedimiento si ocurre cualquiera de estos casos:
 - el destino de restauración está conectado a una aplicación o servicio
   externo;
 - el backup no es reciente o no puede restaurarse;
-- el dry-run no coincide con las ocho migraciones revisadas;
+- el dry-run no coincide con las nueve migraciones revisadas;
 - un administrador entra con AAL1;
+- se intenta activar `required` con una cuenta activa sin `auth_user_id`;
 - una respuesta RLS no corresponde al rol;
 - quedan filas o identidades sintéticas después de un run;
 - el SHA de CI, deployment y evidencia no coincide;

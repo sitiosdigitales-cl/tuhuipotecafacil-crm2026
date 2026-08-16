@@ -16,7 +16,7 @@ captura aislada o resultado local.
 - [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
 - [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
 - [x] CI consulta RLS por Data API con los cinco roles y datos sintéticos.
-- [x] pgTAP comprueba 61 reglas de migración, Auth, Storage y RLS.
+- [x] pgTAP comprueba 75 reglas de migración, Auth, recuperación, Storage y RLS.
 - [x] Los modos `legacy`, `bridge` y `required` están implementados y probados.
 - [x] El puente enlaza cuentas, sincroniza su ciclo de vida y tiene fecha límite.
 - [x] Access y refresh usan cookies HttpOnly; cada solicitud Supabase valida la
@@ -83,6 +83,8 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] [`RES-01`] Configurar el environment protegido `staging-restore` con revisores.
 - [ ] [`AUTH-02`] Configurar el environment protegido `staging-validation`.
 - [ ] [`MAIL-01`] Verificar dominio, SPF, DKIM y DMARC para Resend.
+- [ ] [`AUTH-04`] Configurar `APP_URL` canónica por entorno, `RESEND_API_KEY` y
+  `FROM_EMAIL` en gestores autorizados; no usar archivos versionados ni chat.
 - [ ] [`MAIL-01`] Ejecutar envío real desde staging a una dirección sintética controlada.
 - [ ] [`WEB-01`] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
 - [ ] [`CMF-01`] Configurar y verificar la API oficial CMF con trazabilidad de fecha y
@@ -100,7 +102,12 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] [`AUTH-02`] Confirmar en staging que `SUPER_ADMIN` y `ADMIN` no entran al CRM sin
   TOTP/AAL2.
 - [ ] [`AUTH-02`] Probar revocación y cambio de rol por solicitud con cuentas sintéticas.
-- [ ] [`AUTH-04`] Implementar y probar recuperación de contraseña de autoservicio.
+- [ ] [`AUTH-04`] Ejecutar `Staging Validation` y comprobar token de un uso, cambio de
+  contraseña, rechazo de la anterior y revocación de los refresh tokens previos.
+- [ ] [`AUTH-04`] Desde el deployment de staging, entregar un correo a un buzón sintético,
+  completar el formulario y confirmar que el callback no conserva el token en su URL.
+- [ ] [`AUTH-02`] No activar `SUPABASE_AUTH_MODE=required` mientras exista una cuenta
+  activa sin `auth_user_id` o sin procedimiento administrativo de recuperación probado.
 - [ ] [`AUTH-03`] Configurar protección contra contraseñas conocidas o documentar una
   alternativa equivalente.
 - [ ] [`RLS-01`] Verificar RLS por dominio con la matriz completa de roles.

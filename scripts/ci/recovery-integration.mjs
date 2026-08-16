@@ -12,8 +12,23 @@ if (!supabaseUrl || !anonKey || !serviceRoleKey) {
 }
 
 const parsedUrl = new URL(supabaseUrl);
-if (!["localhost", "127.0.0.1"].includes(parsedUrl.hostname)) {
-  throw new Error("El ensayo de recuperación solo acepta Supabase local");
+const localTarget = ["localhost", "127.0.0.1"].includes(parsedUrl.hostname);
+const integrationTarget = process.env.RECOVERY_INTEGRATION_TARGET ?? "local";
+if (integrationTarget === "local") {
+  if (!localTarget) {
+    throw new Error("El ensayo local de recuperación no acepta proyectos remotos");
+  }
+} else if (integrationTarget === "synthetic-staging") {
+  if (
+    localTarget ||
+    parsedUrl.protocol !== "https:" ||
+    process.env.RECOVERY_INTEGRATION_CONFIRMATION !==
+      "VERIFY_EMPTY_SYNTHETIC_STAGING"
+  ) {
+    throw new Error("La integración remota requiere staging sintético confirmado");
+  }
+} else {
+  throw new Error("RECOVERY_INTEGRATION_TARGET no es válido");
 }
 
 function createAuthClient(key) {
