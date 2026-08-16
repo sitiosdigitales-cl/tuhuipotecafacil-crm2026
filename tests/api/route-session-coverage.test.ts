@@ -24,8 +24,8 @@ const EXCEPCIONES_SIN_SESION = new Map<string, string>([
   ["/api/auth/logout#POST", "elimina las cookies de sesión"],
   ["/api/auth/recuperacion#POST", "recibe la solicitud de quien no puede entrar"],
   [
-    "/api/auth/recuperacion/callback#GET",
-    "canjea el token de un solo uso del correo",
+    "/api/auth/recuperacion/callback#POST",
+    "canjea por cuerpo el token de un solo uso del correo",
   ],
   [
     "/api/auth/recuperacion/confirmacion#POST",

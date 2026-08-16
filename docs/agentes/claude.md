@@ -287,3 +287,20 @@ para tu correo, no lo borres", y ningun documento describe apuntar los MX a
 Resend. O sea el inbound de Resend nunca se cableo, y desde `6b99a73` el correo
 sigue cayendo en cPanel sin que nadie lo procese. Falta revisar los MX reales y
 si hay leads con `origen = email_corporativo` posteriores a esa fecha.
+
+[FASE AUTH · AUTH-04-TOKEN] hecho — el token sale de la query. El correo apunta
+a `/recuperar-contrasena/canje#token=…`; el fragmento no viaja al servidor, la
+pagina lo borra con `history.replaceState` ANTES de usarlo y lo postea en el
+cuerpo. El callback pasa a POST y ya no exporta GET, asi que un `?token=` contra
+ese endpoint responde 405 en vez de canjear. `Referrer-Policy: no-referrer` y
+`no-store` los pone el endpoint y tambien el proxy para toda
+`/recuperar-contrasena/**`, que por eso salio de la exclusion del matcher.
+
+  Detalle que costo encontrar: el efecto de la pagina corre dos veces con
+  StrictMode. Sin una guarda por ref, el segundo pase encontraba el fragmento
+  ya limpio y anulaba el canje del primero — y el token es de un solo uso.
+
+  Actualice tres pruebas que el cambio invalido, solo lo mecanico: la excepcion
+  `callback#GET` pasa a `#POST`, la URL esperada del correo, y la suite del
+  callback pasa de GET+query a POST+cuerpo. Las pruebas NUEVAS (fragmento,
+  replaceState, piso de tiempo, liberacion de turno) son de Codex.

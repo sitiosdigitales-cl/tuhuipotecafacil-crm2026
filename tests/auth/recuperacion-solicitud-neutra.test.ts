@@ -111,7 +111,7 @@ describe("solicitud de recuperación", () => {
     expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
   });
 
-  it("envía el enlace al callback y no devuelve el token", async () => {
+  it("envía el enlace de canje con el token en el fragmento", async () => {
     cuentaEncontrada(CUENTA);
 
     const response = await POST(solicitud());
@@ -120,9 +120,12 @@ describe("solicitud de recuperación", () => {
 
     expect(response.status).toBe(200);
     expect(destinatario).toBe(CUENTA.email);
+    // El fragmento no viaja al servidor: mantiene el token fuera de los logs
+    // de acceso y del Referer.
     expect(url).toBe(
-      "https://crm.example.invalid/api/auth/recuperacion/callback?token=token-sintetico",
+      "https://crm.example.invalid/recuperar-contrasena/canje#token=token-sintetico",
     );
+    expect(new URL(url).search).toBe("");
     expect(JSON.stringify(cuerpo)).not.toContain("token-sintetico");
     expect(response.headers.get("cache-control")).toContain("no-store");
   });

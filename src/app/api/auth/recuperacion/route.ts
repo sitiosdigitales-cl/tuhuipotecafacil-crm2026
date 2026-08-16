@@ -9,7 +9,7 @@ import {
   MENSAJE_NEUTRO_RECUPERACION,
   RECUPERACION_VENTANA_SEGUNDOS,
   reclamarEnvioRecuperacion,
-  urlCallbackRecuperacion,
+  urlCanjeRecuperacion,
 } from "@/lib/recuperacion-password";
 
 const MAX_RECUPERACION_PAYLOAD_BYTES = 4 * 1024;
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     await enviarEmailRecuperacion(
       cuenta.email,
       cuenta.nombre,
-      urlCallbackRecuperacion(tokenHash),
+      urlCanjeRecuperacion(tokenHash),
       Math.round(RECUPERACION_VENTANA_SEGUNDOS / 60),
     );
 

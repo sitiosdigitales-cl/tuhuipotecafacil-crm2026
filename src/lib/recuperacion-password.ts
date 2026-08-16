@@ -27,7 +27,16 @@ export const RECUPERACION_ESPERA_SEGUNDOS = 15 * 60;
 export const MENSAJE_NEUTRO_RECUPERACION =
   "Si el correo corresponde a una cuenta habilitada, enviamos las instrucciones para recuperarla.";
 
-export const RUTA_CALLBACK_RECUPERACION = "/api/auth/recuperacion/callback";
+/**
+ * El enlace del correo apunta a una PÁGINA, no al endpoint. El token viaja en
+ * el fragmento, que el navegador nunca manda al servidor: no entra a los logs
+ * de acceso, no viaja en Referer y no queda en la barra de direcciones una vez
+ * que la página lo limpia. Desde ahí se postea al endpoint del canje.
+ */
+export const RUTA_CANJE_RECUPERACION = "/recuperar-contrasena/canje";
+
+/** Tope del token en el cuerpo del canje. */
+export const MAX_TOKEN_RECUPERACION = 512;
 
 export interface CuentaRecuperacion {
   id: string;
@@ -80,12 +89,12 @@ export function emisionDelToken(accessToken: string): number | null {
   }
 }
 
-export function urlCallbackRecuperacion(
+export function urlCanjeRecuperacion(
   tokenHash: string,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  const url = new URL(RUTA_CALLBACK_RECUPERACION, applicationBaseUrl(env));
-  url.searchParams.set("token", tokenHash);
+  const url = new URL(RUTA_CANJE_RECUPERACION, applicationBaseUrl(env));
+  url.hash = `token=${encodeURIComponent(tokenHash)}`;
   return url.toString();
 }
 

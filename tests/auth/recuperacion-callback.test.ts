@@ -8,12 +8,23 @@ const { createRequestAuthClient, verifyOtp } = vi.hoisted(() => ({
 
 vi.mock("@/lib/supabase-auth", () => ({ createRequestAuthClient }));
 
-import { GET } from "@/app/api/auth/recuperacion/callback/route";
+import * as rutaCallback from "@/app/api/auth/recuperacion/callback/route";
 
-function callback(query = "?token=token-sintetico") {
-  return new NextRequest(
-    `http://localhost/api/auth/recuperacion/callback${query}`,
-  );
+const { POST } = rutaCallback;
+
+function canje(cuerpo: unknown = { token: "token-sintetico" }) {
+  return new NextRequest("http://localhost/api/auth/recuperacion/callback", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+function canjeAceptado() {
+  verifyOtp.mockResolvedValue({
+    data: { session: { access_token: "access-de-recuperacion" } },
+    error: null,
+  });
 }
 
 beforeEach(() => {
@@ -22,20 +33,20 @@ beforeEach(() => {
   createRequestAuthClient.mockReturnValue({ auth: { verifyOtp } });
 });
 
-describe("callback de recuperación", () => {
-  it("canjea el token por una cookie acotada al flujo", async () => {
-    verifyOtp.mockResolvedValue({
-      data: { session: { access_token: "access-de-recuperacion" } },
-      error: null,
-    });
+describe("canje del enlace de recuperación", () => {
+  it("no expone GET: el token no puede llegar por query", () => {
+    expect("GET" in rutaCallback).toBe(false);
+  });
 
-    const response = await GET(callback());
+  it("cambia el token del cuerpo por una cookie acotada al flujo", async () => {
+    canjeAceptado();
+
+    const response = await POST(canje());
+    const cuerpo = await response.json();
     const cookies = response.headers.get("set-cookie") ?? "";
 
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(
-      "http://localhost/recuperar-contrasena/nueva",
-    );
+    expect(response.status).toBe(200);
+    expect(cuerpo.success).toBe(true);
     expect(verifyOtp).toHaveBeenCalledWith({
       type: "recovery",
       token_hash: "token-sintetico",
@@ -44,13 +55,29 @@ describe("callback de recuperación", () => {
     expect(cookies).toContain("HttpOnly");
   });
 
-  it("no abre sesión del CRM: cierra la que hubiera", async () => {
-    verifyOtp.mockResolvedValue({
-      data: { session: { access_token: "access-de-recuperacion" } },
-      error: null,
-    });
+  it("no devuelve el token ni el access token en el cuerpo", async () => {
+    canjeAceptado();
 
-    const response = await GET(callback());
+    const response = await POST(canje());
+    const cuerpo = JSON.stringify(await response.json());
+
+    expect(cuerpo).not.toContain("token-sintetico");
+    expect(cuerpo).not.toContain("access-de-recuperacion");
+  });
+
+  it("responde sin caché y sin referer", async () => {
+    canjeAceptado();
+
+    const response = await POST(canje());
+
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+  });
+
+  it("no abre sesión del CRM: cierra la que hubiera", async () => {
+    canjeAceptado();
+
+    const response = await POST(canje());
     const cookies = response.headers.get("set-cookie") ?? "";
 
     expect(cookies).not.toContain("crm_sb_access=access-de-recuperacion");
@@ -58,47 +85,30 @@ describe("callback de recuperación", () => {
     expect(cookies).toContain("crm_token=;");
   });
 
-  it("el destino no arrastra el token", async () => {
-    verifyOtp.mockResolvedValue({
-      data: { session: { access_token: "access-de-recuperacion" } },
-      error: null,
-    });
-
-    const response = await GET(callback());
-
-    expect(response.headers.get("location")).not.toContain("token-sintetico");
-  });
-
   it.each([
     ["vencido o ya usado", { data: { session: null }, error: { code: "otp_expired" } }],
     ["desconocido", { data: { session: null }, error: null }],
-  ])("manda a solicitar uno nuevo cuando el token está %s", async (_caso, resultado) => {
+  ])("rechaza el canje cuando el token está %s", async (_caso, resultado) => {
     verifyOtp.mockResolvedValue(resultado);
 
-    const response = await GET(callback());
+    const response = await POST(canje());
+    const cuerpo = await response.json();
     const cookies = response.headers.get("set-cookie") ?? "";
 
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(
-      "http://localhost/recuperar-contrasena?estado=invalido",
-    );
+    expect(response.status).toBe(400);
+    expect(cuerpo.success).toBe(false);
     expect(cookies).toContain("crm_rec_access=;");
   });
 
-  it("no llama a Supabase Auth sin token en la URL", async () => {
-    const response = await GET(callback(""));
+  it.each([
+    ["sin token", {}],
+    ["con token vacío", { token: "" }],
+    ["con token sobredimensionado", { token: "a".repeat(513) }],
+    ["con campos de más", { token: "token-sintetico", extra: "x" }],
+  ])("no llama a Supabase Auth %s", async (_caso, cuerpo) => {
+    const response = await POST(canje(cuerpo));
 
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe(
-      "http://localhost/recuperar-contrasena?estado=invalido",
-    );
+    expect(response.status).toBe(400);
     expect(verifyOtp).not.toHaveBeenCalled();
-  });
-
-  it("no acepta un token más largo que el límite", async () => {
-    const response = await GET(callback(`?token=${"a".repeat(513)}`));
-
-    expect(verifyOtp).not.toHaveBeenCalled();
-    expect(response.headers.get("location")).toContain("estado=invalido");
   });
 });

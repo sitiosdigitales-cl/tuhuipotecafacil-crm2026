@@ -79,8 +79,23 @@ function alLogin(request: NextRequest, pathname: string) {
   return respuesta;
 }
 
+/**
+ * La recuperación es pública, pero necesita dos cabeceras propias: el token
+ * llega en el fragmento de `/recuperar-contrasena/canje` y estas cierran las
+ * dos vías por las que esa URL podría escaparse — una caché intermedia y el
+ * Referer de cualquier subrecurso que la página pida.
+ */
+const RUTA_RECUPERACION = "/recuperar-contrasena";
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith(RUTA_RECUPERACION)) {
+    const respuesta = NextResponse.next();
+    respuesta.headers.set("Cache-Control", "no-store, max-age=0");
+    respuesta.headers.set("Referrer-Policy", "no-referrer");
+    return respuesta;
+  }
 
   if (!RUTAS_PANEL.some((ruta) => pathname.startsWith(ruta))) {
     return NextResponse.next();
@@ -120,7 +135,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Excluir /api/, /_next/, /favicon y las páginas públicas.
-    "/((?!api/|_next/|favicon|simulador-publico|login|mfa|register|recuperar-contrasena).*)",
+    // Excluir /api/, /_next/, /favicon y las páginas públicas. La recuperación
+    // NO se excluye: es pública, pero el proxy le pone sus cabeceras.
+    "/((?!api/|_next/|favicon|simulador-publico|login|mfa|register).*)",
   ],
 };
