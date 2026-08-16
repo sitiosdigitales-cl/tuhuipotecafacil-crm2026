@@ -1390,3 +1390,14 @@ mantiene cerrado el registro público y se habilita el proveedor de login.
 [FASE AUTH · AUTH-04-DB] preparado — contrato pgTAP cubre columna, tipo,
 permisos, ventana, estado y enlace Auth. Build verde; suite 801/801;
 lint/typecheck: 0; auditorías: 0. Sin Docker local; `database` valida la RPC.
+
+[FASE AUTH · AUTH-04-DB] verificado — CI `31961189266` pasó reset doble,
+14 comprobaciones de recuperación y el job `database` completo.
+
+[build] ocupado — Codex, AUTH-04-E2E · integración real de recuperación local.
+
+[build] libre — Codex, AUTH-04-E2E · build terminado.
+
+[FASE AUTH · AUTH-04-E2E] preparado — CI canjea un token real una sola vez,
+cambia la contraseña con Admin API y exige revocación de ambos refresh tokens.
+Build verde; suite 801/801; lint/typecheck: 0; auditorías: 0.

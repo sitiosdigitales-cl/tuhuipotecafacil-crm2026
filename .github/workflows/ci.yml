@@ -97,7 +97,7 @@ jobs:
           npm run db:reset
       - name: Test database rules
         run: npm run db:test
-      - name: Test Auth and RLS against local services
+      - name: Test Auth, recovery and RLS against local services
         shell: bash
         run: |
           set -euo pipefail
@@ -113,6 +113,10 @@ jobs:
           SUPABASE_ANON_KEY="$ANON_KEY" \
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
             node scripts/ci/auth-bridge-integration.mjs
+          SUPABASE_URL="$API_URL" \
+          SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+            node scripts/ci/recovery-integration.mjs
           SUPABASE_URL="$API_URL" \
           SUPABASE_ANON_KEY="$ANON_KEY" \
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
