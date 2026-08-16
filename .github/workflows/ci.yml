@@ -95,6 +95,8 @@ jobs:
         run: |
           npm run db:reset
           npm run db:reset
+      - name: Test database rules
+        run: npm run db:test
       - name: Stop local Supabase
         if: always()
         run: npm run db:stop >/dev/null 2>&1 || true

@@ -1125,3 +1125,13 @@ reales por cada push. Suite local: 595/595; audit: 0.
 
 [FASE DB · BUG-118] corregido — todas las migraciones usan timestamps únicos
 de 14 dígitos; CI volverá a ejecutar el reset real. Suite: 596/596; audit: 0.
+
+[FASE DB · DB-06] verificado — GitHub Actions reconstruyó Supabase dos veces.
+
+[build] ocupado — Codex, BUG-119 · contador de login atómico.
+
+[build] libre — Codex, BUG-119 · build y validaciones terminadas.
+
+[FASE DB · BUG-119] corregido — el contador de intentos de login ahora usa una
+operación PostgreSQL atómica, restringida al backend y probada también con
+llamadas simultáneas. Suite: 597/597; audit: 0.

@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { compare, from, update } = vi.hoisted(() => ({
+const { compare, from, rpc, update } = vi.hoisted(() => ({
   compare: vi.fn(),
   from: vi.fn(),
+  rpc: vi.fn(),
   update: vi.fn(),
 }));
 
@@ -12,7 +13,7 @@ vi.mock("bcryptjs", () => ({
 }));
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { from },
+  supabase: { from, rpc },
 }));
 
 import { POST } from "@/app/api/auth/login/route";
@@ -60,15 +61,15 @@ describe("persistencia de intentos del login", () => {
   beforeEach(() => {
     compare.mockReset();
     from.mockReset();
+    rpc.mockReset();
     update.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   it("no aparenta registrar un intento cuando la base lo rechaza", async () => {
     compare.mockResolvedValue(false);
-    from
-      .mockReturnValueOnce(lookupQuery())
-      .mockReturnValueOnce(updateQuery({ message: "columna no disponible" }));
+    from.mockReturnValueOnce(lookupQuery());
+    rpc.mockResolvedValue({ data: null, error: { message: "función no disponible" } });
 
     const response = await POST(loginRequest());
 
@@ -88,20 +89,19 @@ describe("persistencia de intentos del login", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  it("guarda el quinto intento junto con el bloqueo temporal", async () => {
+  it("delega el intento a la operación atómica", async () => {
     compare.mockResolvedValue(false);
-    from
-      .mockReturnValueOnce(lookupQuery())
-      .mockReturnValueOnce(updateQuery(null));
+    from.mockReturnValueOnce(lookupQuery());
+    rpc.mockResolvedValue({
+      data: [{ intentosfallidos: 5, suspendidohasta: new Date().toISOString() }],
+      error: null,
+    });
 
     const response = await POST(loginRequest());
 
     expect(response.status).toBe(401);
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        intentosfallidos: 5,
-        suspendidohasta: expect.any(String),
-      })
-    );
+    expect(rpc).toHaveBeenCalledWith("registrar_intento_login_fallido", {
+      p_usuario_id: USER.id,
+    });
   });
 });

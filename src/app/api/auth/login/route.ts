@@ -6,8 +6,6 @@ import { generarToken } from "@/lib/jwt";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import { establecerCookieSesion } from "@/lib/session-cookie";
 
-const MAX_INTENTOS = 5;
-const MINUTOS_BLOQUEO = 15;
 const MAX_LOGIN_PAYLOAD_BYTES = 4 * 1024;
 const LoginInputSchema = z
   .object({
@@ -29,17 +27,10 @@ const HASH_DESCARTE = "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17l
 // El contador vive en la tabla porque las funciones serverless no comparten
 // memoria: un contador en proceso se reinicia con cada instancia nueva y no
 // frena nada.
-async function registrarIntentoFallido(id: string, intentosPrevios: number) {
-  const intentos = intentosPrevios + 1;
-  const bloqueo =
-    intentos >= MAX_INTENTOS
-      ? new Date(Date.now() + MINUTOS_BLOQUEO * 60_000).toISOString()
-      : null;
-
-  const { error } = await supabase
-    .from("usuarios")
-    .update({ intentosfallidos: intentos, suspendidohasta: bloqueo })
-    .eq("id", id);
+async function registrarIntentoFallido(id: string) {
+  const { error } = await supabase.rpc("registrar_intento_login_fallido", {
+    p_usuario_id: id,
+  });
   if (error) throw new Error(`No se pudo registrar el intento fallido: ${error.message}`);
 }
 
@@ -83,7 +74,7 @@ export async function POST(request: NextRequest) {
     // las demás columnas a memoria sin motivo.
     const { data: user, error } = await supabase
       .from("usuarios")
-      .select("id, nombre, apellido, email, password, rol, estado, intentosfallidos, suspendidohasta")
+      .select("id, nombre, apellido, email, password, rol, estado, suspendidohasta")
       .eq("email", email)
       .single();
 
@@ -108,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     const passwordValido = await bcrypt.compare(password, user.password);
     if (!passwordValido) {
-      await registrarIntentoFallido(user.id, user.intentosfallidos ?? 0);
+      await registrarIntentoFallido(user.id);
       return NextResponse.json({ success: false, error: "Credenciales inválidas" }, { status: 401 });
     }
 
