@@ -102,21 +102,35 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
     });
   }, [mensajes]);
 
-  const handleEnviarMensaje = (contenido: string) => {
+  const handleEnviarMensaje = async (contenido: string) => {
     const texto = respondiendoA
       ? `> ${respondiendoA.remitenteNombre}: ${respondiendoA.contenido.split("\n")[0]}\n\n${contenido}`
       : contenido;
-    enviarMensaje(texto);
-    setRespondiendoA(null);
+    try {
+      await enviarMensaje(texto);
+      setRespondiendoA(null);
+      return true;
+    } catch {
+      toast.error("No se pudo enviar el mensaje");
+      return false;
+    }
   };
 
   const handleEliminarMensaje = async (mensajeId: string) => {
-    await eliminarMensaje(mensajeId);
-    toast.success("Mensaje eliminado");
+    try {
+      await eliminarMensaje(mensajeId);
+      toast.success("Mensaje eliminado");
+    } catch {
+      toast.error("No se pudo eliminar el mensaje");
+    }
   };
 
   const handleReaccionar = async (mensajeId: string, emoji: string) => {
-    await reaccionarMensaje(mensajeId, emoji);
+    try {
+      await reaccionarMensaje(mensajeId, emoji);
+    } catch {
+      toast.error("No se pudo actualizar la reacción");
+    }
   };
 
   const getNombreConversacion = (): string => {

@@ -1242,6 +1242,15 @@ con su lead. Suite: 745/745; build/lint/typecheck: 0; audits: 0.
 tasas fijas como CMF; sin integración oficial responden 503/`SIN_DATOS` y no
 inyectan estimaciones. Suite: 748/748; build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, BUG-133 · mensajes confirmados por servidor.
+
+[build] libre — Codex, BUG-133 · build terminado.
+
+[calidad · BUG-133] corregido — envío, eliminación y reacciones de mensajes
+solo actualizan la interfaz tras confirmación del servidor; ante error se
+conservan el mensaje y el texto pendiente. Suite: 752/752;
+build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

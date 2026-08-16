@@ -20,7 +20,7 @@ import { toast } from "sonner";
 const EMOJIS_COMUNES = ["👍", "❤️", "😊", "😂", "🎉", "🔥", "👏", "💪", "✅", "⭐", "🙏", "💡"];
 
 interface InputMensajeProps {
-  onEnviar: (contenido: string) => void;
+  onEnviar: (contenido: string) => boolean | void | Promise<boolean | void>;
   nombreConversacion: string;
   disabled?: boolean;
 }
@@ -40,20 +40,22 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
     }
   }, [mensaje]);
 
-  const handleEnviar = () => {
-    if (!mensaje.trim()) return;
-    onEnviar(mensaje.trim());
-    setMensaje("");
-    setMostrarEmojis(false);
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+  const handleEnviar = async () => {
+    if (!mensaje.trim() || disabled) return;
+    const enviado = await onEnviar(mensaje.trim());
+    if (enviado !== false) {
+      setMensaje("");
+      setMostrarEmojis(false);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleEnviar();
+      void handleEnviar();
     }
   };
 
@@ -240,7 +242,7 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
             </button>
             <div className="w-px h-4 bg-slate-200 mx-1" />
             <button
-              onClick={handleEnviar}
+              onClick={() => void handleEnviar()}
               disabled={!mensaje.trim() || disabled}
               className={`p-2 rounded-xl transition-all ${
                 mensaje.trim() && !disabled
