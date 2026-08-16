@@ -1046,3 +1046,10 @@ biblioteca aplican el catálogo administrativo. Suite: 586/586; audit: 0.
 
 [calidad · BUG-112] corregido — el HTML almacenado se previsualiza en un
 documento sin capacidades y con CSP propia. Suite: 587/587; audit: 0.
+
+[build] ocupado — Codex, BUG-113 · referidos sin imagen QR inválida.
+
+[build] libre — Codex, BUG-113 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-113] corregido — referidos conserva cuatro canales funcionales
+y no ofrece una imagen que no codifica el enlace. Suite: 588/588; audit: 0.
