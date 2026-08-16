@@ -807,3 +807,10 @@ advertencias ni complemento obsoleto. Suite: 397/397; audit: 0.
 
 [calidad · BUG-078] corregido — webhook servidor a servidor exige secreto fuerte
 en cabecera y el formulario público usa pre evaluación. Suite: 400/400.
+
+[build] ocupado — Codex, BUG-079 · controles de coste y privacidad del asistente.
+
+[build] libre — Codex, BUG-079 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-079] corregido — roles internos, validación, cuota, timeout,
+presupuesto, stream UI y contexto sin identificadores. Suite: 406/406.

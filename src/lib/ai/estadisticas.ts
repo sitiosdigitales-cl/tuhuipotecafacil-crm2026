@@ -129,9 +129,9 @@ export function generarResumenLeads(leads: Lead[], limite: number = 20): string 
     .slice(0, limite);
 
   return leadsRecientes
-    .map((l) => {
+    .map((l, index) => {
       const etapa = l.etapa.replace(/_/g, " ");
-      return `- ${l.nombre} ${l.apellido} (RUT: ${l.rut}) | Etapa: ${etapa} | Banco: ${l.banco || "Sin asignar"} | Monto: ${formatMonto(l.montoSolicitado || 0)} | Ejecutivo: ${l.nombreEjecutivo || "Sin asignar"} | Días en etapa: ${l.diasEnEtapa}`;
+      return `- Caso ${index + 1} | Etapa: ${etapa} | Banco: ${l.banco || "Sin asignar"} | Monto: ${formatMonto(l.montoSolicitado || 0)} | Ejecutivo: ${l.nombreEjecutivo || "Sin asignar"} | Días en etapa: ${l.diasEnEtapa}`;
     })
     .join("\n");
 }
