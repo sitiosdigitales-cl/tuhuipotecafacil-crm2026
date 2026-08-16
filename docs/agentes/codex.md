@@ -628,3 +628,10 @@ catálogo de permisos; nueve casos verdes. Suite completa: 291/291.
 
 [auth · BUG-053] corregido — se retira `/api/auth/register`; el alta queda en
 `POST /api/usuarios` y ya no cambia la sesión administradora. Suite: 292/292.
+
+[build] ocupado — Codex, BUG-054 · invalidar sesión por estado o cambio de rol.
+
+[build] libre — Codex, BUG-054 · build y typecheck terminaron en 0.
+
+[auth · BUG-054] corregido — `/api/auth/me` comprueba `estado` y rol vigente;
+si difieren responde 401 y borra ambas cookies. Suite completa: 296/296.
