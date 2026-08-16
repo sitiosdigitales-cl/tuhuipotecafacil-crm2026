@@ -1039,3 +1039,10 @@ el catálogo administrativo de automatización. Suite: 574/574; audit: 0.
 
 [calidad · BUG-111] corregido — cuatro operaciones y la navegación de
 biblioteca aplican el catálogo administrativo. Suite: 586/586; audit: 0.
+
+[build] ocupado — Codex, BUG-112 · vista previa HTML aislada.
+
+[build] libre — Codex, BUG-112 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-112] corregido — el HTML almacenado se previsualiza en un
+documento sin capacidades y con CSP propia. Suite: 587/587; audit: 0.

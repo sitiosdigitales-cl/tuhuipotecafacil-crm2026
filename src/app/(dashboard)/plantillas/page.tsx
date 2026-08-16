@@ -818,7 +818,7 @@ export default function PlantillasPage() {
 }
 
 // Componente para previsualizar plantillas
-function PreviewPlantilla({ plantilla }: { plantilla: { nombre: string; contenido: string; tipo: string; asunto?: string } }) {
+export function PreviewPlantilla({ plantilla }: { plantilla: { nombre: string; contenido: string; tipo: string; asunto?: string } }) {
   const reemplazarVariables = (texto: string) => {
     return texto
       .replace(/\{\{nombre\}\}/g, "María")
@@ -844,6 +844,18 @@ function PreviewPlantilla({ plantilla }: { plantilla: { nombre: string; contenid
   };
 
   if (plantilla.tipo === "EMAIL") {
+    const contenido = reemplazarVariables(plantilla.contenido);
+    const documentoPreview = `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; font-src https: data:">
+    <meta name="referrer" content="no-referrer">
+    <style>body{font-family:Arial,sans-serif;margin:0;padding:16px;color:#334155;overflow-wrap:anywhere}</style>
+  </head>
+  <body>${contenido}</body>
+</html>`;
+
     return (
       <div>
         <div className="bg-slate-50 rounded-xl p-4 mb-4">
@@ -852,9 +864,12 @@ function PreviewPlantilla({ plantilla }: { plantilla: { nombre: string; contenid
             {reemplazarVariables(plantilla.asunto || "")}
           </div>
         </div>
-        <div
-          className="bg-white border border-slate-200 rounded-xl p-4 overflow-auto max-h-[500px]"
-          dangerouslySetInnerHTML={{ __html: reemplazarVariables(plantilla.contenido) }}
+        <iframe
+          title={`Vista previa de ${plantilla.nombre}`}
+          sandbox=""
+          referrerPolicy="no-referrer"
+          srcDoc={documentoPreview}
+          className="h-[500px] w-full rounded-xl border border-slate-200 bg-white"
         />
       </div>
     );
