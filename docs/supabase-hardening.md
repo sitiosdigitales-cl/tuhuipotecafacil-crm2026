@@ -1,8 +1,9 @@
-# Cierre de acceso público en Supabase
+# RLS y cierre de acceso público en Supabase
 
-La migración `supabase/migrations/20260816000000_lock_down_anon_and_storage.sql` está
-preparada, pero **no fue aplicada a producción por Codex**. Requiere acceso al
-proyecto Supabase y una ventana de verificación humana.
+Las migraciones `20260816000000_lock_down_anon_and_storage.sql` y
+`20260816120000_domain_rls.sql` están preparadas, pero **no fueron aplicadas a
+producción por Codex**. Requieren acceso al proyecto Supabase y una ventana de
+verificación humana.
 
 ## Requisitos previos
 
@@ -20,7 +21,7 @@ Ejecutar la migración primero en staging y luego en producción. No ejecutar
 `prisma/run-all-pending.sql`: contiene el esquema histórico permisivo y ahora se
 detiene de forma explícita.
 
-La migración:
+La primera migración:
 
 - habilita RLS y elimina políticas de todas las tablas de `public`;
 - revoca tablas, vistas, funciones y secuencias a `anon` y `authenticated`;
@@ -30,6 +31,26 @@ La migración:
   conocidos;
 - conserva las políticas de otros buckets y agrega una regla restrictiva que
   impide a `anon` y `authenticated` operar sobre los dos buckets del CRM.
+
+La migración de dominios abre únicamente `SELECT` para `authenticated` en
+`leads`, `documentos`, `tareas` y `comisiones`. Las escrituras siguen detrás de
+las APIs del servidor, donde se validan campos, transiciones y efectos
+secundarios. `anon` continúa sin acceso y `service_role` conserva el flujo del
+backend.
+
+## Matriz de lectura directa
+
+| Rol | Leads | Documentos | Tareas | Comisiones |
+|---|---|---|---|---|
+| `SUPER_ADMIN` | todos, con AAL2 | todos, con AAL2 | todas, con AAL2 | todas, con AAL2 |
+| `ADMIN` | todos, con AAL2 | todos, con AAL2 | todas, con AAL2 | todas, con AAL2 |
+| `EJECUTIVO` | todos | todos | todas | ninguna |
+| `AGENTE` | cartera asignada | cartera asignada | asignadas | ninguna |
+| `CLIENTE` | correo de su cuenta | documentos de su lead | ninguna | ninguna |
+
+Una cuenta inactiva, no enlazada mediante `auth_user_id` o administrativa con
+AAL1 obtiene cero filas. Los helpers consultan el rol vigente en `usuarios`, no
+metadatos editables del JWT, y viven en el esquema no expuesto `private`.
 
 ## Verificación posterior
 
@@ -58,9 +79,16 @@ from pg_publication_tables
 where pubname = 'supabase_realtime' and schemaname = 'public';
 ```
 
-Resultado esperado: todas las tablas con `rowsecurity = true`, ninguna política
-en `public`, la política restrictiva de Storage presente, ambos buckets privados
-y cero tablas públicas en Realtime.
+Resultado esperado: todas las tablas con `rowsecurity = true`; exactamente las
+cuatro políticas `crm_*_read` en esos dominios; ninguna política permisiva en
+las demás tablas; la política restrictiva de Storage presente; ambos buckets
+privados; y cero tablas públicas en Realtime.
+
+`npm run db:test` comprueba grants y estructura. El job `database` de CI además
+crea identidades sintéticas para los cinco roles y consulta la Data API con la
+anon key más su sesión real. También confirma AAL2 administrativo, cuentas
+inactivas/no enlazadas, escrituras reservadas al servidor y el acceso completo
+de `service_role`.
 
 Después repetir el smoke test. Un fallo general de las APIs normalmente indica
 que falta o es incorrecta `SUPABASE_SERVICE_ROLE_KEY`; se corrige el entorno,

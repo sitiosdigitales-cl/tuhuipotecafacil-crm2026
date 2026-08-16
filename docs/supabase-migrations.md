@@ -17,8 +17,10 @@ npm run db:stop
 
 Un reset debe crear 27 tablas públicas y dejar vacías las tablas de clientes y
 usuarios. Ejecutar el reset dos veces antes de aceptar una nueva migración.
-Las pruebas también validan el puente estructural descrito en
-`docs/auth-migration.md`; el reset no crea identidades ni contraseñas.
+Las pruebas también validan el puente estructural y RLS descritos en
+`docs/auth-migration.md`; el reset no crea identidades ni contraseñas. El job de
+CI complementa pgTAP con cuentas sintéticas temporales y consultas reales a la
+Data API.
 
 ## Staging nuevo
 
@@ -32,8 +34,10 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-Probar login, leads, documentos, solicitudes, comisiones, Storage y webhooks con
-datos sintéticos. No reutilizar claves ni datos de producción.
+Probar login, leads, documentos, solicitudes, tareas, comisiones, Storage y
+webhooks con datos sintéticos. Repetir la matriz de
+`docs/supabase-hardening.md` usando sesiones de staging; no reutilizar claves ni
+datos de producción.
 
 ## Proyecto existente
 

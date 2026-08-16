@@ -10,6 +10,7 @@ certifica por sí sola el entorno productivo.
 - [x] `npm audit --audit-level=high` sin alertas vigentes.
 - [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
 - [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
+- [x] CI consulta RLS por Data API con los cinco roles y datos sintéticos.
 - [x] El respaldo externo genera roles, esquema, datos y objetos con hashes.
 - [x] El ensayo de restauración rechaza destinos no vacíos y mide el RTO.
 - [x] El SQL histórico `prisma/run-all-pending.sql` se detiene sin ejecutar.
@@ -79,6 +80,10 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] Exigir MFA a `SUPER_ADMIN` y `ADMIN`.
 - [ ] Probar revocación, recuperación y cambio de rol por solicitud.
 - [ ] Verificar RLS por dominio con la matriz completa de roles.
+
+La matriz automatizada local/CI está documentada en
+`docs/supabase-hardening.md`. Esta casilla permanece abierta hasta repetirla en
+un proyecto de staging separado con el mismo commit.
 
 Estas casillas continúan abiertas hasta tener evidencia en staging; que la suite
 local esté verde no reemplaza esa verificación.

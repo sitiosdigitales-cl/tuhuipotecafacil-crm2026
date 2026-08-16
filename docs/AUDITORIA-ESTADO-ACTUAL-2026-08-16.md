@@ -107,13 +107,15 @@ Fuentes oficiales:
 
 `supabase/migrations/20260816000000_lock_down_anon_and_storage.sql` prepara un modo
 servidor: revoca acceso de `anon`/`authenticated`, deja `service_role`, retira
-Realtime y vuelve privados los buckets. No se aplicó desde este repositorio y
-no debe darse por vigente hasta probarlo primero en staging y luego en el panel
-correcto.
+Realtime y vuelve privados los buckets. La migración aditiva
+`20260816120000_domain_rls.sql` vuelve a conceder solo lectura autenticada en
+cuatro dominios según rol, cartera, cuenta vigente y AAL2 administrativo. Las
+escrituras continúan en las APIs del servidor. Ninguna se aplicó desde este
+repositorio y no deben darse por vigentes hasta probarlas primero en staging.
 
-La evolución recomendada es Supabase Auth + MFA + RLS por usuario. Requiere una
-migración diseñada, no un cambio rápido: identidades, roles, `auth.uid()`,
-cookies SSR, políticas por tabla y pruebas directas con claves no administrativas.
+La evolución Supabase Auth + MFA + RLS por usuario ya está preparada en código,
+incluidas pruebas directas con identidades sintéticas. Su activación todavía
+requiere migración y navegación verificadas en staging.
 
 ## Datos y respaldos
 

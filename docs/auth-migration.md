@@ -110,10 +110,23 @@ staging el enrolamiento y documentar la recuperación de un administrador que
 perdió su autenticador. El código no realiza cambios en el panel ni desactiva
 factores reales automáticamente.
 
-No activar `bridge` todavía en producción: ciclo de cuentas, MFA administrativo
-y validación vigente por solicitud ya están preparados, pero aún faltan RLS por
-dominio y un ensayo autorizado en staging. El valor por defecto permite
-desplegar el código sin consultar una migración aún no aplicada.
+No activar `bridge` todavía en producción: ciclo de cuentas, MFA administrativo,
+validación vigente por solicitud y RLS por dominio ya están preparados, pero aún
+falta aplicar la cadena y repetir la matriz completa en staging autorizado. El
+valor por defecto permite desplegar el código sin consultar migraciones aún no
+aplicadas.
+
+## RLS por dominio
+
+La migración `20260816120000_domain_rls.sql` concede lectura directa autenticada
+solo en leads, documentos, tareas y comisiones. Resuelve la identidad mediante
+`usuarios.auth_user_id`, exige cuenta `ACTIVO` y requiere AAL2 para
+`SUPER_ADMIN`/`ADMIN`. La cartera de `AGENTE` se compara con el ID `TEXT` de
+negocio; `CLIENTE` se vincula por el correo vigente de su cuenta.
+
+Las mutaciones continúan exclusivamente en las APIs del servidor. Esto evita que
+una política por fila permita modificar columnas financieras o de control sin
+pasar por las validaciones de negocio. Realtime continúa desactivado.
 
 La aplicación de la migración, la creación de identidades reales y cualquier
 cambio de modo quedan pendientes de staging autorizado.

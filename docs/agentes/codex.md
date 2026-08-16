@@ -1225,6 +1225,19 @@ asíncrona la sesión Supabase, cuenta vigente y AAL2 administrativo; `/me` rota
 refresh/access, `/logout` revoca la sesión actual y el access JWT local dura
 como máximo 15 minutos. Suite: 709/709; lint/typecheck: 0; audit: 0.
 
+[FASE AUTH · AUTH-05] verificado — sesión por solicitud, vigencia de 15 minutos,
+revocación de refresh, puente Auth, MFA y reconstrucción doble pasan en CI.
+
+[build] ocupado — Codex, AUTH-06 · RLS por dominios y matriz de roles.
+
+[build] libre — Codex, AUTH-06 · build terminado.
+
+[FASE AUTH · AUTH-06] preparado — lectura RLS de leads, documentos, tareas y
+comisiones aplica cuenta vigente, cartera y AAL2; escrituras siguen en APIs del
+servidor. Suite: 716/716; build/lint/typecheck: 0; audit: 0. Docker no está
+instalado localmente, por lo que reconstrucción, pgTAP y Data API quedan como
+gate del job `database` de CI antes de declarar la tarea verificada.
+
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 
