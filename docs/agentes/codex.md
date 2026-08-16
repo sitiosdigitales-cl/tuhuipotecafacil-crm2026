@@ -589,3 +589,14 @@ se mantienen commits aislados, validaciones, secretos fuera del repo y no tocar 
 
 [modo solo] contrato actualizado — build verde; suite conserva los nueve casos
 rojos ya registrados en BUG-037, BUG-050 y BUG-051 (273/282).
+
+[build] ocupado — Codex, BUG-050 · aplicar matriz de roles en comisiones.
+
+[build] libre — Codex, BUG-050 · build y typecheck terminaron en 0.
+
+[calidad · BUG-050] corregido — comisiones aplica `COMISIONES_PERMISOS` antes
+de leer o crear; seis casos en verde. Suite global mejora a 279/282.
+
+[build] ocupado — Codex, BUG-050 · validación final del formato.
+
+[build] libre — Codex, BUG-050 · validación final terminó en 0.
