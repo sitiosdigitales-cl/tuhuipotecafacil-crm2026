@@ -878,3 +878,10 @@ local exige habilitación explícita. Suite: 447/447; audit: 0.
 
 [calidad · BUG-088] corregido — JSON y UTF-8 obligatorios, máximo 32 KiB y
 esquemas antes de todo acceso a datos. Suite: 451/451; audit: 0.
+
+[build] ocupado — Codex, BUG-089 · enlaces de solicitud de documentos.
+
+[build] libre — Codex, BUG-089 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-089] corregido — un único portal autenticado, URL productiva
+validada y confirmaciones acordes al canal. Suite: 454/454; audit: 0.

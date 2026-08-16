@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 
+import { portalClientUrl } from "./application-url";
 import { escapeHtml, safeHttpUrl, sanitizeEmailHeader } from "./html-output";
 
 const fromEmail = process.env.FROM_EMAIL || "CRM <notificaciones@tuhipotecafacil.cl>";
@@ -309,10 +310,15 @@ export async function enviarEmailBienvenida(email: string, nombre: string): Prom
 export async function enviarSolicitudDocumentos(
   email: string,
   nombre: string,
-  documentos: string[],
-  leadId: string
+  documentos: string[]
 ): Promise<boolean> {
-  const urlPortal = `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/portal-cliente?lead=${leadId}`;
+  let urlPortal: string;
+  try {
+    urlPortal = portalClientUrl();
+  } catch (error) {
+    console.error("[email] No se pudo resolver la URL del portal:", error);
+    return false;
+  }
 
   return enviarEmailTemplate("documentosPendientes", email, {
     nombre,

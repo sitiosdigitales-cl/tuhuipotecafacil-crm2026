@@ -219,8 +219,7 @@ export async function POST(request: NextRequest) {
       resultado = await enviarSolicitudDocumentos(
         email,
         nombre,
-        documentos,
-        lead.id
+        documentos
       );
       break;
     }

@@ -158,9 +158,7 @@ export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDoc
       return;
     }
 
-    const tiposDocs = documentosSeleccionados.map((d) => d.tipo).join(",");
-    const nombresDocs = documentosSeleccionados.map((d) => encodeURIComponent(d.nombre)).join(",");
-    const link = `https://tuhipotecafacil.cl/subir-documentos?lead=${leadSeleccionado.id}&docs=${tiposDocs}&nombres=${nombresDocs}&token=${Math.random().toString(36).substring(2, 10)}`;
+    const link = new URL("/portal-cliente", window.location.origin).toString();
     setLinkGenerado(link);
     toast.success("Link generado", {
       description: "El link está listo para compartir",
@@ -183,30 +181,45 @@ export function SolicitarDocumentos({ open, onOpenChange, leadId }: SolicitarDoc
     const listaDocumentos = documentosSeleccionados.map((d) => d.nombre);
 
     if (metodoEnvio === "whatsapp") {
-      const mensaje = mensajePersonalizado || `Hola ${leadSeleccionado.nombre}, te solicitamos documentos para continuar con tu proceso.`;
       const numero = leadSeleccionado.telefono?.replace(/[^0-9]/g, "") || "";
+      if (!numero) {
+        toast.error("El cliente no tiene un teléfono registrado");
+        return;
+      }
+      const portalLink = new URL("/portal-cliente", window.location.origin).toString();
+      const lista = listaDocumentos.map((documento) => `- ${documento}`).join("\n");
+      const mensaje = mensajePersonalizado ||
+        `Hola ${leadSeleccionado.nombre}, necesitamos estos documentos para continuar:\n${lista}\n\nIngresa a tu portal: ${portalLink}`;
       window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`, "_blank");
-    } else if (metodoEnvio === "email" || metodoEnvio === "link") {
-      // Enviar email real a través de la API
+      toast.success("WhatsApp abierto", {
+        description: "Confirma el envío desde WhatsApp",
+      });
+      onOpenChange(false);
+      resetForm();
+      return;
+    }
+
+    if (metodoEnvio === "email") {
       try {
         const response = await fetch("/api/email/send", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             tipo: "documentos",
-            email: leadSeleccionado.email,
-            nombre: `${leadSeleccionado.nombre} ${leadSeleccionado.apellido}`,
             documentos: listaDocumentos,
             leadId: leadSeleccionado.id,
           }),
         });
 
         const data = await response.json();
-        if (!data.success) {
-          // Error en API de email
+        if (!response.ok || !data.success) {
+          toast.error(data.error || "No se pudo enviar el correo");
+          return;
         }
       } catch {
-        // Continuar de todas formas
+        toast.error("No se pudo conectar con el servicio de correo");
+        return;
       }
     }
 

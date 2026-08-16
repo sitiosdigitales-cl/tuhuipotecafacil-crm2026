@@ -140,8 +140,7 @@ describe("roles y alcance del envío de correo", () => {
     expect(enviarSolicitudDocumentos).toHaveBeenCalledWith(
       "cliente.real@example.invalid",
       "Camila Valdés",
-      ["Liquidación de sueldo"],
-      "lead-uno"
+      ["Liquidación de sueldo"]
     );
   });
 
