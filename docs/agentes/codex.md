@@ -1251,6 +1251,14 @@ pipeline persistidos, más información operativa; retirados seis formularios
 locales, campos de secretos y `/api/configuracion` inexistente. Suite: 724/724;
 build/lint/typecheck: 0; audit: 0.
 
+[build] ocupado — Codex, BUG-125 · plantillas en solo lectura.
+
+[build] libre — Codex, BUG-125 · build terminado.
+
+[calidad · BUG-125] corregido — plantillas usa `variables`, `usos` y fechas del
+contrato persistido; el catálogo queda en solo lectura con vista previa aislada
+y sin mutaciones locales. Suite: 726/726; build/lint/typecheck: 0; audit: 0.
+
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 

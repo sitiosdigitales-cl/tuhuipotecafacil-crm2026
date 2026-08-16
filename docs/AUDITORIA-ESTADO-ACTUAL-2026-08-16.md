@@ -157,15 +157,13 @@ cuerpo grande y una prueba de campo inesperado.
 Estas superficies no deben presentarse como terminadas aunque el build esté
 verde:
 
-- Plantillas carga datos reales, pero crear, editar y eliminar desde sus modales
-  todavía cierra o cambia la lista local sin confirmar la API.
 - El detalle de usuario muestra actividad y rendimiento mensual escritos en el
   código; dos formularios anuncian guardado sin persistir sus cambios.
 - La entrega de Resend requiere una prueba real de staging.
 
-Configuración ya aplica esa decisión: solo conserva notificaciones y pipeline
-persistidos, además de la referencia operativa del sistema. Para cada módulo
-restante la decisión debe seguir siendo binaria: conectarlo
+Configuración y plantillas ya aplican esa decisión: la primera conserva
+notificaciones y pipeline persistidos; la segunda es un catálogo de solo
+lectura. Para el módulo restante la decisión debe seguir siendo binaria: conectarlo
 con validación y pruebas, o retirarlo temporalmente de la navegación. Mantener
 controles que parecen funcionales es peor que mostrar “no disponible”.
 
@@ -205,7 +203,7 @@ Prioridad de orden, sin renombres masivos simultáneos:
 
 ### P1 · siguiente ciclo de ingeniería
 
-1. Resolver o retirar las dos superficies de código incompletas descritas arriba.
+1. Resolver o retirar la superficie de código incompleta descrita arriba.
 2. Migrar gradualmente a Supabase Auth, MFA y RLS por propietario.
 3. Hacer atómico el bloqueo de login y definir revocación inmediata de sesión.
 4. Llevar los 38 cuerpos JSON restantes a límites y esquemas estrictos.
