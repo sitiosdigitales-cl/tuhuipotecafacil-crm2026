@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Mensaje } from "@/tipos/conversaciones";
 
 interface RespuestaApi<T> {
@@ -84,40 +83,15 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
     return () => window.clearTimeout(timeout);
   }, [conversacionId, cargarMensajes]);
 
-  // Suscripción Realtime a nuevos mensajes
+  // Mantener la conversación actualizada a través de la API autenticada.
   useEffect(() => {
     if (!conversacionId) return;
-
-    const channel = supabase
-      .channel(`mensajes-${conversacionId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "mensajes",
-        },
-        (payload) => {
-          const nuevo = payload.new as MensajeApi;
-
-          // Solo mensajes de esta conversación
-          if ((nuevo.conversacionId ?? nuevo.conversacionid) !== conversacionId) return;
-
-          const mensajeNuevo = normalizarMensaje(nuevo);
-
-          setMensajes((prev) => {
-            // Deduplicar: no agregar si ya existe (el sender lo tiene por optimistic update)
-            if (prev.some((m) => m.id === mensajeNuevo.id)) return prev;
-            return [...prev, mensajeNuevo];
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversacionId]);
+    const interval = window.setInterval(
+      () => void cargarMensajes(conversacionId),
+      5_000
+    );
+    return () => window.clearInterval(interval);
+  }, [conversacionId, cargarMensajes]);
 
   // Enviar mensaje
   const enviarMensaje = useCallback(async (contenido: string) => {

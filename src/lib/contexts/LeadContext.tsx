@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Lead, Etapa } from "@/tipos";
 
 // Etapas que NO cuentan como carga activa
@@ -73,55 +72,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(cargarLeads, 30000);
     return () => clearInterval(interval);
   }, [initialized, cargarLeads]);
-
-  // Realtime: escuchar cambios en la tabla leads
-  useEffect(() => {
-    if (!initialized) return;
-
-    const channel = supabase
-      .channel("leads-realtime")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "leads" },
-        (payload) => {
-          const nuevoLead = {
-            ...payload.new,
-            creadoEn: new Date(payload.new.creadoEn || payload.new.creadoen),
-          } as Lead;
-          setLeads((prev) => {
-            if (prev.some((l) => l.id === nuevoLead.id)) return prev;
-            return [nuevoLead, ...prev];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "leads" },
-        (payload) => {
-          const actualizado = payload.new;
-          setLeads((prev) =>
-            prev.map((l) =>
-              l.id === actualizado.id
-                ? { ...l, ...actualizado, creadoEn: new Date(actualizado.creadoEn || actualizado.creadoen || l.creadoEn) }
-                : l
-            )
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "leads" },
-        (payload) => {
-          const eliminado = payload.old;
-          setLeads((prev) => prev.filter((l) => l.id !== eliminado.id));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [initialized]);
 
   const agregarLead = useCallback(async (leadData: Omit<Lead, "id" | "creadoEn">) => {
     try {
