@@ -969,3 +969,10 @@ antes de verificar o persistir. Suite: 496/496; audit: 0.
 
 [calidad · BUG-101] corregido — la cuenta actual conserva su rol, estado y
 registro; las acciones propias desaparecen de la UI. Suite: 500/500; audit: 0.
+
+[build] ocupado — Codex, BUG-102 · campos controlados al editar comisiones.
+
+[build] libre — Codex, BUG-102 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-102] corregido — la edición usa campos explícitos y recalcula
+el total financiero en servidor. Suite: 504/504; audit: 0.
