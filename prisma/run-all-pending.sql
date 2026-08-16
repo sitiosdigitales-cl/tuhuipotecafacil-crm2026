@@ -1,3 +1,9 @@
+DO $obsolete_sql$
+BEGIN
+  RAISE EXCEPTION 'SQL obsoleto: use supabase/migrations/20260816_lock_down_anon_and_storage.sql y docs/supabase-hardening.md';
+END
+$obsolete_sql$;
+
 -- ============================================
 -- SCRIPT UNIFICADO: TODAS LAS TABLAS PENDIENTES
 -- Ejecutar en: Supabase SQL Editor

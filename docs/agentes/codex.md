@@ -779,3 +779,10 @@ service role lazy; no queda cliente anónimo operativo. Suite: 385/385.
 
 [calidad · BUG-074] corregido — documentos guardan rutas privadas, usan proxy
 con firma de 60 s y revierten objetos huérfanos. Suite: 391/391.
+
+[build] ocupado — Codex, BUG-075 · migración RLS y Storage privado.
+
+[build] libre — Codex, BUG-075 · build y TypeScript de Next terminaron en 0.
+
+[calidad · BUG-075] preparado — migración para negar roles públicos, vaciar
+Realtime y privatizar Storage; no aplicada a producción. Suite: 393/393.

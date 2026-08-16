@@ -1,4 +1,9 @@
-# Guía: Ejecutar SQL Pendiente en Supabase
+# Guía histórica para SQL pendiente en Supabase
+
+> **No ejecutar.** `prisma/run-all-pending.sql` pertenece a la arquitectura
+> anterior y crea políticas amplias. El procedimiento vigente está en
+> `docs/supabase-hardening.md`; el propio SQL histórico ahora se detiene antes
+> de modificar la base.
 
 ## Resumen
 
