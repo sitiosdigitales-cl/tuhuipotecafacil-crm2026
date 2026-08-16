@@ -571,3 +571,11 @@ a EJECUTIVO, AGENTE y CLIENTE; seis casos rojos. Suite: 273/280, incluido BUG-03
 
 [calidad · BUG-051] hallazgo — GET y PUT `/api/documentos/[id]` responden 200
 para un lead asignado a otro agente; dos casos rojos. Suite: 273/282.
+
+[modo solo] BLOQUEADO — Diego indica que Codex trabaja sin Claude y solicita
+corregir `src/`, pero las secciones 1 y 3 del PROTOCOLO todavía lo prohíben y
+establecen que el protocolo gana. Falta habilitar por escrito el modo Codex solo.
+
+[build] ocupado — Codex, registrar transición pendiente a modo solo.
+
+[build] libre — Codex, registro de modo solo · build terminó en 0.
