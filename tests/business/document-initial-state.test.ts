@@ -35,6 +35,7 @@ describe("alta de documentos", () => {
     single.mockResolvedValue({ data: { id: "documento-nuevo" }, error: null });
 
     const query = {
+      eq: vi.fn(() => query),
       insert,
       select: vi.fn(() => query),
       single,

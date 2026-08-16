@@ -635,3 +635,10 @@ catálogo de permisos; nueve casos verdes. Suite completa: 291/291.
 
 [auth · BUG-054] corregido — `/api/auth/me` comprueba `estado` y rol vigente;
 si difieren responde 401 y borra ambas cookies. Suite completa: 296/296.
+
+[build] ocupado — Codex, BUG-055 · aplicar cartera en colección de documentos.
+
+[build] libre — Codex, BUG-055 · build y typecheck terminaron en 0.
+
+[calidad · BUG-055] corregido — colección de documentos valida `leadId` y
+filtra listados por cartera para AGENTE/CLIENTE. Suite completa: 302/302.
