@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       pie_disponible: body.pieDisponible,
       direccion_propiedad: body.direccionPropiedad || null,
       comuna_propiedad: body.comunaPropiedad || null,
-      estado: body.estado || "EN_REVISION",
+      estado: "EN_REVISION",
       banco_asignado: body.bancoAsignado || null,
       ejecutivo_id: body.ejecutivoId || auth.userId,
       documentos_completos: 0,

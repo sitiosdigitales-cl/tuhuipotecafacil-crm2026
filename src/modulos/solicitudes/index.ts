@@ -18,7 +18,7 @@ export const SOLICITUDES_CONFIG = {
   
   // Estados del expediente
   estados: [
-    { id: "EN_REVISON", label: "En Revisión", color: "#F59E0B", icono: "Clock" },
+    { id: "EN_REVISION", label: "En Revisión", color: "#F59E0B", icono: "Clock" },
     { id: "ENVIADO_BANCO", label: "Enviado al Banco", color: "#3B82F6", icono: "Send" },
     { id: "EN_EVALUACION", label: "En Evaluación", color: "#8B5CF6", icono: "Search" },
     { id: "OBSERVADO", label: "Observado", color: "#EF4444", icono: "AlertTriangle" },

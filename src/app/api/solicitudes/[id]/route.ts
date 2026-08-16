@@ -4,6 +4,27 @@ import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import { SOLICITUDES_CONFIG } from "@/modulos/solicitudes";
 
+const CAMPOS_OPERATIVOS: Record<string, string> = {
+  tipoCredito: "tipo_credito",
+  montoSolicitado: "monto_solicitado",
+  plazoMeses: "plazo_meses",
+  tasaInteres: "tasa_interes",
+  cuotaMensual: "cuota_mensual",
+  valorPropiedad: "valor_propiedad",
+  pieDisponible: "pie_disponible",
+  direccionPropiedad: "direccion_propiedad",
+  comunaPropiedad: "comuna_propiedad",
+  notas: "notas",
+  etiquetas: "etiquetas",
+};
+
+const CAMPOS_ADMINISTRATIVOS: Record<string, string> = {
+  bancoAsignado: "banco_asignado",
+  ejecutivoId: "ejecutivo_id",
+  documentosCompletos: "documentos_completos",
+  documentosRequeridos: "documentos_requeridos",
+};
+
 async function obtenerSolicitudYLead(id: string) {
   const { data: solicitud, error } = await supabase
     .from("solicitudes")
@@ -67,29 +88,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
 
     const updateData: Record<string, unknown> = {};
-    const fieldMap: Record<string, string> = {
-      tipoCredito: "tipo_credito",
-      montoSolicitado: "monto_solicitado",
-      plazoMeses: "plazo_meses",
-      tasaInteres: "tasa_interes",
-      cuotaMensual: "cuota_mensual",
-      valorPropiedad: "valor_propiedad",
-      pieDisponible: "pie_disponible",
-      direccionPropiedad: "direccion_propiedad",
-      comunaPropiedad: "comuna_propiedad",
-      estado: "estado",
-      bancoAsignado: "banco_asignado",
-      ejecutivoId: "ejecutivo_id",
-      documentosCompletos: "documentos_completos",
-      documentosRequeridos: "documentos_requeridos",
-      notas: "notas",
-      etiquetas: "etiquetas",
-    };
+    const puedeAsignarBanco =
+      SOLICITUDES_CONFIG.permisos.asignarBanco.includes(auth.rol);
+    const puedeCambiarEstado =
+      SOLICITUDES_CONFIG.permisos.cambiarEstado.includes(auth.rol);
+    const camposPermitidos = puedeAsignarBanco
+      ? { ...CAMPOS_OPERATIVOS, ...CAMPOS_ADMINISTRATIVOS }
+      : CAMPOS_OPERATIVOS;
 
-    Object.entries(body).forEach(([key, value]) => {
-      const dbKey = fieldMap[key] || key.toLowerCase();
-      if (value !== undefined) updateData[dbKey] = value;
+    Object.entries(camposPermitidos).forEach(([key, dbKey]) => {
+      if (body[key] !== undefined) updateData[dbKey] = body[key];
     });
+
+    if (puedeCambiarEstado && body.estado !== undefined) {
+      updateData.estado = body.estado;
+    }
 
     updateData.actualizadoen = new Date().toISOString();
 

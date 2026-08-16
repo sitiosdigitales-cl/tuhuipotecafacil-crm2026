@@ -656,3 +656,10 @@ filtra AGENTE/CLIENTE por sus leads. Suite completa: 308/308.
 
 [calidad · BUG-057] corregido — detalle de solicitudes aplica cartera en GET/PUT
 y roles del módulo en PUT/DELETE. Suite completa: 318/318.
+
+[build] ocupado — Codex, BUG-058 · campos controlados de solicitudes.
+
+[build] libre — Codex, BUG-058 · build y typecheck terminaron en 0.
+
+[calidad · BUG-058] corregido — solicitudes nuevas nacen `EN_REVISION`; PUT
+ignora IDs y reserva estado/asignación para administración. Suite: 322/322.
