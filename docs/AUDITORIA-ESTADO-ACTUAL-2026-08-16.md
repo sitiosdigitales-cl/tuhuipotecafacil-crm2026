@@ -1,227 +1,270 @@
 # Auditoría del estado actual · rama `diego`
 
-Fecha de corte: 16 de agosto de 2026  
-Código revisado hasta: `bec9a51`  
-Alcance: repositorio completo, ejecución local y documentación oficial. No se
-leyeron secretos ni se modificaron datos, cuentas o paneles de producción.
+Fecha de corte: 16 de agosto de 2026
+Código funcional revisado hasta: `73c7074`
+Alcance: repositorio completo, build de producción, pruebas, migraciones y
+workflows. No se leyeron secretos, datos personales ni paneles administrados.
 
-## Resultado ejecutivo
+## Dictamen ejecutivo
 
-El CRM mejoró de forma importante y el núcleo comprobado ya no está en el
-estado de la línea base. La rama compila, pasa su tipado, tiene CI y conserva
-una suite amplia de regresión. Eso no equivale a certificar producción: aún hay
-comprobaciones humanas, deuda de arquitectura y pantallas incompletas.
+La rama está en un estado de ingeniería muy superior a la línea base: compila,
+no tiene errores de lint o tipos, no presenta alertas de dependencias en los
+umbrales ejecutados y conserva una suite amplia de regresión. Los flujos de
+dinero, documentos, solicitudes, sesión, roles y persistencia cliente-servidor
+tienen cobertura específica.
 
-| Evidencia | Resultado |
+Eso **no certifica todavía la operación productiva**. Las migraciones y la
+configuración de Supabase Auth no fueron aplicadas ni comprobadas por Codex en
+un proyecto administrado. El respaldo externo y su restauración existen como
+código, pero siguen desactivados hasta que una persona configure R2, secretos y
+un staging vacío. El ingreso real por cada rol también requiere un smoke de
+navegador en ese entorno.
+
+| Evidencia local | Resultado |
 | --- | ---: |
-| Archivos de prueba | 114 |
-| Pruebas | 592/592 en verde |
-| Build de Next.js | 0 errores; 83 páginas generadas |
+| Archivos de prueba | 151 |
+| Pruebas | 754/754 |
+| Build de Next.js 16.3.1 | 0 errores; 87 páginas |
 | ESLint | 0 errores |
 | TypeScript | 0 errores |
 | `npm audit --audit-level=high` | 0 alertas |
-| Rutas API | 65 archivos `route.ts` |
-| Código TS/TSX en `src/` | 302 archivos; 54.314 líneas |
-| Hallazgos históricos documentados | 116 |
+| `npm audit --omit=dev --audit-level=high` | 0 alertas |
+| Rutas API | 68 archivos `route.ts` |
+| Código TS/TSX en `src/` | 301 archivos; 53.122 líneas |
+| Migraciones Supabase | 8 |
+| Pruebas pgTAP | 4 archivos; 61 aserciones planificadas |
 
-**116 no es el número de defectos abiertos.** Es el total acumulado de casos
-en `docs/hallazgos/`, incluyendo los ya corregidos. No queda una casilla de
-corrección de código conocida sin cerrar; quedan diez casillas operativas que
-requieren acceso humano o una decisión de arquitectura.
+## Cuántos defectos quedan
 
-Durante el tramo BUG-102 a BUG-116 se corrigieron quince defectos adicionales:
-consistencia de comisiones y campañas, tokens de Google, cierre de sesión,
-matrices de roles, vista previa HTML, referidos, exportaciones y el falso editor
-de permisos.
+`docs/hallazgos/` contiene 133 informes `BUG-*` y una medición `C-07`: son 134
+documentos históricos, **no 134 defectos abiertos**. Todas sus casillas de
+corrección de código están cerradas. Permanecen diez casillas que dependen de
+paneles, secretos, migraciones administradas, respaldo o verificación humana.
+
+No es correcto afirmar que el repositorio tiene cero defectos desconocidos. La
+conclusión comprobable es más acotada: no queda un defecto de código ya
+documentado sin corregir; la suite conocida está verde; y las brechas abiertas
+se enumeran en esta auditoría y en `docs/CHECKLIST-CONFIGURACION.md`.
 
 ## Cómo se verificó
 
-1. Inventario reproducible con `rg`, conteo de rutas, pruebas, líneas, cuerpos
-   JSON y archivos grandes.
-2. Revisión de autenticación, cookies, proxy, matrices de rol, cliente Supabase,
-   Storage, migraciones, exportaciones y CI.
-3. Pruebas de regresión sobre sesión, roles, aislamiento de datos, documentos,
-   solicitudes, comisiones, pipeline, entradas y respuestas de error.
-4. `npm run build`, `npm test`, ESLint, `npx tsc --noEmit` y `npm audit` después
-   de cada corrección.
-5. Smoke HTTP local sin sesión:
-   - `/login`, `/simulador-publico` y `/referir/codigo-invalido`: `200`.
-   - `/portal-cliente`: `307` hacia login.
-   - `/api/leads`, `/api/comisiones`, `/api/campanas`, `/api/flujos` y
-     `/api/biblioteca`: `401`.
-   - las respuestas revisadas incluyeron `nosniff`, política de referencia y
-     una CSP que impide marcos y objetos.
+1. Inventario reproducible de pruebas, rutas, líneas, migraciones, cuerpos JSON,
+   polling, archivos grandes y hallazgos.
+2. Revisión de sesión, cookies, Auth, MFA, proxy, matriz de roles, cliente
+   administrativo, RLS, Storage, respaldo y restauración.
+3. Pruebas de negocio sobre pipeline, comisiones, documentos y solicitudes.
+4. Pruebas de regresión sobre roles, propiedad de datos, entradas acotadas,
+   errores de proveedor y mutaciones confirmadas por el servidor.
+5. `npm run build`, `npm test`, `npm run lint`, `npm run typecheck` y las dos
+   auditorías de dependencias.
+6. CI reconstruye Supabase local dos veces, ejecuta pgTAP y usa identidades
+   sintéticas para comprobar Auth, MFA y RLS por Data API.
 
-No había navegador gráfico conectado en este entorno. Por eso no se afirma que
-el responsive, el foco, los modales o todos los recorridos visuales estén
-correctos. Esa comprobación debe hacerse en staging con cuentas y datos
-sintéticos por rol.
+No se hizo un recorrido con datos reales. Esa omisión es intencional: las
+pruebas usan datos sintéticos y el smoke final debe ejecutarse en staging, no
+sobre la cartera productiva.
 
-## Autenticación actual
+## Autenticación y sesión
 
-### Lo que está bien
+### Implementado y cubierto
 
-- Las contraseñas usan bcrypt y no existen credenciales de ejemplo activas.
-- El JWT exige un secreto de al menos 32 caracteres, algoritmo, audiencia y
-  emisor conocidos, y vence a los 30 minutos.
-- La cookie es HttpOnly, `Secure` en producción y `SameSite=Lax`.
-- `proxy.ts` verifica la firma y limita pantallas por rol.
-- `/api/auth/me` vuelve a leer la cuenta, invalida estados o roles cambiados y
-  renueva la sesión; el cliente comprueba cada diez minutos y al volver a la
-  pestaña.
-- Los endpoints comprobados exigen sesión y las colecciones sensibles aplican
-  alcance por rol o propietario.
+- Existen tres modos explícitos: `legacy`, `bridge` y `required`.
+- `bridge` migra una cuenta al iniciar sesión y exige una fecha límite de hasta
+  30 días; `required` acepta únicamente una identidad Supabase enlazada.
+- La creación, edición, desactivación y eliminación de cuentas sincroniza su
+  ciclo de vida con Supabase Auth.
+- Los tokens de acceso y renovación viven en cookies HttpOnly. El cierre de
+  sesión revoca la sesión Supabase actual y elimina las cuatro cookies.
+- En modos Supabase, cada solicitud valida el access token con `auth.getUser`,
+  resuelve la cuenta vigente mediante `auth_user_id` y compara estado, correo e
+  identificador de aplicación.
+- `SUPER_ADMIN` y `ADMIN` no reciben sesión CRM hasta completar TOTP/AAL2.
+- `/api/auth/me` renueva con refresh token y vuelve a aplicar estado, rol y MFA.
+- `proxy.ts` limita navegación por rol; las APIs siguen siendo la autoridad.
+- Una prueba de inventario falla si aparece un método de API nuevo sin una
+  comprobación de sesión o una excepción pública documentada.
+- El contador de intentos fallidos usa una función SQL atómica.
 
-### Lo que todavía limita el diseño
+### Pendiente operacional o funcional
 
-- Es autenticación propia, no Supabase Auth. No hay MFA, recuperación estándar,
-  revocación centralizada ni controles administrados de contraseñas conocidas.
-- Las APIs validan el rol firmado del JWT, pero no vuelven a consultar la cuenta
-  en cada operación. Un cliente que no invoque `/auth/me` puede conservar su rol
-  anterior hasta que expire el token, como máximo 30 minutos.
-- El contador de intentos fallidos lee y luego actualiza. Dos solicitudes
-  simultáneas pueden partir del mismo contador; conviene mover el incremento a
-  una función SQL atómica o a un limitador administrado.
-- Diez tareas operativas siguen abiertas: rotación de secretos, bootstrap y
-  redundancia de `SUPER_ADMIN`, migraciones, envío real y restauración.
+- Si `SUPABASE_AUTH_MODE` no está configurada, el sistema conserva `legacy`.
+  Staging debe probar `bridge`, fijar su fecha límite y luego avanzar a
+  `required`.
+- `jwt_expiry = 900`, alta pública cerrada, email login y TOTP están versionados
+  en `supabase/config.toml`, pero deben replicarse y comprobarse en el proyecto
+  administrado.
+- No se encontró un recorrido de autoservicio para recuperación de contraseña.
+- El bloqueo contra contraseñas conocidas sigue pendiente de configuración o de
+  una alternativa documentada.
+- Deben confirmarse dos cuentas `SUPER_ADMIN` independientes y recuperables.
 
-## Supabase: veredicto
+## Supabase y reglas de datos
 
-**Sí, Supabase es una buena elección para este CRM.** PostgreSQL, Storage,
-Auth, reglas por fila, respaldos administrados y una API tipada reducen trabajo
-operativo. El problema no es Supabase; es que la aplicación aún usa solo parte
-de sus garantías.
+Supabase sigue siendo una elección adecuada para PostgreSQL, Auth, Storage,
+respaldo administrado y reglas por fila. El diseño actual usa `service_role`
+solo en servidor; esa credencial omite RLS, por lo que las APIs validan rol y
+propiedad antes de consultar o mutar.
 
-El código crea un cliente administrativo únicamente en servidor. Esa separación
-evita exponer la clave, pero la clave `service_role` omite siempre RLS. Por lo
-tanto, hoy la autorización efectiva vive principalmente en las rutas Next.js.
-Supabase recomienda RLS para esquemas expuestos y permite combinarlo con Auth
-para aplicar una condición equivalente a propietario en cada consulta.
+La cadena local ahora es reproducible: CI ejecuta las ocho migraciones dos veces
+desde cero. La primera capa cierra tablas, vistas, secuencias, funciones,
+Realtime y los buckets privados para `anon`/`authenticated`. La segunda vuelve
+a abrir únicamente `SELECT` directo para usuarios autenticados en cuatro
+dominios:
 
-Fuentes oficiales:
+| Rol | Leads | Documentos | Tareas | Comisiones |
+| --- | --- | --- | --- | --- |
+| `SUPER_ADMIN` / `ADMIN` | todos con AAL2 | todos con AAL2 | todas con AAL2 | todas con AAL2 |
+| `EJECUTIVO` | todos | todos | todas | ninguna |
+| `AGENTE` | cartera asignada | cartera asignada | asignadas | ninguna |
+| `CLIENTE` | su ficha por cuenta | documentos de su ficha | ninguna | ninguna |
 
-- [Row Level Security en Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [La service role omite RLS](https://supabase.com/docs/guides/troubleshooting/why-is-my-service-role-key-client-getting-rls-errors-or-not-returning-data-7_1K9z)
-- [Supabase Auth con SSR y Next.js](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs)
-- [Buckets públicos y privados](https://supabase.com/docs/guides/storage/buckets/fundamentals)
+Las escrituras permanecen detrás de las APIs. Las 61 aserciones pgTAP y el
+ensayo CI con cinco roles comprueban la estructura y la Data API local. Nada de
+esto demuestra que el SQL ya esté aplicado remotamente: primero debe ejecutarse
+en staging vacío, comparar la deriva sin datos y repetir la matriz.
 
-`supabase/migrations/20260816000000_lock_down_anon_and_storage.sql` prepara un modo
-servidor: revoca acceso de `anon`/`authenticated`, deja `service_role`, retira
-Realtime y vuelve privados los buckets. La migración aditiva
-`20260816120000_domain_rls.sql` vuelve a conceder solo lectura autenticada en
-cuatro dominios según rol, cartera, cuenta vigente y AAL2 administrativo. Las
-escrituras continúan en las APIs del servidor. Ninguna se aplicó desde este
-repositorio y no deben darse por vigentes hasta probarlas primero en staging.
+Referencias operativas: `docs/supabase-migrations.md` y
+`docs/supabase-hardening.md`.
 
-La evolución Supabase Auth + MFA + RLS por usuario ya está preparada en código,
-incluidas pruebas directas con identidades sintéticas. Su activación todavía
-requiere migración y navegación verificadas en staging.
+## Persistencia y reglas de negocio
 
-## Datos y respaldos
+La interfaz ya no confirma como guardados leads, actividades o mensajes antes
+de recibir el objeto persistido. Un fallo conserva el formulario o el estado
+confirmado y se comunica a la persona. También se retiraron métricas, actividad
+“en vivo”, estados de integración y controles de chat que no tenían operación
+real.
 
-La exportación propia guarda solo filas de `leads` y `documentos`, conserva cinco
-JSON y los almacena dentro del mismo proyecto Supabase. No incluye:
+Las reglas con efecto económico u operacional tienen pruebas dedicadas:
 
-- esquema, funciones, políticas o migraciones;
-- usuarios y el resto de tablas;
-- contenido binario de Supabase Storage;
-- procedimiento de restauración;
-- copia fuera del proyecto o de la cuenta.
+- transiciones permitidas y bloqueadas del pipeline;
+- cálculo y edición controlada de comisiones;
+- completitud, estado inicial, solicitud y carga única de documentos;
+- creación y edición controlada de solicitudes;
+- origen persistido de recompensas de referidos.
 
-Supabase documenta que sus respaldos de base tampoco contienen los objetos de
-Storage; solo conservan sus metadatos. Según el plan, deben verificarse los
-respaldos diarios o PITR, mantener una copia externa de Storage y ejecutar un
-ensayo de recuperación con tiempo y pérdida de datos medidos.
+La página de integraciones muestra solo inventario persistido y es de solo
+lectura. Las tasas CMF fijas fueron eliminadas: hasta implementar una consulta
+autenticada y trazable a la fuente oficial, los endpoints responden
+`503`/`SIN_DATOS`. No se debe reintroducir una cifra financiera escrita en el
+código para llenar esa pantalla.
 
-Fuente: [respaldos de base de Supabase](https://supabase.com/docs/guides/platform/backups).
+## API y entradas
 
-## Superficie de entrada
+Hay 68 rutas API. La regresión de cobertura de sesión inventaría sus métodos y
+obliga a declarar cada excepción pública. Las rutas sensibles comprobadas
+aplican rol, propiedad o participación además de la existencia de sesión.
 
-Los endpoints más delicados ya usan JSON acotado y esquemas estrictos, pero
-quedan 38 archivos de ruta con `await request.json()` directo. No significa que
-los 38 estén defectuosos; significa que todavía no comparten límite de tamaño,
-rechazo de campos desconocidos y validación homogénea.
+Quedan 38 archivos que llaman directamente a `await request.json()`. Este
+conteo no implica 38 defectos: varias rutas ya validan el objeto después de
+leerlo. Sí indica que aún no existe una política homogénea de límite de bytes,
+tipo de contenido, campos desconocidos y respuesta de error.
 
-Orden recomendado:
+Orden recomendado para completar esa estandarización:
 
 1. dinero y administración: comisiones, bancos e integraciones;
 2. automatización: plantillas, flujos y triggers;
 3. comunicaciones: email, WhatsApp, mensajes y conversaciones;
 4. operación: leads, documentos, solicitudes, tareas y eventos.
 
-Cada migración debe usar `parseBoundedJson`, un esquema estricto, una prueba de
-cuerpo grande y una prueba de campo inesperado.
+## Respaldos y recuperación
 
-## Funcionalidad aún no lista
+El respaldo interno histórico sigue siendo parcial y vive en el mismo proyecto.
+No debe considerarse recuperación ante pérdida del proyecto.
 
-Estas superficies no deben presentarse como terminadas aunque el build esté
-verde:
+El repositorio sí incluye una alternativa externa:
 
-- La entrega de Resend requiere una prueba real de staging.
+- `.github/workflows/external-backup.yml` exporta roles, esquema, datos y
+  objetos privados, verifica hashes y cifra con Restic hacia Cloudflare R2;
+- mantiene 48 horarios, 14 diarios, 8 semanales y 12 mensuales;
+- `.github/workflows/restore-drill.yml` exige un staging protegido y vacío,
+  restaura todo y mide un RTO máximo de cuatro horas.
 
-Configuración, plantillas y detalle de usuario ya aplican esa decisión: la
-primera conserva notificaciones y pipeline persistidos; la segunda es un
-catálogo de solo lectura; el tercero calcula la cartera real por identificador
-y no ofrece formularios locales. Toda superficie nueva debe seguir una decisión
-binaria: conectarse con validación y pruebas, o permanecer oculta. Mantener
-controles que parecen funcionales es peor que mostrar “no disponible”.
+Ambos workflows están desactivados por defecto. Hasta configurar sus variables,
+ejecutar el primer snapshot y completar una restauración real, el RPO de una
+hora y el RTO de cuatro horas son objetivos, no resultados observados.
 
-## Orden de carpetas
+## Rendimiento
 
-La estructura es entendible, pero la lógica está repartida:
+El build actual contiene 3,091 MiB de JavaScript en 79 chunks estáticos. Para
+`/simulador-publico`:
 
-- `src/componentes` contiene dominios y `src/components` contiene UI genérica;
-- páginas de hasta 1.652 líneas mezclan consulta, reglas y presentación;
-- `src/modulos` convive con lógica duplicada dentro de páginas y `src/lib`;
-- migraciones viven tanto en `prisma/` como en `supabase/migrations/`;
-- logs, resultados de lint y `crm-webhook-plugin.php` siguen versionados en raíz.
+| Componente sin comprimir | Tamaño | Archivos |
+| --- | ---: | ---: |
+| Código atribuible a la ruta | 108.323 bytes · 105,8 KiB | 4 |
+| Runtime compartido Next/React | 438.980 bytes · 428,7 KiB | 5 |
+| Total declarado para la ruta | 547.303 bytes · 534,5 KiB | 9 |
 
-Prioridad de orden, sin renombres masivos simultáneos:
+La regresión de 400 KiB mide solo código atribuible a la ruta; no carga Recharts
+y pasa con margen. El runtime compartido se documenta, pero no se imputa a cada
+página.
 
-1. mover PHP de WordPress a `wordpress/` y borrar artefactos generados;
-2. usar `src/components/ui` solo para UI y un único nombre para componentes de
-   dominio;
-3. extraer de las páginas grandes `schema.ts`, `api.ts`, reglas y UI por dominio;
-4. dejar `supabase/migrations` como fuente canónica de SQL;
-5. un dominio por commit, con build y pruebas entre movimientos.
+Persisten cinco pollers de datos: chat cada 5 segundos y leads, notificaciones,
+tareas y actividades cada 30 segundos. Además existen mantenimiento de sesión
+y relojes de interfaz. Esto no rompe la suite, pero eleva consultas, renderizados
+y ruido operacional; debe medirse en staging antes de elegir caché coordinada,
+eventos o Realtime con políticas probadas.
 
-## Prioridades reales
+## Mantenibilidad
 
-### P0 · antes de confiar datos productivos
+- Las páginas de cliente, pipeline, clientes, documentos y detalle de lead
+  tienen 1.655, 1.196, 1.089, 985 y 849 líneas respectivamente.
+- `src/componentes` contiene dominios y `src/components` UI genérica; la
+  convención es entendible, pero fácil de incumplir.
+- `src/datos/conversaciones-mock.ts` todavía alberga datasets ficticios y
+  utilidades reales importadas por avatar y mensaje. Conviene separar las
+  utilidades y retirar datos muertos.
+- `crm-webhook-plugin.php`, dos logs de desarrollo y cuatro resultados de lint
+  siguen versionados en la raíz.
+- `prisma/` conserva SQL histórico, aunque su instalador se detiene; la fuente
+  canónica operativa debe seguir siendo `supabase/migrations/`.
 
-1. Recuperar el acceso administrativo y confirmar dos cuentas `SUPER_ADMIN`
-   independientes y recuperables.
-2. Rotar `JWT_SECRET` y `BACKUP_API_KEY`; configurar `CRON_SECRET` y Resend en
-   Vercel sin reutilizar secretos.
-3. Aplicar las migraciones pendientes en staging y producción, comprobando que
-   `anon` y `authenticated` no leen datos y que `documentos`/`backups` son privados.
-4. Verificar respaldo administrado/PITR, copiar Storage fuera del proyecto y
-   ensayar una restauración completa.
-5. Ejecutar smoke visual en staging con `SUPER_ADMIN`, `ADMIN`, `EJECUTIVO`,
-   `AGENTE` y `CLIENTE`, usando datos sintéticos.
+Los refactors deben hacerse por dominio, con pruebas antes de dividir páginas;
+no mediante un renombre masivo simultáneo.
+
+## Prioridades obligatorias
+
+### P0 · antes de declarar el sistema operativo
+
+1. Preparar un proyecto Supabase de staging sin datos reales.
+2. Confirmar respaldo administrado/PITR, activar R2 y completar el ensayo de
+   restauración dentro del RTO.
+3. Comparar deriva sin datos, aplicar las ocho migraciones en staging y repetir
+   pgTAP, Auth, MFA, RLS, buckets y Data API.
+4. Configurar `bridge` con fecha límite, correo transaccional y TOTP; verificar
+   dos `SUPER_ADMIN`; luego ensayar `required`.
+5. Rotar secretos en sus gestores autorizados y comprobar revocación, cambio de
+   rol y recuperación de contraseña.
+6. Ejecutar smoke de navegador con los cinco roles y datos sintéticos: login,
+   panel, cartera, pipeline, documentos, solicitudes, comisiones, mensajes y
+   cierre de sesión.
+7. Avanzar a producción solo con el mismo commit, respaldo comprobado, ventana
+   de cambio, responsable y plan de reversión.
 
 ### P1 · siguiente ciclo de ingeniería
 
-1. Resolver o retirar la superficie de código incompleta descrita arriba.
-2. Migrar gradualmente a Supabase Auth, MFA y RLS por propietario.
-3. Hacer atómico el bloqueo de login y definir revocación inmediata de sesión.
-4. Llevar los 38 cuerpos JSON restantes a límites y esquemas estrictos.
-5. Añadir una prueba de restauración y una prueba end-to-end de los flujos con
-   dinero y documentos.
+1. Implementar recuperación de contraseña y la política de contraseñas
+   conocidas.
+2. Conectar la API oficial CMF con clave, fecha, trazabilidad y manejo cerrado
+   de indisponibilidad, o mantener las tasas ocultas.
+3. Estandarizar los 38 cuerpos JSON restantes con límites y esquemas estrictos.
+4. Reemplazar polling duplicado después de medir consultas y definir políticas
+   para cualquier canal en tiempo real.
+5. Añadir recorridos E2E de navegador y monitoreo de errores sin datos
+   personales.
 
 ### P2 · mantenibilidad
 
-1. Dividir las páginas mayores de 700 líneas.
-2. Consolidar carpetas, migraciones y fuentes de tipos.
-3. Retirar artefactos generados del historial activo.
-4. Endurecer la CSP general con nonces como proyecto separado, porque Next.js
-   necesita un diseño compatible con sus scripts.
+1. Dividir páginas mayores de 700 líneas por dominio.
+2. Separar utilidades de datasets ficticios y retirar código muerto.
+3. Consolidar carpetas, tipos y fuente canónica de SQL.
+4. Mover el plugin WordPress y retirar artefactos generados de la raíz.
 
 ## Conclusión
 
-El código actual es sustancialmente más confiable que la línea base: CI real,
-592 regresiones, sesión firmada, roles verificados, datos aislados y respuestas
-de error honestas. No está “perfecto” ni se puede asignar un número total de
-bugs sin inventar. La evidencia permite afirmar algo más útil: el núcleo bajo
-prueba está verde; la brecha principal ya no es lint, sino operación productiva,
-recuperación, uso completo de Supabase y retiro de interfaces incompletas.
+El núcleo bajo prueba está verde y las correcciones recientes eliminan varias
+fuentes de estado ficticio. Supabase es una base razonable y el diseño preparado
+de Auth, MFA y RLS mejora sustancialmente la situación anterior. La brecha
+principal ya no es lint ni ausencia de pruebas: es convertir la preparación
+local en evidencia operacional de staging, respaldo restaurable y acceso real
+por rol. Hasta cerrar ese P0, el veredicto responsable es **código preparado,
+producción aún no certificada**.

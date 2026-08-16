@@ -1259,6 +1259,14 @@ build/lint/typecheck: 0; audits: 0.
 video ni opciones sin implementación persistente. Suite: 754/754;
 build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, QA-01 · auditoría operativa actualizada.
+
+[build] libre — Codex, QA-01 · build terminado.
+
+[calidad · QA-01] hecho — auditoría, checklist y prompt maestro distinguen
+código verificado de migraciones, respaldo y acceso aún pendientes. Suite:
+754/754; build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

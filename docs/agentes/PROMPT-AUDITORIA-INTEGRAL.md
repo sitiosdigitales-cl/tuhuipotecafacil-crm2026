@@ -21,15 +21,20 @@ operacionales concretas para todo cambio que requiera intervención humana.
 
 <context>
 Estado de referencia:
-- 592/592 pruebas pasando.
+- 754/754 pruebas en 151 archivos.
 - build, lint y typecheck en cero errores.
 - npm audit sin defectos conocidos.
-- 116 hallazgos históricos; no deben presentarse como 116 defectos abiertos.
+- 133 informes BUG y una medición histórica; no deben presentarse como 134
+  defectos abiertos.
 - 10 acciones humanas u operacionales pendientes.
-- La autenticación actual usa bcrypt y JWT propio.
-- Supabase se usa principalmente como PostgreSQL y Storage mediante service_role.
-- La cadena actual de migraciones no reconstruye la base completa.
-- La aplicación todavía contiene superficies incompletas o simuladas.
+- Auth tiene modos legacy, bridge y required, puente JIT y MFA TOTP
+  administrativo; su activación remota sigue pendiente.
+- Las ocho migraciones reconstruyen Supabase local dos veces en CI y preparan
+  RLS por dominio; no se asumen aplicadas en proyectos administrados.
+- Las mutaciones principales se confirman con el servidor y las superficies
+  simuladas conocidas fueron retiradas u ocultadas.
+- La integración CMF oficial, recuperación de contraseña, staging y
+  restauración real siguen pendientes.
 </context>
 
 <source_of_truth>

@@ -11,6 +11,14 @@ certifica por sí sola el entorno productivo.
 - [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
 - [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
 - [x] CI consulta RLS por Data API con los cinco roles y datos sintéticos.
+- [x] pgTAP comprueba 61 reglas de migración, Auth, Storage y RLS.
+- [x] Los modos `legacy`, `bridge` y `required` están implementados y probados.
+- [x] El puente enlaza cuentas, sincroniza su ciclo de vida y tiene fecha límite.
+- [x] Access y refresh usan cookies HttpOnly; cada solicitud Supabase valida la
+  identidad y la cuenta vigente antes de aceptar la sesión.
+- [x] `SUPER_ADMIN` y `ADMIN` requieren TOTP/AAL2 antes de recibir sesión CRM.
+- [x] El inventario de rutas API detecta métodos nuevos sin comprobación de
+  sesión o excepción pública documentada.
 - [x] El respaldo externo genera roles, esquema, datos y objetos con hashes.
 - [x] El ensayo de restauración rechaza destinos no vacíos y mide el RTO.
 - [x] El SQL histórico `prisma/run-all-pending.sql` se detiene sin ejecutar.
@@ -70,15 +78,24 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] Verificar dominio, SPF, DKIM y DMARC para Resend.
 - [ ] Ejecutar envío real desde staging a una dirección sintética controlada.
 - [ ] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
+- [ ] Configurar y verificar la API oficial CMF con trazabilidad de fecha y
+  fuente, o mantener tasas e histórico en estado `SIN_DATOS`.
 
 ## Autenticación y acceso
 
-- [ ] Completar la migración gradual a Supabase Auth.
+- [ ] Definir `SUPABASE_AUTH_MODE=bridge` y una
+  `SUPABASE_AUTH_BRIDGE_DEADLINE` de hasta 30 días en staging.
+- [ ] Completar el puente y probar `SUPABASE_AUTH_MODE=required` antes de
+  retirar el modo legado.
 - [ ] Replicar en staging la configuración versionada de Auth, incluido
   `jwt_expiry = 900`, y confirmar el valor efectivo antes de habilitar
   `SUPABASE_AUTH_MODE=bridge`.
-- [ ] Exigir MFA a `SUPER_ADMIN` y `ADMIN`.
-- [ ] Probar revocación, recuperación y cambio de rol por solicitud.
+- [ ] Confirmar en staging que `SUPER_ADMIN` y `ADMIN` no entran al CRM sin
+  TOTP/AAL2.
+- [ ] Probar revocación y cambio de rol por solicitud con cuentas sintéticas.
+- [ ] Implementar y probar recuperación de contraseña de autoservicio.
+- [ ] Configurar protección contra contraseñas conocidas o documentar una
+  alternativa equivalente.
 - [ ] Verificar RLS por dominio con la matriz completa de roles.
 
 La matriz automatizada local/CI está documentada en
