@@ -60,6 +60,15 @@ esquema y datos en transacciones, repone cada objeto mediante la API de Storage
 y vuelve a descargarlo para comprobar tamaño y SHA-256. Se detiene si el tiempo
 total supera 14.400 segundos, equivalente al RTO máximo de cuatro horas.
 
+Ese destino puede contener datos reales después de restaurar el snapshot. Debe
+ser desechable, permanecer aislado del despliegue, correo y webhooks, y no debe
+reutilizarse como staging funcional. El entorno de validación del CRM es otro
+proyecto, `staging-validation`, que admite solo datos sintéticos. Al finalizar
+el ensayo se elimina o purga el destino restaurado y se registra esa acción.
+
+La separación y la evidencia exigida están en
+`docs/staging-validacion.md`.
+
 La primera ejecución sigue siendo una acción humana: este repositorio no crea
 proyectos, no configura secrets y no ejecuta restauraciones contra producción.
 Guardar el reporte de duración y recuentos en el registro del simulacro.

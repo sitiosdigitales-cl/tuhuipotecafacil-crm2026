@@ -1267,6 +1267,14 @@ build/lint/typecheck: 0; audits: 0.
 código verificado de migraciones, respaldo y acceso aún pendientes. Suite:
 754/754; build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, STG-01 · matriz operacional de staging.
+
+[build] libre — Codex, STG-01 · build terminado.
+
+[operación · STG-01] preparado — runbook, gates, plantilla y workflow manual
+separan staging sintético de restauración restringida; la validación se detiene
+si detecta datos existentes. Suite: 778/778; build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

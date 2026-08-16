@@ -1,0 +1,83 @@
+name: Staging Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type VERIFY_SYNTHETIC_STAGING
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-validation
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate explicit gate
+        shell: bash
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          ENABLED: ${{ vars.ENABLE_STAGING_VALIDATION }}
+        run: |
+          set -euo pipefail
+          test "$CONFIRMATION" = "VERIFY_SYNTHETIC_STAGING"
+          test "$ENABLED" = "true"
+
+  validate:
+    needs: preflight
+    environment: staging-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate protected configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            SUPABASE_URL
+            SUPABASE_ANON_KEY
+            SUPABASE_SERVICE_ROLE_KEY
+          )
+          for variable in "${required[@]}"; do
+            test -n "${!variable:-}"
+          done
+          node <<'NODE'
+          const url = new URL(process.env.SUPABASE_URL);
+          if (url.protocol !== "https:") {
+            throw new Error("Staging Supabase debe usar HTTPS");
+          }
+          if (["localhost", "127.0.0.1"].includes(url.hostname)) {
+            throw new Error("El workflow requiere un proyecto staging remoto");
+          }
+          NODE
+      - name: Require an empty synthetic staging
+        run: node scripts/ci/assert-empty-staging.mjs
+      - name: Validate Auth bridge and MFA
+        run: node scripts/ci/auth-bridge-integration.mjs
+      - name: Validate domain RLS matrix
+        run: node scripts/ci/rls-domain-integration.mjs
+      - name: Publish non-sensitive evidence
+        if: success()
+        run: |
+          echo '## Staging validation' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Empty synthetic staging preflight: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Auth bridge and MFA: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Domain RLS matrix: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Test data: synthetic and cleaned by the validation scripts' >> "$GITHUB_STEP_SUMMARY"
