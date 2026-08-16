@@ -793,3 +793,10 @@ Realtime y privatizar Storage; no aplicada a producción. Suite: 393/393.
 
 [calidad · BUG-076] corregido — Next y cadena transitiva actualizados, paquetes
 obsoletos retirados y auditoría agregada a CI. Suite: 396/396; audit: 0.
+
+[build] ocupado — Codex, BUG-077 · configuración nativa de Vitest.
+
+[build] libre — Codex, BUG-077 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-077] corregido — configuración ESM y alias nativos de Vite, sin
+advertencias ni complemento obsoleto. Suite: 397/397; audit: 0.
