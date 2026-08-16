@@ -702,3 +702,10 @@ resuelve únicamente su asesor desde la sesión. Suite completa: 349/349.
 
 [calidad · BUG-063] corregido — JWT de 30 minutos, cookie única `httpOnly`,
 renovación contra cuenta vigente y refresco cada 10 minutos. Suite: 353/353.
+
+[build] ocupado — Codex, BUG-064 · retirar cambio de identidad de sesión.
+
+[build] libre — Codex, BUG-064 · build y typecheck terminaron en 0.
+
+[calidad · BUG-064] corregido — se retiran endpoint, selector y fallback local
+de cambio de identidad. Suite completa: 355/355.

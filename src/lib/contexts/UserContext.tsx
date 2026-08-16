@@ -6,7 +6,6 @@ import type { Usuario } from "@/tipos";
 
 interface UserContextType {
   usuarioActual: Usuario;
-  cambiarUsuario: (usuarioId: string) => void;
   esSuperAdmin: boolean;
   usuarios: Usuario[];
   cargarUsuarios: () => Promise<void>;
@@ -94,38 +93,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [authUser, isAuthenticated, usuarios]);
 
-  const cambiarUsuario = useCallback(async (usuarioId: string) => {
-    try {
-      const response = await fetch("/api/auth/switch-user", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: usuarioId }),
-      });
-
-      const data = await response.json() as RespuestaApi<{ usuario: UsuarioApi }>;
-
-      if (data.success && data.data) {
-        // Actualizar el usuario actual localmente
-        setUsuarioActual(normalizarUsuario(data.data.usuario));
-
-        // Recargar la página para aplicar los cambios
-        window.location.reload();
-      }
-    } catch {
-      // Fallback: cambio local sin API
-      const usuario = usuarios.find((u) => u.id === usuarioId);
-      if (usuario) {
-        setUsuarioActual(usuario);
-      }
-    }
-  }, [usuarios]);
-
   const esSuperAdmin = usuarioActual.rol === "SUPER_ADMIN";
 
   const valor = useMemo(
-    () => ({ usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios }),
-    [usuarioActual, cambiarUsuario, esSuperAdmin, usuarios, cargarUsuarios]
+    () => ({ usuarioActual, esSuperAdmin, usuarios, cargarUsuarios }),
+    [usuarioActual, esSuperAdmin, usuarios, cargarUsuarios]
   );
 
   return (

@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import { useLeads } from "@/modulos/leads";
 import { useUser } from "@/modulos/usuarios";
-import { CambioRapidoUsuario } from "@/componentes/layout/CambioRapidoUsuario";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { useTareaCount } from "@/modulos/tareas";
 import { LogOut } from "lucide-react";
@@ -124,7 +123,6 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
   });
 
   // Verificar si es admin
-  const esAdmin = ["SUPER_ADMIN", "ADMIN"].includes(usuarioActual.rol);
 
   // Calcular badges dinámicos
   const badges = useMemo(() => ({
@@ -264,13 +262,6 @@ export function BarraLateral({ onClose }: BarraLateralProps) {
 
       {/* Separador */}
       <div className="mx-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-      {/* Selector Rápido de Usuario (solo para admins) */}
-      {esAdmin && (
-        <div className="px-3 py-2">
-          <CambioRapidoUsuario />
-        </div>
-      )}
 
       {/* Botón Cerrar Sesión */}
       <div className="px-3 pb-2">

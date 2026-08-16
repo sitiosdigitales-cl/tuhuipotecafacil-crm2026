@@ -11,7 +11,6 @@ export const USUARIOS_PERMISOS: Record<string, Rol[]> = {
   eliminar: ["SUPER_ADMIN"],
   cambiarRol: ["SUPER_ADMIN"],
   suspender: ["SUPER_ADMIN", "ADMIN"],
-  impersonar: ["SUPER_ADMIN"],
 };
 
 export const USUARIOS_ROLES = [
