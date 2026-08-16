@@ -557,3 +557,10 @@ la única prueba roja (273/274).
 
 [calidad · LINT-08] hecho — CI ejecuta `npm run lint` sobre todo el repo;
 BUG-037 sigue siendo la única prueba roja (273/274).
+
+[build] ocupado — Codex, BUG-050 · matriz de roles de comisiones.
+
+[build] libre — Codex, BUG-050 · build terminó en 0.
+
+[calidad · BUG-050] hallazgo — GET y POST `/api/comisiones` responden 200/201
+a EJECUTIVO, AGENTE y CLIENTE; seis casos rojos. Suite: 273/280, incluido BUG-037.
