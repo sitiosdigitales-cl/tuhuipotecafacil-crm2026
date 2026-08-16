@@ -670,3 +670,10 @@ ignora IDs y reserva estado/asignación para administración. Suite: 322/322.
 
 [calidad · BUG-059] corregido — conversaciones se limitan por participante,
 rol e identidad de sesión; `SUPER_ADMIN` conserva vista global. Suite: 327/327.
+
+[build] ocupado — Codex, BUG-060 · alcance y autoría de mensajes.
+
+[build] libre — Codex, BUG-060 · build y typecheck terminaron en 0.
+
+[calidad · BUG-060] corregido — mensajes validan rol, conversación y autoría;
+remitente y reacciones se derivan de la sesión. Suite completa: 336/336.

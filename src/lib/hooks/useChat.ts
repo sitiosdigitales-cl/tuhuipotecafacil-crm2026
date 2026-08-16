@@ -206,29 +206,17 @@ export function useChat({ conversacionId, usuarioActualId, usuarioActualNombre }
         return { ...m, reacciones };
       })
     );
-    // Guardar en BD
-    const msg = mensajes.find((m) => m.id === mensajeId);
-    if (msg) {
-      const reacciones = { ...msg.reacciones };
-      const usuarios = reacciones[emoji] || [];
-      if (usuarios.includes(usuarioActualId)) {
-        reacciones[emoji] = usuarios.filter((u) => u !== usuarioActualId);
-        if (reacciones[emoji].length === 0) delete reacciones[emoji];
-      } else {
-        reacciones[emoji] = [...usuarios, usuarioActualId];
-      }
-      try {
-        await fetch(`/api/mensajes/${mensajeId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ reacciones }),
-        });
-      } catch {
-        // Silently fail
-      }
+    try {
+      await fetch(`/api/mensajes/${mensajeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ emoji }),
+      });
+    } catch {
+      // Silently fail
     }
-  }, [mensajes, usuarioActualId]);
+  }, [usuarioActualId]);
 
   return {
     mensajes,
