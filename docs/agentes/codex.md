@@ -1097,3 +1097,10 @@ protección de datos y contrato de entrega. Suite: 592/592; audit: 0.
 
 [FASE DB · DB-01] hecho — Supabase CLI 2.114.0 fijado, configuración local
 cerrada y scripts db/typecheck disponibles. Suite: 592/592; audit: 0.
+
+[build] ocupado — Codex, BUG-117 · migraciones sin cuentas concretas.
+
+[build] libre — Codex, BUG-117 · build, suite, lint y TypeScript en verde.
+
+[FASE DB · BUG-117] corregido — la cadena activa ya no siembra cuentas ni
+hashes; la rotación productiva queda como acción humana. Suite: 593/593; audit: 0.
