@@ -1018,3 +1018,10 @@ ni aparece en respuestas completas de log. Suite: 512/512; audit: 0.
 
 [calidad · BUG-108] corregido — la UI solo limpia y redirige tras confirmar
 que el servidor eliminó la sesión. Suite: 514/514; audit: 0.
+
+[build] ocupado — Codex, BUG-109 · matriz administrativa de campañas.
+
+[build] libre — Codex, BUG-109 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-109] corregido — navegación y cuatro métodos de campañas usan
+la misma matriz administrativa. Suite: 526/526; audit: 0.
