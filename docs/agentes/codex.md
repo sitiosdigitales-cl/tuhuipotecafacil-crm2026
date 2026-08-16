@@ -934,3 +934,10 @@ y normaliza el correo antes de consultar. Suite: 484/484; audit: 0.
 
 [calidad · BUG-096] corregido en código — un fallo al guardar o limpiar el
 contador cierra el login y queda registrado. Suite: 487/487; audit: 0.
+
+[build] ocupado — Codex, BUG-097 · sintaxis de columnas en scripts SQL.
+
+[build] libre — Codex, BUG-097 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-097] corregido — el script usa `IF NOT EXISTS` y el CI revisa
+todos los SQL del repositorio. Suite: 488/488; audit: 0.
