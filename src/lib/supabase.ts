@@ -93,6 +93,8 @@ export function fromSupabaseColumns(obj: Record<string, unknown>): Record<string
     fechavencimiento: "fechaVencimiento",
     nombrearchivo: "nombreArchivo",
     archivourl: "archivoUrl",
+    fechainicio: "fechaInicio",
+    fechafin: "fechaFin",
     ejecutivoid: "ejecutivoId",
     ejecutivonombre: "ejecutivoNombre",
     creditosaprobados: "creditosAprobados",
