@@ -1200,5 +1200,15 @@ sintéticos, sin credenciales ni PII real.
 
 [build] libre — Codex, BUG-123 · build terminado.
 
+[FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
+global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
+
 [FASE AUTH · BUG-123-DIAG] preparado — el ensayo CI informa solo código,
 estado y mensaje truncado del error sintético. Suite: 632/632; audit: 0.
+
+[FASE AUTH · BUG-123] en curso — CI confirmó `email_provider_disabled`; se
+mantiene cerrado el registro público y se habilita el proveedor de login.
+
+[build] ocupado — Codex, BUG-123 · proveedor email de Supabase Auth.
+
+[build] libre — Codex, BUG-123 · build terminado.

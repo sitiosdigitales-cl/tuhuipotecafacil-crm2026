@@ -7,6 +7,7 @@ const helperPath = join(process.cwd(), "src/lib/supabase-auth.ts");
 const loginPath = join(process.cwd(), "src/app/api/auth/login/route.ts");
 const cookiePath = join(process.cwd(), "src/lib/session-cookie.ts");
 const ciPath = join(process.cwd(), ".github/workflows/ci.yml");
+const supabaseConfigPath = join(process.cwd(), "supabase/config.toml");
 
 describe("contrato del puente de login", () => {
   it("mantiene legacy por defecto y exige fecha al modo bridge", () => {
@@ -48,5 +49,14 @@ describe("contrato del puente de login", () => {
     expect(ci).toContain("scripts/ci/auth-bridge-integration.mjs");
     expect(ci).toMatch(/supabase status -o env > ["']?\$status_file/);
     expect(ci).not.toMatch(/cat\s+["']?\$status_file/);
+  });
+
+  it("habilita el login por email sin abrir el registro público", () => {
+    const config = readFileSync(supabaseConfigPath, "utf8");
+    const authSection = config.match(/\[auth\]([\s\S]*?)\[auth\.rate_limit\]/)?.[1];
+    const emailSection = config.match(/\[auth\.email\]([\s\S]*?)\[auth\.sms\]/)?.[1];
+
+    expect(authSection).toMatch(/enable_signup\s*=\s*false/);
+    expect(emailSection).toMatch(/enable_signup\s*=\s*true/);
   });
 });

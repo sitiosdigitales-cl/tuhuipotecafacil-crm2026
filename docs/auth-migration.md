@@ -39,6 +39,10 @@ la respuesta JSON conserva solo el perfil permitido. El refresh token vence en
 el navegador a los siete días y la sesión propia del CRM mantiene su máximo de
 treinta minutos durante la convivencia.
 
+En `supabase/config.toml`, `auth.enable_signup` permanece en `false` para cerrar
+el registro público, mientras `auth.email.enable_signup` permanece en `true`
+para permitir el inicio de sesión de identidades creadas mediante Admin API.
+
 No activar `bridge` todavía en producción: antes deben quedar listos el ciclo
 de altas/cambios de contraseña, MFA administrativo y la validación vigente de
 sesión. El valor por defecto permite desplegar el código sin consultar una
