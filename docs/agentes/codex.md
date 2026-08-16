@@ -920,3 +920,10 @@ menos 32 caracteres. Suite: 467/467; audit: 0. Rotación productiva pendiente.
 
 [calidad · BUG-094] corregido — API e interfaz aplican catálogos, JSON acotado
 y contraseña de 15-64 caracteres. Suite: 477/477; audit: 0.
+
+[build] ocupado — Codex, BUG-095 · contrato y límite de entrada del login.
+
+[build] libre — Codex, BUG-095 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-095] corregido — login acepta solo JSON válido de hasta 4 KiB
+y normaliza el correo antes de consultar. Suite: 484/484; audit: 0.

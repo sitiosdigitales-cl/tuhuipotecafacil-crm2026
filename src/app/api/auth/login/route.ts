@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { generarToken } from "@/lib/jwt";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import { establecerCookieSesion } from "@/lib/session-cookie";
 
 const MAX_INTENTOS = 5;
 const MINUTOS_BLOQUEO = 15;
+const MAX_LOGIN_PAYLOAD_BYTES = 4 * 1024;
+const LoginInputSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .max(254)
+      .email()
+      .transform((email) => email.toLowerCase()),
+    password: z.string().min(1).max(128),
+  })
+  .strict();
 
 // Hash real de una contraseña que nadie usa. Sirve para gastar el mismo tiempo
 // de bcrypt cuando el correo no existe, y así no delatar qué cuentas son
@@ -40,21 +54,39 @@ async function limpiarIntentos(id: string) {
 }
 
 export async function POST(request: NextRequest) {
+  let rawBody: unknown;
   try {
-    const { email, password } = await request.json();
-
-    // Se exige que sean cadenas, no solo que existan: un JSON con un objeto o
-    // un arreglo en `email` hacía reventar el .toLowerCase() con un 500.
-    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
-      return NextResponse.json({ success: false, error: "Email y contraseña requeridos" }, { status: 400 });
+    rawBody = await parseBoundedJson(request, MAX_LOGIN_PAYLOAD_BYTES);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
     }
+    return NextResponse.json(
+      { success: false, error: "Solicitud inválida" },
+      { status: 400 }
+    );
+  }
 
+  const parsedBody = LoginInputSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { success: false, error: "Email o contraseña inválidos" },
+      { status: 400 }
+    );
+  }
+
+  const { email, password } = parsedBody.data;
+
+  try {
     // Solo las columnas necesarias. select("*") traía también el hash de todas
     // las demás columnas a memoria sin motivo.
     const { data: user, error } = await supabase
       .from("usuarios")
       .select("id, nombre, apellido, email, password, rol, estado, intentosfallidos, suspendidohasta")
-      .eq("email", email.toLowerCase())
+      .eq("email", email)
       .single();
 
     if (error || !user) {
