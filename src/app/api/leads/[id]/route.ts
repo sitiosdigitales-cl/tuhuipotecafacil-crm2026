@@ -156,6 +156,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Notificaciones para cambios importantes
     const leadData = fromSupabaseColumns(data);
 
+    if (auth.rol === "CLIENTE" && leadData) {
+      await despacharNotificacion({
+        evento: "sistema",
+        leadId: id,
+        titulo: "Perfil actualizado por cliente",
+        descripcion: `${leadData.nombre} ${leadData.apellido} actualizó su información de perfil`,
+        accionUrl: `/clientes/${id}`,
+      });
+    }
+
     // Cambio de etapa
     if (body.etapa && leadData) {
       despacharNotificacion({

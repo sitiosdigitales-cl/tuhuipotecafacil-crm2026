@@ -343,35 +343,8 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
       });
       setEditandoPerfil(false);
       toast.success("Perfil actualizado correctamente");
-
-      // Notificar al ejecutivo
-      await notificarEjecutivo(
-        "perfil",
-        "Perfil actualizado por cliente",
-        `${cliente.nombre} ${cliente.apellido} actualizó su información de perfil`
-      );
     } catch { toast.error("Error al guardar"); }
     setGuardando(false);
-  };
-
-  // Función para notificar al ejecutivo
-  const notificarEjecutivo = async (tipo: string, titulo: string, descripcion: string) => {
-    if (!cliente?.nombreEjecutivo) return;
-    try {
-      await fetch("/api/notificaciones", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tipo,
-          titulo,
-          descripcion,
-          leadId: cliente.id,
-          accionUrl: `/clientes/${cliente.id}`,
-        }),
-      });
-    } catch {
-      // Silenciar errores de notificación
-    }
   };
 
   const eliminarDocumento = (id: string) => {

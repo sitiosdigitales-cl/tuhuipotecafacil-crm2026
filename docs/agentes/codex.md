@@ -744,3 +744,10 @@ teléfono, acota contenido y no expone IDs del proveedor. Suite: 373/373.
 
 [calidad · BUG-069] corregido — dispatcher multicanal queda interno; se retiran
 endpoint y helpers cliente sin consumidores. Suite completa: 374/374.
+
+[build] ocupado — Codex, BUG-070 · bandeja ligada a identidad de sesión.
+
+[build] libre — Codex, BUG-070 · build y TypeScript de Next terminaron en 0.
+
+[calidad · BUG-070] corregido — bandeja deriva usuario desde sesión, elimina
+Realtime directo y el servidor notifica cambios de perfil. Suite: 380/380.

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
 
 export interface Notificacion {
@@ -92,14 +91,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Cargar notificaciones desde la API (filtradas por usuario actual)
   useEffect(() => {
+    if (!usuario?.id) return;
+
     const cargarNotificaciones = async () => {
       try {
-        // Filtrar por usuario actual si hay sesion
         const params = new URLSearchParams({ limit: "50" });
-        if (usuario?.id) {
-          params.set("usuarioId", usuario.id);
-        }
-
         const response = await fetch("/api/notificaciones?" + params.toString());
         const data = await response.json() as RespuestaNotificaciones;
         if (data.success && data.data) {
@@ -123,72 +119,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    if (usuario?.id) {
-      cargarNotificaciones();
-    }
+    cargarNotificaciones();
 
-    // Refrescar cada 30 segundos como fallback del Realtime
+    // La API deriva el usuario desde la sesión. Evitamos una suscripción
+    // directa que reciba filas antes de comprobar su destinatario.
     const interval = setInterval(cargarNotificaciones, 30000);
     return () => clearInterval(interval);
-  }, [usuario?.id]);
-
-  // Suscripcion en tiempo real a nuevas notificaciones
-  useEffect(() => {
-    const channel = supabase
-      .channel("notificaciones-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notificaciones",
-        },
-        (payload) => {
-          // Solo mostrar notificaciones del usuario actual o globales
-          const notifUserId = payload.new.usuarioid;
-          if (notifUserId && notifUserId !== usuario?.id) return;
-
-          const nuevaNotif: Notificacion = {
-            id: payload.new.id,
-            tipo: payload.new.tipo,
-            titulo: payload.new.titulo,
-            descripcion: payload.new.descripcion || "",
-            leida: payload.new.leida || false,
-            fecha: new Date(payload.new.creadoen),
-            usuarioId: payload.new.usuarioid,
-            leadId: payload.new.leadid,
-            accionUrl: payload.new.accionurl,
-            icono: ICONOS_POR_TIPO[payload.new.tipo] || "🔔",
-          };
-
-          setNotificaciones((prev) => {
-            if (prev.some((n) => n.id === nuevaNotif.id)) return prev;
-            return [nuevaNotif, ...prev];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notificaciones",
-        },
-        (payload) => {
-          setNotificaciones((prev) =>
-            prev.map((n) =>
-              n.id === payload.new.id
-                ? { ...n, leida: payload.new.leida }
-                : n
-            )
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [usuario?.id]);
 
   const crearNotificacion = useCallback(async (notif: Omit<Notificacion, "id" | "fecha" | "leida">) => {
@@ -200,7 +136,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           tipo: notif.tipo,
           titulo: notif.titulo,
           descripcion: notif.descripcion,
-          usuarioId: notif.usuarioId,
           leadId: notif.leadId,
           accionUrl: notif.accionUrl,
         }),
