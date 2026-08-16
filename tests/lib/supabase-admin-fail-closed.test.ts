@@ -33,6 +33,10 @@ describe("cliente Supabase de service role", () => {
     const publicModule = await import("@/lib/supabase");
 
     expect(publicModule).not.toHaveProperty("supabaseAdmin");
+    expect(createClient).not.toHaveBeenCalled();
+    expect(() => publicModule.supabase.from).toThrow(
+      "SUPABASE_SERVICE_ROLE_KEY no configurada"
+    );
   });
 
   it("falla de forma explícita cuando falta service role", async () => {

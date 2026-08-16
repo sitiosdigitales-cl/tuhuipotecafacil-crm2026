@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+
 import { verificarWebhookFirma } from "@/lib/whatsapp";
 
 describe("firma del webhook de WhatsApp", () => {

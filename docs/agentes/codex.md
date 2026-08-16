@@ -765,3 +765,10 @@ falla cerrado sin configuración; nunca reutiliza anon. Suite: 383/383.
 
 [calidad · BUG-072] corregido — navegador consume solo APIs autenticadas;
 leads, chat y actividades actualizan por polling. Suite: 385/385.
+
+[build] ocupado — Codex, BUG-073 · fachada DB lazy con service role.
+
+[build] libre — Codex, BUG-073 · build terminó en 0 aun sin variables Supabase.
+
+[calidad · BUG-073] corregido — todas las APIs usan fachada `server-only` y
+service role lazy; no queda cliente anónimo operativo. Suite: 385/385.

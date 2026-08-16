@@ -1,16 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn("Variables NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY no configuradas");
-}
+import { getSupabaseAdmin } from "./supabase-admin";
 
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseKey || "placeholder-key"
-);
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, property) {
+    const client = getSupabaseAdmin();
+    const value = Reflect.get(client, property, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
 /**
  * Limpia un texto antes de interpolarlo en un filtro `.or()` de PostgREST.

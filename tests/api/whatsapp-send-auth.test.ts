@@ -14,6 +14,8 @@ vi.mock("@/lib/whatsapp", () => ({
   isWhatsAppConfigured,
 }));
 
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+
 import { GET, POST } from "@/app/api/whatsapp/send/route";
 
 describe("API de envío de WhatsApp sin sesión", () => {
@@ -32,7 +34,7 @@ describe("API de envío de WhatsApp sin sesión", () => {
     const response = await POST(
       new NextRequest("http://localhost/api/whatsapp/send", {
         body: JSON.stringify({
-          mensaje: "Contenido controlado por un atacante",
+          mensaje: "Contenido de una entrada inesperada",
           telefono: "+56911111111",
         }),
         headers: { "content-type": "application/json" },
