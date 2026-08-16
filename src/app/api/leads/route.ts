@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns, fromSupabaseArray, limpiarParaFiltro } from "@/lib/supabase";
+import { supabase, toSupabaseColumns, fromSupabaseArray, fromSupabaseColumns, limpiarParaFiltro } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         origen: body.origen || "WEB",
         etapa: body.etapa || "NUEVO_LEAD",
         prioridad: body.prioridad || "MEDIA",
+        asignadoA: body.asignadoA || null,
         nombreEjecutivo: body.nombreEjecutivo || null,
         banco: body.banco || null,
         tipoCredito: body.tipoCredito || null,
@@ -134,7 +135,10 @@ export async function POST(request: NextRequest) {
       accionUrl: `/leads/${leadId}`,
     }).catch(() => {});
 
-    return NextResponse.json({ success: true, data }, { status: 201 });
+    return NextResponse.json(
+      { success: true, data: fromSupabaseColumns(data) },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error al crear lead:", error);
     return NextResponse.json({ success: false, error: "Error al crear lead" }, { status: 500 });

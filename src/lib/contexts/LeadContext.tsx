@@ -14,6 +14,7 @@ type LeadApi = Omit<Lead, "creadoEn"> & {
 interface RespuestaApi<T> {
   success: boolean;
   data?: T;
+  error?: string;
 }
 
 function normalizarLead(lead: LeadApi): Lead {
@@ -26,10 +27,13 @@ function normalizarLead(lead: LeadApi): Lead {
 
 interface LeadContextType {
   leads: Lead[];
-  agregarLead: (lead: Omit<Lead, "id" | "creadoEn">) => Promise<void>;
+  agregarLead: (lead: Omit<Lead, "id" | "creadoEn">) => Promise<Lead>;
   actualizarLead: (id: string, datos: Partial<Lead>) => Promise<void>;
   eliminarLead: (id: string) => Promise<void>;
-  asignarEjecutivo: (leadId: string, nombreEjecutivo: string) => Promise<void>;
+  asignarEjecutivo: (
+    leadId: string,
+    ejecutivo: { id: string; nombre: string } | null
+  ) => Promise<void>;
   moverEtapa: (leadId: string, nuevaEtapa: Etapa) => Promise<void>;
   cargando: boolean;
   cargaPorEjecutivo: Record<string, number>;
@@ -72,109 +76,71 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [initialized, cargarLeads]);
 
   const agregarLead = useCallback(async (leadData: Omit<Lead, "id" | "creadoEn">) => {
-    try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(leadData),
-      });
-      const data = await response.json();
-      if (data.success && data.data) {
-        await cargarLeads();
-      }
-    } catch {
-      // Fallback local si la API no está disponible
-      const nuevoLead: Lead = {
-        ...leadData,
-        id: `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        creadoEn: new Date(),
-      };
-      setLeads((prev) => [nuevoLead, ...prev]);
+    const response = await fetch("/api/leads", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(leadData),
+    });
+    const data = (await response.json().catch(() => null)) as
+      | RespuestaApi<LeadApi>
+      | null;
+
+    if (!response.ok || !data?.success || !data.data) {
+      throw new Error(data?.error || "No se pudo crear el lead");
     }
-  }, [cargarLeads]);
+
+    const leadPersistido = normalizarLead(data.data);
+    setLeads((prev) => [leadPersistido, ...prev]);
+    return leadPersistido;
+  }, []);
 
   const actualizarLead = useCallback(async (id: string, datos: Partial<Lead>) => {
-    // Guardar estado anterior para rollback usando functional update
-    let leadsAnteriores: Lead[] = [];
-    
-    // Optimistic update con functional update para evitar stale closure
-    setLeads((prev) => {
-      leadsAnteriores = prev;
-      return prev.map((l) => (l.id === id ? { ...l, ...datos } : l));
+    const response = await fetch(`/api/leads/${id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos),
     });
+    const data = (await response.json().catch(() => null)) as
+      | RespuestaApi<LeadApi>
+      | null;
 
-    try {
-      const response = await fetch(`/api/leads/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos),
-      });
-
-      if (!response.ok) {
-        // Rollback si la API falla
-        setLeads(leadsAnteriores);
-      }
-    } catch {
-      // Rollback si hay error de red
-      setLeads(leadsAnteriores);
+    if (!response.ok || !data?.success || !data.data) {
+      throw new Error(data?.error || "No se pudo actualizar el lead");
     }
+
+    const leadPersistido = normalizarLead(data.data);
+    setLeads((prev) =>
+      prev.map((lead) => (lead.id === id ? leadPersistido : lead))
+    );
   }, []);
 
   const eliminarLead = useCallback(async (id: string) => {
-    // Guardar estado anterior para rollback
-    const leadEliminado = leads.find((l) => l.id === id);
+    const response = await fetch(`/api/leads/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    const data = (await response.json().catch(() => null)) as
+      | RespuestaApi<never>
+      | null;
 
-    // Optimistic update
-    setLeads((prev) => prev.filter((l) => l.id !== id));
-
-    try {
-      const response = await fetch(`/api/leads/${id}`, { method: "DELETE", credentials: "include" });
-
-      if (!response.ok && leadEliminado) {
-        // Rollback si la API falla
-        setLeads((prev) => [...prev, leadEliminado].sort((a, b) =>
-          new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
-        ));
-      }
-    } catch {
-      // Rollback si hay error de red
-      if (leadEliminado) {
-        setLeads((prev) => [...prev, leadEliminado].sort((a, b) =>
-          new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
-        ));
-      }
+    if (!response.ok || !data?.success) {
+      throw new Error(data?.error || "No se pudo eliminar el lead");
     }
-  }, [leads]);
 
-  const asignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
-    try {
-      // Actualizar el lead con el nombre del ejecutivo
-      const updateResponse = await fetch(`/api/leads/${leadId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreEjecutivo }),
-      });
-
-      if (updateResponse.ok) {
-        // Actualizar estado local directamente
-        setLeads((prev) =>
-          prev.map((l) =>
-            l.id === leadId
-              ? { ...l, nombreEjecutivo }
-              : l
-          )
-        );
-      } else {
-        const errorData = await updateResponse.json();
-        console.error("[AsignarEjecutivo] API error:", errorData);
-      }
-    } catch (error) {
-      console.error("[AsignarEjecutivo] Error:", error);
-    }
+    setLeads((prev) => prev.filter((lead) => lead.id !== id));
   }, []);
+
+  const asignarEjecutivo = useCallback(async (
+    leadId: string,
+    ejecutivo: { id: string; nombre: string } | null
+  ) => {
+    await actualizarLead(leadId, {
+      asignadoA: ejecutivo?.id ?? "",
+      nombreEjecutivo: ejecutivo?.nombre ?? "",
+    });
+  }, [actualizarLead]);
 
   const moverEtapa = useCallback(async (leadId: string, nuevaEtapa: Etapa) => {
     await actualizarLead(leadId, { etapa: nuevaEtapa, diasEnEtapa: 0 });

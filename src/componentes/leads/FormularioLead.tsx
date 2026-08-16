@@ -44,7 +44,9 @@ interface FormularioLeadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lead?: Lead | null;
-  onSubmit: (lead: Partial<Lead>) => void;
+  onSubmit: (
+    lead: Partial<Lead>
+  ) => boolean | void | Promise<boolean | void>;
 }
 
 const BANCOS = [
@@ -117,6 +119,7 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     if (lead) {
@@ -205,11 +208,19 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validatePaso1()) {
-      onSubmit({ ...formData, notas: formData.comentarios });
-      onOpenChange(false);
+    if (!validatePaso1() || enviando) return;
+
+    setEnviando(true);
+    try {
+      const resultado = await onSubmit({
+        ...formData,
+        notas: formData.comentarios,
+      });
+      if (resultado !== false) onOpenChange(false);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -680,9 +691,13 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                 Siguiente <ChevronRight size={14} />
               </button>
             ) : (
-              <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[11px] font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20">
+              <button
+                type="submit"
+                disabled={enviando}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-[11px] font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <Save size={14} />
-                {lead ? "Guardar Cambios" : "Crear Lead"}
+                {enviando ? "Guardando..." : lead ? "Guardar Cambios" : "Crear Lead"}
               </button>
             )}
           </div>

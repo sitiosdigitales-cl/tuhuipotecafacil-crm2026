@@ -12,9 +12,14 @@ import {
 import { createPortal } from "react-dom";
 import { useUser } from "@/modulos/usuarios";
 
+export interface EjecutivoAsignable {
+  id: string;
+  nombre: string;
+}
+
 interface AsignarEjecutivoProps {
   ejecutivoActual?: string;
-  onAsignar: (nombreEjecutivo: string) => void;
+  onAsignar: (ejecutivo: EjecutivoAsignable | null) => void;
   compact?: boolean;
   carga?: Record<string, number>;
 }
@@ -39,10 +44,10 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
     `${e.nombre} ${e.apellido}`.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const handleAsignar = useCallback((e: React.MouseEvent, nombre: string) => {
+  const handleAsignar = useCallback((e: React.MouseEvent, ejecutivo: EjecutivoAsignable | null) => {
     e.preventDefault();
     e.stopPropagation();
-    onAsignar(nombre);
+    onAsignar(ejecutivo);
     setAbierto(false);
     setBusqueda("");
   }, [onAsignar]);
@@ -159,7 +164,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
               <button
                 key={user.id}
                 onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onClick={(e) => handleAsignar(e, nombreCompleto)}
+                onClick={(e) => handleAsignar(e, { id: user.id, nombre: nombreCompleto })}
                 className={`w-full flex items-center gap-2.5 p-2 rounded-lg transition-all text-left ${
                   esActual
                     ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
@@ -209,7 +214,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
       <div className="p-2 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
         <button
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          onClick={(e) => handleAsignar(e, "")}
+          onClick={(e) => handleAsignar(e, null)}
           className="w-full text-center text-[10px] font-semibold text-red-500 hover:text-red-600 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
           Quitar asignación

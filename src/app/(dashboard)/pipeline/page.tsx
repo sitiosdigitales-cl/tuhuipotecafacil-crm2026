@@ -36,7 +36,10 @@ import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
 import { useActivities } from "@/lib/contexts/ActivityContext";
 import { validarAvance, type ResultadoValidacion, type ReglaValidacion } from "@/modulos/leads/validaciones-pipeline";
-import { AsignarEjecutivo } from "@/componentes/pipeline/AsignarEjecutivo";
+import {
+  AsignarEjecutivo,
+  type EjecutivoAsignable,
+} from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
 import type { Lead, Etapa, Prioridad, SituacionLaboral } from "@/tipos";
 
@@ -149,7 +152,7 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carg
   onVer: () => void;
   onEditar: (e: React.MouseEvent) => void;
   onEliminar: (e: React.MouseEvent) => void;
-  onAsignar: (leadId: string, nombreEjecutivo: string) => void;
+  onAsignar: (leadId: string, ejecutivo: EjecutivoAsignable | null) => void;
   carga: Record<string, number>;
 }) {
   const tiempo = getTiempoEstilo(lead.diasEnEtapa);
@@ -296,7 +299,7 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carg
                       <div className="flex items-center gap-1">
                         <AsignarEjecutivo
                           ejecutivoActual={lead.nombreEjecutivo}
-                          onAsignar={(nombre) => onAsignar(lead.id, nombre)}
+                          onAsignar={(ejecutivo) => onAsignar(lead.id, ejecutivo)}
                           compact
                           carga={carga}
                         />
@@ -409,31 +412,25 @@ export default function PipelinePage() {
     aprobados: leadsFiltrados.filter(l => ['APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
   }), [leadsFiltrados]);
 
-  const handleAsignarEjecutivo = useCallback(async (leadId: string, nombreEjecutivo: string) => {
+  const handleAsignarEjecutivo = useCallback(async (
+    leadId: string,
+    ejecutivo: EjecutivoAsignable | null
+  ) => {
     const lead = leads.find((item) => item.id === leadId);
     try {
-      const updateResponse = await fetch(`/api/leads/${leadId}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreEjecutivo: nombreEjecutivo || null }),
+      await actualizarLead(leadId, {
+        asignadoA: ejecutivo?.id ?? "",
+        nombreEjecutivo: ejecutivo?.nombre ?? "",
       });
-
-      if (updateResponse.ok) {
-        await actualizarLead(leadId, { nombreEjecutivo: nombreEjecutivo || undefined });
-        if (lead) {
-          toast.success("Ejecutivo asignado", {
-            description: nombreEjecutivo
-              ? `${lead.nombre} ${lead.apellido} asignado a ${nombreEjecutivo}`
-              : `${lead.nombre} ${lead.apellido} sin asignar`,
-          });
-        }
-      } else {
-        const errorResponse = await updateResponse.json().catch(() => ({}));
-        toast.error("Error al asignar", { description: errorResponse.error || "Intenta de nuevo" });
+      if (lead) {
+        toast.success("Ejecutivo asignado", {
+          description: ejecutivo
+            ? `${lead.nombre} ${lead.apellido} asignado a ${ejecutivo.nombre}`
+            : `${lead.nombre} ${lead.apellido} sin asignar`,
+        });
       }
     } catch {
-      toast.error("Error de conexion");
+      toast.error("No se pudo actualizar la asignación");
     }
   }, [actualizarLead, leads]);
 
@@ -450,11 +447,18 @@ export default function PipelinePage() {
 
     // Detectar si es un ejecutivo siendo arrastrado hacia un lead
     if (origenId.startsWith("ejec-drag-")) {
-      const nombreEjecutivo = origenId.replace("ejec-drag-", "");
+      const identificadorEjecutivo = origenId.replace("ejec-drag-", "");
+      const usuarioDestino = usuarios.find((usuario) =>
+        usuario.id === identificadorEjecutivo ||
+        `${usuario.nombre} ${usuario.apellido}` === identificadorEjecutivo
+      );
       // Verificar si el destino es un lead
-      if (destinoId.startsWith("lead-drop-")) {
+      if (destinoId.startsWith("lead-drop-") && usuarioDestino) {
         const leadId = destinoId.replace("lead-drop-", "");
-        handleAsignarEjecutivo(leadId, nombreEjecutivo);
+        await handleAsignarEjecutivo(leadId, {
+          id: usuarioDestino.id,
+          nombre: `${usuarioDestino.nombre} ${usuarioDestino.apellido}`,
+        });
         return;
       }
     }
@@ -464,13 +468,20 @@ export default function PipelinePage() {
     if (esAsignacionEjecutivo) {
       // Buscar el lead en la columna de origen
       let leadMovido: Lead | undefined;
-      if (source.droppableId.startsWith("ejec-view-")) {
-        // Viene de la vista por ejecutivo
-        const nombreOrigen = source.droppableId.replace("ejec-view-", "");
-        const leadsDelOrigen = leadsFiltrados.filter((l) => l.nombreEjecutivo === nombreOrigen);
-        leadMovido = leadsDelOrigen[source.index];
-      } else if (source.droppableId === "ejec-view-Sin asignar") {
+      if (source.droppableId === "ejec-view-sin-asignar") {
         leadMovido = leadsFiltrados.filter((l) => !l.nombreEjecutivo)[source.index];
+      } else if (source.droppableId.startsWith("ejec-view-")) {
+        // Viene de la vista por ejecutivo
+        const usuarioOrigenId = source.droppableId.replace("ejec-view-", "");
+        const usuarioOrigen = usuarios.find((usuario) => usuario.id === usuarioOrigenId);
+        const nombreOrigen = usuarioOrigen
+          ? `${usuarioOrigen.nombre} ${usuarioOrigen.apellido}`
+          : "";
+        const leadsDelOrigen = leadsFiltrados.filter((lead) =>
+          lead.asignadoA === usuarioOrigenId ||
+          (!lead.asignadoA && lead.nombreEjecutivo === nombreOrigen)
+        );
+        leadMovido = leadsDelOrigen[source.index];
       } else {
         // Viene de una etapa del kanban
         leadMovido = leadsFiltrados.filter((l) => l.etapa === source.droppableId)[source.index];
@@ -478,14 +489,30 @@ export default function PipelinePage() {
       if (!leadMovido) return;
 
       // Extraer nombre del ejecutivo destino
-      let nombreEjecutivo = "";
-      if (destinoId === "ejec-view-Sin asignar") {
-        nombreEjecutivo = "";
-      } else {
-        nombreEjecutivo = destinoId.replace("ejec-", "").replace("ejec-view-", "");
+      const usuarioDestinoId = destinoId
+        .replace("ejec-view-", "")
+        .replace("ejec-", "");
+      const usuarioDestino = destinoId === "ejec-view-sin-asignar"
+        ? null
+        : usuarios.find((usuario) =>
+            usuario.id === usuarioDestinoId ||
+            `${usuario.nombre} ${usuario.apellido}` === usuarioDestinoId
+          );
+
+      if (destinoId !== "ejec-view-sin-asignar" && !usuarioDestino) {
+        toast.error("No se pudo identificar al ejecutivo seleccionado");
+        return;
       }
 
-      handleAsignarEjecutivo(leadMovido.id, nombreEjecutivo);
+      await handleAsignarEjecutivo(
+        leadMovido.id,
+        usuarioDestino
+          ? {
+              id: usuarioDestino.id,
+              nombre: `${usuarioDestino.nombre} ${usuarioDestino.apellido}`,
+            }
+          : null
+      );
       return;
     }
 
@@ -540,48 +567,63 @@ export default function PipelinePage() {
       }
     }
 
-    // Si pasa la validación, mover el lead usando el contexto
-    moverEtapa(leadMovido.id, etapaDestino as Etapa);
-
-    // Registrar actividad
     const nombreEtapaOrigen = ETAPAS_CONFIG[leadMovido.etapa]?.label || leadMovido.etapa;
     const nombreEtapaDestino = ETAPAS_CONFIG[etapaDestino as Etapa]?.label || etapaDestino;
-    agregarActividad({
-      leadId: leadMovido.id,
-      tipo: "cambio_estado",
-      titulo: "Cambio de etapa",
-      descripcion: `${leadMovido.nombre} ${leadMovido.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino}`,
-      usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
-      usuarioId: usuarioActual?.id || "system",
-    });
+    try {
+      await moverEtapa(leadMovido.id, etapaDestino as Etapa);
+      void agregarActividad({
+        leadId: leadMovido.id,
+        tipo: "cambio_estado",
+        titulo: "Cambio de etapa",
+        descripcion: `${leadMovido.nombre} ${leadMovido.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino}`,
+        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+        usuarioId: usuarioActual?.id || "system",
+      });
 
-    toast.success(`Lead movido a ${nombreEtapaDestino}`, {
-      description: `${leadMovido.nombre} ${leadMovido.apellido} avanzó de etapa`,
-    });
-  }, [leadsFiltrados, moverEtapa, agregarActividad, usuarioActual, handleAsignarEjecutivo]);
+      toast.success(`Lead movido a ${nombreEtapaDestino}`, {
+        description: `${leadMovido.nombre} ${leadMovido.apellido} avanzó de etapa`,
+      });
+    } catch {
+      toast.error("No se pudo mover el lead", {
+        description: "La etapa anterior fue restaurada.",
+      });
+    }
+  }, [
+    leadsFiltrados,
+    moverEtapa,
+    agregarActividad,
+    usuarioActual,
+    usuarios,
+    handleAsignarEjecutivo,
+  ]);
 
-  const forzarAvance = () => {
+  const forzarAvance = async () => {
     if (!validacionModal.lead || !validacionModal.etapaDestino) return;
-
-    moverEtapa(validacionModal.lead.id, validacionModal.etapaDestino as Etapa);
 
     // Registrar actividad de avance forzado
     const nombreEtapaOrigen = ETAPAS_CONFIG[validacionModal.lead.etapa]?.label || validacionModal.lead.etapa;
     const nombreEtapaDestino = ETAPAS_CONFIG[validacionModal.etapaDestino as Etapa]?.label || validacionModal.etapaDestino;
-    agregarActividad({
-      leadId: validacionModal.lead.id,
-      tipo: "cambio_estado",
-      titulo: "Avance forzado",
-      descripcion: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino} (avance forzado)`,
-      usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
-      usuarioId: usuarioActual?.id || "system",
-    });
+    try {
+      await moverEtapa(
+        validacionModal.lead.id,
+        validacionModal.etapaDestino as Etapa
+      );
+      void agregarActividad({
+        leadId: validacionModal.lead.id,
+        tipo: "cambio_estado",
+        titulo: "Avance forzado",
+        descripcion: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido de ${nombreEtapaOrigen} a ${nombreEtapaDestino} (avance forzado)`,
+        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+        usuarioId: usuarioActual?.id || "system",
+      });
 
-    toast.success(`Avance forzado a ${nombreEtapaDestino}`, {
-      description: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido manualmente`,
-    });
-
-    setValidacionModal({ open: false, resultado: null, lead: null, etapaDestino: "" });
+      toast.success(`Avance forzado a ${nombreEtapaDestino}`, {
+        description: `${validacionModal.lead.nombre} ${validacionModal.lead.apellido} movido manualmente`,
+      });
+      setValidacionModal({ open: false, resultado: null, lead: null, etapaDestino: "" });
+    } catch {
+      toast.error("No se pudo forzar el avance");
+    }
   };
 
   const handleEliminarLead = (lead: Lead, e: React.MouseEvent) => {
@@ -590,14 +632,18 @@ export default function PipelinePage() {
     setEliminarDialogOpen(true);
   };
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (leadAEliminar) {
       const nombre = `${leadAEliminar.nombre} ${leadAEliminar.apellido}`;
-      eliminarLead(leadAEliminar.id);
-      setLeadAEliminar(null);
-      toast.success("Lead eliminado", {
-        description: `${nombre} fue eliminado del pipeline`,
-      });
+      try {
+        await eliminarLead(leadAEliminar.id);
+        setLeadAEliminar(null);
+        toast.success("Lead eliminado", {
+          description: `${nombre} fue eliminado del pipeline`,
+        });
+      } catch {
+        toast.error("No se pudo eliminar el lead");
+      }
     }
   };
 
@@ -612,41 +658,48 @@ export default function PipelinePage() {
     setFormularioOpen(true);
   };
 
-  const handleSubmitLead = (data: Partial<Lead>) => {
-    if (leadSeleccionado) {
-      actualizarLead(leadSeleccionado.id, data);
-      toast.success("Lead actualizado", {
-        description: `${data.nombre} ${data.apellido} fue actualizado`,
+  const handleSubmitLead = async (data: Partial<Lead>) => {
+    try {
+      if (leadSeleccionado) {
+        await actualizarLead(leadSeleccionado.id, data);
+        toast.success("Lead actualizado", {
+          description: `${data.nombre} ${data.apellido} fue actualizado`,
+        });
+      } else {
+        const newLead: Omit<Lead, "id" | "creadoEn"> = {
+          nombre: data.nombre || "",
+          apellido: data.apellido || "",
+          rut: data.rut || "",
+          email: data.email,
+          telefono: data.telefono,
+          situacionLaboral: data.situacionLaboral || "INDEPENDIENTE",
+          enDicom: data.enDicom || false,
+          origen: data.origen || "WEB",
+          etapa: data.etapa || "NUEVO_LEAD",
+          prioridad: data.prioridad || "MEDIA",
+          banco: data.banco,
+          montoSolicitado: data.montoSolicitado,
+          valorPropiedad: data.valorPropiedad,
+          pieDisponible: data.pieDisponible,
+          notas: data.notas,
+          diasEnEtapa: 0,
+          asignadoA: usuarioActual.id,
+          nombreEjecutivo: `${usuarioActual.nombre} ${usuarioActual.apellido}`,
+        };
+        await agregarLead(newLead);
+        toast.success("Lead creado", {
+          description: `${newLead.nombre} ${newLead.apellido} fue agregado al pipeline`,
+        });
+      }
+      setFormularioOpen(false);
+      setLeadSeleccionado(null);
+      return true;
+    } catch {
+      toast.error("No se pudieron guardar los cambios", {
+        description: "El formulario permanece abierto para volver a intentar.",
       });
-    } else {
-      const newLead: Lead = {
-        id: `lead-${Date.now()}`,
-        nombre: data.nombre || "",
-        apellido: data.apellido || "",
-        rut: data.rut || "",
-        email: data.email,
-        telefono: data.telefono,
-        situacionLaboral: data.situacionLaboral || "INDEPENDIENTE",
-        enDicom: data.enDicom || false,
-        origen: data.origen || "WEB",
-        etapa: data.etapa || "NUEVO_LEAD",
-        prioridad: data.prioridad || "MEDIA",
-        banco: data.banco,
-        montoSolicitado: data.montoSolicitado,
-        valorPropiedad: data.valorPropiedad,
-        pieDisponible: data.pieDisponible,
-        notas: data.notas,
-        creadoEn: new Date(),
-        diasEnEtapa: 0,
-        nombreEjecutivo: `${usuarioActual.nombre} ${usuarioActual.apellido}`,
-      };
-      agregarLead(newLead);
-      toast.success("Lead creado", {
-        description: `${newLead.nombre} ${newLead.apellido} fue agregado al pipeline`,
-      });
+      return false;
     }
-    setFormularioOpen(false);
-    setLeadSeleccionado(null);
   };
 
   return (
@@ -937,7 +990,7 @@ export default function PipelinePage() {
                     </div>
 
                     {/* Leads del ejecutivo */}
-                    <Droppable droppableId={`ejec-view-${nombreCompleto}`}>
+                    <Droppable droppableId={`ejec-view-${user.id}`}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
@@ -978,7 +1031,7 @@ export default function PipelinePage() {
                     {/* Leads sin asignar - solo en la última columna */}
                     {esUltimo && leadsSinAsignar.length > 0 && (
                       <div className="mt-3">
-                        <Droppable droppableId="ejec-view-Sin asignar">
+                        <Droppable droppableId="ejec-view-sin-asignar">
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}

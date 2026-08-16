@@ -109,9 +109,8 @@ export default function ClientesPage() {
     urgentes: clientesFiltrados.filter((l) => l.prioridad === "URGENTE").length,
   }), [clientesFiltrados]);
 
-  const handleSubmitCliente = (data: Partial<Lead>) => {
-    const newLead: Lead = {
-      id: `lead-${Date.now()}`,
+  const handleSubmitCliente = async (data: Partial<Lead>) => {
+    const newLead: Omit<Lead, "id" | "creadoEn"> = {
       nombre: data.nombre || "",
       apellido: data.apellido || "",
       rut: data.rut || "",
@@ -133,14 +132,21 @@ export default function ClientesPage() {
       valorPropiedad: data.valorPropiedad,
       pieDisponible: data.pieDisponible,
       notas: data.notas || data.comentarios,
-      creadoEn: new Date(),
       diasEnEtapa: 0,
     };
-    agregarLead(newLead);
-    setFormularioOpen(false);
-    toast.success("Cliente agregado", {
-      description: `${newLead.nombre} ${newLead.apellido} fue registrado`,
-    });
+    try {
+      await agregarLead(newLead);
+      setFormularioOpen(false);
+      toast.success("Cliente agregado", {
+        description: `${newLead.nombre} ${newLead.apellido} fue registrado`,
+      });
+      return true;
+    } catch {
+      toast.error("No se pudo registrar el cliente", {
+        description: "Revisa la conexión e intenta nuevamente.",
+      });
+      return false;
+    }
   };
 
   return (

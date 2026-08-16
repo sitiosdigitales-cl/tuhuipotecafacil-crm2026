@@ -1200,6 +1200,15 @@ sintéticos, sin credenciales ni PII real.
 
 [build] libre — Codex, BUG-123 · build terminado.
 
+[build] ocupado — Codex, BUG-128 · mutaciones de leads confirmadas por servidor.
+
+[build] libre — Codex, BUG-128 · build terminado.
+
+[calidad · BUG-128] corregido — crear, editar, eliminar, mover y asignar leads
+solo actualizan la interfaz tras confirmación del servidor; IDs persistidos y
+asignaciones estables cubiertos. Suite: 738/738; build/lint/typecheck: 0;
+audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.

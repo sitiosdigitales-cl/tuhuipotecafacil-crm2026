@@ -192,70 +192,80 @@ export default function LeadsPage() {
     router.push(`/leads/${lead.id}`);
   };
 
-  const handleConfirmarEliminar = () => {
+  const handleConfirmarEliminar = async () => {
     if (leadAEliminar) {
       const nombre = `${leadAEliminar.nombre} ${leadAEliminar.apellido}`;
-      eliminarLead(leadAEliminar.id);
-      setLeadAEliminar(null);
-      toast.success("Lead eliminado", {
-        description: `${nombre} fue eliminado de la lista`,
-      });
+      try {
+        await eliminarLead(leadAEliminar.id);
+        setLeadAEliminar(null);
+        toast.success("Lead eliminado", {
+          description: `${nombre} fue eliminado de la lista`,
+        });
+      } catch {
+        toast.error("No se pudo eliminar el lead");
+      }
     }
   };
 
-  const handleSubmitLead = (data: Partial<Lead>) => {
-    if (leadSeleccionado) {
-      actualizarLead(leadSeleccionado.id, data);
-      agregarActividad({
-        leadId: leadSeleccionado.id,
-        tipo: "nota",
-        titulo: "Lead actualizado",
-        descripcion: `${data.nombre} ${data.apellido} fue actualizado`,
-        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
-        usuarioId: usuarioActual?.id || "system",
+  const handleSubmitLead = async (data: Partial<Lead>) => {
+    try {
+      if (leadSeleccionado) {
+        await actualizarLead(leadSeleccionado.id, data);
+        void agregarActividad({
+          leadId: leadSeleccionado.id,
+          tipo: "nota",
+          titulo: "Lead actualizado",
+          descripcion: `${data.nombre} ${data.apellido} fue actualizado`,
+          usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+          usuarioId: usuarioActual?.id || "system",
+        });
+        toast.success("Lead actualizado", {
+          description: `${data.nombre} ${data.apellido} fue actualizado`,
+        });
+      } else {
+        const newLead: Omit<Lead, "id" | "creadoEn"> = {
+          nombre: data.nombre || "",
+          apellido: data.apellido || "",
+          rut: data.rut || "",
+          email: data.email,
+          telefono: data.telefono,
+          situacionLaboral: data.situacionLaboral || "INDEPENDIENTE",
+          enDicom: data.enDicom || false,
+          dicomDetalle: data.dicomDetalle,
+          rentaMensual: data.rentaMensual,
+          complementarRenta: data.complementarRenta,
+          tipoCredito: data.tipoCredito,
+          cuentaPie: data.cuentaPie,
+          comentarios: data.comentarios,
+          origen: data.origen || "WEB",
+          etapa: data.etapa || "NUEVO_LEAD",
+          prioridad: data.prioridad || "MEDIA",
+          banco: data.banco,
+          montoSolicitado: data.montoSolicitado,
+          valorPropiedad: data.valorPropiedad,
+          pieDisponible: data.pieDisponible,
+          notas: data.notas || data.comentarios,
+          diasEnEtapa: 0,
+        };
+        const leadPersistido = await agregarLead(newLead);
+        void agregarActividad({
+          leadId: leadPersistido.id,
+          tipo: "sistema",
+          titulo: "Lead creado",
+          descripcion: `${newLead.nombre} ${newLead.apellido} fue agregado al sistema`,
+          usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
+          usuarioId: usuarioActual?.id || "system",
+        });
+        toast.success("Lead creado", {
+          description: `${newLead.nombre} ${newLead.apellido} fue agregado`,
+        });
+      }
+      return true;
+    } catch {
+      toast.error("No se pudieron guardar los cambios", {
+        description: "El formulario permanece abierto para volver a intentar.",
       });
-      toast.success("Lead actualizado", {
-        description: `${data.nombre} ${data.apellido} fue actualizado`,
-      });
-    } else {
-      const newLead: Lead = {
-        id: `lead-${Date.now()}`,
-        nombre: data.nombre || "",
-        apellido: data.apellido || "",
-        rut: data.rut || "",
-        email: data.email,
-        telefono: data.telefono,
-        situacionLaboral: data.situacionLaboral || "INDEPENDIENTE",
-        enDicom: data.enDicom || false,
-        dicomDetalle: data.dicomDetalle,
-        rentaMensual: data.rentaMensual,
-        complementarRenta: data.complementarRenta,
-        tipoCredito: data.tipoCredito,
-        cuentaPie: data.cuentaPie,
-        comentarios: data.comentarios,
-        origen: data.origen || "WEB",
-        etapa: data.etapa || "NUEVO_LEAD",
-        prioridad: data.prioridad || "MEDIA",
-        banco: data.banco,
-        montoSolicitado: data.montoSolicitado,
-        valorPropiedad: data.valorPropiedad,
-        pieDisponible: data.pieDisponible,
-        notas: data.notas || data.comentarios,
-        creadoEn: new Date(),
-        diasEnEtapa: 0,
-      };
-      agregarLead(newLead);
-      agregarActividad({
-        leadId: newLead.id,
-        tipo: "sistema",
-        titulo: "Lead creado",
-        descripcion: `${newLead.nombre} ${newLead.apellido} fue agregado al sistema`,
-        usuario: usuarioActual?.nombre ? `${usuarioActual.nombre} ${usuarioActual.apellido}` : "Sistema",
-        usuarioId: usuarioActual?.id || "system",
-      });
-      toast.success("Lead creado", {
-        description: `${newLead.nombre} ${newLead.apellido} fue agregado`,
-      });
+      return false;
     }
   };
 
