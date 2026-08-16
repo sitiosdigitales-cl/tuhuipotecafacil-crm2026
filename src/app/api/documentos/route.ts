@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
+import { supabase, fromSupabaseArray } from "@/lib/supabase";
 import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
-import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import type { TokenPayload } from "@/lib/jwt";
 import { documentWithProxyUrl } from "@/lib/document-storage";
@@ -78,60 +77,5 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error("Error inesperado:", e);
     return NextResponse.json({ success: false, error: "Error al cargar los datos" }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  const auth = requireAuth(request);
-  if (!auth) return unauthorized();
-  try {
-    const body = await request.json();
-    if (typeof body.leadId !== "string" || !body.leadId) {
-      return NextResponse.json(
-        { success: false, error: "leadId es requerido" },
-        { status: 400 }
-      );
-    }
-
-    const lead = await obtenerLead(body.leadId);
-    if (!lead) {
-      return NextResponse.json(
-        { success: false, error: "Lead no encontrado" },
-        { status: 404 }
-      );
-    }
-    if (!puedeAccederLead(auth, lead)) return forbidden();
-
-    const { data, error } = await supabase
-      .from("documentos")
-      .insert(toSupabaseColumns({
-        id: crypto.randomUUID(),
-        leadId: body.leadId,
-        nombre: body.nombre,
-        tipo: body.tipo || "OTRO",
-        // Un documento recién subido siempre nace PENDIENTE. Antes se copiaba
-        // `body.estado`, así que bastaba enviar "APROBADO" para que entrara ya
-        // revisado. Aprobar es una decisión de una persona y va por el PUT,
-        // que sí comprueba quién la toma.
-        estado: "PENDIENTE",
-        archivoUrl: null,
-        creadoEn: new Date().toISOString(),
-      }))
-      .select()
-      .single();
-    if (error) return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
-
-    // Notificacion via dispatcher (ejecutivo + SUPER_ADMIN)
-    despacharNotificacion({
-      evento: "documento_subido",
-      leadId: body.leadId,
-      titulo: "Documento recibido",
-      descripcion: `Nuevo documento: ${body.nombre}`,
-      accionUrl: "/documentos",
-    }).catch(() => {});
-
-    return NextResponse.json({ success: true, data }, { status: 201 });
-  } catch {
-    return NextResponse.json({ success: false, error: "Error al crear documento" }, { status: 500 });
   }
 }

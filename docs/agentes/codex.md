@@ -821,3 +821,10 @@ presupuesto, stream UI y contexto sin identificadores. Suite: 406/406.
 
 [calidad · BUG-080] corregido — solo roles internos revisan o eliminan; estado,
 observaciones, autor y fecha quedan controlados. Suite: 409/409.
+
+[build] ocupado — Codex, BUG-081 · escritura única de documentos subidos.
+
+[build] libre — Codex, BUG-081 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-081] corregido — upload es la única escritura y la interfaz
+solo incorpora el resultado persistido. Suite: 410/410; audit: 0.

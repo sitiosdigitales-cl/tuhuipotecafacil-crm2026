@@ -3,10 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Rol } from "@/tipos";
 
-const { from, inFilter, insert, requireAuth } = vi.hoisted(() => ({
+const { from, inFilter, requireAuth } = vi.hoisted(() => ({
   from: vi.fn(),
   inFilter: vi.fn(),
-  insert: vi.fn(),
   requireAuth: vi.fn(),
 }));
 
@@ -19,14 +18,13 @@ vi.mock("@/lib/api-auth", () => ({
 vi.mock("@/lib/supabase", () => ({
   fromSupabaseArray: (rows: unknown) => rows,
   supabase: { from },
-  toSupabaseColumns: (row: unknown) => row,
 }));
 
 vi.mock("@/lib/dispatcher-notificaciones", () => ({
   despacharNotificacion: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { GET, POST } from "@/app/api/documentos/route";
+import { GET } from "@/app/api/documentos/route";
 
 const leadAjeno = {
   asignadoa: "agente-dos",
@@ -52,7 +50,6 @@ function documentQuery() {
   const query = {
     eq: vi.fn(() => query),
     in: inFilter,
-    insert,
     select: vi.fn(() => query),
     single: vi.fn().mockResolvedValue({
       data: { id: "documento-nuevo", leadid: "lead-ajeno" },
@@ -64,7 +61,6 @@ function documentQuery() {
     }),
   };
   inFilter.mockReturnValue(query);
-  insert.mockReturnValue(query);
   return query;
 }
 
@@ -84,7 +80,6 @@ describe("alcance de la colección de documentos", () => {
     requireAuth.mockReset();
     from.mockReset();
     inFilter.mockReset();
-    insert.mockReset();
     from.mockImplementation((table: string) =>
       table === "leads" ? leadQuery() : documentQuery()
     );
@@ -102,27 +97,6 @@ describe("alcance de la colección de documentos", () => {
       );
 
       expect(response.status).toBe(403);
-    }
-  );
-
-  it.each<Rol>(["AGENTE", "CLIENTE"])(
-    "responde 403 a %s antes de crear un documento en otro lead",
-    async (role) => {
-      setRole(role);
-
-      const response = await POST(
-        new NextRequest("http://localhost/api/documentos", {
-          body: JSON.stringify({
-            leadId: "lead-ajeno",
-            nombre: "Documento de prueba",
-          }),
-          headers: { "content-type": "application/json" },
-          method: "POST",
-        })
-      );
-
-      expect(response.status).toBe(403);
-      expect(insert).not.toHaveBeenCalled();
     }
   );
 

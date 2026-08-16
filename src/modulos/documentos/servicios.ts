@@ -40,13 +40,6 @@ export async function obtenerDocumentoPorId(id: string) {
   return apiRequest<RespuestaDatos<DocumentoCompleto>>(`${API_BASE}/${id}`);
 }
 
-export async function crearDocumento(data: { leadId: string; nombre: string; tipo: string; banco?: string; fechaEmision?: string; fechaVencimiento?: string }) {
-  return apiRequest<RespuestaDatos<DocumentoCompleto>>(API_BASE, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
 export async function actualizarDocumento(id: string, data: Record<string, unknown>) {
   return apiRequest<RespuestaDatos<DocumentoCompleto>>(`${API_BASE}/${id}`, {
     method: "PUT",

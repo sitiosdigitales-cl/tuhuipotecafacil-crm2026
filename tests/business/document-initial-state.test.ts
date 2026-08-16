@@ -1,66 +1,16 @@
-import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const { from, insert, requireAuth, single } = vi.hoisted(() => ({
-  from: vi.fn(),
-  insert: vi.fn(),
-  requireAuth: vi.fn(),
-  single: vi.fn(),
-}));
-
-vi.mock("@/lib/api-auth", () => ({
-  requireAuth,
-  unauthorized: () => new Response(null, { status: 401 }),
-}));
-
-vi.mock("@/lib/supabase", () => ({
-  fromSupabaseArray: (rows: unknown) => rows,
-  supabase: { from },
-  toSupabaseColumns: (row: unknown) => row,
-}));
-
-vi.mock("@/lib/dispatcher-notificaciones", () => ({
-  despacharNotificacion: vi.fn().mockResolvedValue(undefined),
-}));
-
-import { POST } from "@/app/api/documentos/route";
+import { describe, expect, it } from "vitest";
 
 describe("alta de documentos", () => {
-  beforeEach(() => {
-    requireAuth.mockReturnValue({
-      email: "ejecutivo@example.invalid",
-      rol: "EJECUTIVO",
-      userId: "ejecutivo-uno",
-    });
-    single.mockResolvedValue({ data: { id: "documento-nuevo" }, error: null });
+  it.each([
+    "src/app/api/upload/route.ts",
+    "src/app/api/portal/upload/route.ts",
+  ])("%s siempre inicia el documento pendiente de revisión", (relativePath) => {
+    const source = readFileSync(join(process.cwd(), relativePath), "utf8");
 
-    const query = {
-      eq: vi.fn(() => query),
-      insert,
-      select: vi.fn(() => query),
-      single,
-    };
-    insert.mockReturnValue(query);
-    from.mockReturnValue(query);
-  });
-
-  it("siempre inicia el documento pendiente de revisión", async () => {
-    const response = await POST(
-      new NextRequest("http://localhost/api/documentos", {
-        body: JSON.stringify({
-          estado: "APROBADO",
-          leadId: "lead-uno",
-          nombre: "Liquidación de sueldo",
-          tipo: "LIQUIDACION_SUELDO",
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      })
-    );
-
-    expect(response.status).toBe(201);
-    expect(insert).toHaveBeenCalledWith(
-      expect.objectContaining({ estado: "PENDIENTE" })
-    );
+    expect(source).toMatch(/estado:\s*"PENDIENTE"/);
+    expect(source).not.toMatch(/estado:\s*body\.estado/);
   });
 });

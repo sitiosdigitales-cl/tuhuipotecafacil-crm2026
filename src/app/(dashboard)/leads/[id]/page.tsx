@@ -286,36 +286,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     window.open(`https://wa.me/?text=${texto}`, "_blank");
   };
 
-  const handleUploadDoc = async (nuevoDoc: Omit<DocumentoLead, "id" | "creadoEn">) => {
-    try {
-      const res = await fetch("/api/documentos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: lead.id,
-          leadNombre: `${lead.nombre} ${lead.apellido}`,
-          nombre: nuevoDoc.nombre,
-          tipo: nuevoDoc.tipo,
-          estado: nuevoDoc.estado || "PENDIENTE",
-          archivoUrl: nuevoDoc.archivoUrl || null,
-        }),
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setDocsSubidos((prev) => [{
-          ...json.data,
-          creadoEn: new Date(json.data.creadoEn),
-        }, ...prev]);
-      }
-    } catch {
-      // Fallback local
-      const doc: DocumentoLead = {
-        ...nuevoDoc,
-        id: `doc-${Date.now()}`,
-        creadoEn: new Date(),
-      };
-      setDocsSubidos((prev) => [doc, ...prev]);
-    }
+  const handleUploadDoc = (nuevoDoc: Omit<DocumentoLead, "creadoEn">) => {
+    const doc: DocumentoLead = {
+      ...nuevoDoc,
+      creadoEn: new Date(),
+    };
+    setDocsSubidos((prev) => [doc, ...prev]);
   };
 
   const handleDownloadDoc = (doc: DocumentoLead) => {

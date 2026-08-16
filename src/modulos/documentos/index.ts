@@ -31,7 +31,6 @@ export type { SubirDocumentoInput, CambiarEstadoDocumentoInput } from "./validac
 export {
   obtenerDocumentos,
   obtenerDocumentoPorId,
-  crearDocumento,
   actualizarDocumento,
   eliminarDocumento,
   cambiarEstadoDocumento,
