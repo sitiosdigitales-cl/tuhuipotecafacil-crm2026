@@ -1,106 +1,81 @@
-# Checklist: Configuración del CRM TuHipotecaFacil
+# Checklist operacional del CRM
 
-## ✅ Completado
+Este documento distingue lo comprobado por el repositorio de las acciones que
+requieren cuentas, secretos o decisiones humanas. Una casilla de código no
+certifica por sí sola el entorno productivo.
 
-### Sistema de Backups
-- [x] API de backups funcional (`/api/backup`)
-- [x] Script de backup manual (`scripts/backup-manual.sh`)
-- [x] Página de UI para gestionar backups (`/backups`)
-- [x] Ruta automática compatible con Vercel Cron (`/api/backup/cron`)
-- [ ] Bucket `backups` verificado en Supabase
-- [ ] Variables `BACKUP_API_KEY` y `CRON_SECRET` verificadas en Vercel
+## Verificado en código y CI
 
-### Tablas de Base de Datos
-- [x] Script SQL unificado creado (`prisma/run-all-pending.sql`)
-- [x] Guía de ejecución (`docs/guia-ejecutar-sql-pendiente.md`)
-- [x] 14 tablas pendientes documentadas
+- [x] `npm run build`, `npm test`, `npm run lint` y `npm run typecheck`.
+- [x] `npm audit --audit-level=high` sin alertas vigentes.
+- [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
+- [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
+- [x] El respaldo externo genera roles, esquema, datos y objetos con hashes.
+- [x] El ensayo de restauración rechaza destinos no vacíos y mide el RTO.
+- [x] El SQL histórico `prisma/run-all-pending.sql` se detiene sin ejecutar.
 
-### Email Piping
-- [x] Webhook endpoint funcional (`/api/webhook/email`)
-- [x] Script PHP para cPanel (`crm/email-handler.php`)
-- [x] Script de prueba (`crm/test-email-webhook.sh`)
-- [x] Guías para cPanel, SendGrid y Mailgun
+## P0 · Antes de aplicar migraciones administradas
 
----
+- [ ] Recuperar y probar dos cuentas `SUPER_ADMIN` independientes.
+- [ ] Rotar `JWT_SECRET`, `BACKUP_API_KEY` y `CRON_SECRET` en los gestores
+  autorizados, sin copiar valores a documentos o tickets.
+- [ ] Confirmar respaldo administrado o PITR del proyecto Supabase.
+- [ ] Activar el respaldo R2 siguiendo `docs/respaldos-externos.md`.
+- [ ] Restaurar un snapshot en un proyecto de staging vacío dentro de cuatro
+  horas y registrar el resultado.
+- [ ] Comparar un dump remoto **sin datos** con el baseline del repositorio y
+  reconciliar cualquier deriva de forma aditiva.
 
-## ⏳ Pendiente (Requiere tu acción)
+## Migraciones
 
-### 1. Ejecutar SQL en Supabase
-**Tiempo estimado: 5 minutos**
+### Local
 
-1. Ir a https://supabase.com/dashboard
-2. Seleccionar proyecto → SQL Editor
-3. Copiar contenido de `prisma/run-all-pending.sql`
-4. Pegar y ejecutar
-5. Verificar tablas en Table Editor
+```bash
+npm run db:start
+npm run db:reset
+npm run db:reset
+npm run db:test
+npm run db:stop
+```
 
-### 2. Variables de Entorno en Vercel
-**Tiempo estimado: 10 minutos**
+El procedimiento y las condiciones de detención están en
+`docs/supabase-migrations.md`. No usar scripts de `prisma/` como instalador.
 
-Ir a Vercel → Settings → Environment Variables y agregar:
+### Staging
 
-| Variable | Dónde obtenerla |
-|----------|-----------------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → service_role |
-| `RESEND_API_KEY` | Resend.com → API Keys |
-| `ELEMENTOR_WEBHOOK_SECRET` | Generar con `openssl rand -hex 32` |
-| `CRON_SECRET` | Generar con `openssl rand -hex 32` |
+- [ ] Crear o seleccionar un proyecto que no contenga datos reales.
+- [ ] Confirmar que el snapshot externo se puede leer antes del cambio.
+- [ ] Aplicar exactamente la cadena revisada de `supabase/migrations/` mediante
+  la CLI y credenciales entregadas por una persona autorizada.
+- [ ] Verificar login, roles, leads, solicitudes, documentos, comisiones,
+  webhooks y buckets privados con datos sintéticos.
+- [ ] Confirmar que `anon` y `authenticated` no leen las tablas cerradas.
 
-Después: Redesplegar el proyecto en Vercel.
+### Producción
 
-### 3. Configurar Email Piping
-**Tiempo estimado: 15 minutos**
+- [ ] Avanzar solo después de que staging, respaldo y recuperación estén
+  verdes para el mismo commit.
+- [ ] Abrir una ventana de cambio con responsable, reversión y observación.
+- [ ] Aplicar las migraciones sin editar SQL desde el panel.
+- [ ] Repetir smoke de roles y revisar errores sin consultar datos personales.
 
-Elige una opción:
+**Staging siempre va antes que producción.** Codex no ejecuta estos pasos ni
+confirma casillas que dependan de paneles o secretos.
 
-**Opción A: cPanel (más fácil)**
-1. Subir `crm/email-handler.php` al hosting
-2. Configurar Email Forwarder en cPanel
-3. Probar enviando email a `contacto@tuhipotecafacil.cl`
+## Servicios externos
 
-**Opción B: SendGrid (más profesional)**
-1. Crear cuenta en SendGrid
-2. Configurar Inbound Parse
-3. Agregar MX record en DNS
+- [ ] Configurar R2, Restic y notificaciones de fallos de respaldo.
+- [ ] Configurar el environment protegido `staging-restore` con revisores.
+- [ ] Verificar dominio, SPF, DKIM y DMARC para Resend.
+- [ ] Ejecutar envío real desde staging a una dirección sintética controlada.
+- [ ] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
 
-### 4. Verificar DNS para Resend
-**Tiempo estimado: 10 minutos**
+## Autenticación y acceso
 
-1. Crear cuenta en Resend.com
-2. Agregar dominio `tuhipotecafacil.cl`
-3. Configurar registros DNS (SPF, DKIM, DMARC)
-4. Esperar verificación
+- [ ] Completar la migración gradual a Supabase Auth.
+- [ ] Exigir MFA a `SUPER_ADMIN` y `ADMIN`.
+- [ ] Probar revocación, recuperación y cambio de rol por solicitud.
+- [ ] Verificar RLS por dominio con la matriz completa de roles.
 
----
-
-## 📋 Resumen de Archivos Creados
-
-| Archivo | Descripción |
-|---------|-------------|
-| `scripts/backup-manual.sh` | Script de backup manual |
-| `src/app/(dashboard)/backups/page.tsx` | Página de UI para backups |
-| `prisma/run-all-pending.sql` | Script SQL unificado |
-| `docs/guia-ejecutar-sql-pendiente.md` | Guía para ejecutar SQL |
-| `crm/email-handler.php` | Script PHP para email piping |
-| `crm/test-email-webhook.sh` | Script de prueba |
-| `docs/setup-email-piping.md` | Guía de email piping |
-| `docs/setup-vercel-env.md` | Guía de variables de entorno |
-| `docs/CHECKLIST-CONFIGURACION.md` | Este archivo |
-
----
-
-## 🚀 Siguientes Pasos
-
-1. **Ejecutar SQL** → Seguir `docs/guia-ejecutar-sql-pendiente.md`
-2. **Configurar Vercel** → Seguir `docs/setup-vercel-env.md`
-3. **Configurar Email** → Seguir `docs/setup-email-piping.md`
-4. **Probar todo** → Verificar que emails, webhooks y backups funcionan
-
----
-
-## 📞 Soporte
-
-Si tienes dudas o problemas:
-1. Revisar los logs en Vercel → Logs
-2. Revisar los logs en Supabase → Logs
-3. Ejecutar los scripts de prueba incluidos
+Estas casillas continúan abiertas hasta tener evidencia en staging; que la suite
+local esté verde no reemplaza esa verificación.

@@ -1163,3 +1163,13 @@ primera ejecución requieren secrets humanos. Suite: 603/603; audit: 0.
 environment protegido y confirmación literal; repone y verifica objetos, mide
 RTO y emite solo recuentos. Ensayo real requiere proyecto humano. Suite:
 608/608; audit: 0.
+
+[FASE BACKUP · BACKUP-02] verificado — todas las puertas pasan en CI.
+
+[build] ocupado — Codex, BUG-122 · runbook canónico de migraciones.
+
+[build] libre — Codex, BUG-122 · build y validaciones terminadas.
+
+[operación · BUG-122] corregido — la guía histórica ya no contiene una receta
+ejecutable y el checklist separa evidencia de acciones humanas. Suite: 610/610;
+audit: 0.
