@@ -4,27 +4,39 @@ import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  const vistaAdministrativa = ["SUPER_ADMIN", "ADMIN"].includes(auth.rol);
+  if (!vistaAdministrativa && !["EJECUTIVO", "AGENTE"].includes(auth.rol)) {
+    return forbidden();
+  }
+
   try {
     const { id } = await params;
-    const { data, error } = await supabase
+    if (auth.rol === "AGENTE" && id !== auth.userId) return forbidden();
+
+    let query = supabase
       .from("usuarios")
-      .select("id,nombre,apellido,email,telefono,rol,estado,creadoen")
-      .eq("id", id)
-      .single();
+      .select("id,nombre,apellido,email,telefono,rol,estado,cargo,creadoen")
+      .eq("id", id);
+    if (auth.rol === "EJECUTIVO") {
+      query = query.eq("estado", "ACTIVO").neq("rol", "CLIENTE");
+    }
+    const { data, error } = await query.single();
     if (error || !data) return NextResponse.json({ success: false, error: "No encontrado" }, { status: 404 });
 
-    const usuario = {
+    const usuario: Record<string, unknown> = {
       id: data.id,
       nombre: data.nombre,
       apellido: data.apellido,
       email: data.email,
-      telefono: data.telefono,
       rol: data.rol,
       estado: data.estado,
+      cargo: data.cargo || null,
       ultimoAcceso: null,
       creadoEn: data.creadoen,
     };
+    if (vistaAdministrativa) usuario.telefono = data.telefono;
 
     return NextResponse.json({ success: true, data: usuario });
   } catch {

@@ -125,53 +125,23 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
 
   const [asesor, setAsesor] = useState<Asesor | null>(null);
 
-  // Función para cargar datos del asesor
-  const cargarAsesor = async (asignadoA: string | undefined, nombreEjecutivo: string | undefined) => {
-    if (asignadoA) {
-      try {
-        const res = await fetch(`/api/usuarios?id=${asignadoA}`);
-        const data: RespuestaApi<UsuarioAsesorApi[]> = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          const usuario = data.data[0];
-          setAsesor({
-            nombre: usuario.nombre || "",
-            apellido: usuario.apellido || "",
-            email: usuario.email || "",
-            telefono: usuario.telefono || "",
-            cargo: usuario.cargo || "Asesor Hipotecario Senior",
-          });
-          return;
-        }
-      } catch { /* fallback */ }
+  const cargarAsesor = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/asesor", { credentials: "include" });
+      const data: RespuestaApi<UsuarioAsesorApi> = await res.json();
+      if (res.ok && data.success && data.data) {
+        setAsesor({
+          nombre: data.data.nombre || "",
+          apellido: data.data.apellido || "",
+          email: data.data.email || "",
+          telefono: data.data.telefono || "",
+          cargo: data.data.cargo || "Asesor Hipotecario Senior",
+        });
+      }
+    } catch {
+      setAsesor(null);
     }
-    if (nombreEjecutivo) {
-      try {
-        const res = await fetch(`/api/usuarios?busqueda=${encodeURIComponent(nombreEjecutivo)}`);
-        const data: RespuestaApi<UsuarioAsesorApi[]> = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          const usuario = data.data.find((usuarioActual) => {
-            return `${usuarioActual.nombre || ""} ${usuarioActual.apellido || ""}`.toLowerCase().includes(nombreEjecutivo.toLowerCase());
-          }) || data.data[0];
-          setAsesor({
-            nombre: usuario.nombre || "",
-            apellido: usuario.apellido || "",
-            email: usuario.email || "",
-            telefono: usuario.telefono || "",
-            cargo: usuario.cargo || "Asesor Hipotecario Senior",
-          });
-          return;
-        }
-      } catch { /* fallback */ }
-      const partes = nombreEjecutivo.split(' ');
-      setAsesor({
-        nombre: partes[0] || "",
-        apellido: partes.slice(1).join(" ") || "",
-        email: "",
-        telefono: "",
-        cargo: "Asesor Hipotecario Senior",
-      });
-    }
-  };
+  }, []);
 
   
   // Verificar si es la primera vez del cliente
@@ -223,14 +193,14 @@ export function PortalClienteContent({ className = "" }: PortalClienteContentPro
         }
       } catch { /* documentos no disponibles */ }
 
-      await cargarAsesor(found.asignadoA, found.nombreEjecutivo);
+      await cargarAsesor();
     } catch {
       setCliente(null);
       setError("No pudimos conectar con el servidor");
     } finally {
       setBuscando(false);
     }
-  }, []);
+  }, [cargarAsesor]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void cargarMiSolicitud(), 0);

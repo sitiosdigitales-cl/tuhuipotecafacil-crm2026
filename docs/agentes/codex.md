@@ -684,3 +684,10 @@ remitente y reacciones se derivan de la sesión. Suite completa: 336/336.
 
 [calidad · BUG-061] corregido — integraciones exige rol administrativo,
 enmascara secretos anidados y usa escrituras cerradas. Suite: 343/343.
+
+[build] ocupado — Codex, BUG-062 · directorio por rol y asesor del portal.
+
+[build] libre — Codex, BUG-062 · build y typecheck terminaron en 0.
+
+[calidad · BUG-062] corregido — directorio aplica vistas por rol y el portal
+resuelve únicamente su asesor desde la sesión. Suite completa: 349/349.

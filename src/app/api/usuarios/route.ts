@@ -4,7 +4,13 @@ import bcrypt from "bcryptjs";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest) {
-  if (!requireAuth(request)) return unauthorized();
+  const auth = requireAuth(request);
+  if (!auth) return unauthorized();
+  const vistaAdministrativa = ["SUPER_ADMIN", "ADMIN"].includes(auth.rol);
+  if (!vistaAdministrativa && !["EJECUTIVO", "AGENTE"].includes(auth.rol)) {
+    return forbidden();
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -12,8 +18,15 @@ export async function GET(request: NextRequest) {
     const estado = searchParams.get("estado");
     const busqueda = searchParams.get("busqueda");
 
-    // Seleccionar solo columnas que sabemos que existen
-    let query = supabase.from("usuarios").select("id,nombre,apellido,email,telefono,rol,estado,cargo,creadoen");
+    let query = supabase
+      .from("usuarios")
+      .select("id,nombre,apellido,email,telefono,rol,estado,cargo,creadoen");
+
+    if (auth.rol === "AGENTE") {
+      query = query.eq("id", auth.userId);
+    } else if (auth.rol === "EJECUTIVO") {
+      query = query.eq("estado", "ACTIVO").neq("rol", "CLIENTE");
+    }
 
     if (id) query = query.eq("id", id);
     if (rol) query = query.eq("rol", rol);
@@ -42,18 +55,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No se pudieron cargar los datos" }, { status: 500 });
     }
 
-    const usuarios = (data || []).map((u: Record<string, unknown>) => ({
-      id: u.id,
-      nombre: u.nombre,
-      apellido: u.apellido,
-      email: u.email,
-      telefono: u.telefono,
-      rol: u.rol,
-      estado: u.estado,
-      cargo: u.cargo || null,
-      ultimoAcceso: null,
-      creadoEn: u.creadoen,
-    }));
+    const usuarios = (data || []).map((u: Record<string, unknown>) => {
+      const usuario: Record<string, unknown> = {
+        id: u.id,
+        nombre: u.nombre,
+        apellido: u.apellido,
+        email: u.email,
+        rol: u.rol,
+        estado: u.estado,
+        cargo: u.cargo || null,
+        ultimoAcceso: null,
+        creadoEn: u.creadoen,
+      };
+      if (vistaAdministrativa) usuario.telefono = u.telefono;
+      return usuario;
+    });
 
     return NextResponse.json({ success: true, data: usuarios });
   } catch (e) {
