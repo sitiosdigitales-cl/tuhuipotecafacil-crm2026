@@ -33,7 +33,7 @@ function authErrorCode(error: unknown): string | null {
   return typeof error.code === "string" ? error.code : null;
 }
 
-function createRequestAuthClient(): SupabaseClient {
+export function createRequestAuthClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL no configurada");
@@ -157,6 +157,19 @@ export async function revocarSesionSupabase(
 ): Promise<void> {
   const { error } = await adminClient.auth.admin.signOut(accessToken, "local");
   if (error) throw new Error("No se pudo revocar la sesión de Supabase Auth");
+}
+
+/**
+ * Alcance global: cierra TODAS las sesiones del usuario, no solo la que trae
+ * el token. Es lo que corresponde después de cambiar una contraseña, porque
+ * quien haya entrado con la anterior debe quedar fuera.
+ */
+export async function revocarSesionesSupabase(
+  accessToken: string,
+  adminClient = getSupabaseAdmin(),
+): Promise<void> {
+  const { error } = await adminClient.auth.admin.signOut(accessToken, "global");
+  if (error) throw new Error("No se pudieron revocar las sesiones de Supabase Auth");
 }
 
 export async function migrarIdentidadSupabase({

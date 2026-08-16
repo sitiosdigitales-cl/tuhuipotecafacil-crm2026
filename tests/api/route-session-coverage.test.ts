@@ -22,6 +22,15 @@ const GUARDIAS_ASINCRONAS = new Set([
 const EXCEPCIONES_SIN_SESION = new Map<string, string>([
   ["/api/auth/login#POST", "inicia la sesión"],
   ["/api/auth/logout#POST", "elimina las cookies de sesión"],
+  ["/api/auth/recuperacion#POST", "recibe la solicitud de quien no puede entrar"],
+  [
+    "/api/auth/recuperacion/callback#GET",
+    "canjea el token de un solo uso del correo",
+  ],
+  [
+    "/api/auth/recuperacion/confirmacion#POST",
+    "valida la cookie del canje, no una sesión del CRM",
+  ],
   ["/api/backup#POST", "usa la clave del proceso automático"],
   ["/api/backup#DELETE", "usa la clave del proceso automático"],
   ["/api/backup/cron#GET", "usa CRON_SECRET de Vercel"],

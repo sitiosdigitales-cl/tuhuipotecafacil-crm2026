@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import {
@@ -163,6 +164,13 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <Link
+            href="/recuperar-contrasena"
+            className="mt-6 block text-center text-sm text-blue-200/70 hover:text-white transition-colors"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
         </div>
 
         {/* Footer */}

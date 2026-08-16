@@ -177,6 +177,39 @@ const EMAIL_TEMPLATES: Record<string, (data: Record<string, string>) => EmailTem
       </div>
     `,
   }),
+  recuperacionPassword: (data) => ({
+    nombre: "Recuperación de contraseña",
+    asunto: "Recupera el acceso a tu cuenta - TuHipotecaFacil",
+    contenido: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #3B82F6, #6366F1); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">Recuperación de contraseña</h1>
+        </div>
+        <div style="padding: 30px; background: #F8FAFC;">
+          <h2 style="color: #1E293B;">Hola ${data.nombre},</h2>
+          <p style="color: #475569; line-height: 1.6;">
+            Alguien solicitó recuperar el acceso a tu cuenta del CRM. Si fuiste tú,
+            usa el botón para definir una contraseña nueva.
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${data.url}" style="background: #3B82F6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Definir contraseña nueva
+            </a>
+          </div>
+          <p style="color: #64748B; font-size: 14px; line-height: 1.6;">
+            El enlace sirve una sola vez y vence en ${data.minutos} minutos.
+            Si no pediste esto, ignora el correo: tu contraseña actual sigue vigente.
+          </p>
+        </div>
+        <div style="background: #1E293B; padding: 20px; text-align: center;">
+          <p style="color: #94A3B8; margin: 0; font-size: 12px;">
+            © 2026 Tu Hipoteca Fácil - Todos los derechos reservados
+          </p>
+        </div>
+      </div>
+    `,
+  }),
+
   notificacionDocumento: (data) => ({
     nombre: "Notificacion de Documento",
     asunto: data.evento + " - TuHipotecaFacil",
@@ -309,6 +342,20 @@ export async function enviarEmailTemplate(
 // Enviar email de bienvenida
 export async function enviarEmailBienvenida(email: string, nombre: string): Promise<boolean> {
   return enviarEmailTemplate("bienvenida", email, { nombre });
+}
+
+// Enviar enlace de recuperación de contraseña
+export async function enviarEmailRecuperacion(
+  email: string,
+  nombre: string,
+  url: string,
+  minutos: number
+): Promise<boolean> {
+  return enviarEmailTemplate("recuperacionPassword", email, {
+    nombre,
+    url,
+    minutos: String(minutos),
+  });
 }
 
 // Enviar solicitud de documentos

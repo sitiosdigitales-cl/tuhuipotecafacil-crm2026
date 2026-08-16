@@ -161,3 +161,77 @@ evento `email.received`. Detalle que cambia la implementacion: el webhook trae
 solo METADATOS, no el cuerpo ni los adjuntos; hay que pedirlos a la API de
 Received Emails. Ademas entrega via Svix (cabeceras `svix-*`), asi que la
 verificacion de firma no es la que escribi a mano en `webhook/email`.
+
+[build] ocupado — Claude, AUTH-04. Worktree propio (`crm2026-auth04-b`) con su
+propio `.next`, asi que no colisiona con el build del arbol principal.
+
+[build] libre — Claude, AUTH-04. Build, suite, lint, typecheck y audit en verde.
+
+[FASE AUTH · AUTH-04] hecho — recuperacion de contraseña por Supabase Auth:
+solicitud, callback, cambio, expiracion y respuestas neutras. Rama
+`claude/auth-04-staging-base` desde `45ea5c7` de `origin/diego`, sin push.
+
+  Sin colision con STG-01: ese commit toca ocho archivos de documentacion, CI y
+  scripts, y AUTH-04 no entra en ninguno. Los conjuntos son disjuntos, asi que
+  el orden en que se integren no importa.
+
+  El enlace lo emite `admin.generateLink({type:'recovery'})` y lo entrega
+  Resend, no el SMTP de Supabase: el resto del correo del CRM ya sale por ahi
+  y el servicio por defecto de Supabase limita a dos correos por hora.
+
+  Tres decisiones que conviene revisar, porque no eran las obvias:
+
+  1. El canje NO reusa `crm_sb_access`. Si lo hiciera, abrir el enlace del
+     correo entregaria una sesion completa del CRM sin pasar por contraseña ni
+     por el TOTP que AUTH-03 exige a SUPER_ADMIN y ADMIN. La cookie es
+     `crm_rec_access`, y solo la lee `/api/auth/recuperacion/confirmacion`;
+     `validarSesionSolicitud` no la mira. El callback ademas cierra cualquier
+     sesion abierta en ese navegador antes de dejar la suya.
+
+  2. La expiracion no depende de la cookie. Un `maxAge` lo controla el
+     navegador y quien tenga el token puede ignorarlo. La ventana de 15 minutos
+     se comprueba en el servidor contra el `iat` del access token, que va
+     firmado por Supabase: adelantarlo rompe `getUser`. Encima queda la
+     caducidad propia del token del correo, que Supabase consume en el canje.
+
+  3. El cambio usa `actualizarIdentidadAdministrada` (service role) en vez de
+     `updateUser`, asi no hace falta guardar refresh token: sin el, la sesion
+     de recuperacion no se puede prolongar. Despues revoca en alcance global,
+     dentro de su propio try, porque la contraseña YA cambio y un fallo de la
+     revocacion no puede convertir un exito en 500.
+
+  Respuestas neutras: cuenta inexistente, inhabilitada, sin `auth_user_id`,
+  dentro de la ventana de espera o correo enviado devuelven el MISMO 200 con la
+  misma frase. Solo un correo mal formado da 400, y eso no dice nada sobre que
+  cuentas existen.
+
+  Migracion `20260817000000_recuperacion_password.sql`: columna
+  `recuperacion_enviada_en` y RPC `reclamar_recuperacion_password`, que reserva
+  el turno en el mismo UPDATE que lo comprueba. Sin esto, un tercero repite el
+  formulario con el correo de alguien del equipo y le llena el buzon, y como la
+  respuesta es neutra no hay señal de que este pasando. NO la ejecute: queda
+  para el paso humano de la seccion 11. Si falta, el codigo degrada abierto
+  (envia sin espera) y lo avisa por consola; degradar cerrado dejaria al equipo
+  sin forma de recuperar su cuenta.
+
+  Toque `tests/api/route-session-coverage.test.ts` para registrar los tres
+  endpoints en `EXCEPCIONES_SIN_SESION` con su justificacion — es el mecanismo
+  que el propio test define para un endpoint publico, no un relajo del guardia.
+  Y subi de 4 a 5 el conteo de cookies borradas en tres pruebas de cierre de
+  sesion, porque `eliminarCookiesSesion` ahora tambien tumba `crm_rec_access`.
+
+[nota · AUTH-04, limitaciones] Tres, ninguna bloqueante:
+
+  - Una cuenta sin `auth_user_id` (solo hash legado) no se puede recuperar:
+    responde neutro y no envia nada. Es justo la que el login en modo
+    `required` manda a "solicitar recuperacion", asi que ese circuito queda
+    abierto. Cerrarlo es crear la identidad en Auth durante la recuperacion, y
+    eso es AUTH-01/AUTH-02, no esta tarea. No lo invento por mi cuenta.
+  - El token viaja en la query del callback, o sea entra a los logs de acceso
+    de Vercel. Lo acota que Supabase lo consume en el primer canje y que la
+    ventana es corta. Sacarlo de ahi obliga a moverlo al fragmento y postearlo
+    desde el cliente.
+  - Queda un canal por tiempo: una cuenta real gasta generateLink mas el envio
+    por Resend, una inventada responde de inmediato. El login iguala esto
+    comparando contra un hash de descarte; aca no hay equivalente barato. Lo
+    dejo escrito en vez de fingir que no existe.

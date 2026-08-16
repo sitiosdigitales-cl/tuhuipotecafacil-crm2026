@@ -100,7 +100,8 @@ describe("renovación de la sesión actual con Supabase", () => {
 
     expect(response.status).toBe(401);
     expect(renovarSesionSupabaseSolicitud).not.toHaveBeenCalled();
-    expect(cookies.match(/Max-Age=0/g)).toHaveLength(4);
+    expect(cookies).toContain("crm_rec_access=;");
+    expect(cookies.match(/Max-Age=0/g)).toHaveLength(5);
   });
 
   it("elimina todo si el refresh token ya no está vigente", async () => {

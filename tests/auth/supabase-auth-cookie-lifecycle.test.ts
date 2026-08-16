@@ -54,6 +54,8 @@ describe("cookies del puente Supabase Auth", () => {
 
     expect(cookies).toContain("crm_sb_access=");
     expect(cookies).toContain("crm_sb_refresh=");
-    expect(cookies.match(/Max-Age=0/g)).toHaveLength(4);
+    // La cookie del canje de recuperación también cae con el cierre de sesión.
+    expect(cookies).toContain("crm_rec_access=");
+    expect(cookies.match(/Max-Age=0/g)).toHaveLength(5);
   });
 });

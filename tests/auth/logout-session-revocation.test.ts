@@ -28,7 +28,9 @@ describe("cierre de sesión Supabase", () => {
 
     expect(response.status).toBe(200);
     expect(revocarSesionSupabase).toHaveBeenCalledWith("synthetic-access");
-    expect(cookies.match(/Max-Age=0/g)).toHaveLength(4);
+    // crm_token, auth_token, crm_sb_access, crm_sb_refresh y crm_rec_access.
+    expect(cookies).toContain("crm_rec_access=;");
+    expect(cookies.match(/Max-Age=0/g)).toHaveLength(5);
     expect(response.headers.get("cache-control")).toBe("no-store, max-age=0");
   });
 
