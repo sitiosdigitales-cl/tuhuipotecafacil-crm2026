@@ -4,18 +4,34 @@ import {
   ReferralCodeConfigurationError,
   resolveReferralCode,
 } from "@/lib/referral-code";
+import { ReferralRegistrationInputSchema } from "@/lib/public-lead-schema";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 
 export async function POST(request: NextRequest) {
+  let rawBody: unknown;
   try {
-    const body = await request.json();
-    const { codigo, nombre, email, telefono } = body;
-
-    if (!codigo || !nombre || !email) {
+    rawBody = await parseBoundedJson(request);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
       return NextResponse.json(
-        { success: false, error: "Codigo, nombre y email son requeridos" },
-        { status: 400 }
+        { success: false, error: error.message },
+        { status: error.status }
       );
     }
+    return NextResponse.json({ success: false, error: "Solicitud inválida" }, { status: 400 });
+  }
+
+  const parsedBody = ReferralRegistrationInputSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { success: false, error: "Datos de formulario inválidos" },
+      { status: 400 }
+    );
+  }
+
+  const { codigo, nombre, email, telefono } = parsedBody.data;
+
+  try {
 
     const propietario = await resolveReferralCode(codigo);
     if (!propietario) {

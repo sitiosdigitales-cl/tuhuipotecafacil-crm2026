@@ -2,28 +2,41 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
+import { PreEvaluationInputSchema } from "@/lib/public-lead-schema";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 
 // POST /api/pre-evaluacion — Endpoint público para crear leads desde el simulador
 // NO requiere auth (es un formulario público)
 export async function POST(request: NextRequest) {
+  let rawBody: unknown;
   try {
-    const body = await request.json();
-
-    if (!body.nombre || !body.apellido) {
-      return NextResponse.json({ success: false, error: "Nombre y apellido requeridos" }, { status: 400 });
+    rawBody = await parseBoundedJson(request);
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
     }
+    return NextResponse.json({ success: false, error: "Solicitud inválida" }, { status: 400 });
+  }
 
-    if (!body.email) {
-      return NextResponse.json({ success: false, error: "Email requerido" }, { status: 400 });
-    }
+  const parsedBody = PreEvaluationInputSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { success: false, error: "Datos de formulario inválidos" },
+      { status: 400 }
+    );
+  }
+
+  const body = parsedBody.data;
+
+  try {
 
     const leadId = crypto.randomUUID();
 
     // Determinar situación laboral
-    let sitLaboral = "DEPENDIENTE";
-    if (body.situacionLaboral === "Independiente" || body.situacionLaboral === "INDEPENDIENTE") {
-      sitLaboral = "INDEPENDIENTE";
-    }
+    const sitLaboral = body.situacionLaboral ?? "DEPENDIENTE";
 
     // Crear lead en Supabase
     const { error } = await supabase
@@ -39,14 +52,14 @@ export async function POST(request: NextRequest) {
         etapa: "NUEVO_LEAD",
         prioridad: "MEDIA",
         situacionLaboral: sitLaboral,
-        enDicom: body.dicom === "Sí" || body.enDicom === true,
+        enDicom: body.dicom === "Sí" || body.dicom === "Si" || body.dicom === true || body.enDicom === true,
         tipoCredito: body.tipoCredito || null,
         montoSolicitado: body.montoSolicitado || null,
         banco: body.banco || null,
         notas: body.comentarios || null,
-        edad: body.edad ? parseInt(body.edad) : null,
+        edad: body.edad ?? null,
         rentaMensual: body.rentaMensual || null,
-        complementarRenta: body.complementarRenta === "Sí",
+        complementarRenta: body.complementarRenta === "Sí" || body.complementarRenta === "Si" || body.complementarRenta === true,
         cuentaPie: body.cuentaPie === true,
         diasEnEtapa: 0,
       }))

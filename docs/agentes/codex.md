@@ -871,3 +871,10 @@ atribución persistida. Suite: 444/444; audit: 0.
 
 [calidad · BUG-087] corregido — sin proveedor, el envío falla; la simulación
 local exige habilitación explícita. Suite: 447/447; audit: 0.
+
+[build] ocupado — Codex, BUG-088 · payloads públicos acotados y validados.
+
+[build] libre — Codex, BUG-088 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-088] corregido — JSON y UTF-8 obligatorios, máximo 32 KiB y
+esquemas antes de todo acceso a datos. Suite: 451/451; audit: 0.
