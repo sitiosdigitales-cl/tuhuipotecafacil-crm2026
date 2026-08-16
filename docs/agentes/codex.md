@@ -941,3 +941,10 @@ contador cierra el login y queda registrado. Suite: 487/487; audit: 0.
 
 [calidad · BUG-097] corregido — el script usa `IF NOT EXISTS` y el CI revisa
 todos los SQL del repositorio. Suite: 488/488; audit: 0.
+
+[build] ocupado — Codex, BUG-098 · redacción de logs del webhook WhatsApp.
+
+[build] libre — Codex, BUG-098 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-098] corregido — los eventos WhatsApp no registran token,
+teléfono, contenido ni identificadores del proveedor. Suite: 491/491; audit: 0.

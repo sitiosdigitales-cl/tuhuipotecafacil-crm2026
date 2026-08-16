@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(challenge, { status: 200 });
   }
 
-  console.error("Verificación de webhook fallida:", { mode, token });
+  console.warn("Verificación del webhook de WhatsApp rechazada");
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
 
@@ -57,12 +57,6 @@ export async function POST(request: NextRequest) {
               button: message.button,
               interactive: message.interactive,
             });
-          }
-
-          // Procesar actualizaciones de estado (entregados, leídos)
-          const statuses = value.statuses || [];
-          for (const status of statuses) {
-            console.log(`Estado del mensaje ${status.id}: ${status.status}`);
           }
         }
       }

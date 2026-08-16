@@ -283,7 +283,7 @@ export async function procesarMensajeRecibido(mensaje: MensajeWhatsApp): Promise
       .single();
 
     if (!lead) {
-      console.log("Mensaje WhatsApp de número no registrado:", telefono);
+      console.info("Mensaje de WhatsApp sin lead asociado");
       return;
     }
 
@@ -342,7 +342,7 @@ export async function procesarMensajeRecibido(mensaje: MensajeWhatsApp): Promise
       creadoen: new Date().toISOString(),
     });
 
-    console.log(`Mensaje WhatsApp procesado de ${lead.nombre}: ${contenido.substring(0, 50)}`);
+    console.info("Mensaje de WhatsApp procesado");
   } catch (error) {
     console.error("Error procesando mensaje WhatsApp:", error);
   }
