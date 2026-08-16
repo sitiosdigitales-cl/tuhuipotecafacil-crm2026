@@ -220,7 +220,7 @@ async function ejecutarAccion(accion: Accion, contexto: Record<string, unknown>)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tipo: "custom",
-          to: obtenerTexto(contexto, "email"),
+          leadId,
           subject: obtenerTexto(accion.configuracion, "asunto") || "NotificaciÃ³n",
           html: obtenerTexto(accion.configuracion, "mensaje") || "Tienes una nueva notificaciÃ³n",
         }),

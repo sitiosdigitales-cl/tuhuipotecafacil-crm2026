@@ -723,3 +723,10 @@ y se elimina el POST que aceptaba identidad del cliente. Suite: 358/358.
 
 [calidad · BUG-066] corregido — inventario de backups exige administración;
 clave automática usa comparación constante y nombre canónico. Suite: 362/362.
+
+[build] ocupado — Codex, BUG-067 · roles y alcance del envío de correo.
+
+[build] libre — Codex, BUG-067 · build terminó en 0.
+
+[calidad · BUG-067] corregido — correo operativo exige rol y lead accesible;
+destinatario y nombre se derivan de la ficha. Suite completa: 367/367.
