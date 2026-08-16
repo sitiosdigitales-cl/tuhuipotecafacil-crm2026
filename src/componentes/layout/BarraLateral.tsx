@@ -91,7 +91,7 @@ const seccionesCompletas: { titulo: string; items: MenuItem[]; roles?: Rol[] }[]
       { label: "Plantillas", icon: <FileStack size={17} />, href: "/plantillas" },
       { label: "Triggers", icon: <Zap size={17} />, href: "/triggers" },
       { label: "Integraciones", icon: <Plug size={17} />, href: "/integraciones" },
-      { label: "Asistente IA", icon: <Sparkles size={17} />, href: "/configuracion?tab=asistente-ia" },
+      { label: "Asistente IA", icon: <Sparkles size={17} />, href: "/asistente" },
     ],
   },
   {

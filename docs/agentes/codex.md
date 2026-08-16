@@ -1238,6 +1238,19 @@ servidor. Suite: 716/716; build/lint/typecheck: 0; audit: 0. Docker no está
 instalado localmente, por lo que reconstrucción, pgTAP y Data API quedan como
 gate del job `database` de CI antes de declarar la tarea verificada.
 
+[FASE AUTH · AUTH-06] verificado — reset doble, pgTAP y matriz Data API para
+cinco roles, AAL2, cuentas inactivas/no enlazadas y service role pasan en CI
+`31932775104`.
+
+[build] ocupado — Codex, BUG-124 · configuración con persistencia real.
+
+[build] libre — Codex, BUG-124 · build terminado.
+
+[calidad · BUG-124] corregido — configuración conserva solo notificaciones y
+pipeline persistidos, más información operativa; retirados seis formularios
+locales, campos de secretos y `/api/configuracion` inexistente. Suite: 724/724;
+build/lint/typecheck: 0; audit: 0.
+
 [FASE AUTH · BUG-123] preparado — proveedor email activo con registro público
 global cerrado; regresión contractual añadida. Suite: 633/633; audit: 0.
 

@@ -2,8 +2,6 @@
  * Servicios del módulo Configuración
  */
 
-import type { ConfiguracionInput } from "./validaciones";
-
 export interface Integracion {
   id: string;
   nombre?: string;
@@ -17,21 +15,6 @@ interface RespuestaDatos<T> {
   success: boolean;
   data: T;
   error?: string;
-}
-
-export async function obtenerConfiguracion(): Promise<RespuestaDatos<ConfiguracionInput>> {
-  const response = await fetch("/api/configuracion", { credentials: "include" });
-  return response.json();
-}
-
-export async function actualizarConfiguracion(data: ConfiguracionInput): Promise<RespuestaDatos<ConfiguracionInput>> {
-  const response = await fetch("/api/configuracion", {
-    method: "PUT",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  return response.json();
 }
 
 export async function obtenerIntegraciones(): Promise<RespuestaDatos<Integracion[]>> {
