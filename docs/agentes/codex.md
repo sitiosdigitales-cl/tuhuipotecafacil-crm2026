@@ -906,3 +906,10 @@ defecto; recuperación local explícita. Suite: 462/462; audit: 0.
 
 [calidad · BUG-092] corregido — la interfaz conserva la causa controlada y
 navega directo según rol. Suite: 464/464; audit: 0.
+
+[build] ocupado — Codex, BUG-093 · fortaleza mínima de la clave de sesión.
+
+[build] libre — Codex, BUG-093 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-093] corregido en código — las sesiones exigen una clave de al
+menos 32 caracteres. Suite: 467/467; audit: 0. Rotación productiva pendiente.

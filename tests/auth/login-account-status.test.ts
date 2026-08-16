@@ -38,7 +38,7 @@ function queryResult(result: unknown) {
 
 describe("estado de cuenta al iniciar sesión", () => {
   beforeEach(() => {
-    process.env.JWT_SECRET = "login-status-test-secret";
+    process.env.JWT_SECRET = "login-status-test-secret-not-for-production";
     compare.mockReset();
     compare.mockResolvedValue(true);
     from.mockReset();

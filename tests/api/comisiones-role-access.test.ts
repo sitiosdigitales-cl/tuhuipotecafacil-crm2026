@@ -16,7 +16,7 @@ vi.mock("@/lib/supabase", () => ({
 
 import { GET, POST } from "@/app/api/comisiones/route";
 
-const TEST_SECRET = "commission-role-test-secret";
+const TEST_SECRET = "commission-role-test-secret-not-for-production";
 const originalSecret = process.env.JWT_SECRET;
 const ROLES_SIN_COMISIONES: Rol[] = ["EJECUTIVO", "AGENTE", "CLIENTE"];
 

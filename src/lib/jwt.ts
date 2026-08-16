@@ -4,14 +4,15 @@ const JWT_EXPIRES_IN = "30m";
 const JWT_ALGORITHM = "HS256";
 const JWT_AUDIENCE = "tuhuipotecafacil-crm";
 const JWT_ISSUER = "tuhuipotecafacil";
+const JWT_SECRET_MIN_LENGTH = 32;
 
 // Se resuelve en cada llamada, no en el ambito de modulo: lanzar al importar
 // romperia `next build`, que corre sin variables de entorno.
 function obtenerSecreto(): string {
   const secreto = process.env.JWT_SECRET;
-  if (!secreto) {
+  if (!secreto || secreto.length < JWT_SECRET_MIN_LENGTH) {
     throw new Error(
-      "JWT_SECRET no esta configurada. La autenticacion no puede operar sin ella."
+      "JWT_SECRET debe estar configurada con al menos 32 caracteres. La autenticacion no puede operar con una clave debil."
     );
   }
   return secreto;

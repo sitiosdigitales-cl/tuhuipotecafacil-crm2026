@@ -96,7 +96,7 @@ describe("proxy del panel", () => {
   it.each(["crm_token", "auth_token"])(
     "rechaza %s cuando la firma no corresponde",
     (cookieName) => {
-      process.env.JWT_SECRET = "secret-used-to-sign";
+      process.env.JWT_SECRET = "different-signing-secret-not-for-production";
       const invalidToken = generarToken({
         email: "persona@example.invalid",
         rol: "ADMIN",
