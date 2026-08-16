@@ -10,10 +10,16 @@ interface Usuario {
   rol: string;
 }
 
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  usuario?: Usuario;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   usuario: Usuario | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => void;
   cargando: boolean;
 }
@@ -60,27 +66,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [checkSession]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        setUsuario(data.data.usuario);
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success && data.data?.usuario) {
+        const authenticatedUser = data.data.usuario as Usuario;
+        setUsuario(authenticatedUser);
         setIsAuthenticated(true);
-        return true;
+        return { success: true, usuario: authenticatedUser };
       }
-      return false;
+      return {
+        success: false,
+        error: typeof data?.error === "string"
+          ? data.error
+          : "No se pudo iniciar sesión. Intenta nuevamente.",
+      };
     } catch {
-      return false;
+      return {
+        success: false,
+        error: "No se pudo conectar con el servidor. Intenta nuevamente.",
+      };
     }
   }, []);
 
   const logout = useCallback(() => {
-    fetch("/api/auth/logout", { method: "POST" });
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setUsuario(null);
     setIsAuthenticated(false);
   }, []);

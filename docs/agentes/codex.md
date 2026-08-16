@@ -899,3 +899,10 @@ exportación, sin aceptar resultados parciales. Suite: 460/460; audit: 0.
 
 [calidad · BUG-091] corregido en repositorio — sin cuentas o contraseñas por
 defecto; recuperación local explícita. Suite: 462/462; audit: 0.
+
+[build] ocupado — Codex, BUG-092 · respuesta y destino del login.
+
+[build] libre — Codex, BUG-092 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-092] corregido — la interfaz conserva la causa controlada y
+navega directo según rol. Suite: 464/464; audit: 0.

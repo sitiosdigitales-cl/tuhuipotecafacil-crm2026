@@ -27,12 +27,17 @@ export default function LoginPage() {
     setError("");
     setCargando(true);
 
-    const exito = await login(email, password);
+    const resultado = await login(email, password);
 
-    if (exito) {
-      router.push("/dashboard");
+    if (resultado.success && resultado.usuario) {
+      const destino = resultado.usuario.rol === "CLIENTE"
+        ? "/portal-cliente"
+        : resultado.usuario.rol === "AGENTE"
+          ? "/documentos"
+          : "/dashboard";
+      router.push(destino);
     } else {
-      setError("Credenciales incorrectas.");
+      setError(resultado.error || "No se pudo iniciar sesión. Intenta nuevamente.");
       setCargando(false);
     }
   };
@@ -74,7 +79,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-5">
             {/* Campo Email */}
             <div>
-              <label className="block text-[11px] font-semibold text-blue-200/80 mb-2 uppercase tracking-wider">
+              <label htmlFor="login-email" className="block text-[11px] font-semibold text-blue-200/80 mb-2 uppercase tracking-wider">
                 Correo Electrónico
               </label>
               <div className="relative">
@@ -83,7 +88,9 @@ export default function LoginPage() {
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-300/50"
                 />
                 <input
+                  id="login-email"
                   type="email"
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.cl"
@@ -95,7 +102,7 @@ export default function LoginPage() {
 
             {/* Campo Contraseña */}
             <div>
-              <label className="block text-[11px] font-semibold text-blue-200/80 mb-2 uppercase tracking-wider">
+              <label htmlFor="login-password" className="block text-[11px] font-semibold text-blue-200/80 mb-2 uppercase tracking-wider">
                 Contraseña
               </label>
               <div className="relative">
@@ -104,7 +111,9 @@ export default function LoginPage() {
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-300/50"
                 />
                 <input
+                  id="login-password"
                   type={mostrarPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -113,6 +122,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
+                  aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   onClick={() => setMostrarPassword(!mostrarPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-blue-300/50 hover:text-blue-200 transition-colors"
                 >
