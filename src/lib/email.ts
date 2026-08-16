@@ -2,16 +2,20 @@ import { Resend } from "resend";
 
 import { escapeHtml, safeHttpUrl, sanitizeEmailHeader } from "./html-output";
 
-const resendApiKey = process.env.RESEND_API_KEY || "";
 const fromEmail = process.env.FROM_EMAIL || "CRM <notificaciones@tuhipotecafacil.cl>";
 
 let resendClient: Resend | null = null;
+let resendClientKey = "";
 
-function getResendClient(): Resend {
-  if (!resendClient && resendApiKey) {
-    resendClient = new Resend(resendApiKey);
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY?.trim() ?? "";
+  if (!apiKey) return null;
+
+  if (!resendClient || resendClientKey !== apiKey) {
+    resendClient = new Resend(apiKey);
+    resendClientKey = apiKey;
   }
-  return resendClient!;
+  return resendClient;
 }
 
 export interface EmailOptions {
@@ -246,17 +250,19 @@ export function crearEmailDesdeTemplate(
 // Enviar email
 export async function enviarEmail(options: EmailOptions): Promise<boolean> {
   try {
-    // Si no hay API key configurada, simular envío
-    if (!resendApiKey) {
-      console.log("📧 [SIMULADO] Email enviado:", {
-        to: options.to,
-        subject: options.subject,
-      });
-      return true;
-    }
-
     const client = getResendClient();
-    if (!client) return false;
+    if (!client) {
+      const simulacionExplicita =
+        process.env.NODE_ENV !== "production" &&
+        process.env.EMAIL_SIMULATION === "true";
+      if (simulacionExplicita) {
+        console.info("[email] Entrega simulada por configuración explícita");
+        return true;
+      }
+
+      console.error("[email] RESEND_API_KEY no está configurada");
+      return false;
+    }
 
     await client.emails.send({
       from: options.from || fromEmail,

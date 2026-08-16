@@ -864,3 +864,10 @@ panel DENY, formulario limitado y APIs sin CORS global. Suite: 437/437; audit: 0
 
 [calidad · BUG-086] corregido — códigos firmados, usuario activo comprobado y
 atribución persistida. Suite: 444/444; audit: 0.
+
+[build] ocupado — Codex, BUG-087 · entrega real de correo.
+
+[build] libre — Codex, BUG-087 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-087] corregido — sin proveedor, el envío falla; la simulación
+local exige habilitación explícita. Suite: 447/447; audit: 0.
