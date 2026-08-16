@@ -948,3 +948,10 @@ todos los SQL del repositorio. Suite: 488/488; audit: 0.
 
 [calidad · BUG-098] corregido — los eventos WhatsApp no registran token,
 teléfono, contenido ni identificadores del proveedor. Suite: 491/491; audit: 0.
+
+[build] ocupado — Codex, BUG-099 · resultado real y logs de entrega de correo.
+
+[build] libre — Codex, BUG-099 · lint, build y TypeScript terminaron en 0.
+
+[calidad · BUG-099] corregido — la entrega usa `{ error }` de Resend y sus
+logs no incluyen destinatarios ni respuestas completas. Suite: 493/493; audit: 0.

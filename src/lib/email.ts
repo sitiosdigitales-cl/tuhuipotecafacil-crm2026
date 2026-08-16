@@ -265,7 +265,7 @@ export async function enviarEmail(options: EmailOptions): Promise<boolean> {
       return false;
     }
 
-    await client.emails.send({
+    const { error } = await client.emails.send({
       from: options.from || fromEmail,
       to: Array.isArray(options.to) ? options.to : [options.to],
       subject: options.subject,
@@ -273,11 +273,16 @@ export async function enviarEmail(options: EmailOptions): Promise<boolean> {
       text: options.text,
     });
 
-    console.log("📧 Email enviado exitosamente a:", options.to);
+    if (error) {
+      console.error("[email] El proveedor rechazó la entrega");
+      return false;
+    }
+
+    console.info("[email] Entrega aceptada por el proveedor");
     return true;
 
-  } catch (error) {
-    console.error("Error al enviar email:", error);
+  } catch {
+    console.error("[email] No se pudo contactar al proveedor");
     return false;
   }
 }
