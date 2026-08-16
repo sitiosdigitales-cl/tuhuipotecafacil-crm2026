@@ -1074,3 +1074,10 @@ confirma mantenimiento inexistente. Suite: 590/590; audit: 0.
 
 [calidad · BUG-116] corregido — permisos ya no confirma una matriz local que
 el proxy y las APIs nunca aplicaban. Suite: 592/592; audit: 0.
+
+[build] ocupado — Codex, AUDIT-01 · informe y prompt integral.
+
+[build] libre — Codex, AUDIT-01 · lint, build y TypeScript terminaron en 0.
+
+[auditoría · AUDIT-01] publicado — estado reproducible, límites de Supabase,
+prioridades operativas y prompt maestro. Suite: 592/592; audit: 0.
