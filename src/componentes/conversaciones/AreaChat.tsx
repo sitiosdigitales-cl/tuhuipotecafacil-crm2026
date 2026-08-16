@@ -3,8 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Phone,
-  Video,
-  MoreHorizontal,
   Search,
   Info,
   X,
@@ -226,13 +224,6 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
             <Phone size={16} />
           </button>
           <button
-            onClick={() => toast.info("Videollamada próximamente")}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
-            title="Videollamada"
-          >
-            <Video size={16} />
-          </button>
-          <button
             onClick={() => setMostrarInfo(!mostrarInfo)}
             className={`p-2 rounded-lg transition-colors ${
               mostrarInfo ? "bg-blue-100 text-blue-600" : "hover:bg-slate-100 text-slate-500"
@@ -240,13 +231,6 @@ export function AreaChat({ conversacionId, usuarioActualId }: AreaChatProps) {
             title="Información"
           >
             <Info size={16} />
-          </button>
-          <button
-            onClick={() => toast.info("Opciones de conversación próximamente")}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
-            title="Más opciones"
-          >
-            <MoreHorizontal size={16} />
           </button>
         </div>
       </div>

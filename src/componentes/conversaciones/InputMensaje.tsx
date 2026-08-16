@@ -3,11 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Send,
-  Paperclip,
   Smile,
   AtSign,
-  Image as ImageIcon,
-  Mic,
   Bold,
   Italic,
   Code,
@@ -15,7 +12,6 @@ import {
   List,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 
 const EMOJIS_COMUNES = ["👍", "❤️", "😊", "😂", "🎉", "🔥", "👏", "💪", "✅", "⭐", "🙏", "💡"];
 
@@ -30,8 +26,6 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
   const [mostrarFormato, setMostrarFormato] = useState(false);
   const [mostrarEmojis, setMostrarEmojis] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -96,14 +90,6 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
       textarea.focus();
       textarea.setSelectionRange(start + emoji.length, start + emoji.length);
     }, 0);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, tipo: string) => {
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
-    const tamanho = (archivo.size / 1024).toFixed(1);
-    setMensaje((prev) => prev + `[${tipo}: ${archivo.name} (${tamanho} KB)]`);
-    e.target.value = "";
   };
 
   return (
@@ -187,22 +173,6 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
             >
               <Bold size={16} />
             </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
-              title="Adjuntar archivo"
-            >
-              <Paperclip size={16} />
-            </button>
-            <button
-              onClick={() => imageInputRef.current?.click()}
-              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
-              title="Enviar imagen"
-            >
-              <ImageIcon size={16} />
-            </button>
-            <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => handleFileSelect(e, "Archivo")} />
-            <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, "Imagen")} />
           </div>
 
           {/* Textarea */}
@@ -232,13 +202,6 @@ export function InputMensaje({ onEnviar, nombreConversacion, disabled }: InputMe
               title="Emojis"
             >
               <Smile size={16} />
-            </button>
-            <button
-              onClick={() => toast.info("Grabación de voz próximamente")}
-              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
-              title="Mensaje de voz"
-            >
-              <Mic size={16} />
             </button>
             <div className="w-px h-4 bg-slate-200 mx-1" />
             <button

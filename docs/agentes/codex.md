@@ -1251,6 +1251,14 @@ solo actualizan la interfaz tras confirmación del servidor; ante error se
 conservan el mensaje y el texto pendiente. Suite: 752/752;
 build/lint/typecheck: 0; audits: 0.
 
+[build] ocupado — Codex, BUG-134 · controles operativos de conversaciones.
+
+[build] libre — Codex, BUG-134 · build terminado.
+
+[calidad · BUG-134] corregido — conversaciones ya no muestra adjuntos, voz,
+video ni opciones sin implementación persistente. Suite: 754/754;
+build/lint/typecheck: 0; audits: 0.
+
 [build] ocupado — Codex, BUG-126 · detalle de usuario con datos persistidos.
 
 [build] libre — Codex, BUG-126 · build terminado.
