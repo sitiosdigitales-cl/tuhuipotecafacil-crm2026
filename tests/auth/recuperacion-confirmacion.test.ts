@@ -345,4 +345,56 @@ describe("confirmación de la contraseña recuperada", () => {
     expect(response.status).toBe(500);
     expect(revocarSesionesSupabase).not.toHaveBeenCalled();
   });
+
+  it("completa el enlace al reintentar después de una promoción parcial", async () => {
+    getUser
+      .mockResolvedValueOnce({
+        data: {
+          user: {
+            id: PENDING_AUTH_USER_ID,
+            email: CUENTA_PENDIENTE.email,
+            app_metadata: { crm_pending_user_id: CUENTA_PENDIENTE.id },
+          },
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          user: {
+            id: PENDING_AUTH_USER_ID,
+            email: CUENTA_PENDIENTE.email,
+            app_metadata: { crm_user_id: CUENTA_PENDIENTE.id },
+          },
+        },
+        error: null,
+      });
+    from
+      .mockReturnValueOnce(
+        queryResult({ data: null, error: { code: "PGRST116" } }),
+      )
+      .mockReturnValueOnce(
+        queryResult({ data: CUENTA_PENDIENTE, error: null }),
+      )
+      .mockReturnValueOnce(
+        queryResult({ data: null, error: { code: "PGRST116" } }),
+      )
+      .mockReturnValueOnce(
+        queryResult({ data: CUENTA_PENDIENTE, error: null }),
+      );
+    rpc
+      .mockResolvedValueOnce({ data: null, error: { code: "P0001" } })
+      .mockResolvedValueOnce({ data: true, error: null });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const firstResponse = await POST(confirmacion());
+    const retryResponse = await POST(confirmacion());
+
+    expect(firstResponse.status).toBe(500);
+    expect(retryResponse.status).toBe(200);
+    expect(rpc).toHaveBeenCalledTimes(2);
+    expect(rpc).toHaveBeenLastCalledWith("enlazar_identidad_recuperada", {
+      p_usuario_id: CUENTA_PENDIENTE.id,
+      p_auth_user_id: PENDING_AUTH_USER_ID,
+    });
+  });
 });

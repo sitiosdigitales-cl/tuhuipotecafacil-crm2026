@@ -325,58 +325,66 @@ export async function prepararIdentidadPendiente(
   let authUserId = cuenta.auth_pending_user_id;
   let creada = false;
 
-  if (!authUserId) {
-    const creacion = await adminClient.auth.admin.createUser({
-      email: cuenta.email,
-      password: passwordDeRelleno(),
-      email_confirm: true,
-      app_metadata: { crm_pending_user_id: cuenta.id },
-    });
+  try {
+    if (!authUserId) {
+      const creacion = await adminClient.auth.admin.createUser({
+        email: cuenta.email,
+        password: passwordDeRelleno(),
+        email_confirm: true,
+        app_metadata: { crm_pending_user_id: cuenta.id },
+      });
 
-    if (creacion.error) {
-      const code = authErrorCode(creacion.error);
-      if (code !== "email_exists" && code !== "user_already_exists") {
-        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
-        console.error("[recuperacion] Supabase Auth no creó la identidad pendiente");
-        return null;
-      }
+      if (creacion.error) {
+        const code = authErrorCode(creacion.error);
+        if (code !== "email_exists" && code !== "user_already_exists") {
+          await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+          console.error("[recuperacion] Supabase Auth no creó la identidad pendiente");
+          return null;
+        }
 
-      // Quedó una identidad de un intento anterior. Solo se adopta si declara
-      // esta misma cuenta; si es de otra, la recuperación se detiene y queda
-      // para revisión administrativa.
-      const existente = await buscarIdentidadPorCorreo(cuenta.email, adminClient);
-      const suya =
-        claimPendiente(existente) === cuenta.id ||
-        claimEnlazado(existente) === cuenta.id;
-      if (!existente || !suya) {
-        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
-        console.error("[recuperacion] El correo pertenece a otra identidad de Auth");
-        return null;
+        // Quedó una identidad de un intento anterior. Solo se adopta si declara
+        // esta misma cuenta; si es de otra, la recuperación se detiene y queda
+        // para revisión administrativa.
+        const existente = await buscarIdentidadPorCorreo(cuenta.email, adminClient);
+        const suya =
+          claimPendiente(existente) === cuenta.id ||
+          claimEnlazado(existente) === cuenta.id;
+        if (!existente || !suya) {
+          await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+          console.error("[recuperacion] El correo pertenece a otra identidad de Auth");
+          return null;
+        }
+        authUserId = existente.id;
+      } else {
+        if (!creacion.data.user) {
+          await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+          return null;
+        }
+        authUserId = creacion.data.user.id;
+        creada = true;
       }
-      authUserId = existente.id;
-    } else {
-      if (!creacion.data.user) {
-        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
-        return null;
-      }
-      authUserId = creacion.data.user.id;
-      creada = true;
     }
-  }
 
-  const registrada = await registrarIdentidadPendiente(
-    cuenta.id,
-    turno,
-    authUserId,
-    adminClient,
-  );
-  if (!registrada) {
+    const registrada = await registrarIdentidadPendiente(
+      cuenta.id,
+      turno,
+      authUserId,
+      adminClient,
+    );
+    if (!registrada) {
+      await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+      if (creada) await retirarIdentidadPendiente(authUserId, adminClient);
+      return null;
+    }
+
+    return { authUserId, turno, creada };
+  } catch (error) {
     await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
-    if (creada) await retirarIdentidadPendiente(authUserId, adminClient);
-    return null;
+    if (creada && authUserId) {
+      await retirarIdentidadPendiente(authUserId, adminClient);
+    }
+    throw error;
   }
-
-  return { authUserId, turno, creada };
 }
 
 /** Retira de Auth una identidad pendiente que esta solicitud creó. */

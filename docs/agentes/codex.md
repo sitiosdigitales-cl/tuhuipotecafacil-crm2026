@@ -1474,3 +1474,12 @@ confirmación y el puente ahora anulan el claim pendiente al promover la
 identidad. El CI prueba cookies pendientes, dos solicitudes y dos
 confirmaciones HTTP simultáneas. Suite: 834/834; build: 93 rutas;
 lint/typecheck: 0; integración HTTP local: OK.
+
+[build] ocupado — Codex, BUG-139 · compensación de identidad pendiente.
+
+[build] libre — Codex, BUG-139 · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · BUG-139] corregido — si falla el registro posterior a `createUser`,
+el preparador libera su turno y retira la identidad antes de propagar el error;
+la confirmación reintenta correctamente tras una promoción parcial. Suite:
+836/836; build: 93 rutas; lint/typecheck: 0.

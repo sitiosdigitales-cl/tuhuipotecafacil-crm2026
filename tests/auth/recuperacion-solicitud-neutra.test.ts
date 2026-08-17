@@ -359,6 +359,44 @@ describe("solicitud de recuperación", () => {
     expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
   });
 
+  it("compensa la identidad creada si falla su registro en la cuenta", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+    rpc.mockImplementation(async (functionName: string) => {
+      if (functionName === "registrar_identidad_pendiente") {
+        return { data: null, error: { code: "unexpected" } };
+      }
+      return {
+        data:
+          functionName === "liberar_identidad_pendiente"
+            ? PENDING_AUTH_USER_ID
+            : true,
+        error: null,
+      };
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+    const registro = rpc.mock.calls.find(
+      ([functionName]) => functionName === "registrar_identidad_pendiente",
+    );
+
+    expect(response.status).toBe(500);
+    expect(deleteUser).toHaveBeenCalledWith(PENDING_AUTH_USER_ID);
+    expect(rpc).toHaveBeenCalledWith("liberar_identidad_pendiente", {
+      p_usuario_id: CUENTA.id,
+      p_turno: registro?.[1]?.p_turno,
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_recuperacion_password",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+    expect(generateLink).not.toHaveBeenCalled();
+  });
+
   it("no borra una identidad pendiente preexistente si falla la entrega", async () => {
     cuentaEncontrada({
       ...CUENTA,
