@@ -49,6 +49,7 @@ const credentialCheck = createAuthClient(anonKey);
 const refreshCheck = createAuthClient(anonKey);
 
 const runId = randomUUID();
+const recoveryTurnId = randomUUID();
 const crmUserId = `recovery-${runId}`;
 const email = `recovery-${runId}@example.invalid`;
 const previousPassword = "Synthetic-recovery-password-2026!";
@@ -117,6 +118,7 @@ try {
   const claimed = await admin.rpc("reclamar_recuperacion_password", {
     p_usuario_id: crmUserId,
     p_espera_segundos: 900,
+    p_turno: recoveryTurnId,
   });
   assertNoError(claimed.error, "reservar el correo de recuperación");
   if (claimed.data !== true) {

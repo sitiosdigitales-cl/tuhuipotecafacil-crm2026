@@ -81,6 +81,36 @@ afterAll(() => {
 });
 
 describe("solicitud de recuperación", () => {
+  it("mantiene el mismo piso temporal con cuenta y sin cuenta", async () => {
+    vi.useFakeTimers();
+
+    try {
+      cuentaEncontrada(CUENTA);
+      enviarEmailRecuperacion.mockImplementationOnce(
+        () => new Promise((resolve) => setTimeout(() => resolve(true), 250)),
+      );
+
+      const inicioConCuenta = performance.now();
+      const respuestaConCuenta = POST(solicitud());
+      await vi.runAllTimersAsync();
+      await respuestaConCuenta;
+      const duracionConCuenta = performance.now() - inicioConCuenta;
+
+      cuentaAusente();
+      const inicioSinCuenta = performance.now();
+      const respuestaSinCuenta = POST(solicitud("nadie@example.invalid"));
+      await vi.runAllTimersAsync();
+      await respuestaSinCuenta;
+      const duracionSinCuenta = performance.now() - inicioSinCuenta;
+
+      expect(duracionConCuenta).toBeGreaterThanOrEqual(1_000);
+      expect(duracionSinCuenta).toBeGreaterThanOrEqual(1_000);
+      expect(Math.abs(duracionConCuenta - duracionSinCuenta)).toBeLessThanOrEqual(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("responde lo mismo exista o no la cuenta", async () => {
     cuentaEncontrada(CUENTA);
     const conCuenta = await POST(solicitud());
@@ -128,6 +158,52 @@ describe("solicitud de recuperación", () => {
     expect(new URL(url).search).toBe("");
     expect(JSON.stringify(cuerpo)).not.toContain("token-sintetico");
     expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(rpc).toHaveBeenCalledWith(
+      "reclamar_recuperacion_password",
+      expect.objectContaining({
+        p_usuario_id: CUENTA.id,
+        p_espera_segundos: 900,
+        p_turno: expect.any(String),
+      }),
+    );
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("libera exactamente su turno cuando el proveedor no acepta el correo", async () => {
+    cuentaEncontrada(CUENTA);
+    enviarEmailRecuperacion.mockResolvedValueOnce(false);
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+    const cuerpo = await response.json();
+    const turno = rpc.mock.calls[0]?.[1]?.p_turno;
+
+    expect(response.status).toBe(200);
+    expect(cuerpo.mensaje).toBe(MENSAJE_NEUTRO_RECUPERACION);
+    expect(turno).toEqual(expect.any(String));
+    expect(rpc).toHaveBeenNthCalledWith(2, "liberar_recuperacion_password", {
+      p_usuario_id: CUENTA.id,
+      p_turno: turno,
+    });
+    expect(errorLog).toHaveBeenCalledWith(
+      "[recuperacion] El proveedor no aceptó la entrega; turno liberado para reintento",
+    );
+  });
+
+  it("libera el turno cuando Supabase Auth no emite un token", async () => {
+    cuentaEncontrada(CUENTA);
+    generateLink.mockResolvedValueOnce({ data: null, error: { code: "unexpected" } });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+    const turno = rpc.mock.calls[0]?.[1]?.p_turno;
+
+    expect(response.status).toBe(200);
+    expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenNthCalledWith(2, "liberar_recuperacion_password", {
+      p_usuario_id: CUENTA.id,
+      p_turno: turno,
+    });
   });
 
   it("calla el segundo intento dentro de la ventana de espera", async () => {

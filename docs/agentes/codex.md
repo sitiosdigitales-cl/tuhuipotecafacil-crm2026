@@ -1412,3 +1412,13 @@ recuperación contra Supabase local y los seis jobs completos.
 [FASE AUTH · AUTH-04-OPS] preparado — staging protegido repite recuperación,
 verifica limpieza y exige configuración de URL/correo y corte seguro de
 `required`. Build verde; suite 804/804; lint/typecheck: 0; auditorías: 0.
+
+[build] ocupado — Codex, AUTH-04-SEGUIMIENTOS-QA · integración de cambios de Claude.
+
+[build] libre — Codex, AUTH-04-SEGUIMIENTOS-QA · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · AUTH-04-SEGUIMIENTOS-QA] preparado — token por fragmento, piso
+temporal, turno liberable y firma RPC de tres argumentos quedan cubiertos; el
+ensayo real de CI usa el nuevo UUID. Suite: 813/813; 88 aserciones pgTAP;
+lint/typecheck: 0; auditorías: 0. Docker está instalado pero el daemon local no
+está activo, por lo que `database` en CI es el gate de PostgreSQL antes de cierre.

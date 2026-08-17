@@ -54,7 +54,7 @@ estado inicial del destino de restauración, no el contenido posterior.
 | `RES-02` | El destino restaurado queda eliminado o purgado | fecha y aprobación de cierre | responsable Supabase |
 | `DB-01` | `staging-validation` parte sin tablas de aplicación ni datos reales | recuento de tablas previo y declaración de datos sintéticos | operador |
 | `DB-02` | El dry-run lista exactamente las migraciones esperadas | salida saneada de `db push --dry-run --linked` | operador + revisor |
-| `DB-03` | Las nueve migraciones quedan aplicadas en orden | `migration list --linked` y SHA | operador + revisor |
+| `DB-03` | Las diez migraciones quedan aplicadas en orden | `migration list --linked` y SHA | operador + revisor |
 | `AUTH-01` | Config efectiva coincide con el contrato de Auth | valores no secretos y URL de staging | responsable Supabase |
 | `AUTH-02` | Puente, TOTP, AAL2 y revocación pasan con identidad sintética | run `Staging Validation` verde | ingeniería |
 | `AUTH-04` | Recuperación cambia la credencial y retira refresh tokens anteriores | CI local, run `Staging Validation` y smoke de correo verdes | ingeniería + correo |
@@ -118,7 +118,7 @@ npx supabase migration list --linked
 npx supabase db push --dry-run --linked
 ```
 
-El revisor compara el dry-run con los nueve archivos de
+El revisor compara el dry-run con los diez archivos de
 `supabase/migrations/`. Si aparece una migración inesperada, una tabla previa o
 una diferencia no explicada, se detiene. Solo entonces el operador ejecuta:
 
@@ -225,7 +225,7 @@ Detener el procedimiento si ocurre cualquiera de estos casos:
 - el destino de restauración está conectado a una aplicación o servicio
   externo;
 - el backup no es reciente o no puede restaurarse;
-- el dry-run no coincide con las nueve migraciones revisadas;
+- el dry-run no coincide con las diez migraciones revisadas;
 - un administrador entra con AAL1;
 - se intenta activar `required` con una cuenta activa sin `auth_user_id`;
 - una respuesta RLS no corresponde al rol;
