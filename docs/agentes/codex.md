@@ -1422,3 +1422,11 @@ temporal, turno liberable y firma RPC de tres argumentos quedan cubiertos; el
 ensayo real de CI usa el nuevo UUID. Suite: 813/813; 88 aserciones pgTAP;
 lint/typecheck: 0; auditorías: 0. Docker está instalado pero el daemon local no
 está activo, por lo que `database` en CI es el gate de PostgreSQL antes de cierre.
+
+[build] ocupado — Codex, BUG-135 · registro privado del piping de correo.
+
+[build] libre — Codex, BUG-135 · build terminó en 0 con 93 rutas.
+
+[calidad · BUG-135] corregido — el piping conserva solo estados y códigos HTTP
+en un log `0600`; correo sintético confirmó STDIN, JSON y cabecera compartida
+sin datos del mensaje en el registro. Suite: 816/816; lint/typecheck: 0.

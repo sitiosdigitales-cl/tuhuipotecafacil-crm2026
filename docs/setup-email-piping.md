@@ -23,7 +23,7 @@ En **cPanel**, para el script:
 |---|---|---|
 | `CRM_EMAIL_WEBHOOK_URL` | sí | `https://<despliegue>/api/webhook/email` |
 | `CRM_EMAIL_WEBHOOK_SECRET` | sí | el mismo valor que `EMAIL_WEBHOOK_SECRET` en Vercel |
-| `CRM_EMAIL_LOG` | no | ruta del log; por omisión el temporal del sistema |
+| `CRM_EMAIL_LOG` | no | ruta del log operativo; por omisión el temporal del sistema |
 
 En **Vercel**:
 
@@ -42,8 +42,8 @@ correo en silencio, que es justo lo que hay que evitar en el camino de un lead.
 1. Subir `email-handler.php` a una ruta **fuera de `public_html`**, por ejemplo
    `/home/<usuario>/crm/email-handler.php`.
 
-   > Fuera del árbol web a propósito: el log lleva remitente y asunto de cada
-   > lead. Bajo `public_html` quedaba descargable desde el navegador.
+   > Fuera del árbol web a propósito. El log se crea con modo `0600` y conserva
+   > solo estados y códigos HTTP, nunca remitente, asunto, cuerpo ni respuesta.
 
 2. Permisos `0755` y propietario el usuario de cPanel.
 

@@ -22,15 +22,19 @@
 // silencio, que es exactamente lo que hay que evitar en el camino de un lead.
 $CRM_WEBHOOK_URL = getenv('CRM_EMAIL_WEBHOOK_URL') ?: '';
 
-// El log lleva remitente y asunto de cada lead. Junto al script, con el script
-// bajo public_html, quedaba descargable desde el navegador.
+// El log conserva solo estado operativo, nunca contenido del correo ni la
+// respuesta del CRM. Se crea privado incluso si el temporal es compartido.
+umask(0077);
 $LOG_FILE = getenv('CRM_EMAIL_LOG') ?: (sys_get_temp_dir() . '/crm-email-handler.log');
 
 // Función para registrar logs
 function logMessage($message) {
     global $LOG_FILE;
     $timestamp = date('Y-m-d H:i:s');
-    file_put_contents($LOG_FILE, "[{$timestamp}] {$message}\n", FILE_APPEND);
+    $written = file_put_contents($LOG_FILE, "[{$timestamp}] {$message}\n", FILE_APPEND | LOCK_EX);
+    if ($written !== false) {
+        chmod($LOG_FILE, 0600);
+    }
 }
 
 // Función para enviar al CRM
@@ -69,14 +73,13 @@ function sendToCRM($emailData) {
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
-    curl_close($ch);
     
     if ($error) {
         logMessage("Error cURL: {$error}");
         return false;
     }
     
-    logMessage("CRM Response ({$httpCode}): {$response}");
+    logMessage("CRM Response ({$httpCode})");
     return $httpCode >= 200 && $httpCode < 300;
 }
 
@@ -221,13 +224,10 @@ if (strpos($contentType, 'multipart/form-data') !== false) {
 
 if (!$emailData || empty($emailData['from'])) {
     logMessage("ERROR: No se pudo parsear el email o falta campo 'from'");
-    logMessage("Data: " . print_r($emailData, true));
     exit(1);
 }
 
-logMessage("From: {$emailData['from']}");
-logMessage("Subject: {$emailData['subject']}");
-logMessage("To: {$emailData['to']}");
+logMessage("Correo parseado; enviando al CRM");
 
 // Enviar al CRM
 $result = sendToCRM($emailData);
