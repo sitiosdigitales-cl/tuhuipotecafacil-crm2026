@@ -387,3 +387,30 @@ OK` con salida 0. Contenedores detenidos al terminar.
   con `sudo`. Con `--no-binaries` se omite ese enlace y la instalacion termina;
   ese binario solo guarda credenciales de registries y no hace falta para
   levantar Supabase local.
+
+[EMAIL-02 · BUG-140] hecho — el piping ya no pierde correos Latin-1. Solo E-1;
+E-2 a E-5 quedan intactos para sus propias pruebas.
+
+  Dos piezas distintas, y las dos hacen falta: la CONVERSION desde el charset
+  declarado es el camino correcto y conserva los acentos; la bandera
+  `JSON_INVALID_UTF8_SUBSTITUTE` es la ultima red y los destruye. Verificado:
+  con la bandera sola, `Credito para Jose Pena` llega con rombos donde iban los
+  acentos. Por eso la bandera solo entra en un segundo `json_encode`, cuando el
+  primero ya fallo.
+
+  Convertir desde un charset equivocado NO falla, produce basura en silencio.
+  Por eso la declaracion no se obedece a ciegas: si dice UTF-8 y los bytes no
+  son UTF-8 valido, la cabecera se contradice a si misma y se detecta en vez de
+  hacerle caso. Sin ese ajuste el caso quedaba en `Cr?dito para Jos? Pe?a`.
+
+  Comprobado de punta a punta contra un servidor local, cinco escenarios:
+  charset declarado, ausente, mentiroso, UTF-8 real y ASCII puro. Los cinco
+  conservan los acentos y salen con 0.
+
+  El JSON pasa a estructura fija de cinco campos construida uno por uno. Antes
+  se serializaba el arreglo de cabeceras completo, que lo llena quien envia el
+  correo. Si la serializacion falla aun con la red, el handler sale con 1 y NO
+  postea: un cuerpo vacio recibia 200 y perdia el correo sin que el codigo de
+  salida lo reflejara.
+
+  Sin contenido, sin Message-ID y sin valores derivados del mensaje en el log.

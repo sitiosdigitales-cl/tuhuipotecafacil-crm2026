@@ -37,10 +37,118 @@ function logMessage($message) {
     }
 }
 
+// ============ CODIFICACIÓN ============
+//
+// El correo llega con los bytes del charset que declare el remitente, que en
+// Chile todavía suele ser ISO-8859-1. `json_encode` devuelve `false` ante bytes
+// que no son UTF-8 y ese `false` terminaba en cURL como cuerpo vacío: el CRM
+// respondía 200 y el lead se perdía sin dejar rastro.
+
+/** Validez UTF-8 sin depender de mbstring: `//u` la comprueba en el núcleo. */
+function esUtf8Valido($texto) {
+    return $texto === '' || preg_match('//u', $texto) === 1;
+}
+
+/** Charset declarado en `Content-Type`. Cadena vacía si no viene. */
+function charsetDeclarado($contentType) {
+    if (preg_match('/charset\s*=\s*"?([A-Za-z0-9_.:-]+)"?/i', $contentType, $coincidencias)) {
+        return $coincidencias[1];
+    }
+    return '';
+}
+
+/**
+ * Solo se usa cuando el correo no declara charset. Convertir desde un charset
+ * equivocado NO falla: produce basura en silencio, así que conviene detectar
+ * antes que asumir.
+ */
+function detectarCharset($texto) {
+    if (esUtf8Valido($texto)) {
+        return 'UTF-8';
+    }
+    if (function_exists('mb_detect_encoding')) {
+        $detectado = mb_detect_encoding($texto, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+        if (is_string($detectado) && $detectado !== '') {
+            return $detectado;
+        }
+    }
+    // Windows-1252 es superconjunto práctico de ISO-8859-1 y además cubre las
+    // comillas tipográficas que Outlook coloca entre 0x80 y 0x9F.
+    return 'Windows-1252';
+}
+
+/** Último recurso, sin extensiones: mapeo directo ISO-8859-1 a UTF-8. */
+function latin1AUtf8($texto) {
+    $salida = '';
+    $longitud = strlen($texto);
+    for ($indice = 0; $indice < $longitud; $indice++) {
+        $byte = ord($texto[$indice]);
+        if ($byte < 0x80) {
+            $salida .= chr($byte);
+            continue;
+        }
+        $salida .= chr(0xC0 | ($byte >> 6)) . chr(0x80 | ($byte & 0x3F));
+    }
+    return $salida;
+}
+
+/** Convierte a UTF-8 con degradación mbstring, iconv y manual. */
+function aUtf8($texto, $charset) {
+    if ($texto === '' || $texto === null) {
+        return '';
+    }
+
+    $origen = trim($charset);
+    $declaraUtf8 = strcasecmp($origen, 'UTF-8') === 0;
+
+    if ($declaraUtf8 && esUtf8Valido($texto)) {
+        return $texto;
+    }
+    // Sin charset, o con uno que se contradice a sí mismo: declararse UTF-8 y
+    // no serlo es prueba de que la cabecera miente, y hacerle caso convertiría
+    // los acentos en signos de interrogación pudiendo recuperarlos.
+    if ($origen === '' || $declaraUtf8) {
+        $origen = detectarCharset($texto);
+    }
+
+    if (function_exists('mb_convert_encoding')) {
+        $convertido = @mb_convert_encoding($texto, 'UTF-8', $origen);
+        if (is_string($convertido) && esUtf8Valido($convertido)) {
+            return $convertido;
+        }
+    }
+    if (function_exists('iconv')) {
+        $convertido = @iconv($origen, 'UTF-8//TRANSLIT', $texto);
+        if (is_string($convertido) && esUtf8Valido($convertido)) {
+            return $convertido;
+        }
+    }
+
+    return latin1AUtf8($texto);
+}
+
+/**
+ * Serializa la estructura fija. La sustitución de bytes inválidos es la ÚLTIMA
+ * red: destruye los acentos que la conversión sí habría conservado, así que
+ * solo entra cuando el charset declarado mintió y la detección tampoco acertó.
+ * Perder un acento es aceptable; perder el correo entero no.
+ */
+function serializarPayload($payload) {
+    $banderas = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+
+    $json = json_encode($payload, $banderas);
+    if (is_string($json)) {
+        return $json;
+    }
+
+    $json = json_encode($payload, $banderas | JSON_INVALID_UTF8_SUBSTITUTE);
+    return is_string($json) ? $json : null;
+}
+
 // Función para enviar al CRM
-function sendToCRM($emailData) {
+function sendToCRM($cuerpoJson) {
     global $CRM_WEBHOOK_URL;
-    
+
     // El secreto se lee del entorno, nunca se escribe en este archivo.
     // Debe coincidir con EMAIL_WEBHOOK_SECRET configurada en Vercel.
     $secret = getenv('CRM_EMAIL_WEBHOOK_SECRET') ?: '';
@@ -64,7 +172,7 @@ function sendToCRM($emailData) {
 
     $ch = curl_init($CRM_WEBHOOK_URL);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($emailData));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $cuerpoJson);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -227,10 +335,30 @@ if (!$emailData || empty($emailData['from'])) {
     exit(1);
 }
 
+// Estructura FIJA, construida campo por campo. El correo trae las cabeceras que
+// quiera su remitente, y antes cualquiera de ellas entraba al JSON.
+$charset = charsetDeclarado(isset($emailData['content-type']) ? $emailData['content-type'] : '');
+$payload = [
+    'from'    => aUtf8(isset($emailData['from']) ? $emailData['from'] : '', $charset),
+    'to'      => aUtf8(isset($emailData['to']) ? $emailData['to'] : '', $charset),
+    'subject' => aUtf8(isset($emailData['subject']) ? $emailData['subject'] : '', $charset),
+    'text'    => aUtf8(isset($emailData['text']) ? $emailData['text'] : '', $charset),
+    'date'    => aUtf8(isset($emailData['date']) ? $emailData['date'] : '', $charset),
+];
+
+$cuerpoJson = serializarPayload($payload);
+if ($cuerpoJson === null) {
+    // Nunca postear con cuerpo vacío: el CRM respondería 200 y el correo se
+    // perdería sin que el código de salida lo reflejara.
+    logMessage("ERROR: no se pudo serializar el mensaje");
+    echo "ERROR";
+    exit(1);
+}
+
 logMessage("Correo parseado; enviando al CRM");
 
 // Enviar al CRM
-$result = sendToCRM($emailData);
+$result = sendToCRM($cuerpoJson);
 
 if ($result) {
     logMessage("Email enviado al CRM exitosamente");
