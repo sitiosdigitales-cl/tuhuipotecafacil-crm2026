@@ -1491,3 +1491,11 @@ la confirmación reintenta correctamente tras una promoción parcial. Suite:
 [FASE AUTH · AUTH-07-CIERRE] hecho — BUG-137 queda corregido y verificado con
 143 comprobaciones pgTAP, integración Auth/RLS, carrera HTTP, sesión pendiente
 y MFA; CI 31991609498 terminó completamente verde.
+
+[build] ocupado — Codex, BUG-140 · reproducción de correo Latin-1.
+
+[build] libre — Codex, BUG-140 · build terminó en 0 con 93 rutas.
+
+[EMAIL-02 · BUG-140] preparado — el handler informa éxito, pero entrega cero
+bytes al webhook ante un cuerpo Latin-1 con acentos. Build: 93 rutas; las 836
+pruebas previas siguen verdes y la regresión nueva queda roja para Claude.
