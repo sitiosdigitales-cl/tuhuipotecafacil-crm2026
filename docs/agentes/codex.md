@@ -1483,3 +1483,11 @@ lint/typecheck: 0; integración HTTP local: OK.
 el preparador libera su turno y retira la identidad antes de propagar el error;
 la confirmación reintenta correctamente tras una promoción parcial. Suite:
 836/836; build: 93 rutas; lint/typecheck: 0.
+
+[build] ocupado — Codex, AUTH-07-CIERRE · cierre documental de BUG-137.
+
+[build] libre — Codex, AUTH-07-CIERRE · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · AUTH-07-CIERRE] hecho — BUG-137 queda corregido y verificado con
+143 comprobaciones pgTAP, integración Auth/RLS, carrera HTTP, sesión pendiente
+y MFA; CI 31991609498 terminó completamente verde.
