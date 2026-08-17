@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -82,6 +82,18 @@ interface CuentaSolicitud {
   email: string;
   estado: string;
   auth_user_id: string | null;
+  auth_pending_user_id: string | null;
+  /** Derivada en la base. Evita traer el hash a memoria solo para decidir. */
+  tiene_password: boolean;
+}
+
+/** Columnas que la recuperación necesita de la cuenta. Nunca `password`. */
+const COLUMNAS_CUENTA =
+  "id,nombre,email,estado,auth_user_id,auth_pending_user_id,tiene_password";
+
+function authErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== "object" || !("code" in error)) return null;
+  return typeof error.code === "string" ? error.code : null;
 }
 
 function funcionInexistente(error: unknown): boolean {
@@ -130,7 +142,7 @@ export async function buscarCuentaRecuperable(
 ): Promise<CuentaSolicitud | null> {
   const { data, error } = await adminClient
     .from("usuarios")
-    .select("id,nombre,email,estado,auth_user_id")
+    .select(COLUMNAS_CUENTA)
     .eq("email", email)
     .single();
   if (error) {
@@ -208,6 +220,198 @@ export async function liberarEnvioRecuperacion(
   }
 }
 
+/** Ventana de la reserva de creación de identidad pendiente. */
+export const RECUPERACION_PENDIENTE_SEGUNDOS = 15 * 60;
+
+export interface IdentidadPendiente {
+  authUserId: string;
+  /** Turno que hay que devolver para soltar la reserva. */
+  turno: string;
+  /** `true` solo si esta solicitud la creó: decide si se puede borrar. */
+  creada: boolean;
+}
+
+function claimPendiente(usuario: { app_metadata?: Record<string, unknown> } | null) {
+  return usuario?.app_metadata?.crm_pending_user_id;
+}
+
+function claimEnlazado(usuario: { app_metadata?: Record<string, unknown> } | null) {
+  return usuario?.app_metadata?.crm_user_id;
+}
+
+/**
+ * Contraseña de relleno de la identidad pendiente. Nadie la conoce ni la usa:
+ * la cuenta solo queda utilizable cuando la confirmación fija una elegida por
+ * su dueño. Aun así se genera con entropía real, porque mientras tanto es la
+ * única credencial de esa identidad.
+ */
+function passwordDeRelleno(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+/**
+ * Reserva el derecho a crear la identidad pendiente. Es un paso aparte del
+ * registro porque el turno se gana antes de que exista el UUID de Auth.
+ */
+export async function reservarIdentidadPendiente(
+  usuarioId: string,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+  ventanaSegundos = RECUPERACION_PENDIENTE_SEGUNDOS,
+  turno: string = randomUUID(),
+): Promise<string | null> {
+  const { data, error } = await adminClient.rpc("reservar_identidad_pendiente", {
+    p_usuario_id: usuarioId,
+    p_turno: turno,
+    p_ventana_segundos: ventanaSegundos,
+  });
+  if (error) throw new Error("No se pudo reservar la identidad pendiente");
+  return data === true ? turno : null;
+}
+
+export async function registrarIdentidadPendiente(
+  usuarioId: string,
+  turno: string,
+  authUserId: string,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<boolean> {
+  const { data, error } = await adminClient.rpc("registrar_identidad_pendiente", {
+    p_usuario_id: usuarioId,
+    p_turno: turno,
+    p_auth_user_id: authUserId,
+  });
+  if (error) throw new Error("No se pudo registrar la identidad pendiente");
+  return data === true;
+}
+
+/** Nunca lanza: se llama en caminos de compensación donde ya hubo un error. */
+export async function liberarIdentidadPendiente(
+  usuarioId: string,
+  turno: string,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<void> {
+  try {
+    const { error } = await adminClient.rpc("liberar_identidad_pendiente", {
+      p_usuario_id: usuarioId,
+      p_turno: turno,
+    });
+    if (error) throw error;
+  } catch {
+    console.error("[recuperacion] No se pudo liberar la identidad pendiente");
+  }
+}
+
+/**
+ * Deja lista una identidad pendiente para la cuenta: reutiliza la registrada,
+ * reconcilia una huérfana con el mismo correo, o crea una nueva.
+ *
+ * La identidad lleva `crm_pending_user_id` y **nunca** `crm_user_id`: es lo que
+ * impide que cualquier camino existente la confunda con una identidad enlazada
+ * y le entregue sesión del CRM.
+ */
+export async function prepararIdentidadPendiente(
+  cuenta: { id: string; email: string; auth_pending_user_id: string | null },
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<IdentidadPendiente | null> {
+  const turno = await reservarIdentidadPendiente(cuenta.id, adminClient);
+  // Otra solicitud de la misma cuenta va en vuelo. No se crea una segunda
+  // identidad ni se toca la suya.
+  if (!turno) return null;
+
+  let authUserId = cuenta.auth_pending_user_id;
+  let creada = false;
+
+  if (!authUserId) {
+    const creacion = await adminClient.auth.admin.createUser({
+      email: cuenta.email,
+      password: passwordDeRelleno(),
+      email_confirm: true,
+      app_metadata: { crm_pending_user_id: cuenta.id },
+    });
+
+    if (creacion.error) {
+      const code = authErrorCode(creacion.error);
+      if (code !== "email_exists" && code !== "user_already_exists") {
+        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+        console.error("[recuperacion] Supabase Auth no creó la identidad pendiente");
+        return null;
+      }
+
+      // Quedó una identidad de un intento anterior. Solo se adopta si declara
+      // esta misma cuenta; si es de otra, la recuperación se detiene y queda
+      // para revisión administrativa.
+      const existente = await buscarIdentidadPorCorreo(cuenta.email, adminClient);
+      const suya =
+        claimPendiente(existente) === cuenta.id ||
+        claimEnlazado(existente) === cuenta.id;
+      if (!existente || !suya) {
+        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+        console.error("[recuperacion] El correo pertenece a otra identidad de Auth");
+        return null;
+      }
+      authUserId = existente.id;
+    } else {
+      if (!creacion.data.user) {
+        await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+        return null;
+      }
+      authUserId = creacion.data.user.id;
+      creada = true;
+    }
+  }
+
+  const registrada = await registrarIdentidadPendiente(
+    cuenta.id,
+    turno,
+    authUserId,
+    adminClient,
+  );
+  if (!registrada) {
+    await liberarIdentidadPendiente(cuenta.id, turno, adminClient);
+    if (creada) await retirarIdentidadPendiente(authUserId, adminClient);
+    return null;
+  }
+
+  return { authUserId, turno, creada };
+}
+
+/** Retira de Auth una identidad pendiente que esta solicitud creó. */
+export async function retirarIdentidadPendiente(
+  authUserId: string,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<void> {
+  try {
+    const { error } = await adminClient.auth.admin.deleteUser(authUserId);
+    if (error) throw error;
+  } catch {
+    // Queda huérfana en Auth, pero sin registro en `usuarios` no da acceso a
+    // nada. El siguiente intento la reconcilia por correo.
+    console.error("[recuperacion] No se pudo retirar la identidad pendiente");
+  }
+}
+
+async function buscarIdentidadPorCorreo(
+  email: string,
+  adminClient: SupabaseClient,
+): Promise<{ id: string; app_metadata?: Record<string, unknown> } | null> {
+  const normalizado = email.toLowerCase();
+  const porPagina = 1_000;
+
+  for (let pagina = 1; pagina <= 100; pagina += 1) {
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page: pagina,
+      perPage: porPagina,
+    });
+    if (error) return null;
+
+    const encontrada = data.users.find(
+      (usuario) => usuario.email?.toLowerCase() === normalizado,
+    );
+    if (encontrada) return encontrada;
+    if (data.users.length < porPagina) return null;
+  }
+  return null;
+}
+
 /**
  * Pide a Supabase Auth el token de recuperación sin usar su servicio de correo:
  * la entrega es de Resend, que es por donde sale el resto del correo del CRM.
@@ -270,7 +474,7 @@ export async function resolverCuentaRecuperacion({
 
   const { data: cuenta, error: cuentaError } = await adminClient
     .from("usuarios")
-    .select("id,nombre,email,estado,auth_user_id")
+    .select(COLUMNAS_CUENTA)
     .eq("auth_user_id", data.user.id)
     .single();
   if (cuentaError || !cuenta) return { status: "invalid" };

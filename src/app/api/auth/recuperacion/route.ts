@@ -7,12 +7,17 @@ import {
   buscarCuentaRecuperable,
   emitirTokenRecuperacion,
   esperarPisoRespuesta,
+  type IdentidadPendiente,
   liberarEnvioRecuperacion,
+  liberarIdentidadPendiente,
   MENSAJE_NEUTRO_RECUPERACION,
+  prepararIdentidadPendiente,
   RECUPERACION_VENTANA_SEGUNDOS,
   reclamarEnvioRecuperacion,
+  retirarIdentidadPendiente,
   urlCanjeRecuperacion,
 } from "@/lib/recuperacion-password";
+import { obtenerModoSupabaseAuth } from "@/lib/supabase-auth";
 
 const MAX_RECUPERACION_PAYLOAD_BYTES = 4 * 1024;
 
@@ -78,26 +83,56 @@ export async function POST(request: NextRequest) {
   // minutos por un correo que nunca salió.
   let cuentaId: string | null = null;
   let turno: string | null = null;
+  let pendiente: IdentidadPendiente | null = null;
+
+  // Deshace todo lo reservado en esta solicitud. La identidad solo se retira de
+  // Auth si la creó este mismo intento: una preexistente puede estar sirviendo
+  // a un enlace ya enviado.
+  const compensar = async () => {
+    if (pendiente) {
+      await liberarIdentidadPendiente(cuentaId!, pendiente.turno);
+      if (pendiente.creada) await retirarIdentidadPendiente(pendiente.authUserId);
+    }
+    if (cuentaId) await liberarEnvioRecuperacion(cuentaId, turno);
+  };
 
   try {
     const cuenta = await buscarCuentaRecuperable(email);
 
-    // Las tres condiciones salen por la misma puerta que el envío exitoso.
-    // Una cuenta sin `auth_user_id` todavía vive del hash legado y no tiene
-    // identidad que recuperar en Supabase Auth.
-    if (!cuenta || cuenta.estado !== "ACTIVO" || !cuenta.auth_user_id) {
-      return respuestaNeutra(inicio);
-    }
+    // Cuenta inexistente o inhabilitada sale por la misma puerta que el envío
+    // exitoso, con el mismo cuerpo y el mismo piso de tiempo.
+    if (!cuenta || cuenta.estado !== "ACTIVO") return respuestaNeutra(inicio);
 
     const reserva = await reclamarEnvioRecuperacion(cuenta.id);
     if (!reserva.concedido) return respuestaNeutra(inicio);
     cuentaId = cuenta.id;
     turno = reserva.identificador;
 
+    let authUserId = cuenta.auth_user_id;
+
+    if (!authUserId) {
+      // Cuenta legada: todavía vive del hash heredado. Se le prepara una
+      // identidad pendiente, que no llena `auth_user_id` y por lo tanto no
+      // resuelve sesión del CRM hasta que la confirmación la enlace.
+      if (!cuenta.tiene_password || obtenerModoSupabaseAuth() === "legacy") {
+        // En `legacy` no hay a dónde migrar, y sin hash no hay nada que
+        // conservar: en ambos casos la cuenta necesita intervención humana.
+        await compensar();
+        return respuestaNeutra(inicio);
+      }
+
+      pendiente = await prepararIdentidadPendiente(cuenta);
+      if (!pendiente) {
+        await compensar();
+        return respuestaNeutra(inicio);
+      }
+      authUserId = pendiente.authUserId;
+    }
+
     const tokenHash = await emitirTokenRecuperacion(email);
     if (!tokenHash) {
-      // Nada salió, así que el turno no puede seguir consumido.
-      await liberarEnvioRecuperacion(cuentaId, turno);
+      // Nada salió, así que ni el turno ni la identidad pueden quedar tomados.
+      await compensar();
       console.error(
         "[recuperacion] Supabase Auth no emitió el enlace; turno liberado para reintento",
       );
@@ -116,7 +151,7 @@ export async function POST(request: NextRequest) {
       // siendo la neutra —no hay forma de avisar sin delatar que la cuenta
       // existe—, así que la única señal posible es esta, y va sin correo, sin
       // nombre y sin identificador de la persona.
-      await liberarEnvioRecuperacion(cuentaId, turno);
+      await compensar();
       console.error(
         "[recuperacion] El proveedor no aceptó la entrega; turno liberado para reintento",
       );
@@ -132,7 +167,7 @@ export async function POST(request: NextRequest) {
       "Error en POST /api/auth/recuperacion:",
       error instanceof Error ? error.message : "Error desconocido",
     );
-    if (cuentaId) await liberarEnvioRecuperacion(cuentaId, turno);
+    await compensar();
     await esperarPisoRespuesta(inicio);
     return sinCache(
       NextResponse.json(
