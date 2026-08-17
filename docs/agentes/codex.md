@@ -1464,3 +1464,13 @@ build: 93 rutas; lint/typecheck: 0. Pendiente implementación de Claude.
 recuperación a `anon` ni `authenticated`; el borrado real de Supabase Auth
 limpia identidades pendientes y rechaza las ya enlazadas. Suite: 834/834;
 pgTAP: 143/143; integraciones recovery/RLS, lint y typecheck: 0.
+
+[build] ocupado — Codex, AUTH-07-QA-HTTP · runtime local para carreras HTTP.
+
+[build] libre — Codex, AUTH-07-QA-HTTP · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · BUG-138] corregido — Supabase combina `app_metadata`; la
+confirmación y el puente ahora anulan el claim pendiente al promover la
+identidad. El CI prueba cookies pendientes, dos solicitudes y dos
+confirmaciones HTTP simultáneas. Suite: 834/834; build: 93 rutas;
+lint/typecheck: 0; integración HTTP local: OK.

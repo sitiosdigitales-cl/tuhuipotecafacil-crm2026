@@ -111,7 +111,10 @@ export async function POST(request: NextRequest) {
       // utilizable.
       const promovida = await actualizarIdentidadAdministrada({
         authUserId: resolucion.cuenta.authUserId,
-        appMetadata: { crm_user_id: resolucion.cuenta.id },
+        appMetadata: {
+          crm_user_id: resolucion.cuenta.id,
+          crm_pending_user_id: null,
+        },
       });
       if (promovida.status !== "ok") {
         throw new Error("La identidad pendiente no aceptó su promoción");

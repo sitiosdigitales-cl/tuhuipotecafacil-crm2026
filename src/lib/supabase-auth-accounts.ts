@@ -75,7 +75,7 @@ export async function actualizarIdentidadAdministrada({
   email?: string;
   password?: string;
   active?: boolean;
-  /** Reemplaza `app_metadata` completo: Supabase no hace mezcla parcial. */
+  /** Supabase combina estas claves con el `app_metadata` existente. */
   appMetadata?: Record<string, unknown>;
   adminClient?: SupabaseClient;
 }): Promise<IdentityMutationResult> {

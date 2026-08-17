@@ -102,8 +102,15 @@ jobs:
         run: |
           set -euo pipefail
           status_file="$RUNNER_TEMP/supabase-local.env"
+          app_log="$RUNNER_TEMP/recovery-http-next.log"
+          app_pid=""
           cleanup() {
             find "$status_file" -maxdepth 0 -type f -delete 2>/dev/null || true
+            find "$app_log" -maxdepth 0 -type f -delete 2>/dev/null || true
+            if [[ -n "$app_pid" ]]; then
+              kill "$app_pid" 2>/dev/null || true
+              wait "$app_pid" 2>/dev/null || true
+            fi
           }
           trap cleanup EXIT
           umask 077
@@ -118,6 +125,42 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
           RECOVERY_INTEGRATION_TARGET="local" \
             node scripts/ci/recovery-integration.mjs
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" \
+          NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          SUPABASE_AUTH_MODE="required" \
+          JWT_SECRET="ci-recovery-http-integration-secret-2026" \
+          APP_URL="http://127.0.0.1:3210" \
+          NEXT_PUBLIC_APP_URL="http://127.0.0.1:3210" \
+          EMAIL_SIMULATION="true" \
+          RESEND_API_KEY="" \
+            npm run dev -- --hostname 127.0.0.1 --port 3210 > "$app_log" 2>&1 &
+          app_pid=$!
+          app_ready="false"
+          for _attempt in {1..60}; do
+            if curl --silent --output /dev/null http://127.0.0.1:3210/login; then
+              app_ready="true"
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              tail -n 100 "$app_log"
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ "$app_ready" != "true" ]]; then
+            tail -n 100 "$app_log"
+            exit 1
+          fi
+          SUPABASE_URL="$API_URL" \
+          SUPABASE_ANON_KEY="$ANON_KEY" \
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+          CRM_HTTP_BASE_URL="http://127.0.0.1:3210" \
+          RECOVERY_HTTP_INTEGRATION_TARGET="local" \
+            node scripts/ci/recovery-http-integration.mjs
+          kill "$app_pid" 2>/dev/null || true
+          wait "$app_pid" 2>/dev/null || true
+          app_pid=""
           SUPABASE_URL="$API_URL" \
           SUPABASE_ANON_KEY="$ANON_KEY" \
           SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \

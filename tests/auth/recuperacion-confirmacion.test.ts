@@ -248,6 +248,13 @@ describe("confirmación de la contraseña recuperada", () => {
         password: PASSWORD_VALIDA,
       }),
     );
+    expect(actualizarIdentidadAdministrada).toHaveBeenNthCalledWith(2, {
+      authUserId: PENDING_AUTH_USER_ID,
+      appMetadata: {
+        crm_user_id: CUENTA_PENDIENTE.id,
+        crm_pending_user_id: null,
+      },
+    });
     expect(rpc).toHaveBeenCalledWith("enlazar_identidad_recuperada", {
       p_usuario_id: CUENTA_PENDIENTE.id,
       p_auth_user_id: PENDING_AUTH_USER_ID,

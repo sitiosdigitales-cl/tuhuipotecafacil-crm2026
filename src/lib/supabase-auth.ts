@@ -236,7 +236,10 @@ export async function migrarIdentidadSupabase({
         // `crm_user_id` la sesión no resolvería después del enlace.
         const adopcion = await adminClient.auth.admin.updateUserById(authUser.id, {
           password,
-          app_metadata: { crm_user_id: identity.id },
+          app_metadata: {
+            crm_user_id: identity.id,
+            crm_pending_user_id: null,
+          },
         });
         if (adopcion.error) {
           if (authErrorCode(adopcion.error) === "weak_password") {

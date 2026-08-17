@@ -272,7 +272,10 @@ describe("servicio del puente Supabase Auth", () => {
     expect(atributosPromovidos).toEqual(
       expect.objectContaining({
         password: "credencial-sintetica-larga",
-        app_metadata: { crm_user_id: "usuario-bridge" },
+        app_metadata: {
+          crm_user_id: "usuario-bridge",
+          crm_pending_user_id: null,
+        },
       }),
     );
     const completionIndex = admin.rpc.mock.calls.findIndex(
