@@ -1499,3 +1499,12 @@ y MFA; CI 31991609498 terminó completamente verde.
 [EMAIL-02 · BUG-140] preparado — el handler informa éxito, pero entrega cero
 bytes al webhook ante un cuerpo Latin-1 con acentos. Build: 93 rutas; las 836
 pruebas previas siguen verdes y la regresión nueva queda roja para Claude.
+
+[build] ocupado — Codex, DB-BANCOS · retirar SQL documental duplicado.
+
+[build] libre — Codex, DB-BANCOS · build terminó en 0 con 93 rutas.
+
+[DB · DB-BANCOS] hecho — retirado `docs/add_bancos_table.sql`: su definición
+vigente ya está versionada en `20260813000000_application_schema.sql`. No se
+duplicó como migración porque el archivo antiguo usa UUID y la baseline usa
+TEXT. Suite: 837/837; build: 93 rutas; lint/typecheck: 0.
