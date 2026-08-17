@@ -1455,3 +1455,12 @@ la fila todavía coincida por `auth_pending_user_id`.
 rojo, 53 comprobaciones pgTAP nuevas y recorrido local
 `LEGADA → PENDIENTE → ENLAZADA`. Las 818 pruebas anteriores siguen verdes;
 build: 93 rutas; lint/typecheck: 0. Pendiente implementación de Claude.
+
+[build] ocupado — Codex, AUTH-07-QA-DB · límites de Auth y Data API.
+
+[build] libre — Codex, AUTH-07-QA-DB · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · AUTH-07-QA-DB] hecho — Data API no entrega estado interno de
+recuperación a `anon` ni `authenticated`; el borrado real de Supabase Auth
+limpia identidades pendientes y rechaza las ya enlazadas. Suite: 834/834;
+pgTAP: 143/143; integraciones recovery/RLS, lint y typecheck: 0.

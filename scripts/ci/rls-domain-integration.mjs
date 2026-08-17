@@ -174,6 +174,24 @@ async function expectAnonymousWithoutRows(table) {
   }
 }
 
+async function expectRecoveryInternalsUnavailable(client, label) {
+  const { data, error } = await client
+    .from("usuarios")
+    .select(
+      "tiene_password,auth_pending_user_id,auth_pending_turno,auth_pending_desde",
+    )
+    .limit(1);
+
+  if (!error || (data ?? []).length > 0) {
+    throw new Error(`${label} pudo consultar el estado interno de recuperación`);
+  }
+
+  const triggerCall = await client.rpc("limpiar_identidad_pendiente_borrada");
+  if (!triggerCall.error) {
+    throw new Error(`${label} pudo invocar directamente el disparador de limpieza`);
+  }
+}
+
 async function expectServerOnlyWrites(client) {
   const insertResult = await client.from("leads").insert({
     id: possibleWriteId,
@@ -205,6 +223,12 @@ try {
   const client = await createIdentity("CLIENTE");
   const inactive = await createIdentity("EJECUTIVO", { state: "INACTIVO" });
   const unlinked = await createIdentity("EJECUTIVO", { linked: false });
+
+  await expectRecoveryInternalsUnavailable(anonymous, "anon");
+  await expectRecoveryInternalsUnavailable(
+    executive.client,
+    "authenticated",
+  );
 
   const insertedLeads = await admin.from("leads").insert([
     {

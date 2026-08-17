@@ -115,7 +115,158 @@ function assertRejectedSession(result, operation) {
   }
 }
 
+async function verifyAuthDeletionBoundaries() {
+  const pendingCrmUserId = `recovery-delete-pending-${runId}`;
+  const pendingEmail = `recovery-delete-pending-${runId}@example.invalid`;
+  const pendingTurn = randomUUID();
+  let pendingAuthUserId = null;
+  let pendingCrmInserted = false;
+
+  const linkedCrmUserId = `recovery-delete-linked-${runId}`;
+  const linkedEmail = `recovery-delete-linked-${runId}@example.invalid`;
+  let linkedAuthUserId = null;
+  let linkedCrmInserted = false;
+
+  try {
+    const pendingCrm = await admin.from("usuarios").insert({
+      id: pendingCrmUserId,
+      nombre: "Cuenta",
+      apellido: "Pendiente",
+      email: pendingEmail,
+      password: "synthetic-legacy-hash",
+      rol: "EJECUTIVO",
+      estado: "ACTIVO",
+    });
+    assertNoError(pendingCrm.error, "crear cuenta para borrado pendiente");
+    pendingCrmInserted = true;
+
+    const pendingClaim = await admin.rpc("reservar_identidad_pendiente", {
+      p_usuario_id: pendingCrmUserId,
+      p_turno: pendingTurn,
+      p_ventana_segundos: 900,
+    });
+    assertNoError(pendingClaim.error, "reservar identidad para borrado pendiente");
+    if (pendingClaim.data !== true) {
+      throw new Error("La cuenta de borrado no obtuvo reserva pendiente");
+    }
+
+    const pendingIdentity = await admin.auth.admin.createUser({
+      email: pendingEmail,
+      password: pendingPassword,
+      email_confirm: true,
+      app_metadata: { crm_pending_user_id: pendingCrmUserId },
+    });
+    assertNoError(pendingIdentity.error, "crear identidad que Auth debe limpiar");
+    if (!pendingIdentity.data.user) {
+      throw new Error("Auth no devolvió la identidad que debe limpiar");
+    }
+    pendingAuthUserId = pendingIdentity.data.user.id;
+
+    const pendingRegistration = await admin.rpc("registrar_identidad_pendiente", {
+      p_usuario_id: pendingCrmUserId,
+      p_turno: pendingTurn,
+      p_auth_user_id: pendingAuthUserId,
+    });
+    assertNoError(
+      pendingRegistration.error,
+      "registrar identidad que Auth debe limpiar",
+    );
+    if (pendingRegistration.data !== true) {
+      throw new Error("La identidad de borrado no quedó registrada");
+    }
+
+    const pendingDeletion = await admin.auth.admin.deleteUser(pendingAuthUserId);
+    assertNoError(
+      pendingDeletion.error,
+      "borrar identidad pendiente mediante Supabase Auth",
+    );
+    pendingAuthUserId = null;
+
+    const cleanedPending = await admin
+      .from("usuarios")
+      .select(
+        "auth_user_id,auth_pending_user_id,auth_pending_desde,auth_pending_turno,password,tiene_password",
+      )
+      .eq("id", pendingCrmUserId)
+      .single();
+    assertNoError(cleanedPending.error, "verificar limpieza ejecutada por Auth");
+    if (
+      cleanedPending.data?.auth_user_id !== null ||
+      cleanedPending.data?.auth_pending_user_id !== null ||
+      cleanedPending.data?.auth_pending_desde !== null ||
+      cleanedPending.data?.auth_pending_turno !== null ||
+      cleanedPending.data?.password === null ||
+      cleanedPending.data?.tiene_password !== true
+    ) {
+      throw new Error("Auth no devolvió la cuenta pendiente al estado legado");
+    }
+
+    const linkedIdentity = await admin.auth.admin.createUser({
+      email: linkedEmail,
+      password: nextPassword,
+      email_confirm: true,
+      app_metadata: { crm_user_id: linkedCrmUserId },
+    });
+    assertNoError(linkedIdentity.error, "crear identidad enlazada para borrado");
+    if (!linkedIdentity.data.user) {
+      throw new Error("Auth no devolvió la identidad enlazada para borrado");
+    }
+    linkedAuthUserId = linkedIdentity.data.user.id;
+
+    const linkedCrm = await admin.from("usuarios").insert({
+      id: linkedCrmUserId,
+      nombre: "Cuenta",
+      apellido: "Enlazada",
+      email: linkedEmail,
+      password: null,
+      auth_user_id: linkedAuthUserId,
+      auth_migrated_at: new Date().toISOString(),
+      rol: "EJECUTIVO",
+      estado: "ACTIVO",
+    });
+    assertNoError(linkedCrm.error, "crear cuenta enlazada para borrado");
+    linkedCrmInserted = true;
+
+    const linkedDeletion = await admin.auth.admin.deleteUser(linkedAuthUserId);
+    if (!linkedDeletion.error) {
+      throw new Error("Supabase Auth borró una identidad CRM ya enlazada");
+    }
+
+    const preservedLinked = await admin
+      .from("usuarios")
+      .select("auth_user_id,password,auth_pending_user_id")
+      .eq("id", linkedCrmUserId)
+      .single();
+    assertNoError(
+      preservedLinked.error,
+      "verificar cuenta enlazada después del borrado rechazado",
+    );
+    if (
+      preservedLinked.data?.auth_user_id !== linkedAuthUserId ||
+      preservedLinked.data?.password !== null ||
+      preservedLinked.data?.auth_pending_user_id !== null
+    ) {
+      throw new Error("El borrado rechazado modificó la cuenta enlazada");
+    }
+  } finally {
+    if (pendingCrmInserted) {
+      await admin.from("usuarios").delete().eq("id", pendingCrmUserId);
+    }
+    if (pendingAuthUserId) {
+      await admin.auth.admin.deleteUser(pendingAuthUserId);
+    }
+    if (linkedCrmInserted) {
+      await admin.from("usuarios").delete().eq("id", linkedCrmUserId);
+    }
+    if (linkedAuthUserId) {
+      await admin.auth.admin.deleteUser(linkedAuthUserId);
+    }
+  }
+}
+
 try {
+  await verifyAuthDeletionBoundaries();
+
   const inserted = await admin.from("usuarios").insert({
     id: crmUserId,
     nombre: "Cuenta",

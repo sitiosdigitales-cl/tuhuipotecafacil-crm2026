@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 
-SELECT plan(53);
+SELECT plan(55);
 
 SELECT has_column(
   'public',
@@ -182,6 +182,62 @@ SELECT ok(
     'EXECUTE'
   ),
   'service_role enlaza identidades recuperadas'
+);
+
+SELECT ok(
+  NOT has_column_privilege(
+    'anon',
+    'public.usuarios',
+    'tiene_password',
+    'SELECT'
+  )
+    AND NOT has_column_privilege(
+      'anon',
+      'public.usuarios',
+      'auth_pending_user_id',
+      'SELECT'
+    )
+    AND NOT has_column_privilege(
+      'anon',
+      'public.usuarios',
+      'auth_pending_turno',
+      'SELECT'
+    )
+    AND NOT has_column_privilege(
+      'anon',
+      'public.usuarios',
+      'auth_pending_desde',
+      'SELECT'
+    ),
+  'anon no puede leer el estado interno de recuperación'
+);
+
+SELECT ok(
+  NOT has_column_privilege(
+    'authenticated',
+    'public.usuarios',
+    'tiene_password',
+    'SELECT'
+  )
+    AND NOT has_column_privilege(
+      'authenticated',
+      'public.usuarios',
+      'auth_pending_user_id',
+      'SELECT'
+    )
+    AND NOT has_column_privilege(
+      'authenticated',
+      'public.usuarios',
+      'auth_pending_turno',
+      'SELECT'
+    )
+    AND NOT has_column_privilege(
+      'authenticated',
+      'public.usuarios',
+      'auth_pending_desde',
+      'SELECT'
+    ),
+  'authenticated no puede leer el estado interno de recuperación'
 );
 
 INSERT INTO auth.users (
