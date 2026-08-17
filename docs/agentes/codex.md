@@ -1430,3 +1430,11 @@ está activo, por lo que `database` en CI es el gate de PostgreSQL antes de cier
 [calidad · BUG-135] corregido — el piping conserva solo estados y códigos HTTP
 en un log `0600`; correo sintético confirmó STDIN, JSON y cabecera compartida
 sin datos del mensaje en el registro. Suite: 816/816; lint/typecheck: 0.
+
+[build] ocupado — Codex, BUG-136 · runtime vigente de GitHub Actions.
+
+[build] libre — Codex, BUG-136 · build terminó en 0 con 93 rutas.
+
+[calidad · BUG-136] corregido — los cuatro workflows usan `checkout@v6` y
+`setup-node@v6`, conservando Node 22 para la aplicación. Build: 93 rutas;
+suite: 818/818; lint/typecheck: 0; auditorías: 0.
