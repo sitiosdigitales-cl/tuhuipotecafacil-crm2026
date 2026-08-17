@@ -218,8 +218,32 @@ export async function migrarIdentidadSupabase({
       }
 
       authUser = await findAuthUserByEmail(adminClient, identity.email);
-      if (authUser?.app_metadata?.crm_user_id !== identity.id) {
+      const enlazada = authUser?.app_metadata?.crm_user_id === identity.id;
+      // Puede ser la identidad PENDIENTE que dejó una solicitud de recuperación
+      // de esta misma cuenta. Adoptarla es lo correcto: crear otra chocaría con
+      // el correo, y rechazarla dejaría sin login de puente a quien pidió
+      // recuperación y no llegó a completarla.
+      const pendientePropia =
+        authUser?.app_metadata?.crm_pending_user_id === identity.id;
+      if (!authUser || (!enlazada && !pendientePropia)) {
         return { status: "identity_conflict" };
+      }
+
+      if (!enlazada) {
+        // La identidad pendiente conserva una contraseña de relleno que nadie
+        // conoce. Se reemplaza por la credencial legada ya verificada y se
+        // promueve el claim, las dos antes de completar la migración: sin
+        // `crm_user_id` la sesión no resolvería después del enlace.
+        const adopcion = await adminClient.auth.admin.updateUserById(authUser.id, {
+          password,
+          app_metadata: { crm_user_id: identity.id },
+        });
+        if (adopcion.error) {
+          if (authErrorCode(adopcion.error) === "weak_password") {
+            return { status: "password_upgrade_required" };
+          }
+          throw new Error("No se pudo adoptar la identidad pendiente");
+        }
       }
     } else {
       authUser = created.data.user;

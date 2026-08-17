@@ -341,3 +341,49 @@ para `generateLink` fallido y para el catch posterior a la reserva.
   el codigo llama a la RPC de tres argumentos, PostgREST responde PGRST202 y el
   control de frecuencia queda DESACTIVADO en silencio (degrada abierto y lo
   avisa por consola). Las dos migraciones tienen que viajar juntas.
+
+[build] ocupado — Claude, AUTH-07. Worktree `crm2026-auth07`, `.next` propio.
+
+[build] libre — Claude, AUTH-07. Build, suite, lint y typecheck en verde.
+
+[FASE AUTH · AUTH-07] hecho — BUG-137 cerrado. Una cuenta activa con hash
+heredado y sin `auth_user_id` ya completa la recuperacion:
+LEGADA - RESERVADA - PENDIENTE - ENLAZADA. Rama `claude/auth-07` desde
+`144d5f6`, cuatro commits, sin push.
+
+  Correcciones al diseño que Codex marco y que confirme en el codigo:
+
+  1. El CHECK que propuse era imposible. La reserva se gana ANTES de que exista
+     el UUID de Auth, asi que hay un estado con turno y fecha pero sin
+     identidad. Quedaron tres restricciones: turno y fecha aparecen juntos, una
+     identidad registrada exige las dos, y pendiente y enlazada se excluyen.
+  2. `ON DELETE SET NULL` solo limpia su propia columna. Borrar la identidad
+     dejaba fecha y turno huerfanos, que ademas bloqueaban la siguiente
+     reserva. Lo resuelve un disparador BEFORE DELETE sobre `auth.users`, que
+     corre antes de que la clave foranea anule la columna y todavia encuentra
+     la fila.
+  3. `completar_migracion_auth` fijaba `auth_user_id` sin limpiar lo pendiente
+     y violaba la exclusion. Redefinida para limpiar los tres campos.
+
+  Decision propia que conviene revisar: NO revoque EXECUTE sobre la funcion del
+  disparador. Una funcion de disparador no se puede invocar directamente
+  —PostgreSQL lo rechaza—, asi que restringirla no aporta nada; y si el
+  privilegio se comprobara al dispararse, romperia el borrado de usuarios en
+  Auth para `supabase_auth_admin`. El riesgo es asimetrico. pgTAP no lo exige.
+
+  Orden de la confirmacion, que no es negociable: contraseña, promocion de
+  metadatos y enlace atomico. Al reves, un fallo intermedio dejaria la cuenta
+  con `auth_user_id` puesto, hash retirado y sin `crm_user_id`:
+  `validarSesionSupabase` la rechaza y no queda ninguna credencial utilizable.
+
+[FASE AUTH · AUTH-07] verificado en local — Diego instalo Docker Desktop, asi
+que las compuertas de base de datos ya no quedan solo como gate de CI:
+reconstruccion doble de las once migraciones, 141 comprobaciones pgTAP en seis
+archivos y `recovery-integration.mjs` devolviendo `Legacy recovery integration:
+OK` con salida 0. Contenedores detenidos al terminar.
+
+  Nota de instalacion: `brew install --cask docker-desktop` falla sin terminal
+  interactivo porque enlaza `docker-credential-osxkeychain` en `/usr/local/bin`
+  con `sudo`. Con `--no-binaries` se omite ese enlace y la instalacion termina;
+  ese binario solo guarda credenciales de registries y no hace falta para
+  levantar Supabase local.
