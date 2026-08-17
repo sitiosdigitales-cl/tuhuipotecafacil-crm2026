@@ -1438,3 +1438,20 @@ sin datos del mensaje en el registro. Suite: 816/816; lint/typecheck: 0.
 [calidad · BUG-136] corregido — los cuatro workflows usan `checkout@v6` y
 `setup-node@v6`, conservando Node 22 para la aplicación. Build: 93 rutas;
 suite: 818/818; lint/typecheck: 0; auditorías: 0.
+
+[nota · AUTH-07] Diego reactivó expresamente el reparto paralelo. Codex deja
+los contratos rojos en `diego` para que Claude implemente sin tocar `tests/**`.
+El diseño requiere tres ajustes: la reserva debe existir antes del UUID sin
+violar CHECK; borrar Auth debe limpiar fecha/turno; y
+`completar_migracion_auth` debe limpiar el estado pendiente del puente. Además,
+un reintento posterior a promover metadatos debe aceptar `crm_user_id` mientras
+la fila todavía coincida por `auth_pending_user_id`.
+
+[build] ocupado — Codex, AUTH-07-TESTS · contratos de identidad pendiente.
+
+[build] libre — Codex, AUTH-07-TESTS · build terminó en 0 con 93 rutas.
+
+[FASE AUTH · AUTH-07-TESTS] preparado — 15 contratos unitarios/estáticos en
+rojo, 53 comprobaciones pgTAP nuevas y recorrido local
+`LEGADA → PENDIENTE → ENLAZADA`. Las 818 pruebas anteriores siguen verdes;
+build: 93 rutas; lint/typecheck: 0. Pendiente implementación de Claude.

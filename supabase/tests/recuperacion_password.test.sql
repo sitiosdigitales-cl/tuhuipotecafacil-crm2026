@@ -272,8 +272,8 @@ SELECT is(
     900,
     '40000000-0000-4000-8000-000000000001'
   ),
-  false,
-  'una cuenta todavía no enlazada no obtiene el turno'
+  true,
+  'una cuenta legada activa obtiene el turno sin retirar su hash'
 );
 
 SELECT is(

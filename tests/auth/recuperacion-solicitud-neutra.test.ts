@@ -1,28 +1,65 @@
 import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { enviarEmailRecuperacion, from, generateLink, rpc } = vi.hoisted(() => ({
+const {
+  createUser,
+  deleteUser,
+  enviarEmailRecuperacion,
+  from,
+  generateLink,
+  getUserById,
+  listUsers,
+  rpc,
+  updateUserById,
+} = vi.hoisted(() => ({
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
   enviarEmailRecuperacion: vi.fn(),
   from: vi.fn(),
   generateLink: vi.fn(),
+  getUserById: vi.fn(),
+  listUsers: vi.fn(),
   rpc: vi.fn(),
+  updateUserById: vi.fn(),
 }));
 
 vi.mock("@/lib/email", () => ({ enviarEmailRecuperacion }));
 vi.mock("@/lib/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ auth: { admin: { generateLink } }, from, rpc }),
+  getSupabaseAdmin: () => ({
+    auth: {
+      admin: {
+        createUser,
+        deleteUser,
+        generateLink,
+        getUserById,
+        listUsers,
+        updateUserById,
+      },
+    },
+    from,
+    rpc,
+  }),
 }));
 
 import { POST } from "@/app/api/auth/recuperacion/route";
 import { MENSAJE_NEUTRO_RECUPERACION } from "@/lib/recuperacion-password";
 
 const originalAppUrl = process.env.APP_URL;
+const originalAuthMode = process.env.SUPABASE_AUTH_MODE;
+const PENDING_AUTH_USER_ID = "10000000-0000-4000-8000-000000000002";
+const PENDING_AUTH_USER = {
+  id: PENDING_AUTH_USER_ID,
+  email: "recuperacion@example.invalid",
+  app_metadata: { crm_pending_user_id: "usuario-sintetico" },
+};
 const CUENTA = {
   id: "usuario-sintetico",
   nombre: "Cuenta",
   email: "recuperacion@example.invalid",
   estado: "ACTIVO",
   auth_user_id: "10000000-0000-4000-8000-000000000001",
+  auth_pending_user_id: null,
+  tiene_password: false,
 };
 
 function queryResult(result: unknown) {
@@ -63,12 +100,38 @@ function cuentaAusente() {
 
 beforeEach(() => {
   process.env.APP_URL = "https://crm.example.invalid";
+  process.env.SUPABASE_AUTH_MODE = "required";
+  createUser.mockReset();
+  deleteUser.mockReset();
   from.mockReset();
   generateLink.mockReset();
+  getUserById.mockReset();
+  listUsers.mockReset();
   rpc.mockReset();
+  updateUserById.mockReset();
   enviarEmailRecuperacion.mockReset();
+  createUser.mockResolvedValue({ data: { user: PENDING_AUTH_USER }, error: null });
+  deleteUser.mockResolvedValue({ data: null, error: null });
   enviarEmailRecuperacion.mockResolvedValue(true);
-  rpc.mockResolvedValue({ data: true, error: null });
+  getUserById.mockResolvedValue({
+    data: { user: PENDING_AUTH_USER },
+    error: null,
+  });
+  listUsers.mockResolvedValue({
+    data: { users: [PENDING_AUTH_USER] },
+    error: null,
+  });
+  rpc.mockImplementation(async (functionName: string) => ({
+    data:
+      functionName === "liberar_identidad_pendiente"
+        ? PENDING_AUTH_USER_ID
+        : true,
+    error: null,
+  }));
+  updateUserById.mockResolvedValue({
+    data: { user: PENDING_AUTH_USER },
+    error: null,
+  });
   generateLink.mockResolvedValue({
     data: { properties: { hashed_token: "token-sintetico" } },
     error: null,
@@ -78,6 +141,8 @@ beforeEach(() => {
 afterAll(() => {
   if (originalAppUrl === undefined) delete process.env.APP_URL;
   else process.env.APP_URL = originalAppUrl;
+  if (originalAuthMode === undefined) delete process.env.SUPABASE_AUTH_MODE;
+  else process.env.SUPABASE_AUTH_MODE = originalAuthMode;
 });
 
 describe("solicitud de recuperación", () => {
@@ -126,11 +191,8 @@ describe("solicitud de recuperación", () => {
     expect(cuerpoConCuenta.mensaje).toBe(MENSAJE_NEUTRO_RECUPERACION);
   });
 
-  it.each([
-    ["inhabilitada", { ...CUENTA, estado: "INACTIVO" }],
-    ["sin identidad en Auth", { ...CUENTA, auth_user_id: null }],
-  ])("no envía correo a una cuenta %s y no lo delata", async (_caso, cuenta) => {
-    cuentaEncontrada(cuenta);
+  it("no envía correo a una cuenta inhabilitada y no lo delata", async () => {
+    cuentaEncontrada({ ...CUENTA, estado: "INACTIVO" });
 
     const response = await POST(solicitud());
     const cuerpo = await response.json();
@@ -139,6 +201,182 @@ describe("solicitud de recuperación", () => {
     expect(cuerpo.mensaje).toBe(MENSAJE_NEUTRO_RECUPERACION);
     expect(generateLink).not.toHaveBeenCalled();
     expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
+  });
+
+  it("crea una identidad pendiente para una cuenta legada sin retirar su hash", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+
+    const response = await POST(solicitud());
+    const cuerpo = await response.json();
+    const atributos = createUser.mock.calls[0]?.[0];
+
+    expect(response.status).toBe(200);
+    expect(cuerpo.mensaje).toBe(MENSAJE_NEUTRO_RECUPERACION);
+    expect(atributos).toEqual(
+      expect.objectContaining({
+        email: CUENTA.email,
+        email_confirm: true,
+        app_metadata: { crm_pending_user_id: CUENTA.id },
+      }),
+    );
+    expect(atributos?.app_metadata).not.toHaveProperty("crm_user_id");
+    expect(atributos?.password).toEqual(expect.any(String));
+    expect(atributos?.password.length).toBeGreaterThanOrEqual(32);
+    expect(rpc).toHaveBeenCalledWith(
+      "registrar_identidad_pendiente",
+      expect.objectContaining({
+        p_usuario_id: CUENTA.id,
+        p_auth_user_id: PENDING_AUTH_USER_ID,
+      }),
+    );
+    expect(enviarEmailRecuperacion).toHaveBeenCalledTimes(1);
+  });
+
+  it("reutiliza la identidad pendiente de la misma cuenta sin crear otra", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      auth_pending_user_id: PENDING_AUTH_USER_ID,
+      tiene_password: true,
+    });
+
+    const response = await POST(solicitud());
+
+    expect(response.status).toBe(200);
+    expect(createUser).not.toHaveBeenCalled();
+    expect(enviarEmailRecuperacion).toHaveBeenCalledTimes(1);
+  });
+
+  it("reconcilia por correo una identidad pendiente huérfana de la misma cuenta", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+    createUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { code: "email_exists" },
+    });
+
+    const response = await POST(solicitud());
+
+    expect(response.status).toBe(200);
+    expect(listUsers).toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith(
+      "registrar_identidad_pendiente",
+      expect.objectContaining({
+        p_usuario_id: CUENTA.id,
+        p_auth_user_id: PENDING_AUTH_USER_ID,
+      }),
+    );
+    expect(enviarEmailRecuperacion).toHaveBeenCalledTimes(1);
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("mantiene la respuesta neutra si el correo pertenece a otra cuenta", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+    createUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { code: "email_exists" },
+    });
+    listUsers.mockResolvedValueOnce({
+      data: {
+        users: [
+          {
+            ...PENDING_AUTH_USER,
+            app_metadata: { crm_pending_user_id: "otra-cuenta" },
+          },
+        ],
+      },
+      error: null,
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+    const cuerpo = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(cuerpo.mensaje).toBe(MENSAJE_NEUTRO_RECUPERACION);
+    expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
+    expect(deleteUser).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_identidad_pendiente",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_recuperacion_password",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+  });
+
+  it("no crea identidades pendientes mientras el modo siga en legacy", async () => {
+    process.env.SUPABASE_AUTH_MODE = "legacy";
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+
+    const response = await POST(solicitud());
+
+    expect(response.status).toBe(200);
+    expect(createUser).not.toHaveBeenCalled();
+    expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
+  });
+
+  it("compensa la identidad creada si Auth no emite el enlace", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      tiene_password: true,
+    });
+    generateLink.mockResolvedValueOnce({
+      data: null,
+      error: { code: "unexpected" },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+
+    expect(response.status).toBe(200);
+    expect(deleteUser).toHaveBeenCalledWith(PENDING_AUTH_USER_ID);
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_identidad_pendiente",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_recuperacion_password",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+    expect(enviarEmailRecuperacion).not.toHaveBeenCalled();
+  });
+
+  it("no borra una identidad pendiente preexistente si falla la entrega", async () => {
+    cuentaEncontrada({
+      ...CUENTA,
+      auth_user_id: null,
+      auth_pending_user_id: PENDING_AUTH_USER_ID,
+      tiene_password: true,
+    });
+    enviarEmailRecuperacion.mockResolvedValueOnce(false);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(solicitud());
+
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith(
+      "liberar_identidad_pendiente",
+      expect.objectContaining({ p_usuario_id: CUENTA.id }),
+    );
+    expect(deleteUser).not.toHaveBeenCalled();
   });
 
   it("envía el enlace de canje con el token en el fragmento", async () => {

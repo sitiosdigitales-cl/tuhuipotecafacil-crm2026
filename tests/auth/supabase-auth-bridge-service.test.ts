@@ -23,6 +23,10 @@ const AUTH_USER = {
   user_metadata: {},
   created_at: "2026-08-16T00:00:00.000Z",
 } as User;
+const PENDING_AUTH_USER = {
+  ...AUTH_USER,
+  app_metadata: { crm_pending_user_id: "usuario-bridge" },
+} as User;
 
 const SESSION = {
   access_token: "synthetic-access-token",
@@ -67,15 +71,20 @@ function adminClient({
     error: null,
   });
   const deleteUser = vi.fn().mockResolvedValue({ data: null, error: null });
+  const updateUserById = vi.fn().mockResolvedValue({
+    data: { user: AUTH_USER },
+    error: null,
+  });
   return {
     client: {
       rpc,
-      auth: { admin: { createUser, listUsers, deleteUser } },
+      auth: { admin: { createUser, listUsers, deleteUser, updateUserById } },
     } as unknown as SupabaseClient,
     createUser,
     deleteUser,
     listUsers,
     rpc,
+    updateUserById,
   };
 }
 
@@ -232,6 +241,52 @@ describe("servicio del puente Supabase Auth", () => {
       }),
     ).resolves.toEqual({ status: "identity_conflict" });
     expect(admin.rpc).toHaveBeenCalledWith("liberar_migracion_auth", expect.any(Object));
+  });
+
+  it("adopta la identidad pendiente de la misma cuenta durante el puente", async () => {
+    const admin = adminClient({
+      createResult: {
+        data: { user: null },
+        error: { code: "email_exists", message: "exists" },
+      },
+      listedUsers: [PENDING_AUTH_USER],
+    });
+
+    const result = await migrarIdentidadSupabase({
+      identity: { id: "usuario-bridge", email: "bridge@example.invalid" },
+      password: "credencial-sintetica-larga",
+      adminClient: admin.client,
+      authClient: authClient(),
+      tokenFactory: () => "20000000-0000-4000-8000-000000000010",
+    });
+
+    expect(result).toEqual({
+      status: "authenticated",
+      authUserId: AUTH_USER.id,
+      session: SESSION,
+    });
+    const atributosPromovidos = Object.assign(
+      {},
+      ...admin.updateUserById.mock.calls.map(([, attributes]) => attributes),
+    );
+    expect(atributosPromovidos).toEqual(
+      expect.objectContaining({
+        password: "credencial-sintetica-larga",
+        app_metadata: { crm_user_id: "usuario-bridge" },
+      }),
+    );
+    const completionIndex = admin.rpc.mock.calls.findIndex(
+      ([functionName]) => functionName === "completar_migracion_auth",
+    );
+    const promotionIndex = admin.updateUserById.mock.calls.findIndex(
+      ([, attributes]) => attributes?.app_metadata?.crm_user_id === "usuario-bridge",
+    );
+    expect(promotionIndex).toBeGreaterThanOrEqual(0);
+    expect(completionIndex).toBeGreaterThanOrEqual(0);
+    expect(
+      admin.updateUserById.mock.invocationCallOrder[promotionIndex],
+    ).toBeLessThan(admin.rpc.mock.invocationCallOrder[completionIndex]);
+    expect(admin.deleteUser).not.toHaveBeenCalled();
   });
 
   it("revoca solo la sesión que no debe entregarse", async () => {
