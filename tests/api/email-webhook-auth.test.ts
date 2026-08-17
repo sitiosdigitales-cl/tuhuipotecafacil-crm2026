@@ -30,7 +30,7 @@ vi.mock("@/lib/email", () => ({
 import { POST } from "@/app/api/webhook/email/route";
 
 const originalApiKey = process.env.RESEND_API_KEY;
-const originalWebhookSecret = process.env.RESEND_WEBHOOK_SECRET;
+const originalWebhookSecret = process.env.EMAIL_WEBHOOK_SECRET;
 
 function queryResult(result: unknown) {
   const query = new Proxy<Record<string, unknown>>(
@@ -50,7 +50,7 @@ function queryResult(result: unknown) {
 describe("POST /api/webhook/email", () => {
   beforeEach(() => {
     delete process.env.RESEND_API_KEY;
-    delete process.env.RESEND_WEBHOOK_SECRET;
+    delete process.env.EMAIL_WEBHOOK_SECRET;
     from.mockReset();
     from.mockReturnValue(queryResult({ data: {}, error: null }));
     enviarEmail.mockReset();
@@ -62,11 +62,11 @@ describe("POST /api/webhook/email", () => {
   afterAll(() => {
     if (originalApiKey === undefined) delete process.env.RESEND_API_KEY;
     else process.env.RESEND_API_KEY = originalApiKey;
-    if (originalWebhookSecret === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
-    else process.env.RESEND_WEBHOOK_SECRET = originalWebhookSecret;
+    if (originalWebhookSecret === undefined) delete process.env.EMAIL_WEBHOOK_SECRET;
+    else process.env.EMAIL_WEBHOOK_SECRET = originalWebhookSecret;
   });
 
-  it("rechaza una solicitud sin firma antes de crear el lead", async () => {
+  it("rechaza una solicitud sin secreto antes de crear el lead", async () => {
     const response = await POST(
       new NextRequest("http://localhost/api/webhook/email", {
         body: JSON.stringify({
@@ -85,28 +85,20 @@ describe("POST /api/webhook/email", () => {
   });
 
   it("trata el asunto recibido como texto dentro de la confirmación", async () => {
-    process.env.RESEND_API_KEY = "re_test_key";
-    process.env.RESEND_WEBHOOK_SECRET = "whsec_test_secret";
-    verify.mockResolvedValue({
-      data: { email_id: "email-uno" },
-      type: "email.received",
-    });
-    getReceivedEmail.mockResolvedValue({
-      data: {
-        from: "Caso Prueba <cliente@example.invalid>",
-        subject: "Consulta hipotecaria <img src=x>",
-        text: "Necesito orientación.",
-      },
-      error: null,
-    });
+    // El piping de cPanel manda el correo ya desarmado en el cuerpo y se
+    // autentica con X-Webhook-Secret: no hay firma Svix ni segunda consulta.
+    process.env.EMAIL_WEBHOOK_SECRET = "secreto-sintetico-de-prueba";
 
     const response = await POST(
       new NextRequest("http://localhost/api/webhook/email", {
-        body: JSON.stringify({ type: "email.received" }),
+        body: JSON.stringify({
+          from: "Caso Prueba <cliente@example.invalid>",
+          subject: "Consulta hipotecaria <img src=x>",
+          text: "Necesito orientación.",
+        }),
         headers: {
-          "svix-id": "msg_uno",
-          "svix-signature": "v1,firma",
-          "svix-timestamp": "1700000000",
+          "content-type": "application/json",
+          "x-webhook-secret": "secreto-sintetico-de-prueba",
         },
         method: "POST",
       })

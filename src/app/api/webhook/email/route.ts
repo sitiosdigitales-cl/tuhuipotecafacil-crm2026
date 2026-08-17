@@ -4,72 +4,39 @@ import { toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/html-output";
 import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
-import { Resend } from "resend";
 
 const MAX_EMAIL_WEBHOOK_BYTES = 256 * 1024;
 
-// POST /api/webhook/email — Recibe emails reenviados desde el correo corporativo
-// Fuente: correo entrante de Resend (evento email.received)
-// Crea un lead automáticamente en el CRM
+// POST /api/webhook/email — Recibe los correos que cPanel entrega por email
+// piping, a través de wordpress/email-handler.php, y crea un lead.
 //
-// Autenticación: firma Svix de Resend (svix-id, svix-timestamp, svix-signature)
-// verificada contra RESEND_WEBHOOK_SECRET. Obligatoria: el endpoint escribe en
-// la base con la service role key y dispara correos.
+// El correo del dominio vive en cPanel y no se puede mover, así que el correo
+// entrante de Resend no aplica: exigiría apuntar los MX del dominio a Resend.
+//
+// Autenticación: cabecera X-Webhook-Secret contra EMAIL_WEBHOOK_SECRET.
+// Obligatoria: el endpoint escribe en la base con la service role key y dispara
+// correos, así que sin secreto configurado no acepta nada.
 
-interface EventoResend {
-  type: string;
-  data?: { email_id?: string };
-}
-
-async function verificarEventoResend(
-  request: NextRequest,
-  rawBody: string
-): Promise<EventoResend | null> {
-  const secreto = process.env.RESEND_WEBHOOK_SECRET;
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!secreto || !apiKey) return null;
-
-  // Resend entrega vía Svix. El SDK recibe las tres cabeceras ya desarmadas.
-  const headers = {
-    id: request.headers.get("svix-id") ?? "",
-    timestamp: request.headers.get("svix-timestamp") ?? "",
-    signature: request.headers.get("svix-signature") ?? "",
-  };
-  if (!headers.id || !headers.signature) return null;
-
-  try {
-    // verify() lanza si la firma no cuadra o si el evento está fuera de la
-    // ventana de tiempo, que es lo que impide reenviar uno capturado.
-    const resend = new Resend(apiKey);
-    return (await resend.webhooks.verify({
-      payload: rawBody,
-      headers,
-      webhookSecret: secreto,
-    })) as EventoResend;
-  } catch {
-    return null;
-  }
-}
-
-interface CorreoRecibido {
+interface CorreoEntrante {
   from?: string;
   subject?: string;
   text?: string;
 }
 
-async function obtenerCorreoRecibido(emailId: string): Promise<CorreoRecibido | null> {
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data, error } = await resend.emails.receiving.get(emailId);
-    if (error || !data) {
-      console.error("No se pudo recuperar el correo recibido:", error);
-      return null;
-    }
-    return data as CorreoRecibido;
-  } catch (e) {
-    console.error("Error consultando el correo recibido:", e);
-    return null;
+function remitenteAutorizado(request: NextRequest): boolean {
+  const esperado = process.env.EMAIL_WEBHOOK_SECRET;
+  if (!esperado) return false;
+
+  const recibido = request.headers.get("x-webhook-secret");
+  if (!recibido || recibido.length !== esperado.length) return false;
+
+  // Comparación en tiempo constante sin traer crypto: acumula las diferencias
+  // en vez de cortar en el primer byte distinto.
+  let diff = 0;
+  for (let i = 0; i < esperado.length; i++) {
+    diff |= esperado.charCodeAt(i) ^ recibido.charCodeAt(i);
   }
+  return diff === 0;
 }
 
 // Extraer nombre del campo "From" del email
@@ -149,6 +116,12 @@ function extraerContexto(subject: string, body: string): { tipoConsulta: string;
 }
 
 export async function POST(request: NextRequest) {
+  // El secreto se comprueba antes de leer el cuerpo: quien no lo trae no llega
+  // a gastar ni el flujo de lectura.
+  if (!remitenteAutorizado(request)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   let rawBody: string;
   try {
     rawBody = await readBoundedText(request, MAX_EMAIL_WEBHOOK_BYTES);
@@ -162,37 +135,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
   }
 
-  const evento = await verificarEventoResend(request, rawBody);
-  if (!evento) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
-  // Resend manda varios tipos de evento al mismo endpoint. Los que no son
-  // correo entrante se aceptan y se ignoran: responder error haría que Resend
-  // los reintente en vano.
-  if (evento.type !== "email.received") {
-    return NextResponse.json({ received: true, ignorado: evento.type });
-  }
-
   try {
-    const emailId = evento.data?.email_id;
-    if (!emailId) {
-      return NextResponse.json({ error: "Evento sin email_id" }, { status: 400 });
+    // El handler de cPanel manda JSON con el correo ya desarmado. Es el único
+    // productor, así que no se aceptan otros formatos: las ramas de multipart y
+    // urlencoded que hubo antes eran para proveedores que nunca se usaron, y la
+    // de multipart ni siquiera funcionaba porque leía el cuerpo dos veces.
+    let correo: CorreoEntrante;
+    try {
+      correo = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: "Cuerpo no es JSON válido" }, { status: 400 });
     }
 
-    // El webhook trae solo metadatos: ni cuerpo, ni cabeceras, ni adjuntos.
-    // El contenido se pide aparte, y de ahí sale el teléfono y el contexto.
-    const completo = await obtenerCorreoRecibido(emailId);
-    if (!completo) {
-      return NextResponse.json(
-        { error: "No se pudo recuperar el contenido del correo" },
-        { status: 502 }
-      );
-    }
-
-    const from = completo.from || "";
-    const subject = completo.subject || "";
-    const body = completo.text || "";
+    const from = correo.from || "";
+    const subject = correo.subject || "";
+    const body = correo.text || "";
 
     if (!from) {
       return NextResponse.json({ error: "Correo sin remitente" }, { status: 400 });
@@ -314,7 +271,7 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     message: "Email webhook endpoint activo",
-    usage: "POST con: { from, subject, text, html } o formato SendGrid/Mailgun",
+    usage: "POST application/json con { from, subject, text } y X-Webhook-Secret",
   });
 }
 

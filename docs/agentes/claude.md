@@ -235,3 +235,55 @@ solicitud, callback, cambio, expiracion y respuestas neutras. Rama
     por Resend, una inventada responde de inmediato. El login iguala esto
     comparando contra un hash de descarte; aca no hay equivalente barato. Lo
     dejo escrito en vez de fingir que no existe.
+
+[EMAIL-01] hecho — vuelve el correo entrante por piping de cPanel. Diego
+confirmo que el correo del dominio no se puede mover, y el inbound de Resend
+exige apuntar los MX a Resend: son incompatibles. Rama
+`claude/email-piping-cpanel` desde `77b036d`, sin push.
+
+  Revision antes de restaurar, y encontre TRES defectos en lo que iba a
+  devolver. Restaurarlo verbatim habria devuelto algo que no funcionaba:
+
+  1. `parseEmailFromSTDIN()` leia `php://input`, que es el cuerpo de una
+     peticion HTTP y esta VACIO en CLI. El piping invoca el script como CLI y
+     entrega por STDIN. O sea el camino registraba "STDIN vacio" y salia con
+     error: nunca creo un lead. Corregido a `php://stdin`.
+  2. El log iba a `__DIR__/email-handler.log` con el script bajo `public_html`,
+     segun su propia cabecera. Ese log lleva remitente y asunto de CADA lead, y
+     quedaba descargable desde el navegador. Ahora sale del arbol web por
+     omision y la ruta es configurable.
+  3. El destino estaba hardcodeado a `tuhuipotecafacil-crm.vercel.app`, que no
+     es el dominio al que apunta el plugin de WordPress
+     (`tuhuipotecafacil-crm2026-sitiosdigitales`). No se cual de los dos vive,
+     asi que no elegi: pasa a `CRM_EMAIL_WEBHOOK_URL`, obligatoria.
+
+  Tambien hice obligatorio el secreto en el script. Antes era opcional y sin el
+  mandaba el POST igual, que el endpoint responde 401: perdia el correo despues
+  de gastar el viaje, en vez de detenerse y dejarlo escrito en el log.
+
+  La ruta NO es un revert. Tres commits la tocaron despues del borrado —
+  `64bc68f` limites de cuerpo, `5f3d9ee` escape de HTML, `c4501cb` cliente
+  admin— y dos son arreglos de seguridad. Cambie solo la capa de transporte y
+  autenticacion: fuera Svix y la consulta de metadatos, vuelve
+  `X-Webhook-Secret` contra `EMAIL_WEBHOOK_SECRET`. Los tres arreglos quedan.
+
+  No restaure las ramas de multipart y urlencoded. Eran para SendGrid y
+  Mailgun, que nunca se usaron, y la de multipart ni siquiera podia funcionar:
+  llamaba `request.formData()` despues de `request.text()`, con el cuerpo ya
+  consumido. El unico productor es nuestro handler y manda JSON.
+
+  El PHP queda en `wordpress/`, no en `crm/`, que es donde el PROTOCOLO seccion
+  8 dice que vive el codigo que se despliega a otra maquina.
+
+  Ajuste dos aserciones invalidadas por el cambio de mecanismo: la de firma
+  Svix pasa a secreto por cabecera, y la del limite de 256 KiB ahora manda el
+  secreto, porque la autenticacion se comprueba ANTES de leer el cuerpo y sin
+  el respondia 401 en vez de 413.
+
+[nota · EMAIL-01, sin verificar] No puedo confirmar desde el repositorio si el
+camino esta caido en produccion ni desde cuando. Lo que si consta:
+`docs/configurar-dns-nic-cl.md` dice explicitamente "si ya tienes un registro MX
+para tu correo, no lo borres", y ningun documento describe apuntar los MX a
+Resend. O sea el inbound de Resend nunca se cableo, y desde `6b99a73` el correo
+sigue cayendo en cPanel sin que nadie lo procese. Falta revisar los MX reales y
+si hay leads con `origen = email_corporativo` posteriores a esa fecha.
