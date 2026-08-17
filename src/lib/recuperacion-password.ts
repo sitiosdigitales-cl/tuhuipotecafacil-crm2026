@@ -72,7 +72,12 @@ export interface CuentaRecuperacion {
 }
 
 export type ResolucionRecuperacion =
-  | { status: "ok"; cuenta: CuentaRecuperacion }
+  | {
+      status: "ok";
+      cuenta: CuentaRecuperacion;
+      /** `true` cuando la identidad todavía no está enlazada a la cuenta. */
+      pendiente: boolean;
+    }
   | { status: "expired" }
   | { status: "invalid" };
 
@@ -432,6 +437,24 @@ export async function emitirTokenRecuperacion(
   return typeof tokenHash === "string" && tokenHash ? tokenHash : null;
 }
 
+/**
+ * Enlace atómico de la identidad recuperada. Es la única operación autorizada a
+ * retirar el hash heredado, y lo hace en la misma sentencia que fija
+ * `auth_user_id`. Devuelve `false` si la identidad no corresponde a la cuenta.
+ */
+export async function enlazarIdentidadRecuperada(
+  usuarioId: string,
+  authUserId: string,
+  adminClient: SupabaseClient = getSupabaseAdmin(),
+): Promise<boolean> {
+  const { data, error } = await adminClient.rpc("enlazar_identidad_recuperada", {
+    p_usuario_id: usuarioId,
+    p_auth_user_id: authUserId,
+  });
+  if (error) throw new Error("No se pudo enlazar la identidad recuperada");
+  return data === true;
+}
+
 /** Canjea el token del correo. Supabase lo consume: no sirve dos veces. */
 export async function canjearTokenRecuperacion(
   tokenHash: string,
@@ -472,27 +495,56 @@ export async function resolverCuentaRecuperacion({
   const { data, error } = await authClient.auth.getUser(accessToken);
   if (error || !data.user) return { status: "invalid" };
 
-  const { data: cuenta, error: cuentaError } = await adminClient
+  const { data: enlazada, error: enlazadaError } = await adminClient
     .from("usuarios")
     .select(COLUMNAS_CUENTA)
     .eq("auth_user_id", data.user.id)
     .single();
-  if (cuentaError || !cuenta) return { status: "invalid" };
+  if (enlazadaError && !filaNoEncontrada(enlazadaError)) {
+    return { status: "invalid" };
+  }
 
-  const fila = cuenta as CuentaSolicitud;
-  if (fila.estado !== "ACTIVO" || !fila.auth_user_id) return { status: "invalid" };
-  if (data.user.app_metadata?.crm_user_id !== fila.id) return { status: "invalid" };
+  let fila = enlazada as CuentaSolicitud | null;
+  let pendiente = false;
+
+  if (!fila) {
+    // La identidad todavía no está enlazada. Puede ser una pendiente creada por
+    // la solicitud de esta misma cuenta.
+    const { data: reservada, error: reservadaError } = await adminClient
+      .from("usuarios")
+      .select(COLUMNAS_CUENTA)
+      .eq("auth_pending_user_id", data.user.id)
+      .single();
+    if (reservadaError || !reservada) return { status: "invalid" };
+    fila = reservada as CuentaSolicitud;
+    pendiente = true;
+  }
+
+  if (fila.estado !== "ACTIVO") return { status: "invalid" };
   if (data.user.email?.toLowerCase() !== fila.email.toLowerCase()) {
     return { status: "invalid" };
   }
 
+  if (pendiente) {
+    if (fila.auth_pending_user_id !== data.user.id) return { status: "invalid" };
+    // Se acepta el claim ya promovido porque una confirmación anterior pudo
+    // fallar entre la promoción y el enlace. Nunca el claim de otra cuenta.
+    const suya =
+      claimPendiente(data.user) === fila.id || claimEnlazado(data.user) === fila.id;
+    if (!suya) return { status: "invalid" };
+  } else {
+    if (!fila.auth_user_id) return { status: "invalid" };
+    if (claimEnlazado(data.user) !== fila.id) return { status: "invalid" };
+  }
+
   return {
     status: "ok",
+    pendiente,
     cuenta: {
       id: fila.id,
       email: fila.email,
       nombre: fila.nombre,
-      authUserId: fila.auth_user_id,
+      authUserId: data.user.id,
     },
   };
 }

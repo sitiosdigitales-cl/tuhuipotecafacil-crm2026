@@ -68,15 +68,19 @@ export async function actualizarIdentidadAdministrada({
   email,
   password,
   active,
+  appMetadata,
   adminClient = getSupabaseAdmin(),
 }: {
   authUserId: string;
   email?: string;
   password?: string;
   active?: boolean;
+  /** Reemplaza `app_metadata` completo: Supabase no hace mezcla parcial. */
+  appMetadata?: Record<string, unknown>;
   adminClient?: SupabaseClient;
 }): Promise<IdentityMutationResult> {
   const attributes: AdminUpdateAttributes = {};
+  if (appMetadata !== undefined) attributes.app_metadata = appMetadata;
   if (email !== undefined) {
     attributes.email = email;
     attributes.email_confirm = true;

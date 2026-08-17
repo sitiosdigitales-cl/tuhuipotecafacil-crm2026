@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
-import { resolverCuentaRecuperacion } from "@/lib/recuperacion-password";
+import {
+  enlazarIdentidadRecuperada,
+  resolverCuentaRecuperacion,
+} from "@/lib/recuperacion-password";
 import {
   eliminarCookiesSesion,
   RECUPERACION_COOKIE,
@@ -99,6 +102,30 @@ export async function POST(request: NextRequest) {
     }
     if (actualizada.status !== "ok") {
       throw new Error("La identidad no aceptó la contraseña nueva");
+    }
+
+    if (resolucion.pendiente) {
+      // Promover ANTES de enlazar. Al revés, un fallo intermedio dejaría la
+      // cuenta con `auth_user_id` puesto, hash retirado y sin `crm_user_id`:
+      // `validarSesionSupabase` la rechazaría y no quedaría ninguna credencial
+      // utilizable.
+      const promovida = await actualizarIdentidadAdministrada({
+        authUserId: resolucion.cuenta.authUserId,
+        appMetadata: { crm_user_id: resolucion.cuenta.id },
+      });
+      if (promovida.status !== "ok") {
+        throw new Error("La identidad pendiente no aceptó su promoción");
+      }
+
+      const enlazada = await enlazarIdentidadRecuperada(
+        resolucion.cuenta.id,
+        resolucion.cuenta.authUserId,
+      );
+      if (!enlazada) {
+        // El hash sigue en pie y la identidad ya tiene la contraseña nueva, así
+        // que el reintento puede completar sin dejar la cuenta inutilizable.
+        throw new Error("La cuenta no aceptó el enlace de la identidad");
+      }
     }
 
     // Alcance global: quien haya entrado con la contraseña anterior queda
