@@ -7,6 +7,7 @@ const { from, requireAuth } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/api-auth", () => ({
+  forbidden: () => new Response(null, { status: 403 }),
   requireAuth,
   unauthorized: () => new Response(null, { status: 401 }),
 }));
@@ -36,7 +37,7 @@ describe("entrada de creación de leads", () => {
   beforeEach(() => {
     from.mockReset();
     requireAuth.mockReset();
-    requireAuth.mockResolvedValue({ rol: "EJECUTIVO", userId: "user-1" });
+    requireAuth.mockResolvedValue({ rol: "ADMIN", userId: "user-1" });
   });
 
   it("rechaza tipos y campos que no pertenecen al contrato", async () => {
@@ -69,6 +70,17 @@ describe("entrada de creación de leads", () => {
     );
 
     expect(response.status).toBe(415);
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("reserva la creación de leads para administración", async () => {
+    requireAuth.mockResolvedValue({ rol: "EJECUTIVO", userId: "ejecutivo-1" });
+
+    const response = await POST(
+      request(JSON.stringify({ nombre: "Ana", apellido: "Pérez" }))
+    );
+
+    expect(response.status).toBe(403);
     expect(from).not.toHaveBeenCalled();
   });
 });

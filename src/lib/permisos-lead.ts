@@ -11,8 +11,7 @@ export interface LeadPropiedad {
  *
  *   SUPER_ADMIN  todo
  *   ADMIN        todo. Ve y edita datos; lo que no puede es administrar roles
- *   EJECUTIVO    todos los leads y clientes: el equipo comercial trabaja sobre
- *                un pozo compartido, no sobre carteras separadas
+ *   EJECUTIVO    solo los leads que tiene asignados
  *   AGENTE       contraparte del banco. Solo los leads que le asignaron
  *   CLIENTE      solo el suyo, identificado por correo
  *
@@ -24,8 +23,8 @@ export function puedeAccederLead(auth: TokenPayload, lead: LeadPropiedad): boole
   switch (auth.rol) {
     case "SUPER_ADMIN":
     case "ADMIN":
-    case "EJECUTIVO":
       return true;
+    case "EJECUTIVO":
     case "AGENTE":
       return !!lead.asignadoa && lead.asignadoa === auth.userId;
     case "CLIENTE":

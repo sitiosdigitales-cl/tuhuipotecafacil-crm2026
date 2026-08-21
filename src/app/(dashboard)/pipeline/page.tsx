@@ -14,15 +14,11 @@ import {
   Banknote,
   ArrowLeft,
   Layout,
-  LayoutList,
-  LayoutGrid,
-  UserPlus,
 } from "lucide-react";
 import {
   COLOR_ETAPA_POR_DEFECTO,
   ETAPAS_CONFIG,
   etapasPorDefecto,
-  ROLES_CONFIG,
 } from "@/tipos";
 import { formatoMonedaAbreviado } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -157,7 +153,7 @@ function leadCoincideConBusqueda(lead: Lead, query: string) {
 
 export default function PipelinePage() {
   const router = useRouter();
-  const { usuarioActual, esSuperAdmin, usuarios } = useUser();
+  const { usuarioActual, esSuperAdmin } = useUser();
   const { leads, agregarLead, actualizarLead, eliminarLead, moverEtapa, cargaPorEjecutivo, cargando } = useLeads();
   const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
@@ -175,8 +171,8 @@ export default function PipelinePage() {
   });
   const leadsAnteriores = useRef(leads.length);
   const [etapasPipeline, setEtapasPipeline] = useState<EtapaPipeline[]>(etapasPorDefecto);
-  const [vistaModo, setVistaModo] = useState<"kanban" | "ejecutivos">("kanban");
   const [filtroEtapa, setFiltroEtapa] = useState<string>("todas");
+  const puedeAdministrarPipeline = esSuperAdmin || usuarioActual.rol === "ADMIN";
 
   // Cargar etapas desde la API
   useEffect(() => {
@@ -210,17 +206,12 @@ export default function PipelinePage() {
     leadsAnteriores.current = leads.length;
   }, [leads]);
 
-  // Filtrar leads: NUEVO_LEAD visible para todos, otros solo para el ejecutivo asignado
+  // Administración ve toda la cartera; el ejecutivo solo su asignación real.
   const leadsUsuario = useMemo(() => {
-    if (esSuperAdmin) return leads;
-    const nombreCompleto = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
-    return leads.filter((l) => {
-      // Leads nuevos sin asignar o asignados a mí: siempre visibles
-      if (l.etapa === "NUEVO_LEAD") return true;
-      // Leads en otras etapas: solo si estoy asignado
-      return l.nombreEjecutivo === nombreCompleto;
-    });
-  }, [leads, esSuperAdmin, usuarioActual]);
+    if (puedeAdministrarPipeline) return leads;
+    if (usuarioActual.rol !== "EJECUTIVO") return [];
+    return leads.filter((lead) => lead.asignadoA === usuarioActual.id);
+  }, [leads, puedeAdministrarPipeline, usuarioActual.id, usuarioActual.rol]);
 
   // Obtener ejecutivos únicos de los leads
   const ejecutivos = useMemo(() => {
@@ -300,80 +291,6 @@ export default function PipelinePage() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const destinoId = destination.droppableId;
-    const origenId = source.droppableId;
-
-    // Detectar si es un ejecutivo siendo arrastrado hacia un lead
-    if (origenId.startsWith("ejec-drag-")) {
-      const identificadorEjecutivo = origenId.replace("ejec-drag-", "");
-      const usuarioDestino = usuarios.find((usuario) =>
-        usuario.id === identificadorEjecutivo ||
-        `${usuario.nombre} ${usuario.apellido}` === identificadorEjecutivo
-      );
-      // Verificar si el destino es un lead
-      if (destinoId.startsWith("lead-drop-") && usuarioDestino) {
-        const leadId = destinoId.replace("lead-drop-", "");
-        await handleAsignarEjecutivo(leadId, {
-          id: usuarioDestino.id,
-          nombre: `${usuarioDestino.nombre} ${usuarioDestino.apellido}`,
-        });
-        return;
-      }
-    }
-
-    // Detectar si es asignación de ejecutivo (sidebar o vista ejecutivo) - flujo antiguo
-    const esAsignacionEjecutivo = destinoId.startsWith("ejec-") || destinoId.startsWith("ejec-view-");
-    if (esAsignacionEjecutivo) {
-      // Buscar el lead en la columna de origen
-      let leadMovido: Lead | undefined;
-      if (source.droppableId === "ejec-view-sin-asignar") {
-        leadMovido = leadsFiltrados.filter((l) => !l.nombreEjecutivo)[source.index];
-      } else if (source.droppableId.startsWith("ejec-view-")) {
-        // Viene de la vista por ejecutivo
-        const usuarioOrigenId = source.droppableId.replace("ejec-view-", "");
-        const usuarioOrigen = usuarios.find((usuario) => usuario.id === usuarioOrigenId);
-        const nombreOrigen = usuarioOrigen
-          ? `${usuarioOrigen.nombre} ${usuarioOrigen.apellido}`
-          : "";
-        const leadsDelOrigen = leadsFiltrados.filter((lead) =>
-          lead.asignadoA === usuarioOrigenId ||
-          (!lead.asignadoA && lead.nombreEjecutivo === nombreOrigen)
-        );
-        leadMovido = leadsDelOrigen[source.index];
-      } else {
-        // Viene de una etapa del kanban
-        leadMovido = leadsFiltrados.filter((l) => l.etapa === source.droppableId)[source.index];
-      }
-      if (!leadMovido) return;
-
-      // Extraer nombre del ejecutivo destino
-      const usuarioDestinoId = destinoId
-        .replace("ejec-view-", "")
-        .replace("ejec-", "");
-      const usuarioDestino = destinoId === "ejec-view-sin-asignar"
-        ? null
-        : usuarios.find((usuario) =>
-            usuario.id === usuarioDestinoId ||
-            `${usuario.nombre} ${usuario.apellido}` === usuarioDestinoId
-          );
-
-      if (destinoId !== "ejec-view-sin-asignar" && !usuarioDestino) {
-        toast.error("No se pudo identificar al ejecutivo seleccionado");
-        return;
-      }
-
-      await handleAsignarEjecutivo(
-        leadMovido.id,
-        usuarioDestino
-          ? {
-              id: usuarioDestino.id,
-              nombre: `${usuarioDestino.nombre} ${usuarioDestino.apellido}`,
-            }
-          : null
-      );
-      return;
-    }
-
-    // Flujo normal: mover entre etapas del pipeline
     const etapaOrigen = source.droppableId;
     const leadsEnEtapaOrigen = leadsFiltrados.filter((l) => l.etapa === etapaOrigen);
     const leadMovido = leadsEnEtapaOrigen[source.index];
@@ -452,8 +369,6 @@ export default function PipelinePage() {
     moverEtapa,
     agregarActividad,
     usuarioActual,
-    usuarios,
-    handleAsignarEjecutivo,
   ]);
 
   const forzarAvance = async () => {
@@ -544,8 +459,8 @@ export default function PipelinePage() {
           pieDisponible: data.pieDisponible,
           notas: data.notas,
           diasEnEtapa: 0,
-          asignadoA: usuarioActual.id,
-          nombreEjecutivo: `${usuarioActual.nombre} ${usuarioActual.apellido}`,
+          asignadoA: data.asignadoA,
+          nombreEjecutivo: data.nombreEjecutivo,
         };
         await agregarLead(newLead);
         toast.success("Lead creado", {
@@ -611,11 +526,13 @@ export default function PipelinePage() {
              </div>
           </div>
 
+          {puedeAdministrarPipeline && (
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Button onClick={handleNuevoLead} className="gap-1.5 shadow-lg shadow-blue-600/15 text-[11px] sm:text-sm">
               <Plus size={14} /> <span className="hidden sm:inline">Nuevo Lead</span><span className="sm:hidden">Nuevo</span>
             </Button>
           </div>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-700">
@@ -644,36 +561,22 @@ export default function PipelinePage() {
               </option>
             ))}
           </select>
-          <label className="sr-only" htmlFor="pipeline-owner-filter">Filtrar por ejecutivo</label>
-          <select
-            id="pipeline-owner-filter"
-            value={filtroEjecutivo}
-            onChange={(event) => setFiltroEjecutivo(event.target.value)}
-            className="max-w-[190px] flex-1 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 sm:flex-none"
-          >
-            <option value="todos">Todos los ejecutivos</option>
-            {ejecutivos.map((ejecutivo) => (
-              <option key={ejecutivo} value={ejecutivo}>{ejecutivo}</option>
-            ))}
-          </select>
-          <div className="flex items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-700">
-            <button
-              onClick={() => setVistaModo("kanban")}
-              className={`rounded-md p-1.5 transition-colors ${vistaModo === "kanban" ? "bg-white text-blue-600 shadow-sm dark:bg-slate-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-              title="Vista Kanban"
-              aria-label="Vista Kanban"
-            >
-              <LayoutList size={14} />
-            </button>
-            <button
-              onClick={() => setVistaModo("ejecutivos")}
-              className={`rounded-md p-1.5 transition-colors ${vistaModo === "ejecutivos" ? "bg-white text-blue-600 shadow-sm dark:bg-slate-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-              title="Vista por Ejecutivo"
-              aria-label="Vista por Ejecutivo"
-            >
-              <LayoutGrid size={14} />
-            </button>
-          </div>
+          {puedeAdministrarPipeline && (
+            <>
+              <label className="sr-only" htmlFor="pipeline-owner-filter">Filtrar por ejecutivo</label>
+              <select
+                id="pipeline-owner-filter"
+                value={filtroEjecutivo}
+                onChange={(event) => setFiltroEjecutivo(event.target.value)}
+                className="max-w-[190px] flex-1 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 sm:flex-none"
+              >
+                <option value="todos">Todos los ejecutivos</option>
+                {ejecutivos.map((ejecutivo) => (
+                  <option key={ejecutivo} value={ejecutivo}>{ejecutivo}</option>
+                ))}
+              </select>
+            </>
+          )}
           <span className="ml-auto text-[10px] font-medium text-slate-400">
             {leadsFiltrados.length} {leadsFiltrados.length === 1 ? "resultado" : "resultados"}
           </span>
@@ -688,8 +591,7 @@ export default function PipelinePage() {
       {/* Board - ocupa todo el espacio restante */}
       <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
         <div className="flex-1 flex overflow-hidden p-2 sm:p-4 pt-3">
-          {vistaModo === "kanban" ? (
-            <div className="flex flex-1 gap-2 overflow-x-auto scroll-smooth sm:gap-3">
+          <div className="flex flex-1 gap-2 overflow-x-auto scroll-smooth sm:gap-3">
           {etapasVisibles.map((etapaPipeline) => {
             const etapa = etapaPipeline.id;
             // Nombre y color salen de la API. Una etapa personalizada no tiene
@@ -784,120 +686,7 @@ export default function PipelinePage() {
               </div>
             );
           })}
-              </div>
-          ) : (
-            /* Vista por Ejecutivo - Swimlanes */
-            <div className="flex-1 flex gap-3 overflow-x-auto scroll-smooth">
-              {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user, idx, arr) => {
-                const nombreCompleto = `${user.nombre} ${user.apellido}`;
-                const userRol = ROLES_CONFIG[user.rol];
-                const leadsDelEjecutivo = leadsFiltrados.filter((l) => l.nombreEjecutivo === nombreCompleto);
-                const leadsSinAsignar = leadsFiltrados.filter((l) => !l.nombreEjecutivo);
-                const esUltimo = idx === arr.length - 1;
-
-                return (
-                  <div key={user.id} className="min-w-[280px] w-[280px] flex-shrink-0 flex flex-col">
-                    {/* Ejecutivo Header */}
-                    <div className="rounded-xl p-3 mb-2 flex-shrink-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shadow-sm"
-                          style={{
-                            background:
-                              user.rol === "ADMIN"
-                                ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                                : "linear-gradient(135deg, #64748b, #475569)",
-                          }}
-                        >
-                          {user.nombre[0]}{user.apellido[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
-                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
-                        </div>
-                        <span className={`text-[11px] font-bold px-2 py-1 rounded-lg ${
-                          leadsDelEjecutivo.length === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
-                          leadsDelEjecutivo.length <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                          leadsDelEjecutivo.length <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                          "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                        }`}>
-                          {leadsDelEjecutivo.length} leads
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Leads del ejecutivo */}
-                    <Droppable droppableId={`ejec-view-${user.id}`}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`flex-1 rounded-xl p-2.5 overflow-y-auto transition-all duration-200 min-h-[300px] ${
-                            snapshot.isDraggingOver
-                              ? "bg-blue-50/80 dark:bg-blue-900/20 border-2 border-dashed border-blue-400 shadow-inner"
-                              : "bg-white/60 dark:bg-slate-800/60 border-2 border-transparent"
-                          }`}
-                        >
-                          {leadsDelEjecutivo.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center p-4 min-h-[200px]">
-                              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center mb-3">
-                                <UserPlus size={16} className="text-slate-300 dark:text-slate-500" />
-                              </div>
-                              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Sin leads asignados</p>
-                              <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-1">Arrastra leads aquí</p>
-                            </div>
-                          ) : (
-                            leadsDelEjecutivo.map((lead, index) => (
-                              <PipelineLeadCard
-                                key={lead.id}
-                                lead={lead}
-                                index={index}
-                                onOpen={() => setLeadDetalle(lead)}
-                              />
-                            ))
-                          )}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-
-                    {/* Leads sin asignar - solo en la última columna */}
-                    {esUltimo && leadsSinAsignar.length > 0 && (
-                      <div className="mt-3">
-                        <Droppable droppableId="ejec-view-sin-asignar">
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`rounded-xl p-2.5 transition-all duration-200 ${
-                                snapshot.isDraggingOver
-                                  ? "bg-amber-50/80 dark:bg-amber-900/20 border-2 border-dashed border-amber-400"
-                                  : "bg-slate-50/60 dark:bg-slate-800/40 border-2 border-dashed border-slate-200 dark:border-slate-700"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 mb-2 px-1">
-                                <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sin asignar ({leadsSinAsignar.length})</span>
-                              </div>
-                              {leadsSinAsignar.map((lead, index) => (
-                                <PipelineLeadCard
-                                  key={lead.id}
-                                  lead={lead}
-                                  index={index}
-                                  onOpen={() => setLeadDetalle(lead)}
-                                />
-                              ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
       </DragDropContext>
 
@@ -912,6 +701,7 @@ export default function PipelinePage() {
           ""
         }
         carga={cargaPorEjecutivo}
+        canManage={puedeAdministrarPipeline}
         onOpenChange={(open) => {
           if (!open) setLeadDetalle(null);
         }}

@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PipelinePage from "@/app/(dashboard)/pipeline/page";
-import type { EtapaPipeline, Lead } from "@/tipos";
+import type { EtapaPipeline, Lead, Rol } from "@/tipos";
 
 const mocks = vi.hoisted(() => ({
   agregarActividad: vi.fn(),
@@ -41,7 +41,7 @@ vi.mock("@/componentes/pipeline/PipelineSkeleton", () => ({
 }));
 
 vi.mock("@/componentes/pipeline/AsignarEjecutivo", () => ({
-  AsignarEjecutivo: () => null,
+  AsignarEjecutivo: () => <button>Asignar ejecutivo</button>,
 }));
 
 vi.mock("@/componentes/leads/FormularioLead", () => ({
@@ -121,16 +121,21 @@ function crearLead(overrides: Partial<Lead> = {}): Lead {
   };
 }
 
-function configurarContextos(leads: Lead[], cargando = false) {
+function configurarContextos(
+  leads: Lead[],
+  cargando = false,
+  rol: Rol = "SUPER_ADMIN",
+  userId = "admin-qa",
+) {
   mocks.useUser.mockReturnValue({
     usuarioActual: {
-      id: "admin-qa",
+      id: userId,
       nombre: "Admin",
       apellido: "QA",
-      rol: "SUPER_ADMIN",
+      rol,
       estado: "ACTIVO",
     },
-    esSuperAdmin: true,
+    esSuperAdmin: rol === "SUPER_ADMIN",
     usuarios: [],
   });
   mocks.useLeads.mockReturnValue({
@@ -181,6 +186,35 @@ describe("regresiones del pipeline V3", () => {
     expect(screen.queryByText("Total oportunidades")).toBeNull();
     expect(screen.queryByText("Ticket promedio")).toBeNull();
     expect(screen.queryByText("Click en el icono del lead para asignar")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Vista Kanban" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Vista por Ejecutivo" })).toBeNull();
+  });
+
+  it("muestra toda la cartera a administración y solo la asignada al ejecutivo", async () => {
+    const propiosYAjenos = [
+      crearLead({ id: "propio", nombre: "Lead", apellido: "Propio", asignadoA: "ejecutivo-uno" }),
+      crearLead({ id: "ajeno", nombre: "Lead", apellido: "Ajeno", asignadoA: "ejecutivo-dos" }),
+      crearLead({ id: "sin-asignar", nombre: "Lead", apellido: "Libre", asignadoA: undefined }),
+    ];
+    const vista = render(<PipelinePage />);
+    configurarContextos(propiosYAjenos, false, "ADMIN");
+    vista.rerender(<PipelinePage />);
+    await screen.findByRole("option", { name: /Revisión Legal/ });
+
+    expect(screen.getByText("Lead Propio")).toBeTruthy();
+    expect(screen.getByText("Lead Ajeno")).toBeTruthy();
+    expect(screen.getByText("Lead Libre")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Nuevo Lead/ })).toBeTruthy();
+    expect(screen.getByLabelText("Filtrar por ejecutivo")).toBeTruthy();
+
+    configurarContextos(propiosYAjenos, false, "EJECUTIVO", "ejecutivo-uno");
+    vista.rerender(<PipelinePage />);
+
+    expect(screen.getByText("Lead Propio")).toBeTruthy();
+    expect(screen.queryByText("Lead Ajeno")).toBeNull();
+    expect(screen.queryByText("Lead Libre")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Nuevo Lead/ })).toBeNull();
+    expect(screen.queryByLabelText("Filtrar por ejecutivo")).toBeNull();
   });
 
   it("combina etapa y ejecutivo con búsqueda normalizada por varios campos", async () => {
@@ -268,8 +302,14 @@ describe("regresiones del pipeline V3", () => {
     fireEvent.click(screen.getByRole("button", { name: "Abrir ficha de María Detalle" }));
 
     expect(screen.getByRole("dialog")).toBeTruthy();
+    const responsable = screen.getByText("Responsable");
     expect(screen.getByText("Valor propiedad")).toBeTruthy();
     expect(screen.getByText("Antecedentes completos")).toBeTruthy();
+    expect(
+      responsable.compareDocumentPosition(screen.getByText("Valor propiedad")) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Asignar ejecutivo" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Ver ficha completa/ })).toBeTruthy();
   });
 

@@ -52,15 +52,17 @@ function leadsQuery() {
 describe("GET /api/leads", () => {
   beforeEach(() => {
     requireAuth.mockReset();
-    requireAuth.mockReturnValue({
-      email: "agente.uno@example.com",
-      rol: "AGENTE",
-      userId: "agente-uno",
-    });
     from.mockReset();
   });
 
-  it("solo entrega al agente los leads que tiene asignados", async () => {
+  it.each(["AGENTE", "EJECUTIVO"])(
+  "solo entrega a %s los leads que tiene asignados",
+  async (rol) => {
+    requireAuth.mockReturnValue({
+      email: "agente.uno@example.com",
+      rol,
+      userId: "agente-uno",
+    });
     const query = leadsQuery();
     from.mockReturnValue(query);
 

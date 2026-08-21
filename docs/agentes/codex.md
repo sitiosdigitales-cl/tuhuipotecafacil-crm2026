@@ -1600,3 +1600,10 @@ lint 0 con Supabase local detenido y typecheck 0.
 la búsqueda normaliza nombre/RUT/teléfono y suma banco/ejecutivo, el filtro de
 etapa muestra conteos y una sola columna, y las tarjetas compactas abren detalle
 modal. Build 94/94, suite 864/864, lint y typecheck en 0; navegador no disponible.
+[build] ocupado — Codex, PIPELINE-V4 · Kanban único y cartera por rol.
+[build] libre — Codex, PIPELINE-V4 · build terminó en 0 con 94 páginas.
+[PIPELINE-V4] hecho — el pipeline queda solo en Kanban; SUPER_ADMIN y ADMIN
+ven toda la cartera y EJECUTIVO solo sus leads asignados, tanto en interfaz
+como API y RLS. El asistente ya no crea el lead al enviar el paso 2 y la
+asignación se muestra arriba del detalle solo a administración. Build 94/94,
+suite 874/874, lint y typecheck en 0.

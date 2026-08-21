@@ -131,6 +131,7 @@ describe("roles y cartera del detalle de solicitudes", () => {
   });
 
   it("mantiene la edición para EJECUTIVO", async () => {
+    leadData.asignadoa = "usuario-ejecutivo";
     setRole("EJECUTIVO");
 
     const response = await PUT(request("PUT"), params);

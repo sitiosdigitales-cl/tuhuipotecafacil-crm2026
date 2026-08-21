@@ -86,7 +86,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.pieDisponible !== undefined) updateData.pieDisponible = body.pieDisponible;
       if (body.banco !== undefined) updateData.banco = body.banco;
     } else {
-      // Admin/Gerente/Agente pueden actualizar todo
+      // Los roles internos pueden actualizar el lead dentro de su alcance.
       if (body.nombre) updateData.nombre = body.nombre;
       if (body.apellido) updateData.apellido = body.apellido;
       if (body.rut !== undefined) updateData.rut = body.rut;
@@ -95,8 +95,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.origen) updateData.origen = body.origen;
       if (body.etapa) updateData.etapa = body.etapa;
       if (body.prioridad) updateData.prioridad = body.prioridad;
-      if (body.nombreEjecutivo !== undefined) updateData.nombreEjecutivo = body.nombreEjecutivo;
-      if (body.asignadoA !== undefined) updateData.asignadoa = body.asignadoA;
+      if (auth.rol === "SUPER_ADMIN" || auth.rol === "ADMIN") {
+        if (body.nombreEjecutivo !== undefined) updateData.nombreEjecutivo = body.nombreEjecutivo;
+        if (body.asignadoA !== undefined) updateData.asignadoa = body.asignadoA;
+      }
       if (body.banco !== undefined) updateData.banco = body.banco;
       if (body.tipoCredito !== undefined) updateData.tipoCredito = body.tipoCredito;
       if (body.montoSolicitado !== undefined) updateData.montoSolicitado = body.montoSolicitado;

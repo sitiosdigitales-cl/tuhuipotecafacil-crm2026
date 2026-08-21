@@ -323,7 +323,7 @@ export const ESTADOS_USUARIO_CONFIG: Record<EstadoUsuario, { label: string; colo
 export const ROLES_CONFIG: Record<Rol, { label: string; color: string; descripcion: string }> = {
   SUPER_ADMIN: { label: "Super Admin", color: "bg-purple-100 text-purple-700", descripcion: "Control total. Único que administra roles" },
   ADMIN: { label: "Administrador", color: "bg-blue-100 text-blue-700", descripcion: "Todas las vistas del dashboard. Ve y edita datos, no administra roles" },
-  EJECUTIVO: { label: "Ejecutivo", color: "bg-cyan-100 text-cyan-700", descripcion: "Ejecutivo comercial. Ve todos los leads y clientes" },
+  EJECUTIVO: { label: "Ejecutivo", color: "bg-cyan-100 text-cyan-700", descripcion: "Ejecutivo comercial. Ve únicamente los leads y clientes que tiene asignados" },
   AGENTE: { label: "Agente de banco", color: "bg-amber-100 text-amber-700", descripcion: "Contraparte del banco. Lee documentos de las solicitudes" },
   CLIENTE: { label: "Cliente", color: "bg-emerald-100 text-emerald-700", descripcion: "Solo su propio perfil y sus documentos" },
 };

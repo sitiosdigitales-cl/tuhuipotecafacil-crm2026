@@ -273,9 +273,10 @@ describe("persistencia de mutaciones de leads", () => {
     expect(apiSource).toContain("asignadoA: body.asignadoA || null");
     expect(leadsPageSource).toContain("const leadPersistido = await agregarLead");
     expect(leadsPageSource).toContain("leadId: leadPersistido.id");
-    expect(pipelineSource).toContain("asignadoA: usuarioActual.id");
-    expect(pipelineSource).toContain("asignadoA: ejecutivo?.id ?? \"\"");
-    expect(pipelineSource).toContain("droppableId={`ejec-view-${user.id}`}");
+    expect(pipelineSource).toContain("asignadoA: data.asignadoA");
+    expect(pipelineSource).toContain('lead.asignadoA === usuarioActual.id');
+    expect(pipelineSource).not.toContain("ejec-view-");
+    expect(selectorSource).toContain('u.rol === "EJECUTIVO"');
     expect(selectorSource).toContain("id: user.id, nombre: nombreCompleto");
   });
 });

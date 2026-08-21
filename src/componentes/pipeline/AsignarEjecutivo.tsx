@@ -33,7 +33,7 @@ export function AsignarEjecutivo({ ejecutivoActual, onAsignar, compact = false, 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const ejecutivos = usuarios
-    .filter((u) => u.estado === "ACTIVO")
+    .filter((u) => u.estado === "ACTIVO" && u.rol === "EJECUTIVO")
     .sort((a, b) => {
       const nombreA = `${a.nombre} ${a.apellido}`;
       const nombreB = `${b.nombre} ${b.apellido}`;

@@ -32,7 +32,6 @@ import {
   Save,
   X,
   Briefcase,
-  UserCheck,
   Calendar,
   Shield,
   TrendingUp,
@@ -61,14 +60,6 @@ const BANCOS = [
 ];
 
 const TIPOS_CREDITO = ["Créditos Hipotecarios", "Créditos de Consumos", "Fines Generales", "Capital para Empresas"];
-
-const EJECUTIVOS = [
-  "Andrés Pérez",
-  "Carolina Muñoz",
-  "Diego Silva",
-  "Valentina Torres",
-  "Javier Morales",
-];
 
 const PASOS_CONFIG = [
   { id: 1, label: "Datos Personales", icono: User, color: "blue" },
@@ -210,6 +201,10 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (paso < 3) {
+      irAPaso(paso + 1);
+      return;
+    }
     if (!validatePaso1() || enviando) return;
 
     setEnviando(true);
@@ -621,8 +616,7 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                <div className="space-y-1.5">
                     <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
                       <Building2 size={11} className="text-slate-400" /> Banco
                     </Label>
@@ -636,22 +630,6 @@ export function FormularioLead({ open, onOpenChange, lead, onSubmit }: Formulari
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
-                      <UserCheck size={11} className="text-slate-400" /> Ejecutivo
-                    </Label>
-                    <Select value={formData.nombreEjecutivo || ""} onValueChange={(v) => updateField("nombreEjecutivo", v)}>
-                      <SelectTrigger className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EJECUTIVOS.map((ej) => (
-                          <SelectItem key={ej} value={ej}>{ej}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 <div className="space-y-1.5 mt-4">

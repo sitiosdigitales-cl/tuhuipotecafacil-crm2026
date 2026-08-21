@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray, fromSupabaseColumns, limpiarParaFiltro } from "@/lib/supabase";
-import { requireAuth, unauthorized } from "@/lib/api-auth";
+import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import { CreateLeadApiSchema } from "@/modulos/leads/validaciones-api";
@@ -21,15 +21,14 @@ export async function GET(request: NextRequest) {
     // El alcance por rol se aplica en la consulta, no filtrando después: lo que
     // no corresponde no debe salir de la base. Es la versión de listado de la
     // misma regla que puedeAccederLead aplica a un lead suelto.
-    if (auth.rol === "AGENTE") {
-      // Contraparte del banco: solo los leads que le asignaron.
+    if (auth.rol === "EJECUTIVO" || auth.rol === "AGENTE") {
+      // Ejecutivos y contrapartes bancarias solo reciben su cartera asignada.
       query = query.eq("asignadoa", auth.userId);
     } else if (auth.rol === "CLIENTE") {
       // Solo el suyo, identificado por correo.
       query = query.eq("email", auth.email.toLowerCase());
     }
-    // SUPER_ADMIN, ADMIN y EJECUTIVO ven todo: el equipo comercial trabaja
-    // sobre un pozo compartido.
+    // SUPER_ADMIN y ADMIN ven toda la cartera.
 
     if (busqueda) {
       const q = limpiarParaFiltro(busqueda);
@@ -61,7 +60,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await requireAuth(request))) return unauthorized();
+  const auth = await requireAuth(request);
+  if (!auth) return unauthorized();
+  if (auth.rol !== "SUPER_ADMIN" && auth.rol !== "ADMIN") return forbidden();
   try {
     const rawBody = await parseBoundedJson(request, MAX_CREATE_LEAD_BYTES);
     const parsedBody = CreateLeadApiSchema.safeParse(rawBody);

@@ -64,7 +64,9 @@ function setRole(role: Rol) {
   requireAuth.mockReturnValue({
     email: `${role.toLowerCase()}@example.invalid`,
     rol: role,
-    userId: role === "AGENTE" ? "agente-uno" : `usuario-${role.toLowerCase()}`,
+    userId: ["AGENTE", "EJECUTIVO"].includes(role)
+      ? "agente-uno"
+      : `usuario-${role.toLowerCase()}`,
   });
 }
 

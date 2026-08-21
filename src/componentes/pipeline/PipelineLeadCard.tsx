@@ -135,6 +135,7 @@ interface PipelineLeadDetailProps {
   lead: Lead | null;
   etapaNombre: string;
   carga: Record<string, number>;
+  canManage: boolean;
   onOpenChange: (open: boolean) => void;
   onAssign: (leadId: string, ejecutivo: EjecutivoAsignable | null) => void;
   onDelete: (lead: Lead) => void;
@@ -164,6 +165,7 @@ export function PipelineLeadDetail({
   lead,
   etapaNombre,
   carga,
+  canManage,
   onOpenChange,
   onAssign,
   onDelete,
@@ -190,6 +192,22 @@ export function PipelineLeadDetail({
             </div>
           </div>
         </DialogHeader>
+
+        {canManage && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2.5 dark:border-blue-900/50 dark:bg-blue-900/20">
+            <div className="min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-blue-500">Responsable</p>
+              <p className="truncate text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                {lead.nombreEjecutivo || "Lead sin asignar"}
+              </p>
+            </div>
+            <AsignarEjecutivo
+              ejecutivoActual={lead.nombreEjecutivo}
+              carga={carga}
+              onAsignar={(ejecutivo) => onAssign(lead.id, ejecutivo)}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <DetailItem
@@ -238,23 +256,18 @@ export function PipelineLeadDetail({
           </div>
         )}
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <AsignarEjecutivo
-            ejecutivoActual={lead.nombreEjecutivo}
-            carga={carga}
-            onAsignar={(ejecutivo) => onAssign(lead.id, ejecutivo)}
-          />
-          <div className="flex flex-wrap justify-end gap-2">
+        <DialogFooter className="flex flex-wrap justify-end gap-2">
+          {canManage && (
             <Button variant="outline" className="gap-1.5 text-red-500" onClick={() => onDelete(lead)}>
               <Trash2 size={13} /> Eliminar
             </Button>
+          )}
             <Button variant="outline" className="gap-1.5" onClick={() => onEdit(lead)}>
               <Pencil size={13} /> Editar
             </Button>
             <Button className="gap-1.5" onClick={() => onOpenFull(lead)}>
               <Eye size={13} /> Ver ficha completa
             </Button>
-          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

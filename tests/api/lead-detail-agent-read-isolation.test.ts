@@ -62,7 +62,14 @@ describe("GET /api/leads/[id]", () => {
     from.mockReturnValue(detailQuery());
   });
 
-  it("no entrega a un agente la ficha asignada a otro vendedor", async () => {
+  it.each(["AGENTE", "EJECUTIVO"])(
+  "no entrega a %s la ficha asignada a otro vendedor",
+  async (rol) => {
+    requireAuth.mockReturnValue({
+      email: "agente.uno@example.com",
+      rol,
+      userId: "agente-uno",
+    });
     const response = await GET(
       new NextRequest("http://localhost/api/leads/lead-ajeno"),
       { params: Promise.resolve({ id: "lead-ajeno" }) }
