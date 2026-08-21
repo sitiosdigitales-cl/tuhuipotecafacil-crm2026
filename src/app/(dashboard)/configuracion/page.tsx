@@ -1,5 +1,7 @@
 "use client";
 
+import type { EtapaPipeline } from "@/tipos";
+
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bell, Database, Settings } from "lucide-react";
@@ -24,9 +26,7 @@ function ConfiguracionContent() {
       ? (requestedTab as TabConfig)
       : "notificaciones"
   );
-  const [etapas, setEtapas] = useState<
-    Array<{ id: string; nombre: string; color: string; activa: boolean }>
-  >([]);
+  const [etapas, setEtapas] = useState<EtapaPipeline[]>([]);
   const [cargandoEtapas, setCargandoEtapas] = useState(true);
 
   useEffect(() => {

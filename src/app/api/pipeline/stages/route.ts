@@ -1,49 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { requireAuth, requireRole, unauthorized, forbidden } from "@/lib/api-auth";
 
-// Etapas por defecto del sistema (almacenadas en memoria)
-let etapasEnMemoria = [
-  { id: "NUEVO_LEAD", nombre: "Nuevo Lead", color: "#3B82F6", orden: 1, activa: true },
-  { id: "CONTACTO_INICIAL", nombre: "Contacto Inicial", color: "#6366F1", orden: 2, activa: true },
-  { id: "CONTACTADO", nombre: "Contactado", color: "#8B5CF6", orden: 3, activa: true },
-  { id: "INTERESADO", nombre: "Interesado", color: "#A855F7", orden: 4, activa: true },
-  { id: "CALIFICACION_COMERCIAL", nombre: "Calificación Comercial", color: "#D946EF", orden: 5, activa: true },
-  { id: "DOCS_PENDIENTES", nombre: "Docs. Pendientes", color: "#F97316", orden: 6, activa: true },
-  { id: "DOCS_COMPLETAS", nombre: "Docs. Completas", color: "#22C55E", orden: 7, activa: true },
-  { id: "EVALUACION_BANCARIA", nombre: "Evaluación Bancaria", color: "#06B6D4", orden: 8, activa: true },
-  { id: "PREAPROBADO", nombre: "Preaprobado", color: "#14B8A6", orden: 9, activa: true },
-  { id: "APROBADO", nombre: "Aprobado", color: "#10B981", orden: 10, activa: true },
-  { id: "FIRMA_DIGITAL", nombre: "Firma Digital", color: "#6366F1", orden: 11, activa: true },
-  { id: "NOTARIA", nombre: "Notaría", color: "#8B5CF6", orden: 12, activa: true },
-  { id: "CREDITO_PAGADO", nombre: "Crédito Pagado", color: "#22C55E", orden: 13, activa: true },
-];
+// `public.pipeline_stages` es la unica fuente. Antes convivia con un arreglo en
+// memoria del proceso: en Vercel esa memoria no persiste ni se comparte entre
+// instancias, asi que la interfaz informaba exito y el cambio desaparecia al
+// recargar o al caer en otra instancia.
+
+const COLUMNAS = "id,nombre,color,orden,activa";
+
+// Etapas que el flujo hipotecario necesita para funcionar. No se borran.
+const ETAPAS_SISTEMA = ["NUEVO_LEAD", "CLIENTE_FINALIZADO"];
+
+const ColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9A-Fa-f]{6}$/, "El color debe ser hexadecimal de seis dígitos");
+
+const CrearEtapaSchema = z
+  .object({
+    nombre: z.string().trim().min(1).max(60),
+    color: ColorSchema.optional(),
+    orden: z.number().int().positive().optional(),
+  })
+  .strict();
+
+const ActualizarEtapaSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    nombre: z.string().trim().min(1).max(60).optional(),
+    color: ColorSchema.optional(),
+    orden: z.number().int().positive().optional(),
+    activa: z.boolean().optional(),
+  })
+  .strict()
+  .refine(
+    (valor) =>
+      valor.nombre !== undefined ||
+      valor.color !== undefined ||
+      valor.orden !== undefined ||
+      valor.activa !== undefined,
+    { message: "No hay campos que actualizar" },
+  );
+
+/**
+ * Deriva el id desde el nombre. Puede quedar vacio —un nombre de solo simbolos
+ * o de solo acentos se queda sin caracteres validos—, y en ese caso hay que
+ * rechazar en vez de insertar una fila con id "".
+ */
+function idDesdeNombre(nombre: string): string {
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+function esViolacionDeUnicidad(error: unknown): boolean {
+  return Boolean(
+    error && typeof error === "object" && "code" in error && error.code === "23505",
+  );
+}
+
+function errorDeServidor(mensaje: string) {
+  return NextResponse.json({ success: false, error: mensaje }, { status: 500 });
+}
 
 export async function GET(request: NextRequest) {
   // Los metodos de escritura ya pedian rol; la lectura no pedia nada y
   // devolvia el flujo completo del CRM a cualquiera.
   if (!(await requireAuth(request))) return unauthorized();
-  // Intentar cargar desde la base de datos
-  let etapasDB: typeof etapasEnMemoria = [];
-  try {
-    const { data, error } = await supabase
-      .from("pipeline_stages")
-      .select("*")
-      .order("orden", { ascending: true });
 
-    if (!error && data && data.length > 0) {
-      etapasDB = data;
-    }
-  } catch {
-    // Ignorar errores
+  const { data, error } = await supabase
+    .from("pipeline_stages")
+    .select(COLUMNAS)
+    .order("orden", { ascending: true });
+
+  if (error) {
+    console.error("Error en GET /api/pipeline/stages:", error.message);
+    return errorDeServidor("No se pudieron cargar las etapas");
   }
 
-  // Combinar: etapas de DB + etapas del sistema que falten
-  const idsDB = new Set(etapasDB.map((e) => e.id));
-  const etapasSistema = etapasEnMemoria.filter((e) => !idsDB.has(e.id));
-  const todasEtapas = [...etapasDB, ...etapasSistema].sort((a, b) => a.orden - b.orden);
-
-  return NextResponse.json({ success: true, data: todasEtapas });
+  // Se devuelve lo que hay. Rellenar los huecos desde un arreglo estatico era
+  // lo que resucitaba las etapas recien eliminadas.
+  return NextResponse.json({ success: true, data: data ?? [] });
 }
 
 export async function POST(request: NextRequest) {
@@ -51,48 +94,74 @@ export async function POST(request: NextRequest) {
     return forbidden();
   }
 
+  let cuerpo: unknown;
   try {
-    const body = await request.json();
-    const { nombre, color, orden } = body;
-
-    if (!nombre) {
-      return NextResponse.json({ success: false, error: "Nombre requerido" }, { status: 400 });
-    }
-
-    const id = nombre
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "_")
-      .replace(/_+/g, "_");
-
-    const nuevoOrden = orden || etapasEnMemoria.length + 1;
-
-    const nuevaEtapa = {
-      id,
-      nombre,
-      color: color || "#64748B",
-      orden: nuevoOrden,
-      activa: true,
-    };
-
-    // Intentar guardar en la base de datos
-    try {
-      const { error } = await supabase
-        .from("pipeline_stages")
-        .insert(nuevaEtapa);
-
-      if (error) {
-        // Tabla no existe aún, usar memoria
-      }
-    } catch {
-      // Ignorar errores
-    }
-
-    // Agregar a memoria
-    etapasEnMemoria.push(nuevaEtapa);
-
-    return NextResponse.json({ success: true, data: nuevaEtapa }, { status: 201 });
+    cuerpo = await request.json();
   } catch {
-    return NextResponse.json({ success: false, error: "Error al crear etapa" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Solicitud inválida" }, { status: 400 });
+  }
+
+  const parseado = CrearEtapaSchema.safeParse(cuerpo);
+  if (!parseado.success) {
+    return NextResponse.json(
+      { success: false, error: parseado.error.issues[0]?.message ?? "Datos inválidos" },
+      { status: 400 },
+    );
+  }
+
+  const { nombre, color, orden } = parseado.data;
+  const id = idDesdeNombre(nombre);
+  if (!id) {
+    return NextResponse.json(
+      { success: false, error: "El nombre debe incluir al menos una letra o un número" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    // El orden sale de la base, no del largo de un arreglo local: dos
+    // instancias con memorias distintas calculaban el mismo numero y chocaban
+    // contra UNIQUE (orden).
+    let ordenFinal = orden;
+    if (ordenFinal === undefined) {
+      const { data: ultima, error: errorOrden } = await supabase
+        .from("pipeline_stages")
+        .select("orden")
+        .order("orden", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (errorOrden) {
+        console.error("Error calculando el orden:", errorOrden.message);
+        return errorDeServidor("No se pudo calcular el orden de la etapa");
+      }
+      ordenFinal = (ultima?.orden ?? 0) + 1;
+    }
+
+    const { data, error } = await supabase
+      .from("pipeline_stages")
+      .insert({ id, nombre, color: color ?? "#64748B", orden: ordenFinal, activa: true })
+      .select(COLUMNAS)
+      .single();
+
+    if (error) {
+      if (esViolacionDeUnicidad(error)) {
+        return NextResponse.json(
+          { success: false, error: "Ya existe una etapa con ese nombre o ese orden" },
+          { status: 409 },
+        );
+      }
+      console.error("Error en POST /api/pipeline/stages:", error.message);
+      return errorDeServidor("No se pudo crear la etapa");
+    }
+
+    return NextResponse.json({ success: true, data }, { status: 201 });
+  } catch (error) {
+    console.error(
+      "Error en POST /api/pipeline/stages:",
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+    return errorDeServidor("No se pudo crear la etapa");
   }
 }
 
@@ -101,41 +170,65 @@ export async function PUT(request: NextRequest) {
     return forbidden();
   }
 
+  let cuerpo: unknown;
   try {
-    const body = await request.json();
-    const { id, nombre, color, orden, activa } = body;
-
-    if (!id) {
-      return NextResponse.json({ success: false, error: "ID requerido" }, { status: 400 });
-    }
-
-    // Actualizar en memoria
-    const index = etapasEnMemoria.findIndex((e) => e.id === id);
-    if (index !== -1) {
-      if (nombre !== undefined) etapasEnMemoria[index].nombre = nombre;
-      if (color !== undefined) etapasEnMemoria[index].color = color;
-      if (orden !== undefined) etapasEnMemoria[index].orden = orden;
-      if (activa !== undefined) etapasEnMemoria[index].activa = activa;
-    }
-
-    // Intentar actualizar en la base de datos
-    try {
-      const { error } = await supabase
-        .from("pipeline_stages")
-        .update({ nombre, color, orden, activa, updated_at: new Date().toISOString() })
-        .eq("id", id);
-
-      if (error) {
-        // Error actualizando en DB
-      }
-    } catch {
-      // Error actualizando en DB
-    }
-
-    const etapaActualizada = index !== -1 ? etapasEnMemoria[index] : { id, nombre, color, orden, activa };
-    return NextResponse.json({ success: true, data: etapaActualizada });
+    cuerpo = await request.json();
   } catch {
-    return NextResponse.json({ success: false, error: "Error al actualizar etapa" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Solicitud inválida" }, { status: 400 });
+  }
+
+  const parseado = ActualizarEtapaSchema.safeParse(cuerpo);
+  if (!parseado.success) {
+    return NextResponse.json(
+      { success: false, error: parseado.error.issues[0]?.message ?? "Datos inválidos" },
+      { status: 400 },
+    );
+  }
+
+  const { id, ...campos } = parseado.data;
+
+  // Solo los campos recibidos. Antes se enviaban los cuatro siempre, asi que
+  // cambiar el color escribia `nombre: undefined` sobre la fila.
+  const cambios: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (campos.nombre !== undefined) cambios.nombre = campos.nombre;
+  if (campos.color !== undefined) cambios.color = campos.color;
+  if (campos.orden !== undefined) cambios.orden = campos.orden;
+  if (campos.activa !== undefined) cambios.activa = campos.activa;
+
+  try {
+    const { data, error } = await supabase
+      .from("pipeline_stages")
+      .update(cambios)
+      .eq("id", id)
+      .select(COLUMNAS);
+
+    if (error) {
+      if (esViolacionDeUnicidad(error)) {
+        return NextResponse.json(
+          { success: false, error: "Ese orden ya lo ocupa otra etapa" },
+          { status: 409 },
+        );
+      }
+      console.error("Error en PUT /api/pipeline/stages:", error.message);
+      return errorDeServidor("No se pudo actualizar la etapa");
+    }
+
+    // Cero filas significa que la etapa no existe. Responder exito era lo que
+    // hacia que la interfaz conservara un cambio que la base nunca guardo.
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "La etapa no existe" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: true, data: data[0] });
+  } catch (error) {
+    console.error(
+      "Error en PUT /api/pipeline/stages:",
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+    return errorDeServidor("No se pudo actualizar la etapa");
   }
 }
 
@@ -144,55 +237,63 @@ export async function DELETE(request: NextRequest) {
     return forbidden();
   }
 
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ success: false, error: "ID requerido" }, { status: 400 });
+  }
+
+  if (ETAPAS_SISTEMA.includes(id)) {
+    return NextResponse.json(
+      { success: false, error: "No se pueden eliminar etapas del sistema" },
+      { status: 400 },
+    );
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const { count, error: errorLeads } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("etapa", id);
 
-    if (!id) {
-      return NextResponse.json({ success: false, error: "ID requerido" }, { status: 400 });
+    // Si la comprobacion falla no se puede saber si hay leads: no se borra.
+    if (errorLeads) {
+      console.error("Error comprobando leads de la etapa:", errorLeads.message);
+      return errorDeServidor("No se pudo comprobar si la etapa tiene leads");
     }
 
-    // Verificar que no sea una etapa del sistema
-    const etapasSistema = ["NUEVO_LEAD", "CLIENTE_FINALIZADO"];
-    if (etapasSistema.includes(id)) {
-      return NextResponse.json({
-        success: false,
-        error: "No se pueden eliminar etapas del sistema"
-      }, { status: 400 });
+    if (count && count > 0) {
+      return NextResponse.json(
+        { success: false, error: `No se puede eliminar: hay ${count} leads en esta etapa` },
+        { status: 400 },
+      );
     }
 
-    // Verificar que no haya leads en esta etapa
-    try {
-      const { count } = await supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("etapa", id);
+    const { data, error } = await supabase
+      .from("pipeline_stages")
+      .delete()
+      .eq("id", id)
+      .select("id");
 
-      if (count && count > 0) {
-        return NextResponse.json({
-          success: false,
-          error: `No se puede eliminar: hay ${count} leads en esta etapa`
-        }, { status: 400 });
-      }
-    } catch {
-      // Ignorar errores
+    if (error) {
+      console.error("Error en DELETE /api/pipeline/stages:", error.message);
+      return errorDeServidor("No se pudo eliminar la etapa");
     }
 
-    // Eliminar de memoria
-    etapasEnMemoria = etapasEnMemoria.filter((e) => e.id !== id);
-
-    // Intentar eliminar de la base de datos
-    try {
-      await supabase
-        .from("pipeline_stages")
-        .delete()
-        .eq("id", id);
-    } catch {
-      // Ignorar errores
+    if (!data || data.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "La etapa no existe" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ success: false, error: "Error al eliminar etapa" }, { status: 500 });
+  } catch (error) {
+    console.error(
+      "Error en DELETE /api/pipeline/stages:",
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+    return errorDeServidor("No se pudo eliminar la etapa");
   }
 }

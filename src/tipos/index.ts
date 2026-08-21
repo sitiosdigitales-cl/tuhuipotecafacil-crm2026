@@ -142,6 +142,36 @@ export const ETAPAS_CONFIG: Record<Etapa, { label: string; color: string }> = {
   CLIENTE_FINALIZADO: { label: "Finalizado", color: "#64748B" },
 };
 
+/**
+ * Etapa tal como vive en `public.pipeline_stages`. Es el modelo que consume el
+ * tablero: el id puede no existir en `ETAPAS_CONFIG`, porque las etapas se
+ * crean desde Configuracion y el arreglo estatico solo conoce las de fabrica.
+ */
+export interface EtapaPipeline {
+  id: string;
+  nombre: string;
+  color: string;
+  orden: number;
+  activa: boolean;
+}
+
+/** Color de reserva cuando una etapa personalizada no trae uno valido. */
+export const COLOR_ETAPA_POR_DEFECTO = "#64748B";
+
+/**
+ * Respaldo para cuando la API no responde. Deriva de `ETAPAS_CONFIG` para no
+ * mantener una segunda lista a mano que se desincronice.
+ */
+export function etapasPorDefecto(): EtapaPipeline[] {
+  return (Object.keys(ETAPAS_CONFIG) as Etapa[]).map((id, indice) => ({
+    id,
+    nombre: ETAPAS_CONFIG[id].label,
+    color: ETAPAS_CONFIG[id].color,
+    orden: indice + 1,
+    activa: true,
+  }));
+}
+
 export const ORIGEN_LABELS: Record<OrigenLead, string> = {
   WEB: "Sitio Web",
   FACEBOOK: "Facebook Ads",

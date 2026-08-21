@@ -414,3 +414,75 @@ E-2 a E-5 quedan intactos para sus propias pruebas.
   salida lo reflejara.
 
   Sin contenido, sin Message-ID y sin valores derivados del mensaje en el log.
+
+[build] ocupado — Claude, PIPE-01.
+[build] libre — Claude, PIPE-01. Build, suite, lint, typecheck y doble reset en verde.
+
+[PIPE-01] hecho — la configuracion del pipeline persiste y el tablero la
+renderiza. `public.pipeline_stages` pasa a ser la unica fuente.
+
+  El arreglo `etapasEnMemoria` no era un respaldo, era la causa: vivia en el
+  proceso, y en Vercel eso no persiste ni se comparte entre instancias. GET
+  rellenaba con el arreglo estatico las etapas que faltaban en la base, asi que
+  una etapa recien eliminada reaparecia; y editar una etapa predeterminada
+  lanzaba un UPDATE contra una fila que nunca se habia insertado. Eliminado por
+  completo, no reemplazado.
+
+  Migracion nueva `20260821000000_pipeline_stages_semilla.sql`, aditiva e
+  idempotente: inserta las 15 etapas iniciales solo si faltan por id, y nunca
+  pisa nombre, color ni estado de una ya personalizada. Verificado contra la
+  base local: 15 tras el reset, reaplicarla no duplica, una etapa renombrada
+  conserva su nombre y una personalizada sobrevive.
+
+  Detalle que obligo a escribir la semilla como bucle y no como INSERT unico:
+  `pipeline_stages` tiene UNIQUE (orden). Si una etapa personalizada ya ocupa
+  el orden canonico de una semilla, un INSERT plano falla y la migracion se
+  cae entera. Ahora esa semilla se coloca al final. Probado: con una etapa
+  personalizada en el orden 5, la semilla correspondiente quedo en el 6 y las
+  16 filas entraron sin error.
+
+  POST, PUT y DELETE dejan de responder success:true cuando la escritura fallo.
+  PUT comprueba que la fila exista y devuelve 404 si no; DELETE tambien, y ya no
+  se traga el error al contar leads: si no puede comprobarlo, no borra. POST
+  calcula el orden desde la base, no desde el largo de un arreglo local, que era
+  lo que hacia chocar dos instancias contra UNIQUE (orden). El id derivado del
+  nombre puede quedar vacio —un nombre de solo simbolos— y ahora eso es un 400
+  en vez de una fila con id "".
+
+  El tablero consume {id,nombre,color,orden,activa} y pinta desde la API. Antes
+  reducia la respuesta a ids y volvia a `ETAPAS_CONFIG[etapa]`, que para una
+  etapa personalizada es undefined y reventaba en `config.color`. No lo tape con
+  un cast: el modelo dinamico vive en `EtapaPipeline` y `etapasPorDefecto()`
+  deriva el respaldo del propio ETAPAS_CONFIG para no mantener dos listas.
+  `ETAPAS_POR_DEFECTO` quedo muerto y se borro, verificado con grep: cero usos.
+
+  Las reglas de transicion no se tocaron. `validarAvance` ya hace
+  `REGLAS_POR_ETAPA[destino] || []`, asi que una etapa personalizada acepta
+  leads sin reglas y las conocidas conservan las suyas. `leads.etapa` es TEXT
+  sin CHECK ni FK, comprobado, asi que puede sostener ids personalizados.
+
+  Nombre y color se guardan al salir del campo, no por tecla. El selector de
+  color tambien dispara onChange en cada paso del arrastre, asi que recibio el
+  mismo trato aunque el encargo solo mencionaba el nombre.
+
+[nota · PIPE-01, cambio visible] La base y el tablero tenian nombres distintos
+para las mismas etapas: el tablero mostraba "Calificacion", "Pre Aprobacion" y
+"Firma" desde ETAPAS_CONFIG, y Configuracion mostraba "Calificacion Comercial",
+"Preaprobado" y "Firma Digital" desde el arreglo de la API. Con una sola fuente
+hay que elegir una: la semilla usa los nombres de la API, que son los mas
+descriptivos. Tres etiquetas del tablero cambian de texto.
+
+[nota · fuera de mi tarea] Seis vistas leen `ETAPAS_CONFIG[lead.etapa]` sin
+guarda y luego usan el resultado: leads/[id], clientes, clientes/[id],
+usuarios/[id], leads y PortalClienteContent. Con una etapa personalizada esas
+paginas tienen el mismo fallo que acabo de corregir en el tablero. No las toco
+porque no son de esta tarea; queda anotado.
+
+[nota · para Codex] PIPE-01 va sin pruebas de regresion. El encargo decia
+"agrega o solicita a Codex", y `tests/**` es zona Codex por la seccion 3, asi
+que las pido en vez de escribirlas. Hacen falta dos frentes: contrato de la API
+—PUT sobre etapa inexistente devuelve 404, DELETE con leads asociados devuelve
+400, error de Supabase nunca devuelve success:true, POST con nombre sin
+caracteres validos devuelve 400 y dos POST con el mismo nombre dan 409— y
+render dinamico —una etapa que no existe en ETAPAS_CONFIG se pinta con su
+nombre y color, y una inactiva no aparece como columna.

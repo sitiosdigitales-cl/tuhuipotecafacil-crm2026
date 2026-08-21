@@ -26,7 +26,13 @@ import {
   LayoutGrid,
   UserPlus,
 } from "lucide-react";
-import { ETAPAS_CONFIG, ORIGEN_LABELS, ROLES_CONFIG } from "@/tipos";
+import {
+  COLOR_ETAPA_POR_DEFECTO,
+  ETAPAS_CONFIG,
+  etapasPorDefecto,
+  ORIGEN_LABELS,
+  ROLES_CONFIG,
+} from "@/tipos";
 import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -41,7 +47,7 @@ import {
   type EjecutivoAsignable,
 } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
-import type { Lead, Etapa, Prioridad, SituacionLaboral } from "@/tipos";
+import type { Lead, Etapa, EtapaPipeline, Prioridad, SituacionLaboral } from "@/tipos";
 
 // Documentos obligatorios por situación laboral (mismos que en clientes/[id]/page.tsx)
 const DOCUMENTOS_OBLIGATORIOS: Record<SituacionLaboral, string[]> = {
@@ -114,23 +120,6 @@ async function verificarDocumentosCompletos(lead: Lead): Promise<{ completo: boo
     return { completo: false, faltantes: ["Error al verificar documentos"] };
   }
 }
-
-// Etapas por defecto (se cargan desde la API)
-const ETAPAS_POR_DEFECTO: Etapa[] = [
-  "NUEVO_LEAD",
-  "CONTACTO_INICIAL",
-  "CONTACTADO",
-  "INTERESADO",
-  "CALIFICACION_COMERCIAL",
-  "DOCS_PENDIENTES",
-  "DOCS_COMPLETAS",
-  "EVALUACION_BANCARIA",
-  "PREAPROBADO",
-  "APROBADO",
-  "FIRMA_DIGITAL",
-  "NOTARIA",
-  "CREDITO_PAGADO",
-];
 
 const prioridadConfig: Record<Prioridad, { label: string; color: string; bg: string }> = {
   BAJA: { label: "Baja", color: "text-slate-600", bg: "bg-slate-100" },
@@ -341,7 +330,7 @@ export default function PipelinePage() {
     etapaDestino: "",
   });
   const leadsAnteriores = useRef(leads.length);
-  const [etapasPipeline, setEtapasPipeline] = useState<Etapa[]>(ETAPAS_POR_DEFECTO);
+  const [etapasPipeline, setEtapasPipeline] = useState<EtapaPipeline[]>(etapasPorDefecto);
   const [vistaModo, setVistaModo] = useState<"kanban" | "ejecutivos">("kanban");
 
   // Cargar etapas desde la API
@@ -349,13 +338,14 @@ export default function PipelinePage() {
     async function cargarEtapas() {
       try {
         const res = await fetch("/api/pipeline/stages");
+        if (!res.ok) return;
         const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          // Filtrar solo las etapas activas y ordenarlas
-          const etapasActivas = data.data
-            .filter((e: { activa: boolean }) => e.activa)
-            .sort((a: { orden: number }, b: { orden: number }) => a.orden - b.orden)
-            .map((e: { id: string }) => e.id as Etapa);
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          // Se conservan nombre y color: el tablero los pinta desde aqui y no
+          // desde ETAPAS_CONFIG, que no conoce las etapas personalizadas.
+          const etapasActivas = (data.data as EtapaPipeline[])
+            .filter((etapa) => etapa.activa)
+            .sort((a, b) => a.orden - b.orden);
           setEtapasPipeline(etapasActivas);
         }
       } catch {
@@ -813,8 +803,14 @@ export default function PipelinePage() {
             <>
               {/* Kanban columns */}
               <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto scroll-smooth">
-          {etapasPipeline.map((etapa) => {
-            const config = ETAPAS_CONFIG[etapa];
+          {etapasPipeline.map((etapaPipeline) => {
+            const etapa = etapaPipeline.id;
+            // Nombre y color salen de la API. Una etapa personalizada no tiene
+            // entrada en ETAPAS_CONFIG y leer `config.color` reventaba la vista.
+            const config = {
+              label: etapaPipeline.nombre,
+              color: etapaPipeline.color || COLOR_ETAPA_POR_DEFECTO,
+            };
             const leadsEnEtapa = leadsFiltrados.filter((l) => l.etapa === etapa);
             const montoEtapa = leadsEnEtapa.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
             const valorEtapa = leadsEnEtapa.reduce((acc, l) => acc + (l.valorPropiedad || 0), 0);

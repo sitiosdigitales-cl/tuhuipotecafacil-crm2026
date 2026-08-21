@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Settings, Eye, EyeOff, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import type { EtapaPipeline as Etapa } from "@/tipos";
 import { SectionCard } from "./config-section";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -15,13 +16,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-interface Etapa {
-  id: string;
-  nombre: string;
-  color: string;
-  activa: boolean;
-}
-
 interface TabPipelineProps {
   etapas: Etapa[];
   setEtapas: (etapas: Etapa[]) => void;
@@ -29,19 +23,53 @@ interface TabPipelineProps {
 }
 
 export function TabPipeline({ etapas, setEtapas, cargandoEtapas }: TabPipelineProps) {
+  // Ultimo valor que el servidor confirmo. Sirve para no reenviar al salir del
+  // campo si el texto no cambio, y para saber que restaurar si el PUT falla.
+  const nombresGuardados = useRef<Record<string, string>>({});
+  const coloresGuardados = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    etapas.forEach((etapa) => {
+      if (nombresGuardados.current[etapa.id] === undefined) {
+        nombresGuardados.current[etapa.id] = etapa.nombre;
+      }
+      if (coloresGuardados.current[etapa.id] === undefined) {
+        coloresGuardados.current[etapa.id] = etapa.color;
+      }
+    });
+  }, [etapas]);
+
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [newStageName, setNewStageName] = useState("");
   const [deleteStageId, setDeleteStageId] = useState<string | null>(null);
 
-  const actualizarEtapa = async (id: string, updates: { nombre?: string; color?: string; activa?: boolean }) => {
+  /**
+   * Guarda y confirma. Antes se ignoraba la respuesta, asi que un rechazo del
+   * servidor dejaba el cambio pintado en pantalla y desaparecia al recargar.
+   * Si falla, se restaura el valor que la base sigue teniendo.
+   */
+  const actualizarEtapa = async (
+    id: string,
+    updates: { nombre?: string; color?: string; activa?: boolean },
+  ) => {
+    const anteriores = etapas;
     try {
-      await fetch("/api/pipeline/stages", {
+      const res = await fetch("/api/pipeline/stages", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ...updates }),
       });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setEtapas(anteriores);
+        toast.error(data?.error || "No se pudo guardar el cambio");
+        return false;
+      }
+      return true;
     } catch {
-      toast.error("Error al actualizar la etapa");
+      setEtapas(anteriores);
+      toast.error("No se pudo guardar el cambio");
+      return false;
     }
   };
 
@@ -113,10 +141,19 @@ export function TabPipeline({ etapas, setEtapas, cargandoEtapas }: TabPipelinePr
                   type="text"
                   value={etapa.nombre}
                   onChange={(e) => {
-                    const nuevasEtapas = [...etapas];
-                    nuevasEtapas[idx].nombre = e.target.value;
+                    // Solo estado local: un PUT por tecla permitia que las
+                    // respuestas llegaran fuera de orden y ganara una parcial.
+                    const nuevasEtapas = etapas.map((actual, posicion) =>
+                      posicion === idx ? { ...actual, nombre: e.target.value } : actual,
+                    );
                     setEtapas(nuevasEtapas);
-                    actualizarEtapa(etapa.id, { nombre: e.target.value });
+                  }}
+                  onBlur={(e) => {
+                    const nombre = e.target.value.trim();
+                    if (!nombre || nombre === nombresGuardados.current[etapa.id]) return;
+                    void actualizarEtapa(etapa.id, { nombre }).then((ok) => {
+                      if (ok) nombresGuardados.current[etapa.id] = nombre;
+                    });
                   }}
                   className="flex-1 bg-white border border-slate-200/60 rounded-lg px-3 py-1.5 text-[12px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-400"
                 />
@@ -124,19 +161,31 @@ export function TabPipeline({ etapas, setEtapas, cargandoEtapas }: TabPipelinePr
                   type="color"
                   value={etapa.color}
                   onChange={(e) => {
-                    const nuevasEtapas = [...etapas];
-                    nuevasEtapas[idx].color = e.target.value;
+                    const nuevasEtapas = etapas.map((actual, posicion) =>
+                      posicion === idx ? { ...actual, color: e.target.value } : actual,
+                    );
                     setEtapas(nuevasEtapas);
-                    actualizarEtapa(etapa.id, { color: e.target.value });
+                  }}
+                  onBlur={(e) => {
+                    // El selector de color dispara onChange en cada paso del
+                    // arrastre: se guarda al soltarlo, no en cada tono.
+                    const color = e.target.value;
+                    if (color === coloresGuardados.current[etapa.id]) return;
+                    void actualizarEtapa(etapa.id, { color }).then((ok) => {
+                      if (ok) coloresGuardados.current[etapa.id] = color;
+                    });
                   }}
                   className="w-8 h-8 rounded-lg cursor-pointer border-0"
                 />
                 <button
                   onClick={() => {
-                    const nuevasEtapas = [...etapas];
-                    nuevasEtapas[idx].activa = !nuevasEtapas[idx].activa;
-                    setEtapas(nuevasEtapas);
-                    actualizarEtapa(etapa.id, { activa: !etapa.activa });
+                    const activa = !etapa.activa;
+                    setEtapas(
+                      etapas.map((actual, posicion) =>
+                        posicion === idx ? { ...actual, activa } : actual,
+                      ),
+                    );
+                    void actualizarEtapa(etapa.id, { activa });
                   }}
                   className={`p-2 rounded-lg transition-colors ${
                     etapa.activa
