@@ -16,7 +16,7 @@ captura aislada o resultado local.
 - [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
 - [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
 - [x] CI consulta RLS por Data API con los cinco roles y datos sintéticos.
-- [x] pgTAP comprueba 88 reglas de migración, Auth, recuperación, Storage y RLS.
+- [x] pgTAP comprueba 143 reglas de migración, Auth, recuperación, Storage y RLS.
 - [x] Los modos `legacy`, `bridge` y `required` están implementados y probados.
 - [x] El puente enlaza cuentas, sincroniza su ciclo de vida y tiene fecha límite.
 - [x] Access y refresh usan cookies HttpOnly; cada solicitud Supabase valida la
@@ -79,6 +79,10 @@ confirma casillas que dependan de paneles o secretos.
 
 ## Servicios externos
 
+- [ ] [`APP-03`] Definir la URL canónica pública de producción detrás de
+  Auth/MFA del CRM; mantener Vercel SSO solo en previews o staging.
+- [ ] [`APP-03`] Confirmar que Vercel despliega el SHA aprobado desde la rama
+  productiva elegida y que `APP_URL` coincide con ese dominio.
 - [ ] [`BAK-02`] Configurar R2, Restic y notificaciones de fallos de respaldo.
 - [ ] [`RES-01`] Configurar el environment protegido `staging-restore` con revisores.
 - [ ] [`AUTH-02`] Configurar el environment protegido `staging-validation`.
@@ -88,6 +92,8 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] [`EMAIL-01`] Configurar `EMAIL_WEBHOOK_SECRET` en Vercel y
   `CRM_EMAIL_WEBHOOK_URL`/`CRM_EMAIL_WEBHOOK_SECRET` en cPanel; instalar el
   handler fuera de `public_html` según `docs/setup-email-piping.md`.
+- [ ] [`EMAIL-02`] Verificar recorrido MIME, límite de entrada, payload estricto
+  e idempotencia con correos exclusivamente sintéticos.
 - [ ] [`MAIL-01`] Ejecutar envío real desde staging a una dirección sintética controlada.
 - [ ] [`WEB-01`] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
 - [ ] [`CMF-01`] Configurar y verificar la API oficial CMF con trazabilidad de fecha y
@@ -121,3 +127,7 @@ un proyecto de staging separado con el mismo commit.
 
 Estas casillas continúan abiertas hasta tener evidencia en staging; que la suite
 local esté verde no reemplaza esa verificación.
+
+La fotografía técnica que fundamenta este checklist está en
+`docs/AUDITORIA-BACKEND-2026-08-21.md`. Inventarios externos no sustituyen la
+evidencia asociada al SHA desplegado.

@@ -1508,3 +1508,11 @@ pruebas previas siguen verdes y la regresión nueva queda roja para Claude.
 vigente ya está versionada en `20260813000000_application_schema.sql`. No se
 duplicó como migración porque el archivo antiguo usa UUID y la baseline usa
 TEXT. Suite: 837/837; build: 93 rutas; lint/typecheck: 0.
+
+[build] ocupado — Codex, BACKEND-AUDIT · auditoría canónica y gates operativos.
+
+[build] libre — Codex, BACKEND-AUDIT · build terminó en 0 con 93 rutas.
+
+[BACKEND · BACKEND-AUDIT] hecho — auditoría canónica fijada al SHA `30968cf`,
+inventario externo contrastado y gates actualizados a 11 migraciones, 143
+comprobaciones pgTAP y URL pública con Auth/MFA. Suite: 837/837; lint/typecheck: 0.

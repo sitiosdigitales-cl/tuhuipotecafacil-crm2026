@@ -44,6 +44,7 @@ objetos ni capturas de datos.
 | `RLS-01` | pendiente | | |
 | `STO-01` | pendiente | | |
 | `APP-01` | pendiente | | |
+| `APP-03` | pendiente | | |
 | `APP-02` | pendiente | | |
 | `MAIL-01` | pendiente | | |
 | `WEB-01` | pendiente | | |
