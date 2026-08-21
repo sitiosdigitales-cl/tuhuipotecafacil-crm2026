@@ -16,7 +16,7 @@ captura aislada o resultado local.
 - [x] Supabase local se reconstruye dos veces desde `supabase/migrations/`.
 - [x] Las reglas SQL se comprueban con pgTAP mediante `npm run db:test`.
 - [x] CI consulta RLS por Data API con los cinco roles y datos sintéticos.
-- [x] pgTAP comprueba 143 reglas de migración, Auth, recuperación, Storage y RLS.
+- [x] pgTAP comprueba 161 reglas de migración, Auth, correo, Storage y RLS.
 - [x] Los modos `legacy`, `bridge` y `required` están implementados y probados.
 - [x] El puente enlaza cuentas, sincroniza su ciclo de vida y tiene fecha límite.
 - [x] Access y refresh usan cookies HttpOnly; cada solicitud Supabase valida la
@@ -94,8 +94,10 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] [`EMAIL-01`] Configurar `EMAIL_WEBHOOK_SECRET` en Vercel y
   `CRM_EMAIL_WEBHOOK_URL`/`CRM_EMAIL_WEBHOOK_SECRET` en cPanel; instalar el
   handler fuera de `public_html` según `docs/setup-email-piping.md`.
-- [ ] [`EMAIL-02`] Verificar recorrido MIME, límite de entrada, payload estricto
-  e idempotencia con correos exclusivamente sintéticos.
+- [x] [`EMAIL-02`] Recorrido MIME, límite de entrada, payload estricto e
+  idempotencia están cubiertos en código y Supabase local.
+- [ ] [`EMAIL-02`] Repetir el flujo con correos exclusivamente sintéticos en el
+  PHP real de cPanel y el deployment de staging.
 - [ ] [`MAIL-01`] Ejecutar envío real desde staging a una dirección sintética controlada.
 - [ ] [`WEB-01`] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
 - [ ] [`CMF-01`] Configurar y verificar la API oficial CMF con trazabilidad de fecha y

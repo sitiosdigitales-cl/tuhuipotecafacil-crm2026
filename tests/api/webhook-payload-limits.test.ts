@@ -52,12 +52,12 @@ describe("límites de cuerpos en webhooks", () => {
 
   afterEach(() => vi.unstubAllEnvs());
 
-  it("rechaza un correo mayor a 256 KiB antes de tocar la base", async () => {
+  it("rechaza un payload de correo mayor a 1 MiB antes de tocar la base", async () => {
     // El secreto va porque ahora se comprueba ANTES de leer el cuerpo: sin él
     // la respuesta sería 401 y no se estaría midiendo el límite.
     vi.stubEnv("EMAIL_WEBHOOK_SECRET", "secreto-sintetico-de-prueba");
     const response = await receiveEmail(
-      oversizedRequest("/api/webhook/email", 256 * 1024 + 1, {
+      oversizedRequest("/api/webhook/email", 1024 * 1024 + 1, {
         "x-webhook-secret": "secreto-sintetico-de-prueba",
       })
     );

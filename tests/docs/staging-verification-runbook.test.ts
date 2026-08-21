@@ -92,7 +92,7 @@ describe("contrato de evidencia de staging", () => {
     expect(workflow).toContain(
       "RECOVERY_INTEGRATION_CONFIRMATION: VERIFY_EMPTY_SYNTHETIC_STAGING",
     );
-    expect(runbook).toContain("once archivos");
+    expect(runbook).toContain("doce archivos");
   });
 
   it("documenta las variables y el corte seguro de required", () => {

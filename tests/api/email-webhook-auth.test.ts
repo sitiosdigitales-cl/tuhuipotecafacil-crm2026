@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { enviarEmail, from, getReceivedEmail, verify } = vi.hoisted(() => ({
+const { enviarEmail, from, getReceivedEmail, rpc, verify } = vi.hoisted(() => ({
   enviarEmail: vi.fn(),
   from: vi.fn(),
   getReceivedEmail: vi.fn(),
+  rpc: vi.fn(),
   verify: vi.fn(),
 }));
 
@@ -16,7 +17,7 @@ vi.mock("resend", () => ({
 }));
 
 vi.mock("@/lib/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ from }),
+  getSupabaseAdmin: () => ({ from, rpc }),
 }));
 
 vi.mock("@/lib/supabase", () => ({
@@ -53,6 +54,8 @@ describe("POST /api/webhook/email", () => {
     delete process.env.EMAIL_WEBHOOK_SECRET;
     from.mockReset();
     from.mockReturnValue(queryResult({ data: {}, error: null }));
+    rpc.mockReset();
+    rpc.mockResolvedValue({ data: true, error: null });
     enviarEmail.mockReset();
     enviarEmail.mockResolvedValue(true);
     getReceivedEmail.mockReset();
@@ -93,8 +96,11 @@ describe("POST /api/webhook/email", () => {
       new NextRequest("http://localhost/api/webhook/email", {
         body: JSON.stringify({
           from: "Caso Prueba <cliente@example.invalid>",
+          to: "ventas@example.invalid",
           subject: "Consulta hipotecaria <img src=x>",
           text: "Necesito orientación.",
+          date: "Mon, 17 Aug 2026 12:00:00 -0400",
+          messageId: "<correo-html@example.invalid>",
         }),
         headers: {
           "content-type": "application/json",
@@ -108,5 +114,70 @@ describe("POST /api/webhook/email", () => {
     const options = enviarEmail.mock.calls[0]?.[0];
     expect(options.html).toContain("Consulta hipotecaria &lt;img src=x&gt;");
     expect(options.html).not.toContain("Consulta hipotecaria <img src=x>");
+    expect(rpc).toHaveBeenCalledWith(
+      "reclamar_correo_entrante",
+      expect.objectContaining({
+        p_mensaje_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      })
+    );
+    expect(JSON.stringify(rpc.mock.calls)).not.toContain("correo-html@example.invalid");
+  });
+
+  it("acepta una repetición sin crear otro lead", async () => {
+    process.env.EMAIL_WEBHOOK_SECRET = "secreto-sintetico-de-prueba";
+    rpc.mockResolvedValueOnce({ data: false, error: null });
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/webhook/email", {
+        body: JSON.stringify({
+          from: "Caso Prueba <cliente@example.invalid>",
+          to: "ventas@example.invalid",
+          subject: "Consulta",
+          text: "Necesito orientación.",
+          date: "",
+          messageId: "<correo-repetido@example.invalid>",
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-webhook-secret": "secreto-sintetico-de-prueba",
+        },
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      success: true,
+      message: "Correo procesado",
+    });
+    expect(from).not.toHaveBeenCalled();
+    expect(enviarEmail).not.toHaveBeenCalled();
+  });
+
+  it("rechaza campos fuera del payload fijo", async () => {
+    process.env.EMAIL_WEBHOOK_SECRET = "secreto-sintetico-de-prueba";
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/webhook/email", {
+        body: JSON.stringify({
+          from: "Caso Prueba <cliente@example.invalid>",
+          to: "ventas@example.invalid",
+          subject: "Consulta",
+          text: "Necesito orientación.",
+          date: "",
+          messageId: "",
+          headers: { "x-extra": "no debe entrar" },
+        }),
+        headers: {
+          "content-type": "application/json",
+          "x-webhook-secret": "secreto-sintetico-de-prueba",
+        },
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(from).not.toHaveBeenCalled();
   });
 });

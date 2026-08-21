@@ -1532,3 +1532,11 @@ productivos embebidos del código ejecutable. Suite: 838/838; lint/typecheck: 0.
 [EMAIL · EMAIL-02A] hecho — piping limitado a 1 MiB, MIME recursivo acotado,
 base64/quoted-printable y cabeceras codificadas normalizadas; adjuntos no
 entran al payload. Suite: 841/841; PHP/lint/typecheck: 0.
+
+[build] ocupado — Codex, EMAIL-02B · payload estricto e idempotencia persistente.
+
+[build] libre — Codex, EMAIL-02B · build terminó en 0 con 93 rutas.
+
+[EMAIL · EMAIL-02B] hecho — payload de seis campos con Zod estricto y
+deduplicación persistente por hash de remitente + Message-ID. Base reconstruida
+dos veces; pgTAP 161/161; suite 843/843; lint/typecheck: 0.

@@ -42,6 +42,11 @@ niveles y cien partes, decodifica `base64`/`quoted-printable`, normaliza charset
 y omite adjuntos. Solo `from`, `to`, `subject`, `text`, `date` y `messageId`
 llegan al CRM.
 
+Cuando existe `Message-ID`, el endpoint reserva un SHA-256 de remitente e
+identificador en `correos_entrantes`. Una repetición responde correctamente sin
+crear otro lead. Sin `Message-ID`, el mensaje se procesa sin deduplicación para
+no descartar una consulta real por una cabecera ausente.
+
 ## Instalación
 
 1. Subir `email-handler.php` a una ruta **fuera de `public_html`**, por ejemplo
@@ -82,7 +87,7 @@ Prueba del endpoint sin pasar por el correo:
 curl -sS -X POST "$CRM_EMAIL_WEBHOOK_URL" \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Secret: $CRM_EMAIL_WEBHOOK_SECRET" \
-  -d '{"from":"Prueba <prueba@example.invalid>","subject":"Consulta","text":"Telefono: +56 9 1111 1111"}'
+  -d '{"from":"Prueba <prueba@example.invalid>","to":"ventas@example.invalid","subject":"Consulta","text":"Telefono: +56 9 1111 1111","date":"","messageId":"<prueba-unica@example.invalid>"}'
 ```
 
 Usa siempre una dirección sintética: el endpoint crea un lead real y le manda

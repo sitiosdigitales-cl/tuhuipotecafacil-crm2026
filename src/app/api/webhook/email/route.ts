@@ -1,11 +1,15 @@
+import { createHash } from "node:crypto";
+
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { toSupabaseColumns } from "@/lib/supabase";
 import { enviarEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/html-output";
 import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
 
-const MAX_EMAIL_WEBHOOK_BYTES = 256 * 1024;
+const MAX_EMAIL_WEBHOOK_BYTES = 1024 * 1024;
+const EMAIL_CLAIM_WINDOW_SECONDS = 15 * 60;
 
 // POST /api/webhook/email — Recibe los correos que cPanel entrega por email
 // piping, a través de wordpress/email-handler.php, y crea un lead.
@@ -17,11 +21,16 @@ const MAX_EMAIL_WEBHOOK_BYTES = 256 * 1024;
 // Obligatoria: el endpoint escribe en la base con la service role key y dispara
 // correos, así que sin secreto configurado no acepta nada.
 
-interface CorreoEntrante {
-  from?: string;
-  subject?: string;
-  text?: string;
-}
+const CorreoEntranteSchema = z.object({
+  from: z.string().trim().min(3).max(998),
+  to: z.string().trim().max(998),
+  subject: z.string().max(998),
+  text: z.string().max(768 * 1024),
+  date: z.string().max(128),
+  messageId: z.string().trim().max(998),
+}).strict();
+
+const EmailSchema = z.string().trim().toLowerCase().max(254).email();
 
 function remitenteAutorizado(request: NextRequest): boolean {
   const esperado = process.env.EMAIL_WEBHOOK_SECRET;
@@ -140,23 +149,30 @@ export async function POST(request: NextRequest) {
     // productor, así que no se aceptan otros formatos: las ramas de multipart y
     // urlencoded que hubo antes eran para proveedores que nunca se usaron, y la
     // de multipart ni siquiera funcionaba porque leía el cuerpo dos veces.
-    let correo: CorreoEntrante;
+    let parsedBody: unknown;
     try {
-      correo = JSON.parse(rawBody);
+      parsedBody = JSON.parse(rawBody);
     } catch {
       return NextResponse.json({ error: "Cuerpo no es JSON válido" }, { status: 400 });
     }
 
-    const from = correo.from || "";
-    const subject = correo.subject || "";
-    const body = correo.text || "";
-
-    if (!from) {
-      return NextResponse.json({ error: "Correo sin remitente" }, { status: 400 });
+    const parsedCorreo = CorreoEntranteSchema.safeParse(parsedBody);
+    if (!parsedCorreo.success) {
+      return NextResponse.json({ error: "Formato de correo inválido" }, { status: 400 });
     }
+    const correo = parsedCorreo.data;
+
+    const from = correo.from;
+    const subject = correo.subject;
+    const body = correo.text;
 
     // Extraer datos del email
-    const { nombre, apellido, email } = extraerNombreDeFrom(from);
+    const { nombre, apellido, email: rawEmail } = extraerNombreDeFrom(from);
+    const parsedEmail = EmailSchema.safeParse(rawEmail);
+    if (!parsedEmail.success) {
+      return NextResponse.json({ error: "Remitente inválido" }, { status: 400 });
+    }
+    const email = parsedEmail.data;
     const telefono = extraerTelefono(body);
     const { tipoConsulta, monto, comentarios } = extraerContexto(subject, body);
 
@@ -166,6 +182,28 @@ export async function POST(request: NextRequest) {
 
     const leadId = crypto.randomUUID();
     const supabaseAdmin = getSupabaseAdmin();
+    const mensajeHash = correo.messageId
+      ? createHash("sha256")
+          .update(`${email}\0${correo.messageId}`)
+          .digest("hex")
+      : null;
+
+    if (mensajeHash) {
+      const { data: reclamada, error: claimError } = await supabaseAdmin.rpc(
+        "reclamar_correo_entrante",
+        {
+          p_mensaje_hash: mensajeHash,
+          p_ventana_segundos: EMAIL_CLAIM_WINDOW_SECONDS,
+        }
+      );
+      if (claimError) {
+        console.error("No se pudo reservar el correo entrante");
+        return NextResponse.json({ error: "Error al procesar correo" }, { status: 500 });
+      }
+      if (!reclamada) {
+        return NextResponse.json({ success: true, message: "Correo procesado" });
+      }
+    }
 
     // Crear lead en Supabase (usar admin para bypass RLS)
     const { error } = await supabaseAdmin
@@ -193,7 +231,23 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Error creando lead desde email:", error);
+      if (mensajeHash) {
+        await supabaseAdmin.rpc("liberar_correo_entrante", {
+          p_mensaje_hash: mensajeHash,
+        });
+      }
       return NextResponse.json({ error: "Error al guardar lead" }, { status: 500 });
+    }
+
+    if (mensajeHash) {
+      const { data: completada, error: completeError } = await supabaseAdmin.rpc(
+        "completar_correo_entrante",
+        { p_lead_id: leadId, p_mensaje_hash: mensajeHash }
+      );
+      if (completeError || !completada) {
+        console.error("No se pudo completar el correo entrante");
+        return NextResponse.json({ error: "Error al procesar correo" }, { status: 500 });
+      }
     }
 
     // Crear notificación en el CRM (usar admin para bypass RLS)
@@ -254,11 +308,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Lead creado desde email",
-      leadId,
-      nombre: `${nombre} ${apellido}`,
-      email,
-      tipoConsulta,
+      message: "Correo procesado",
     });
 
   } catch (err) {
@@ -271,17 +321,5 @@ export async function GET() {
   return NextResponse.json({
     status: "ok",
     message: "Email webhook endpoint activo",
-    usage: "POST application/json con { from, subject, text } y X-Webhook-Secret",
-  });
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
   });
 }

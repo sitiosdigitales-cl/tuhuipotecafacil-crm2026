@@ -1,9 +1,10 @@
 # Auditoría canónica del backend · 2026-08-21
 
 Esta auditoría sustituye inventarios históricos como fuente de verdad técnica.
-Describe el repositorio en el commit
-`30968cf0fd0fe9e9370ac2c9fee8b79aad80591e`; no certifica por sí sola la
-configuración efectiva de Vercel, Supabase, DNS, cPanel ni producción.
+Su medición inicial parte del commit
+`30968cf0fd0fe9e9370ac2c9fee8b79aad80591e` y se mantiene junto al historial de
+`diego`; no certifica por sí sola la configuración efectiva de Vercel,
+Supabase, DNS, cPanel ni producción.
 
 ## Resumen verificable
 
@@ -12,8 +13,8 @@ configuración efectiva de Vercel, Supabase, DNS, cPanel ni producción.
 | Next.js | `16.3.1`; 93 rutas generadas por el último build validado |
 | API | 71 archivos `route.ts` bajo `src/app/api/` |
 | Pruebas | 161 archivos; 837 pruebas después de ejecutar el build |
-| Base de datos | 11 migraciones canónicas en `supabase/migrations/` |
-| pgTAP | 6 archivos y 143 comprobaciones declaradas |
+| Base de datos | 12 migraciones canónicas en `supabase/migrations/` |
+| pgTAP | 7 archivos y 161 comprobaciones declaradas |
 | CI | seis jobs: audit, lint, typecheck, build, test y database |
 | Hallazgos | 139 informes `BUG-*`; ninguno conserva corrección pendiente |
 | Auth | modos `legacy`, `bridge` y `required`, TOTP para roles administrativos y recuperación de contraseña |
@@ -38,13 +39,13 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
 
 ### Datos y migraciones
 
-- La única cadena instalable es la de 11 archivos timestamp bajo
+- La única cadena instalable es la de 12 archivos timestamp bajo
   `supabase/migrations/`, desde `20260813000000_application_schema.sql` hasta
-  `20260819000000_auth_identidad_pendiente.sql`.
+  `20260820000000_correos_entrantes.sql`.
 - Los SQL históricos de `prisma/` no son un instalador y no prueban qué existe
   en un proyecto remoto.
 - No existe evidencia versionada suficiente para afirmar que producción tiene
-  las 11 migraciones aplicadas o que no existe deriva. Esa comprobación es un
+  las 12 migraciones aplicadas o que no existe deriva. Esa comprobación es un
   gate humano, primero en staging y luego en producción.
 
 ### Correo y webhooks
@@ -52,8 +53,8 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
 - El envío saliente usa Resend y requiere `RESEND_API_KEY`, `FROM_EMAIL` y una
   `APP_URL` canónica configuradas fuera del repositorio.
 - El correo entrante dispone de handler PHP para cPanel y webhook protegido por
-  secreto. La conversión Latin-1 está cubierta, pero el recorrido MIME,
-  límites, validación estricta e idempotencia persistente siguen pendientes.
+  secreto. Conversión, MIME, límites, payload estricto e idempotencia
+  persistente están cubiertos localmente.
 - El plugin WordPress valida un secreto y obtiene la URL HTTPS exacta desde
   `CRM_WEBHOOK_URL` o una opción del servidor, nunca desde el navegador.
 - Ninguna prueba local demuestra la entrega real del proveedor, la ruta del PHP
@@ -86,7 +87,7 @@ trazabilidad. Las discrepancias principales son:
 
 | Inventario externo | Repositorio auditado |
 | --- | --- |
-| Lista scripts SQL antiguos como migraciones aplicadas | Hay 11 migraciones canónicas timestamp; el estado remoto no está probado |
+| Lista scripts SQL antiguos como migraciones aplicadas | Hay 12 migraciones canónicas timestamp; el estado remoto no está probado |
 | Describe RLS permisivo y buckets públicos | El código vigente restringe RLS y declara `documentos` y `backups` privados |
 | Afirma que existe `.env` versionado | No hay archivos `.env*` rastreados y están ignorados |
 | Indica que no existe forwarder PHP | Existe `wordpress/email-handler.php` |
@@ -104,7 +105,7 @@ resuelve evidencia del panel asociada a un SHA, no una suposición.
 | Afirmación | Código/CI | Staging | Producción |
 | --- | --- | --- | --- |
 | Build, lint, tipos y pruebas | comprobable | repetir para SHA desplegado | repetir para SHA desplegado |
-| 11 migraciones ordenadas | comprobable localmente | `migration list` y dry-run pendientes | pendiente después de staging |
+| 12 migraciones ordenadas | comprobable localmente | `migration list` y dry-run pendientes | pendiente después de staging |
 | RLS y buckets privados | comprobable localmente | matriz sintética pendiente | smoke sin datos personales pendiente |
 | Auth bridge, MFA y recuperación | comprobable localmente | proveedor alojado y correo real pendientes | pendiente después de staging |
 | Resend y DNS | no comprobable solo con código | entrega sintética pendiente | evidencia del proveedor pendiente |
@@ -136,7 +137,7 @@ de clientes. Para cerrar los gates se necesita:
 ## Orden de cierre
 
 1. Configurar la URL canónica ya centralizada en cada entorno y servidor.
-2. Completar robustez e idempotencia del correo entrante.
+2. Validar robustez e idempotencia del correo entrante en cPanel con sintéticos.
 3. Añadir health mínimo sin filtrar detalles internos.
 4. Implementar CMF oficial con trazabilidad o mantenerlo `SIN_DATOS`.
 5. Endurecer por dominio las entradas JSON aún no tipadas.
