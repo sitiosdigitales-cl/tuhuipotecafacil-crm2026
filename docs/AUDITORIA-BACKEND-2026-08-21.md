@@ -54,8 +54,8 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
 - El correo entrante dispone de handler PHP para cPanel y webhook protegido por
   secreto. La conversión Latin-1 está cubierta, pero el recorrido MIME,
   límites, validación estricta e idempotencia persistente siguen pendientes.
-- El plugin WordPress valida un secreto, pero la URL del webhook todavía está
-  embebida en código y debe pasar a configuración del servidor.
+- El plugin WordPress valida un secreto y obtiene la URL HTTPS exacta desde
+  `CRM_WEBHOOK_URL` o una opción del servidor, nunca desde el navegador.
 - Ninguna prueba local demuestra la entrega real del proveedor, la ruta del PHP
   de cPanel ni los MX efectivos del dominio.
 
@@ -135,11 +135,10 @@ de clientes. Para cerrar los gates se necesita:
 
 ## Orden de cierre
 
-1. Centralizar URL canónica y retirar URLs productivas embebidas.
+1. Configurar la URL canónica ya centralizada en cada entorno y servidor.
 2. Completar robustez e idempotencia del correo entrante.
 3. Añadir health mínimo sin filtrar detalles internos.
 4. Implementar CMF oficial con trazabilidad o mantenerlo `SIN_DATOS`.
 5. Endurecer por dominio las entradas JSON aún no tipadas.
 6. Ejecutar staging, backup, restore y smoke con la plantilla de evidencia.
 7. Autorizar producción solo si todos los gates pertenecen al mismo SHA.
-

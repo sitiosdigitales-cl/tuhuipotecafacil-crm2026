@@ -78,13 +78,15 @@ Este secreto protege el webhook que recibe leads desde formularios Elementor.
    - **Environment**: Production, Preview, Development
 
 3. Instala `crm-webhook-plugin.php` en WordPress y agrega en `wp-config.php`,
-   antes de la línea de cierre, el mismo valor:
+   antes de la línea de cierre, la URL canónica y el mismo valor:
    ```
+   define('CRM_WEBHOOK_URL', 'https://TU-DOMINIO-CANONICO/api/webhook/leads');
    define('CRM_WEBHOOK_SECRET', 'PEGA_AQUI_EL_SECRETO_GENERADO');
    ```
 
-No pongas el secreto en la URL, Elementor ni JavaScript. El plugin lo envía
-desde el servidor en la cabecera `X-Webhook-Secret`.
+La URL debe usar HTTPS, no llevar query ni fragmento y terminar exactamente en
+`/api/webhook/leads`. No pongas el secreto en la URL, Elementor ni JavaScript.
+El plugin lo envía desde el servidor en la cabecera `X-Webhook-Secret`.
 
 ### 2.4 JWT_SECRET, BACKUP_API_KEY y CRON_SECRET
 

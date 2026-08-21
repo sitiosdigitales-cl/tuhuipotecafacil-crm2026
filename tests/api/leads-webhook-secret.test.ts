@@ -23,6 +23,7 @@ vi.mock("@/lib/dispatcher-notificaciones", () => ({
 import { POST } from "@/app/api/webhook/leads/route";
 
 const originalSecret = process.env.ELEMENTOR_WEBHOOK_SECRET;
+const originalAppUrl = process.env.APP_URL;
 const WEBHOOK_SECRET = "webhook-test-secret-with-enough-entropy";
 const validBody = {
   Apellido: "Prueba",
@@ -48,6 +49,7 @@ function request(
 describe("secreto del webhook de leads", () => {
   beforeEach(() => {
     delete process.env.ELEMENTOR_WEBHOOK_SECRET;
+    process.env.APP_URL = "https://crm.example.invalid";
     despacharNotificacion.mockReset();
     despacharNotificacion.mockResolvedValue(undefined);
     enviarEmail.mockReset();
@@ -64,6 +66,8 @@ describe("secreto del webhook de leads", () => {
     } else {
       process.env.ELEMENTOR_WEBHOOK_SECRET = originalSecret;
     }
+    if (originalAppUrl === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = originalAppUrl;
   });
 
   it("no procesa datos si el servidor no tiene secreto configurado", async () => {
@@ -95,6 +99,9 @@ describe("secreto del webhook de leads", () => {
 
     expect(plugin).toMatch(/if\s*\(empty\(\$secret\)\)\s*\{/);
     expect(plugin).toContain("X-Webhook-Secret");
+    expect(plugin).toContain("CRM_WEBHOOK_URL");
+    expect(plugin).toContain("crm_webhook_url");
+    expect(plugin).not.toContain("tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app");
     expect(publicForm).toContain("const WEBHOOK_URL = '/api/pre-evaluacion'");
     expect(publicForm).not.toContain("X-Webhook-Secret");
   });
@@ -117,5 +124,6 @@ describe("secreto del webhook de leads", () => {
     expect(options.html).toContain("Consulta &lt;img src=x&gt;");
     expect(options.html).not.toContain("<b>Uno</b>");
     expect(options.html).not.toContain("<img src=x>");
+    expect(options.html).toContain('href="https://crm.example.invalid/leads"');
   });
 });

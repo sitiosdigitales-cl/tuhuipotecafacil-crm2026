@@ -4,6 +4,7 @@ import { enviarEmail } from "@/lib/email";
 import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
 import { PreEvaluationInputSchema } from "@/lib/public-lead-schema";
 import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
+import { applicationUrl } from "@/lib/application-url";
 
 // POST /api/pre-evaluacion — Endpoint público para crear leads desde el simulador
 // NO requiere auth (es un formulario público)
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
       );
       const safeBanco = escapeHtml(body.banco);
       const safeComentarios = escapeHtml(body.comentarios);
+      const leadUrl = applicationUrl(`/leads/${leadId}`);
       await enviarEmail({
         to: "contacto@tuhipotecafacil.cl",
         subject: sanitizeEmailHeader(
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
                 ${body.comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;"><strong>Comentarios:</strong></td><td style="padding: 8px 0; color: #0f172a;">${safeComentarios}</td></tr>` : ""}
               </table>
               <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <a href="https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/leads/${leadId}" style="display: inline-block; background: #1E40AF; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">Ver Lead en el CRM</a>
+                <a href="${leadUrl}" style="display: inline-block; background: #1E40AF; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold;">Ver Lead en el CRM</a>
               </div>
             </div>
           </div>

@@ -1516,3 +1516,11 @@ TEXT. Suite: 837/837; build: 93 rutas; lint/typecheck: 0.
 [BACKEND · BACKEND-AUDIT] hecho — auditoría canónica fijada al SHA `30968cf`,
 inventario externo contrastado y gates actualizados a 11 migraciones, 143
 comprobaciones pgTAP y URL pública con Auth/MFA. Suite: 837/837; lint/typecheck: 0.
+
+[build] ocupado — Codex, DEPLOY-URL · URL canónica y webhooks configurables.
+
+[build] libre — Codex, DEPLOY-URL · build terminó en 0 con 93 rutas.
+
+[BACKEND · DEPLOY-URL] hecho — enlaces internos centralizados en `APP_URL`,
+plugin WordPress exige `CRM_WEBHOOK_URL` HTTPS exacta y se retiraron dominios
+productivos embebidos del código ejecutable. Suite: 838/838; lint/typecheck: 0.

@@ -9,6 +9,7 @@ import { getSupabaseAdmin } from "./supabase-admin";
 import { supabase } from "./supabase";
 import { crearEmailDesdeTemplate, enviarEmail } from "./email";
 import { enviarMensajeWhatsApp, isWhatsAppConfigured } from "./whatsapp";
+import { applicationUrl } from "./application-url";
 
 export type EventoNotificacion =
   | "documento_subido"
@@ -227,8 +228,7 @@ async function enviarNotificacionEmail(
     const templateName = templateMap[opts.evento];
     if (!templateName) return;
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const urlCompleta = opts.accionUrl ? baseUrl + opts.accionUrl : "";
+    const urlCompleta = opts.accionUrl ? applicationUrl(opts.accionUrl) : "";
 
     const email = crearEmailDesdeTemplate(templateName, {
       ...opts.datosEmail,
@@ -266,8 +266,7 @@ async function enviarNotificacionWhatsApp(
 
     if (!usuario?.telefono) return;
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const urlCompleta = opts.accionUrl ? baseUrl + opts.accionUrl : "";
+    const urlCompleta = opts.accionUrl ? applicationUrl(opts.accionUrl) : "";
 
     let mensaje = `📋 *${opts.titulo}*\n${opts.descripcion}`;
     if (urlCompleta) {

@@ -86,6 +86,7 @@ FROM_EMAIL=CRM <notificaciones@tuhipotecafacil.cl>
 2. Genera un secreto con `openssl rand -hex 32`.
 3. Define el resultado en `wp-config.php`:
    ```
+   define('CRM_WEBHOOK_URL', 'https://TU-DOMINIO-CANONICO/api/webhook/leads');
    define('CRM_WEBHOOK_SECRET', 'PEGA_AQUI_EL_SECRETO_GENERADO');
    ```
 4. Configura el mismo valor como `ELEMENTOR_WEBHOOK_SECRET` en Vercel.

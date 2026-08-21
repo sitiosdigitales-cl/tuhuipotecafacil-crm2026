@@ -3,7 +3,11 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { applicationBaseUrl, portalClientUrl } from "@/lib/application-url";
+import {
+  applicationBaseUrl,
+  applicationUrl,
+  portalClientUrl,
+} from "@/lib/application-url";
 
 describe("enlace de solicitud de documentos", () => {
   it("envía al portal autenticado sin datos del cliente en la URL", () => {
@@ -34,5 +38,22 @@ describe("enlace de solicitud de documentos", () => {
     expect(() =>
       applicationBaseUrl({ NODE_ENV: "production" } as NodeJS.ProcessEnv)
     ).toThrow(/URL productiva/);
+  });
+
+  it("solo genera enlaces internos sobre la URL canónica", () => {
+    const env = {
+      APP_URL: "https://crm.example.com",
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv;
+
+    expect(applicationUrl("/leads/lead-uno", env)).toBe(
+      "https://crm.example.com/leads/lead-uno"
+    );
+    expect(() => applicationUrl("https://otro.example/leads", env)).toThrow(
+      /ruta interna/
+    );
+    expect(() => applicationUrl("//otro.example/leads", env)).toThrow(
+      /ruta interna/
+    );
   });
 });

@@ -34,3 +34,14 @@ export function applicationBaseUrl(
 export function portalClientUrl(env: NodeJS.ProcessEnv = process.env): string {
   return new URL("/portal-cliente", applicationBaseUrl(env)).toString();
 }
+
+export function applicationUrl(
+  pathname: string,
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  if (!pathname.startsWith("/") || pathname.startsWith("//") || pathname.includes("\\")) {
+    throw new Error("La ruta interna de la aplicación no es válida");
+  }
+
+  return new URL(pathname, applicationBaseUrl(env)).toString();
+}

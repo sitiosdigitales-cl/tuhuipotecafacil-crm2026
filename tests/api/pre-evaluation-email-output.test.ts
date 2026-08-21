@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { enviarEmail, from } = vi.hoisted(() => ({
   enviarEmail: vi.fn(),
@@ -15,6 +15,8 @@ vi.mock("@/lib/email", () => ({ enviarEmail }));
 
 import { POST } from "@/app/api/pre-evaluacion/route";
 
+const originalAppUrl = process.env.APP_URL;
+
 function leadInsertQuery() {
   const query = {
     insert: vi.fn(() => query),
@@ -26,6 +28,7 @@ function leadInsertQuery() {
 
 describe("correo de pre evaluación", () => {
   beforeEach(() => {
+    process.env.APP_URL = "https://crm.example.invalid";
     enviarEmail.mockReset();
     enviarEmail.mockResolvedValue(true);
     from.mockReset();
@@ -34,6 +37,11 @@ describe("correo de pre evaluación", () => {
         ? leadInsertQuery()
         : { insert: vi.fn().mockResolvedValue({ error: null }) }
     );
+  });
+
+  afterAll(() => {
+    if (originalAppUrl === undefined) delete process.env.APP_URL;
+    else process.env.APP_URL = originalAppUrl;
   });
 
   it("trata los datos del formulario como texto dentro del correo", async () => {
@@ -59,5 +67,8 @@ describe("correo de pre evaluación", () => {
       expect(options.html).not.toContain("<img src=x>");
       expect(options.html).not.toContain("<script>");
     }
+    expect(enviarEmail.mock.calls[0]?.[0].html).toContain(
+      'href="https://crm.example.invalid/leads/'
+    );
   });
 });

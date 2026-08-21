@@ -27,6 +27,8 @@ captura aislada o resultado local.
 - [x] El respaldo externo genera roles, esquema, datos y objetos con hashes.
 - [x] El ensayo de restauración rechaza destinos no vacíos y mide el RTO.
 - [x] El SQL histórico `prisma/run-all-pending.sql` se detiene sin ejecutar.
+- [x] Los enlaces del servidor usan una URL canónica y WordPress exige su
+  destino HTTPS mediante configuración, sin dominios productivos embebidos.
 
 ## P0 · Antes de aplicar migraciones administradas
 

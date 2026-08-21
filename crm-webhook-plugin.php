@@ -11,8 +11,6 @@ if (!defined('ABSPATH')) exit;
 
 class CRM_Webhook_Connector {
     
-    private $webhook_url = 'https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/api/webhook/leads';
-    
     public function __construct() {
         add_action('elementor_pro/forms/actions/submission', array($this, 'handle_elementor_form'), 10, 2);
     }
@@ -54,12 +52,53 @@ class CRM_Webhook_Connector {
         return get_option('crm_webhook_secret', '');
     }
 
+    /**
+     * Destino configurado en el servidor. Definir en wp-config.php:
+     *   define('CRM_WEBHOOK_URL', 'https://crm.example/api/webhook/leads');
+     * También puede guardarse como opción `crm_webhook_url`.
+     */
+    private function get_webhook_url() {
+        $configured = defined('CRM_WEBHOOK_URL')
+            ? CRM_WEBHOOK_URL
+            : get_option('crm_webhook_url', '');
+
+        if (!is_string($configured)) {
+            return '';
+        }
+
+        $url = trim($configured);
+        if ($url === '' || !wp_http_validate_url($url)) {
+            return '';
+        }
+
+        $parts = wp_parse_url($url);
+        if (
+            !is_array($parts) ||
+            ($parts['scheme'] ?? '') !== 'https' ||
+            ($parts['path'] ?? '') !== '/api/webhook/leads' ||
+            isset($parts['user']) ||
+            isset($parts['pass']) ||
+            isset($parts['query']) ||
+            isset($parts['fragment'])
+        ) {
+            return '';
+        }
+
+        return esc_url_raw($url, array('https'));
+    }
+
     private function send_to_crm($data) {
         // Cabecera, no query param: un secreto en la URL queda en los logs de
         // acceso, en los proxies intermedios y en la cabecera Referer.
         $secret = $this->get_webhook_secret();
         if (empty($secret)) {
             error_log('CRM Webhook no enviado: falta CRM_WEBHOOK_SECRET');
+            return;
+        }
+
+        $webhook_url = $this->get_webhook_url();
+        if (empty($webhook_url)) {
+            error_log('CRM Webhook no enviado: falta CRM_WEBHOOK_URL valida');
             return;
         }
 
@@ -73,7 +112,7 @@ class CRM_Webhook_Connector {
             'body' => wp_json_encode($data),
         );
 
-        $response = wp_remote_post($this->webhook_url, $args);
+        $response = wp_remote_post($webhook_url, $args);
         
         if (is_wp_error($response)) {
             error_log('CRM Webhook Error: ' . $response->get_error_message());

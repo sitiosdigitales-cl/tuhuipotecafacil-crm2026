@@ -6,6 +6,7 @@ import { enviarEmail } from "@/lib/email";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
 import { escapeHtml, sanitizeEmailHeader } from "@/lib/html-output";
 import { readBoundedText, RequestPayloadError } from "@/lib/request-json";
+import { applicationUrl } from "@/lib/application-url";
 
 const MAX_LEADS_WEBHOOK_BYTES = 64 * 1024;
 
@@ -184,6 +185,7 @@ export async function POST(request: NextRequest) {
       const safeTipoCredito = escapeHtml(tipoCredito || "No informado");
       const safeRentaMensual = escapeHtml(rentaMensual || "No informado");
       const safeComentarios = escapeHtml(comentarios);
+      const leadsUrl = applicationUrl("/leads");
       const htmlNotificacion = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #1E40AF, #2563EB); color: white; padding: 20px; text-align: center; border-radius: 12px 12px 0 0;">
@@ -201,7 +203,7 @@ export async function POST(request: NextRequest) {
               ${comentarios ? `<tr><td style="padding: 8px 0; color: #64748b;">Comentarios:</td><td style="padding: 8px 0; color: #1e293b;">${safeComentarios}</td></tr>` : ''}
             </table>
             <div style="margin-top: 20px; text-align: center;">
-              <a href="https://tuhuipotecafacil-crm2026-sitiosdigitales.vercel.app/leads" style="background: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver en CRM</a>
+              <a href="${leadsUrl}" style="background: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver en CRM</a>
             </div>
           </div>
         </div>
