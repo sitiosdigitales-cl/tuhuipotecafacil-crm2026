@@ -10,13 +10,13 @@ Supabase, DNS, cPanel ni producción.
 
 | Superficie | Estado comprobado en repositorio |
 | --- | --- |
-| Next.js | `16.3.1`; 93 rutas generadas por el último build validado |
+| Next.js | `16.3.1`; 94 rutas generadas por el último build validado |
 | API | 74 archivos `route.ts` bajo `src/app/api/` |
-| Pruebas | 165 archivos; la cifra exacta se registra en cada gate |
+| Pruebas | 168 archivos y 858 casos en la última suite completa |
 | Base de datos | 12 migraciones canónicas en `supabase/migrations/` |
 | pgTAP | 7 archivos y 161 comprobaciones declaradas |
 | CI | seis jobs: audit, lint, typecheck, build, test y database |
-| Hallazgos | 142 informes `BUG-*`; ninguno conserva corrección pendiente |
+| Hallazgos | 144 informes `BUG-*`; ninguno conserva corrección pendiente |
 | Auth | modos `legacy`, `bridge` y `required`, TOTP para roles administrativos y recuperación de contraseña |
 | Storage | buckets privados y comprobaciones locales de acceso por rol |
 | Respaldo | cron interno, backup cifrado externo y ensayo de restauración versionados |
@@ -86,6 +86,16 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
 - La configuración del monitor, canal de alerta y prueba de recuperación son
   acciones humanas abiertas bajo `MON-01`.
 
+### Entradas críticas
+
+- La creación interna de leads exige `application/json`, limita el cuerpo a
+  64 KiB y valida un contrato estricto antes de consultar Supabase.
+- La creación de comisiones y la revisión de documentos limitan el cuerpo a
+  8 KiB y comprueban tipos, rangos y campos antes de calcular o escribir.
+- El inventario completo aún contiene rutas secundarias con validación manual.
+  No se consideran bloqueantes para este cierre, pero deben migrarse por
+  dominio al helper acotado cuando se modifiquen.
+
 ## Discrepancias del inventario recibido
 
 El archivo externo `INVENTARIO_TECNICO_TUHIPOTECAFACIL.md`, generado el
@@ -101,7 +111,7 @@ trazabilidad. Las discrepancias principales son:
 | Indica que no existe forwarder PHP | Existe `wordpress/email-handler.php` |
 | Usa `main` como rama productiva | El repositorio usa `master` como rama por defecto y `diego` como rama de trabajo |
 | Describe región `scl1` y cron `/api/backup` | `vercel.json` usa `gru1` y `/api/backup/cron` |
-| Enumera endpoints de registro, Stripe y health | No corresponden al inventario actual; health se mantiene pendiente |
+| Enumera endpoints de registro y Stripe, y omite health | No corresponden al inventario actual; health ya existe y está probado |
 | Omite MFA y recuperación de contraseña | Ambos flujos están implementados y probados localmente |
 | Incluye OpenAI y Capacitor | No figuran como dependencias instaladas |
 
@@ -142,12 +152,21 @@ de clientes. Para cerrar los gates se necesita:
 11. Resultado de un webhook WordPress sintético y un correo entrante sintético.
 12. Responsable, fuente comercial y frecuencia de revisión del catálogo manual.
 
-## Orden de cierre
+## Estado del plan de cierre
 
-1. Configurar la URL canónica ya centralizada en cada entorno y servidor.
-2. Validar robustez e idempotencia del correo entrante en cPanel con sintéticos.
-3. Añadir health mínimo sin filtrar detalles internos.
-4. Mantener CMF en `SIN_DATOS` y revisar semanalmente las tasas manuales.
-5. Endurecer por dominio las entradas JSON aún no tipadas.
-6. Ejecutar staging, backup, restore y smoke con la plantilla de evidencia.
-7. Autorizar producción solo si todos los gates pertenecen al mismo SHA.
+| Bloque | Estado |
+| --- | --- |
+| URL canónica y destinos de webhooks | código centralizado; configuración humana pendiente |
+| Correo entrante | MIME, límites, contrato e idempotencia listos; prueba real en cPanel pendiente |
+| Health | endpoint mínimo listo; monitor y alerta pendientes |
+| Tasas | CMF cerrado y catálogo manual listo; responsable semanal pendiente |
+| Entradas críticas | leads, comisiones y revisión documental acotados y tipados |
+| Staging y recuperación | completamente humano; no ejecutado por agentes |
+
+## Orden humano restante
+
+1. Fijar la URL canónica y los nombres de variables en cada entorno.
+2. Ejecutar staging, migraciones, Auth/RLS y smoke con datos sintéticos.
+3. Validar correo saliente, piping cPanel, webhook WordPress y monitor.
+4. Ejecutar backup y restore drill para el mismo SHA.
+5. Autorizar producción solo si todos los gates pertenecen a ese SHA.

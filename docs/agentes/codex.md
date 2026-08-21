@@ -1578,3 +1578,10 @@ tipos, rangos y campos antes del cálculo. Suite: 856/856; lint/typecheck: 0.
 
 [BACKEND · API-IN-03] hecho — `PUT /api/documentos/:id` limita 8 KiB y valida
 el contrato de revisión antes de escribir. Suite: 858/858; lint/typecheck: 0.
+
+[build] ocupado — Codex, DOC-CIERRE-01 · fotografía y gates humanos finales.
+
+[build] libre — Codex, DOC-CIERRE-01 · build terminó en 0 con 94 páginas generadas.
+
+[BACKEND · DOC-CIERRE-01] hecho — auditoría y checklist distinguen código listo
+de configuración humana pendiente. Suite: 858/858; lint/typecheck: 0.

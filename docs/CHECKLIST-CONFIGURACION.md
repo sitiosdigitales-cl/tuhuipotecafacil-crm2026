@@ -30,6 +30,10 @@ captura aislada o resultado local.
 - [x] Los enlaces del servidor usan una URL canónica y WordPress exige su
   destino HTTPS mediante configuración, sin dominios productivos embebidos.
 - [x] `GET /api/health` comprueba Supabase y solo publica `ok` o `unavailable`.
+- [x] Creación de leads, creación de comisiones y revisión de documentos usan
+  JSON acotado y contratos de entrada validados antes de consultar o escribir.
+- [x] Última validación local: build de 94 rutas, 858/858 pruebas, lint y
+  typecheck en cero.
 
 ## P0 · Antes de aplicar migraciones administradas
 
@@ -136,6 +140,18 @@ un proyecto de staging separado con el mismo commit.
 
 Estas casillas continúan abiertas hasta tener evidencia en staging; que la suite
 local esté verde no reemplaza esa verificación.
+
+## Secuencia humana mínima
+
+1. Plataforma define URL canónica, variables y SHA de staging sin compartir
+   valores secretos.
+2. Operaciones aplica las 12 migraciones en `staging-validation` vacío.
+3. QA ejecuta `APP-02`, `AUTH-02`, `AUTH-04`, `RLS-01`, `STO-01` y `TASAS-01`
+   solo con identidades y registros sintéticos.
+4. Plataforma ejecuta `BAK-02`, `RES-01`, `MAIL-01`, `EMAIL-02`, `WEB-01` y
+   `MON-01`, adjuntando evidencia saneada.
+5. Un revisor distinto confirma que todos los resultados corresponden al mismo
+   SHA antes de aprobar `GO-01`.
 
 La fotografía técnica que fundamenta este checklist está en
 `docs/AUDITORIA-BACKEND-2026-08-21.md`. Inventarios externos no sustituyen la
