@@ -49,6 +49,7 @@ objetos ni capturas de datos.
 | `MAIL-01` | pendiente | | |
 | `WEB-01` | pendiente | | |
 | `MON-01` | pendiente | | |
+| `TASAS-01` | pendiente | | |
 | `ADM-01` | pendiente | | |
 | `SEC-01` | pendiente | | |
 | `GO-01` | pendiente | | |

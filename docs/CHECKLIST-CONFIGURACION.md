@@ -103,8 +103,10 @@ confirma casillas que dependan de paneles o secretos.
 - [ ] [`WEB-01`] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
 - [ ] [`MON-01`] Configurar monitor externo sobre `/api/health`, con alerta por
   `503`, sin anexar cuerpos de respuesta ni datos del CRM.
-- [ ] [`CMF-01`] Configurar y verificar la API oficial CMF con trazabilidad de fecha y
-  fuente, o mantener tasas e histórico en estado `SIN_DATOS`.
+- [x] [`CMF-01`] Mantener la API CMF en `SIN_DATOS`; no configurar una clave ni
+  atribuir el catálogo bancario a la CMF.
+- [ ] [`TASAS-01`] Asignar responsables y verificar semanalmente fuente, fecha y
+  vigencia de las tasas manuales según `docs/tasas-manuales.md`.
 
 ## Autenticación y acceso
 

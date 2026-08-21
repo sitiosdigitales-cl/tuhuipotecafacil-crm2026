@@ -4,18 +4,62 @@ import { useMemo, useState } from "react";
 import {
   Building2, DollarSign, Users, CheckCircle, Clock,
   Phone, Mail, MessageSquare, Eye, Search, ChevronRight,
-  FileText, Target, X,
+  FileText, Target, X, Pencil, Save,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useLeads } from "@/modulos/leads";
 import { useBancos } from "@/modulos/bancos";
 import type { Banco } from "@/modulos/bancos";
+import { useUser } from "@/lib/contexts/UserContext";
 
 export default function BancosPage() {
   const { leads } = useLeads();
-  const { bancos, cargando } = useBancos();
+  const { bancos, cargando, actualizarTasas } = useBancos();
+  const { usuarioActual } = useUser();
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [bancoSeleccionado, setBancoSeleccionado] = useState<Banco | null>(null);
+  const [editandoTasas, setEditandoTasas] = useState(false);
+  const [guardandoTasas, setGuardandoTasas] = useState(false);
+  const [tasasFormulario, setTasasFormulario] = useState({
+    cae: 0,
+    tasaBase: 0,
+    tasaPreferencial: 0,
+  });
+
+  const puedeEditarTasas = ["SUPER_ADMIN", "ADMIN", "EJECUTIVO"].includes(
+    usuarioActual.rol
+  );
+
+  const iniciarEdicionTasas = () => {
+    if (!bancoSeleccionado) return;
+    setTasasFormulario({
+      cae: bancoSeleccionado.cae,
+      tasaBase: bancoSeleccionado.tasaBase,
+      tasaPreferencial: bancoSeleccionado.tasaPreferencial,
+    });
+    setEditandoTasas(true);
+  };
+
+  const guardarTasas = async () => {
+    if (!bancoSeleccionado) return;
+    setGuardandoTasas(true);
+    try {
+      const actualizadas = await actualizarTasas(
+        bancoSeleccionado.id,
+        tasasFormulario
+      );
+      if (!actualizadas) {
+        toast.error("No se pudieron actualizar las tasas");
+        return;
+      }
+      setBancoSeleccionado({ ...bancoSeleccionado, ...actualizadas });
+      setEditandoTasas(false);
+      toast.success("Tasas actualizadas");
+    } finally {
+      setGuardandoTasas(false);
+    }
+  };
 
   const bancosFiltrados = useMemo(() => {
     return bancos.filter((b) => {
@@ -193,7 +237,50 @@ export default function BancosPage() {
             <div className="p-6 space-y-5">
               {/* Tasas */}
               <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Tasas de Interes</h3>
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tasas referenciales</h3>
+                    <p className="mt-1 text-[10px] text-slate-400">Carga manual del equipo; no son datos CMF ni una oferta vinculante.</p>
+                  </div>
+                  {puedeEditarTasas && !editandoTasas && (
+                    <button onClick={iniciarEdicionTasas} className="flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-[10px] font-bold text-blue-700 hover:bg-blue-100">
+                      <Pencil size={11} /> Actualizar tasas
+                    </button>
+                  )}
+                </div>
+                {editandoTasas ? (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      {([
+                        ["tasaBase", "Tasa base"],
+                        ["tasaPreferencial", "Preferencial"],
+                        ["cae", "CAE"],
+                      ] as const).map(([campo, etiqueta]) => (
+                        <label key={campo} className="text-[10px] font-semibold text-slate-600">
+                          {etiqueta}
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={tasasFormulario[campo]}
+                            onChange={(event) => setTasasFormulario((actual) => ({
+                              ...actual,
+                              [campo]: Number(event.target.value),
+                            }))}
+                            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button onClick={() => setEditandoTasas(false)} className="rounded-lg px-3 py-2 text-[10px] font-bold text-slate-500">Cancelar</button>
+                      <button onClick={() => void guardarTasas()} disabled={guardandoTasas} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-[10px] font-bold text-white disabled:opacity-50">
+                        <Save size={11} /> {guardandoTasas ? "Guardando..." : "Guardar"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-blue-50 rounded-xl p-3 text-center">
                     <div className="text-[10px] text-blue-500 font-medium">Tasa Base</div>
@@ -208,6 +295,7 @@ export default function BancosPage() {
                     <div className="text-xl font-bold text-purple-700">{bancoSeleccionado.cae}%</div>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Tabla de Tasas por Tipo */}

@@ -5,20 +5,9 @@ import { Calculator, DollarSign, Building2, Home, Wallet, Shield, Phone, Message
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 import { InputField, SectionHeader } from "@/componentes/simulador/CamposSimulador";
+import { useTasasBancosPublicas } from "@/modulos/bancos/tasas-publicas";
 
 const UF_CLP = 40844.79;
-
-// Bancos con tasas reales CMF
-const BANCOS = [
-  { id: "bancodechile", nombre: "Banco de Chile", tasa: 4.79, color: "#E31837" },
-  { id: "bci", nombre: "BCI", tasa: 4.95, color: "#0071CE" },
-  { id: "santander", nombre: "Santander", tasa: 4.89, color: "#EC0000" },
-  { id: "scotiabank", nombre: "Scotiabank", tasa: 5.10, color: "#EC111A" },
-  { id: "bancostado", nombre: "BancoEstado", tasa: 4.65, color: "#004B87" },
-  { id: "itaucorpbanco", nombre: "Itaú", tasa: 5.20, color: "#F58220" },
-  { id: "bice", nombre: "BICE", tasa: 5.05, color: "#003DA5" },
-  { id: "coopeuch", nombre: "Coopeuch", tasa: 4.55, color: "#00A651" },
-];
 
 const SEGUROS = [
   { id: "desgravamen", nombre: "Seguro de Desgravamen", tasaAnual: 0.003, base: "credito" as const, obligatorio: true },
@@ -67,6 +56,7 @@ function fmtUF(n: number) {
 }
 
 export default function SimuladorPage() {
+  const { bancos, cargando: cargandoTasas } = useTasasBancosPublicas();
   // Income
   const [ingreso, setIngreso] = useState(2500000);
   const [tieneSegundoIngreso, setTieneSegundoIngreso] = useState(false);
@@ -93,7 +83,7 @@ export default function SimuladorPage() {
   const [pie, setPie] = useState(24000000);
   const [plazo, setPlazo] = useState(20);
   const [tipoTasa, setTipoTasa] = useState("fija");
-  const [bancoSeleccionado, setBancoSeleccionado] = useState("bancodechile");
+  const [bancoSeleccionado, setBancoSeleccionado] = useState("");
   const tasaPersonalizada = 0;
 
   // Seguros
@@ -126,7 +116,8 @@ export default function SimuladorPage() {
     return disponible;
   }, [totalIngresos, totalCompromisos]);
 
-  const tasaBanco = BANCOS.find((b) => b.id === bancoSeleccionado)?.tasa || 4.80;
+  const bancoActivoId = bancoSeleccionado || bancos[0]?.id || "";
+  const tasaBanco = bancos.find((b) => b.id === bancoActivoId)?.tasa ?? 0;
   const tasaFinal = tasaPersonalizada > 0 ? tasaPersonalizada : tasaBanco;
   const montoCredito = valorPropiedad - pie;
   const porcentajePie = valorPropiedad > 0 ? (pie / valorPropiedad) * 100 : 0;
@@ -189,7 +180,7 @@ export default function SimuladorPage() {
     // NaN. Y un pie mayor producía un dividendo negativo con un CAE de aspecto
     // razonable, que es peor: no parece roto y se lee como una oferta.
     if (montoCredito <= 0 || plazo <= 0) return [];
-    return BANCOS.map((banco) => {
+    return bancos.map((banco) => {
       const r = banco.tasa / 100 / 12;
       const n = plazo * 12;
       const cuota = montoCredito * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
@@ -201,7 +192,7 @@ export default function SimuladorPage() {
       const caeCalc = (Math.pow(totalPagado / montoCredito, 1 / plazo) - 1) * 100;
       return { ...banco, dividendo: total, cae: caeCalc, costoTotal: totalPagado };
     }).sort((a, b) => a.dividendo - b.dividendo);
-  }, [montoCredito, plazo, segurosOn, valorPropiedad]);
+  }, [bancos, montoCredito, plazo, segurosOn, valorPropiedad]);
 
   // Escenarios
   const escenarios = useMemo(() => {
@@ -241,14 +232,14 @@ export default function SimuladorPage() {
           <div className="max-w-xl">
             <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Simulador de Crédito Hipotecario</h1>
             <p className="text-sm text-blue-100/80 leading-relaxed">
-              Calcula tu dividendo utilizando tasas reales publicadas por la CMF, seguros incluidos y simulaciones comparativas entre bancos.
+              Calcula tu dividendo con tasas referenciales cargadas manualmente por el equipo, seguros incluidos y simulaciones comparativas entre bancos.
             </p>
           </div>
           <div className="hidden lg:flex items-center gap-4">
             <div className="text-center px-4 py-3 bg-white/15 rounded-xl backdrop-blur-sm border border-white/15">
               <p className="text-[10px] text-blue-100/60 font-semibold">Tasa vigente</p>
               <p className="text-xl font-bold text-white">{tasaFinal.toFixed(2)}%</p>
-              <p className="text-[9px] text-blue-100/50">CMF · UF</p>
+              <p className="text-[9px] text-blue-100/50">Catálogo interno · UF</p>
             </div>
             <div className="text-center px-4 py-3 bg-white/15 rounded-xl backdrop-blur-sm border border-white/15">
               <p className="text-[10px] text-blue-100/60 font-semibold">UF hoy</p>
@@ -386,9 +377,10 @@ export default function SimuladorPage() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-600">Banco</label>
-                  <select value={bancoSeleccionado} onChange={(e) => setBancoSeleccionado(e.target.value)}
+                  <select value={bancoActivoId} onChange={(e) => setBancoSeleccionado(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    {BANCOS.map((b) => <option key={b.id} value={b.id}>{b.nombre} ({b.tasa}%)</option>)}
+                    {bancos.map((b) => <option key={b.id} value={b.id}>{b.nombre} ({b.tasa}%)</option>)}
+                    {!cargandoTasas && bancos.length === 0 && <option value="">Sin tasas cargadas</option>}
                   </select>
                 </div>
               </div>
@@ -398,7 +390,7 @@ export default function SimuladorPage() {
                   <Info size={12} className="text-slate-400" />
                   <span className="text-xs text-slate-600">Tasa: <strong>{tasaFinal.toFixed(2)}%</strong> UF</span>
                 </div>
-                <span className="text-[10px] text-slate-400">CMF · {new Date().toLocaleDateString("es-CL")}</span>
+                <span className="text-[10px] text-slate-400">Actualización manual</span>
               </div>
             </div>
           )}
@@ -481,7 +473,7 @@ export default function SimuladorPage() {
                 <div className="absolute top-0 right-0 opacity-5"><Home size={200} /></div>
                 <p className="text-sm text-blue-200/70 mb-1">Tu dividendo mensual estimado</p>
                 <p className="text-4xl font-bold tracking-tight mb-2">{fmt(resultado.dividendo)}</p>
-                <p className="text-xs text-blue-200/60">Calculado con tasas reales CMF y seguros incluidos</p>
+                <p className="text-xs text-blue-200/60">Calculado con tasas referenciales del catálogo y seguros incluidos</p>
               </div>
 
               {/* Cards resumen */}
@@ -620,7 +612,7 @@ export default function SimuladorPage() {
                   </thead>
                   <tbody>
                     {comparacion.map((b, i) => (
-                      <tr key={b.id} className={`border-b border-slate-50 transition-colors ${b.id === bancoSeleccionado ? "bg-blue-50/50" : "hover:bg-slate-50"}`}>
+                      <tr key={b.id} className={`border-b border-slate-50 transition-colors ${b.id === bancoActivoId ? "bg-blue-50/50" : "hover:bg-slate-50"}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             {i === 0 && <span className="text-[8px] bg-emerald-100 text-emerald-600 px-1 py-0.5 rounded font-bold">MEJOR</span>}

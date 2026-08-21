@@ -1548,3 +1548,11 @@ dos veces; pgTAP 161/161; suite 843/843; lint/typecheck: 0.
 [BACKEND · MON-01] hecho — `/api/health` comprueba Supabase, deshabilita caché
 y publica solo `ok` o `unavailable`; el monitor externo queda como gate humano.
 Suite: 845/845; lint/typecheck: 0.
+
+[build] ocupado — Codex, TASAS-01 · catálogo manual sin atribución CMF.
+
+[build] libre — Codex, TASAS-01 · build terminó en 0 con 94 páginas generadas.
+
+[BACKEND · TASAS-01] hecho — CMF permanece `SIN_DATOS`; ejecutivos actualizan
+el catálogo manual auditado y ambos simuladores consumen solo tasas activas.
+Suite: 850/850; lint/typecheck: 0.

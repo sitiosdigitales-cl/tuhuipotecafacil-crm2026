@@ -11,12 +11,12 @@ Supabase, DNS, cPanel ni producción.
 | Superficie | Estado comprobado en repositorio |
 | --- | --- |
 | Next.js | `16.3.1`; 93 rutas generadas por el último build validado |
-| API | 72 archivos `route.ts` bajo `src/app/api/` |
-| Pruebas | 163 archivos; la cifra exacta se registra en cada gate |
+| API | 74 archivos `route.ts` bajo `src/app/api/` |
+| Pruebas | 165 archivos; la cifra exacta se registra en cada gate |
 | Base de datos | 12 migraciones canónicas en `supabase/migrations/` |
 | pgTAP | 7 archivos y 161 comprobaciones declaradas |
 | CI | seis jobs: audit, lint, typecheck, build, test y database |
-| Hallazgos | 139 informes `BUG-*`; ninguno conserva corrección pendiente |
+| Hallazgos | 142 informes `BUG-*`; ninguno conserva corrección pendiente |
 | Auth | modos `legacy`, `bridge` y `required`, TOTP para roles administrativos y recuperación de contraseña |
 | Storage | buckets privados y comprobaciones locales de acceso por rol |
 | Respaldo | cron interno, backup cifrado externo y ensayo de restauración versionados |
@@ -71,10 +71,11 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
 
 ### CMF e integraciones opcionales
 
-- CMF está cerrado de forma explícita: sin integración oficial configurada, el
-  servicio no presenta datos de demostración como si fueran vigentes.
-- Las tasas específicas por banco pertenecen al catálogo administrado por el
-  CRM; un indicador CMF de mercado no debe presentarse como oferta bancaria.
+- CMF queda cerrado por decisión operativa: el servicio permanece `SIN_DATOS`
+  y no se configurará `CMF_API_KEY`.
+- Las tasas específicas por banco pertenecen al catálogo manual del CRM. Los
+  roles `EJECUTIVO`, `ADMIN` y `SUPER_ADMIN` pueden actualizar solo esos campos;
+  los simuladores publican el valor y fecha guardados como referenciales.
 - Stripe, WhatsApp, IA y Google no son dependencias del núcleo productivo y no
   bloquean el despliegue mientras su estado deshabilitado sea explícito.
 
@@ -139,14 +140,14 @@ de clientes. Para cerrar los gates se necesita:
 10. MX efectivo, ruta real del PHP del forwarder y módulos disponibles para ese
     binario.
 11. Resultado de un webhook WordPress sintético y un correo entrante sintético.
-12. Confirmación de la fuente CMF y fecha de actualización, si se habilita.
+12. Responsable, fuente comercial y frecuencia de revisión del catálogo manual.
 
 ## Orden de cierre
 
 1. Configurar la URL canónica ya centralizada en cada entorno y servidor.
 2. Validar robustez e idempotencia del correo entrante en cPanel con sintéticos.
 3. Añadir health mínimo sin filtrar detalles internos.
-4. Implementar CMF oficial con trazabilidad o mantenerlo `SIN_DATOS`.
+4. Mantener CMF en `SIN_DATOS` y revisar semanalmente las tasas manuales.
 5. Endurecer por dominio las entradas JSON aún no tipadas.
 6. Ejecutar staging, backup, restore y smoke con la plantilla de evidencia.
 7. Autorizar producción solo si todos los gates pertenecen al mismo SHA.

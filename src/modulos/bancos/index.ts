@@ -61,7 +61,36 @@ export function useBancos() {
     return data.success;
   };
 
-  return { bancos, cargando, crearBanco, actualizarBanco, eliminarBanco, recargar: cargarBancos };
+  const actualizarTasas = async (
+    id: string,
+    tasas: Pick<Banco, "cae" | "tasaBase" | "tasaPreferencial">
+  ) => {
+    const res = await fetch(`/api/bancos/${id}/tasas`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tasas),
+    });
+    const data = await res.json();
+    if (data.success && data.data) {
+      setBancos((prev) =>
+        prev.map((banco) =>
+          banco.id === id ? { ...banco, ...data.data } : banco
+        )
+      );
+      return data.data as Partial<Banco> & { id: string };
+    }
+    return null;
+  };
+
+  return {
+    bancos,
+    cargando,
+    crearBanco,
+    actualizarBanco,
+    actualizarTasas,
+    eliminarBanco,
+    recargar: cargarBancos,
+  };
 }
 
 export type { Banco } from "./types";
