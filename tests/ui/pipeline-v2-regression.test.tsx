@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import PipelinePage from "@/app/(dashboard)/pipeline/page";
@@ -145,13 +145,6 @@ function configurarContextos(leads: Lead[], cargando = false) {
   mocks.useActivities.mockReturnValue({ agregarActividad: mocks.agregarActividad });
 }
 
-function tarjetaIndicador(titulo: string) {
-  const etiqueta = screen.getByText(titulo);
-  const tarjeta = etiqueta.parentElement?.parentElement;
-  if (!tarjeta) throw new Error(`No se encontró la tarjeta ${titulo}`);
-  return within(tarjeta);
-}
-
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-08-21T12:00:00-04:00"));
@@ -172,86 +165,35 @@ afterEach(() => {
   dndHarness.onDragEnd = null;
 });
 
-describe("regresiones del pipeline V2", () => {
-  it("muestra el esqueleto mientras carga y el contenido cuando termina", async () => {
+describe("regresiones del pipeline V3", () => {
+  it("muestra el esqueleto mientras carga y luego prioriza el tablero", async () => {
     configurarContextos([], true);
     const vista = render(<PipelinePage />);
 
     expect(screen.getByTestId("pipeline-skeleton")).toBeTruthy();
-    expect(screen.queryByText("Total oportunidades")).toBeNull();
 
     configurarContextos([], false);
     vista.rerender(<PipelinePage />);
 
     expect(screen.queryByTestId("pipeline-skeleton")).toBeNull();
-    expect(screen.getByText("Total oportunidades")).toBeTruthy();
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
+    expect(await screen.findByRole("option", { name: /Revisión Legal \(0\)/ })).toBeTruthy();
+    expect(screen.getByTestId("pipeline-column-REVISION_LEGAL")).toBeTruthy();
+    expect(screen.queryByText("Total oportunidades")).toBeNull();
+    expect(screen.queryByText("Ticket promedio")).toBeNull();
+    expect(screen.queryByText("Click en el icono del lead para asignar")).toBeNull();
   });
 
-  it("calcula totales y variaciones usando mes actual y mes anterior", async () => {
-    configurarContextos([
-      crearLead({ id: "actual-ganada", etapa: "APROBADO", montoSolicitado: 200 }),
-      crearLead({ id: "actual-abierta", montoSolicitado: 100 }),
-      crearLead({
-        id: "anterior-ganada",
-        etapa: "FIRMA_DIGITAL",
-        montoSolicitado: 100,
-        creadoEn: new Date("2026-07-10T12:00:00-04:00"),
-      }),
-      crearLead({
-        id: "anterior-abierta",
-        montoSolicitado: 100,
-        creadoEn: new Date("2026-07-15T12:00:00-04:00"),
-      }),
-    ]);
-
-    render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
-
-    expect(tarjetaIndicador("Total oportunidades").getByText("4")).toBeTruthy();
-    expect(tarjetaIndicador("Total oportunidades").getByText("+0.0% vs mes pasado")).toBeTruthy();
-    expect(tarjetaIndicador("Monto total").getByText("$ 500")).toBeTruthy();
-    expect(tarjetaIndicador("Monto total").getByText("+50.0% vs mes pasado")).toBeTruthy();
-    expect(tarjetaIndicador("Ticket promedio").getByText("$ 125")).toBeTruthy();
-    expect(tarjetaIndicador("Ticket promedio").getByText("+50.0% vs mes pasado")).toBeTruthy();
-    expect(tarjetaIndicador("Conversión global").getByText("50.0%")).toBeTruthy();
-    expect(tarjetaIndicador("Conversión global").getByText("+0.0% vs mes pasado")).toBeTruthy();
-    expect(tarjetaIndicador("Oportunidades ganadas").getByText("2")).toBeTruthy();
-    expect(tarjetaIndicador("Oportunidades ganadas").getByText("+0.0% vs mes pasado")).toBeTruthy();
-  });
-
-  it("usa null sin porcentajes inventados cuando el mes anterior está vacío", async () => {
-    configurarContextos([crearLead({ id: "solo-actual", montoSolicitado: 300 })]);
-
-    render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
-
-    expect(screen.getAllByText("Sin comparación")).toHaveLength(5);
-    expect(screen.queryByText(/vs mes pasado/)).toBeNull();
-  });
-
-  it("evita divisiones por cero cuando no hay oportunidades", async () => {
-    configurarContextos([]);
-
-    render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
-
-    expect(tarjetaIndicador("Total oportunidades").getByText("0")).toBeTruthy();
-    expect(tarjetaIndicador("Ticket promedio").getByText("$ 0")).toBeTruthy();
-    expect(tarjetaIndicador("Conversión global").getByText("0.0%")).toBeTruthy();
-    expect(tarjetaIndicador("Oportunidades ganadas").getByText("0")).toBeTruthy();
-    expect(screen.queryByText(/Infinity|NaN/)).toBeNull();
-  });
-
-  it("combina etapa, ejecutivo y búsqueda telefónica ignorando espacios", async () => {
+  it("combina etapa y ejecutivo con búsqueda normalizada por varios campos", async () => {
     configurarContextos([
       crearLead({
         id: "objetivo",
-        nombre: "Objetivo",
-        apellido: "Correcto",
+        nombre: "José",
+        apellido: "Peña",
+        rut: "18.121.211-0",
         etapa: "REVISION_LEGAL" as Lead["etapa"],
         nombreEjecutivo: "Ejecutivo Uno",
         telefono: "+56 9 1234 5678",
+        banco: "Banco Estado",
       }),
       crearLead({
         id: "otra-etapa",
@@ -272,32 +214,75 @@ describe("regresiones del pipeline V2", () => {
     ]);
 
     render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
+    expect(await screen.findByRole("option", { name: /Revisión Legal \(2\)/ })).toBeTruthy();
 
     const [filtroEtapa, filtroEjecutivo] = screen.getAllByRole("combobox");
-    const busqueda = screen.getByPlaceholderText("Buscar cliente, RUT, teléfono, email...");
+    const busqueda = screen.getByRole("searchbox", { name: "Buscar oportunidades" });
     fireEvent.change(filtroEtapa, { target: { value: "REVISION_LEGAL" } });
     fireEvent.change(filtroEjecutivo, { target: { value: "Ejecutivo Uno" } });
-    fireEvent.change(busqueda, { target: { value: "+56912345678" } });
+    fireEvent.change(busqueda, { target: { value: "jose pena" } });
 
-    expect(screen.getByText("Objetivo Correcto")).toBeTruthy();
+    expect(screen.getByText("José Peña")).toBeTruthy();
     expect(screen.queryByText("Otra Etapa")).toBeNull();
     expect(screen.queryByText("Otro Ejecutivo")).toBeNull();
 
-    fireEvent.change(busqueda, { target: { value: "+56 9 1234 5678" } });
-    expect(screen.getByText("Objetivo Correcto")).toBeTruthy();
+    for (const consulta of ["181212110", "+56912345678", "banco estado"]) {
+      fireEvent.change(busqueda, { target: { value: consulta } });
+      expect(screen.getByText("José Peña")).toBeTruthy();
+    }
+  });
+
+  it("al elegir una etapa muestra solo su columna y conserva su contador", async () => {
+    configurarContextos([
+      crearLead({ id: "legal", etapa: "REVISION_LEGAL" as Lead["etapa"] }),
+      crearLead({ id: "nuevo", etapa: "NUEVO_LEAD" }),
+    ]);
+    render(<PipelinePage />);
+    const filtroEtapa = await screen.findByLabelText("Filtrar por etapa");
+
+    fireEvent.change(filtroEtapa, { target: { value: "REVISION_LEGAL" } });
+
+    expect(screen.getByTestId("pipeline-column-REVISION_LEGAL")).toBeTruthy();
+    expect(screen.queryByTestId("pipeline-column-NUEVO_LEAD")).toBeNull();
+    expect(screen.getByRole("option", { name: /Revisión Legal \(1\)/ })).toBeTruthy();
+  });
+
+  it("abre el detalle completo desde una tarjeta resumida", async () => {
+    const lead = crearLead({
+      id: "detalle",
+      nombre: "María",
+      apellido: "Detalle",
+      valorPropiedad: 250_000_000,
+      pieDisponible: 50_000_000,
+      banco: "Banco QA",
+      tipoCredito: "Hipotecario",
+      notas: "Antecedentes completos",
+    });
+    configurarContextos([lead]);
+    render(<PipelinePage />);
+    expect(await screen.findByRole("option", { name: /Revisión Legal/ })).toBeTruthy();
+
+    expect(screen.queryByText("Valor propiedad")).toBeNull();
+    expect(screen.queryByText("Antecedentes completos")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir ficha de María Detalle" }));
+
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("Valor propiedad")).toBeTruthy();
+    expect(screen.getByText("Antecedentes completos")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Ver ficha completa/ })).toBeTruthy();
   });
 
   it("distingue el estado vacío normal del resultado vacío por filtros", async () => {
     configurarContextos([]);
     render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
+    expect(await screen.findByRole("option", { name: /Revisión Legal \(0\)/ })).toBeTruthy();
 
     expect(screen.getAllByText("No hay oportunidades en esta etapa")).toHaveLength(3);
     expect(screen.queryByText("No encontramos oportunidades con estos criterios.")).toBeNull();
 
     fireEvent.change(
-      screen.getByPlaceholderText("Buscar cliente, RUT, teléfono, email..."),
+      screen.getByRole("searchbox", { name: "Buscar oportunidades" }),
       { target: { value: "sin-coincidencias" } },
     );
 
@@ -309,7 +294,7 @@ describe("regresiones del pipeline V2", () => {
     const lead = crearLead({ id: "lead-movible", telefono: "+56 9 1111 2222" });
     configurarContextos([lead]);
     render(<PipelinePage />);
-    expect(await screen.findByRole("option", { name: "Revisión Legal" })).toBeTruthy();
+    expect(await screen.findByRole("option", { name: /Revisión Legal/ })).toBeTruthy();
     expect(dndHarness.onDragEnd).not.toBeNull();
 
     await act(async () => {

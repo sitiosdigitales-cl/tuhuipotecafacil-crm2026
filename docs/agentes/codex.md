@@ -1594,3 +1594,9 @@ consulta directa a `dcoyjvbhrkarrmetrhiv`: 1 lead, monto 0, 0 ganadas y 8 etapas
 activas; difiere de la base local reportada por Claude (24/15). Sin navegador
 controlable para certificar los tres viewports. Build 94/94, suite 865/865,
 lint 0 con Supabase local detenido y typecheck 0.
+[build] ocupado — Codex, PIPELINE-V3 · interfaz compacta y detalle modal.
+[build] libre — Codex, PIPELINE-V3 · build terminó en 0 con 94 páginas.
+[PIPELINE-V3] hecho — se retiraron las métricas grandes y el panel lateral,
+la búsqueda normaliza nombre/RUT/teléfono y suma banco/ejecutivo, el filtro de
+etapa muestra conteos y una sola columna, y las tarjetas compactas abren detalle
+modal. Build 94/94, suite 864/864, lint y typecheck en 0; navegador no disponible.

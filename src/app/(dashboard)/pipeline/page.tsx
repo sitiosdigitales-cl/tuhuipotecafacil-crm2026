@@ -1,23 +1,15 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  Phone,
-  Mail,
-  MoreHorizontal,
   DollarSign,
   Plus,
   AlertCircle,
   CheckCircle,
   TrendingUp,
-  Building2,
-  Home,
-  Eye,
-  Pencil,
-  Trash2,
   Users,
   Banknote,
   ArrowLeft,
@@ -25,35 +17,30 @@ import {
   LayoutList,
   LayoutGrid,
   UserPlus,
-  ArrowUpRight,
-  ArrowDownRight,
-  Percent,
-  Trophy,
-  Wallet
 } from "lucide-react";
 import {
   COLOR_ETAPA_POR_DEFECTO,
   ETAPAS_CONFIG,
   etapasPorDefecto,
-  ORIGEN_LABELS,
   ROLES_CONFIG,
 } from "@/tipos";
-import { formatoMonedaAbreviado, formatoUF } from "@/lib/utils";
+import { formatoMonedaAbreviado } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
 import { PipelineSkeleton } from "@/componentes/pipeline/PipelineSkeleton";
+import {
+  PipelineLeadCard,
+  PipelineLeadDetail,
+} from "@/componentes/pipeline/PipelineLeadCard";
 import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
 import { useActivities } from "@/lib/contexts/ActivityContext";
 import { validarAvance, type ResultadoValidacion, type ReglaValidacion } from "@/modulos/leads/validaciones-pipeline";
-import {
-  AsignarEjecutivo,
-  type EjecutivoAsignable,
-} from "@/componentes/pipeline/AsignarEjecutivo";
+import type { EjecutivoAsignable } from "@/componentes/pipeline/AsignarEjecutivo";
 import { toast } from "sonner";
-import type { Lead, Etapa, EtapaPipeline, Prioridad, SituacionLaboral } from "@/tipos";
+import type { Lead, Etapa, EtapaPipeline, SituacionLaboral } from "@/tipos";
 
 // Documentos obligatorios por situación laboral (mismos que en clientes/[id]/page.tsx)
 const DOCUMENTOS_OBLIGATORIOS: Record<SituacionLaboral, string[]> = {
@@ -127,229 +114,45 @@ async function verificarDocumentosCompletos(lead: Lead): Promise<{ completo: boo
   }
 }
 
-const prioridadConfig: Record<Prioridad, { label: string; color: string; bg: string }> = {
-  BAJA: { label: "Baja", color: "text-slate-600", bg: "bg-slate-100" },
-  MEDIA: { label: "Media", color: "text-blue-600", bg: "bg-blue-50 border border-blue-100" },
-  ALTA: { label: "Alta", color: "text-orange-600", bg: "bg-orange-50 border border-orange-100" },
-  URGENTE: { label: "Urgente", color: "text-red-600", bg: "bg-red-50 border border-red-100" },
-};
-
 /** Etapas que cuentan como oportunidad ganada. Ya se usaban para `aprobados`. */
 const ETAPAS_GANADAS: string[] = ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO"];
 
-const getTiempoEstilo = (dias: number) => {
-  if (dias <= 3) return { text: "text-emerald-700", bg: "bg-emerald-50 border border-emerald-100", label: "Nuevo" };
-  if (dias <= 7) return { text: "text-amber-700", bg: "bg-amber-50 border border-amber-100", label: "Normal" };
-  if (dias <= 14) return { text: "text-orange-700", bg: "bg-orange-50 border border-orange-100", label: "Tardío" };
-  return { text: "text-red-700", bg: "bg-red-50 border border-red-100", label: "Crítico" };
-};
-
-function TarjetaIndicador({ icono, titulo, valor, variacion }: {
-  icono: React.ReactNode;
-  titulo: string;
-  valor: string;
-  variacion: number | null;
-}) {
-  const sube = variacion !== null && variacion >= 0;
-  return (
-    <div className="flex-1 min-w-[150px] bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl px-3.5 py-3">
-      <div className="flex items-center gap-1.5 mb-2 text-slate-400 dark:text-slate-500">
-        {icono}
-        <span className="text-[10px] font-semibold uppercase tracking-wider truncate">{titulo}</span>
-      </div>
-      {/* El numero domina: es lo que se lee de un vistazo. */}
-      <div className="text-[19px] font-bold text-slate-900 dark:text-slate-100 leading-none tabular-nums">
-        {valor}
-      </div>
-      {variacion === null ? (
-        // Sin mes anterior con datos no hay porcentaje que mostrar, y no se
-        // inventa uno.
-        <div className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500">Sin comparación</div>
-      ) : (
-        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-semibold ${sube ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-          {sube ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-          {sube ? "+" : ""}{variacion.toFixed(1)}% vs mes pasado
-        </div>
-      )}
-    </div>
-  );
+function normalizarTextoBusqueda(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carga }: {
-  lead: Lead;
-  index: number;
-  onVer: () => void;
-  onEditar: (e: React.MouseEvent) => void;
-  onEliminar: (e: React.MouseEvent) => void;
-  onAsignar: (leadId: string, ejecutivo: EjecutivoAsignable | null) => void;
-  carga: Record<string, number>;
-}) {
-  const tiempo = getTiempoEstilo(lead.diasEnEtapa);
-  const prioridad = prioridadConfig[lead.prioridad];
+function normalizarIdentificador(value: string) {
+  return normalizarTextoBusqueda(value).replace(/[^a-z0-9@+]/g, "");
+}
 
-  return (
-    <Draggable draggableId={lead.id} index={index}>
-      {(provided, snapshot) => (
-         <div
-           ref={provided.innerRef}
-           {...provided.draggableProps}
-           className={`bg-white dark:bg-slate-800 rounded-xl border mb-2.5 transition-all duration-200 ${
-             snapshot.isDragging
-               ? "shadow-2xl ring-2 ring-blue-500/30 scale-[1.02] rotate-[1deg] z-50 opacity-90"
-               : "border-slate-100 dark:border-slate-700 hover:shadow-lg hover:border-slate-200 dark:hover:border-slate-600"
-           }`}
-         >
-          {/* Drag Handle + Header */}
-         <div {...provided.dragHandleProps} className={`px-3 py-2 border-b border-slate-100 dark:border-slate-700 cursor-grab active:cursor-grabbing ${
-             lead.prioridad === 'URGENTE' ? 'bg-red-50/50 dark:bg-red-900/20' :
-             lead.prioridad === 'ALTA' ? 'bg-orange-50/30 dark:bg-orange-900/20' : ''
-           }`}>
-            <div className="flex items-center justify-between">
-               <div
-                 className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 -mx-1 px-1 py-0.5 rounded-lg transition-colors"
-                 onClick={(e) => { e.stopPropagation(); onVer(); }}
-               >
-                <div className="relative">
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
-                    {lead.nombre[0]}{lead.apellido[0]}
-                  </div>
-                  <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
-                    lead.prioridad === 'URGENTE' ? 'bg-red-500' :
-                    lead.prioridad === 'ALTA' ? 'bg-orange-500' :
-                    lead.prioridad === 'MEDIA' ? 'bg-blue-500' : 'bg-slate-400'
-                  }`} />
-                </div>
-                <div className="min-w-0">
-                   <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">{lead.nombre} {lead.apellido}</div>
-                   <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{lead.rut}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${prioridad.bg} ${prioridad.color}`}>
-                  {prioridad.label}
-                </span>
-                 <button
-                   onClick={(e) => { e.stopPropagation(); }}
-                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                 >
-                   <MoreHorizontal size={12} className="text-slate-400 dark:text-slate-500" />
-                 </button>
-              </div>
-            </div>
-          </div>
+function leadCoincideConBusqueda(lead: Lead, query: string) {
+  if (!query.trim()) return true;
 
-          {/* Información financiera destacada */}
-          <div className="px-3 py-2.5">
-             <div className="bg-gradient-to-br from-slate-50 dark:from-slate-700 to-slate-100/50 dark:to-slate-700/50 rounded-lg p-2.5 mb-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <div>
-                   <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">Monto Crédito</div>
-                   <div className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-tight">{formatoMonedaAbreviado(lead.montoSolicitado || 0)}</div>
-                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{formatoUF(lead.montoSolicitado || 0)}</div>
-                </div>
-                <div className="text-right">
-                   <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-medium">Propiedad</div>
-                   <div className="text-[12px] font-bold text-slate-700 dark:text-slate-300">{formatoMonedaAbreviado(lead.valorPropiedad || 0)}</div>
-                   <div className="text-[11px] text-slate-500 dark:text-slate-400">{formatoUF(lead.valorPropiedad || 0)}</div>
-                </div>
-              </div>
-              {lead.pieDisponible && lead.valorPropiedad && (
-                 <div className="pt-1.5 mt-1.5 border-t border-slate-200/50 dark:border-slate-600/50">
-                   <div className="flex items-center justify-between">
-                     <span className="text-[10px] text-slate-400 dark:text-slate-500">Pie</span>
-                     <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{formatoMonedaAbreviado(lead.pieDisponible)}</span>
-                   </div>
-                   <div className="mt-1 h-1 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
-                      style={{ width: `${Math.min((lead.pieDisponible / lead.valorPropiedad) * 100, 100)}%` }}
-                    />
-                  </div>
-                   <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 text-right">
-                    {((lead.pieDisponible / lead.valorPropiedad) * 100).toFixed(0)}% del valor
-                  </div>
-                </div>
-              )}
-            </div>
+  const campos = [
+    lead.nombre,
+    lead.apellido,
+    `${lead.nombre} ${lead.apellido}`,
+    lead.rut,
+    lead.telefono,
+    lead.email,
+    lead.banco,
+    lead.tipoCredito,
+    lead.nombreEjecutivo,
+  ].filter(Boolean).join(" ");
+  const texto = normalizarTextoBusqueda(campos);
+  const identificadores = normalizarIdentificador(campos);
 
-            {/* Banco y tipo de crédito */}
-             <div className="flex items-center gap-2 mb-2">
-               <div className="flex-1 flex items-center gap-1.5 px-2 py-1.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                 <Building2 size={10} className="text-slate-400 dark:text-slate-500" />
-                 <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium truncate">{lead.banco || "Sin banco"}</span>
-               </div>
-               <div className="flex-1 flex items-center gap-1.5 px-2 py-1.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
-                 <Home size={10} className="text-slate-400 dark:text-slate-500" />
-                 <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium truncate">{lead.tipoCredito || "Sin tipo"}</span>
-               </div>
-             </div>
-
-            {/* Origen y tiempo */}
-             <div className="flex items-center gap-1.5 mb-2.5">
-               <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-800">
-                {ORIGEN_LABELS[lead.origen] || lead.origen}
-              </span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${tiempo.bg} ${tiempo.text}`}>
-                {lead.diasEnEtapa}d • {tiempo.label}
-              </span>
-            </div>
-
-            {/* Contacto */}
-             <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 mb-2.5">
-               <div className="flex items-center gap-1">
-                 <Phone size={9} className="text-slate-400 dark:text-slate-500" />
-                 <span>{lead.telefono || "-"}</span>
-               </div>
-               <div className="flex items-center gap-1 truncate">
-                 <Mail size={9} className="text-slate-400 dark:text-slate-500" />
-                 <span className="truncate">{lead.email || "-"}</span>
-               </div>
-             </div>
-
-            {/* Footer */}
-             <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <div className="relative flex-shrink-0">
-                          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[7px] font-bold text-white ${
-                            lead.nombreEjecutivo
-                              ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                              : "bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700"
-                          }`}>
-                            {lead.nombreEjecutivo?.split(" ").map((n) => n[0]).join("") || "?"}
-                          </div>
-                          {lead.nombreEjecutivo && (
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-white dark:border-slate-800" />
-                          )}
-                        </div>
-                        <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium truncate">
-                          {lead.nombreEjecutivo?.split(" ")[0] || "Sin asignar"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <AsignarEjecutivo
-                          ejecutivoActual={lead.nombreEjecutivo}
-                          onAsignar={(ejecutivo) => onAsignar(lead.id, ejecutivo)}
-                          compact
-                          carga={carga}
-                        />
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={onVer} className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Ver detalle">
-                            <Eye size={11} className="text-blue-500 dark:text-blue-400" />
-                          </button>
-                          <button onClick={onEditar} className="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors" title="Editar">
-                            <Pencil size={11} className="text-amber-500 dark:text-amber-400" />
-                          </button>
-                          <button onClick={onEliminar} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar">
-                            <Trash2 size={11} className="text-red-500 dark:text-red-400" />
-                          </button>
-                        </div>
-                      </div>
-             </div>
-          </div>
-        </div>
-      )}
-    </Draggable>
-  );
+  return normalizarTextoBusqueda(query)
+    .split(" ")
+    .filter(Boolean)
+    .every((termino) =>
+      texto.includes(termino) || identificadores.includes(normalizarIdentificador(termino))
+    );
 }
 
 export default function PipelinePage() {
@@ -363,6 +166,7 @@ export default function PipelinePage() {
   const [leadAEliminar, setLeadAEliminar] = useState<Lead | null>(null);
   const [formularioOpen, setFormularioOpen] = useState(false);
   const [leadSeleccionado, setLeadSeleccionado] = useState<Lead | null>(null);
+  const [leadDetalle, setLeadDetalle] = useState<Lead | null>(null);
   const [validacionModal, setValidacionModal] = useState<{ open: boolean; resultado: ResultadoValidacion | null; lead: Lead | null; etapaDestino: string }>({
     open: false,
     resultado: null,
@@ -424,19 +228,31 @@ export default function PipelinePage() {
     return Array.from(nombres).sort();
   }, [leadsUsuario]);
 
-  const leadsFiltrados = useMemo(() => {
+  const leadsBaseFiltrados = useMemo(() => {
     return leadsUsuario.filter((lead) => {
-      const coincideBusqueda = !busqueda ||
-        lead.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        lead.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
-        lead.rut.includes(busqueda) ||
-        lead.email?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        lead.telefono?.replace(/\s/g, "").includes(busqueda.replace(/\s/g, ""));
       const coincideEjecutivo = filtroEjecutivo === "todos" || lead.nombreEjecutivo === filtroEjecutivo;
-      const coincideEtapa = filtroEtapa === "todas" || lead.etapa === filtroEtapa;
-      return coincideBusqueda && coincideEjecutivo && coincideEtapa;
+      return leadCoincideConBusqueda(lead, busqueda) && coincideEjecutivo;
     });
-  }, [leadsUsuario, busqueda, filtroEjecutivo, filtroEtapa]);
+  }, [leadsUsuario, busqueda, filtroEjecutivo]);
+
+  const leadsFiltrados = useMemo(() => (
+    filtroEtapa === "todas"
+      ? leadsBaseFiltrados
+      : leadsBaseFiltrados.filter((lead) => lead.etapa === filtroEtapa)
+  ), [filtroEtapa, leadsBaseFiltrados]);
+
+  const cantidadPorEtapa = useMemo(() => (
+    leadsBaseFiltrados.reduce<Record<string, number>>((cantidades, lead) => {
+      cantidades[lead.etapa] = (cantidades[lead.etapa] || 0) + 1;
+      return cantidades;
+    }, {})
+  ), [leadsBaseFiltrados]);
+
+  const etapasVisibles = useMemo(() => (
+    filtroEtapa === "todas"
+      ? etapasPipeline
+      : etapasPipeline.filter((etapa) => etapa.id === filtroEtapa)
+  ), [etapasPipeline, filtroEtapa]);
 
   const stats = useMemo(() => ({
     total: leadsFiltrados.length,
@@ -444,51 +260,6 @@ export default function PipelinePage() {
     valorPropiedad: leadsFiltrados.reduce((acc, l) => acc + (l.valorPropiedad || 0), 0),
     aprobados: leadsFiltrados.filter(l => ETAPAS_GANADAS.includes(l.etapa)).length,
   }), [leadsFiltrados]);
-
-  /**
-   * Indicadores del encabezado. Todo sale de los leads que ya trae el contexto:
-   * no hay endpoint de metricas ni tabla historica, asi que la comparacion
-   * mensual se calcula sobre `creadoEn`, que es dato real. Si algun mes no
-   * tiene leads, la variacion queda en `null` y la tarjeta no inventa un
-   * porcentaje.
-   */
-  const indicadores = useMemo(() => {
-    const ahora = new Date();
-    const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
-
-    const enRango = (lead: Lead, desde: Date, hasta: Date) => {
-      const creado = new Date(lead.creadoEn);
-      return creado >= desde && creado < hasta;
-    };
-    const mesActual = leadsFiltrados.filter((l) => enRango(l, inicioMesActual, ahora));
-    const mesAnterior = leadsFiltrados.filter((l) => enRango(l, inicioMesAnterior, inicioMesActual));
-
-    const monto = (lista: Lead[]) => lista.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
-    const ganadas = (lista: Lead[]) => lista.filter((l) => ETAPAS_GANADAS.includes(l.etapa)).length;
-    const promedio = (lista: Lead[]) => (lista.length ? monto(lista) / lista.length : 0);
-    const conversion = (lista: Lead[]) => (lista.length ? (ganadas(lista) / lista.length) * 100 : 0);
-
-    // `null` significa "no hay con que comparar", no "cero".
-    const variacion = (actual: number, anterior: number): number | null => {
-      if (!mesAnterior.length || anterior === 0) return null;
-      return ((actual - anterior) / anterior) * 100;
-    };
-
-    return {
-      total: { valor: stats.total, variacion: variacion(mesActual.length, mesAnterior.length) },
-      monto: { valor: stats.montoTotal, variacion: variacion(monto(mesActual), monto(mesAnterior)) },
-      ticket: {
-        valor: stats.total ? stats.montoTotal / stats.total : 0,
-        variacion: variacion(promedio(mesActual), promedio(mesAnterior)),
-      },
-      conversion: {
-        valor: stats.total ? (stats.aprobados / stats.total) * 100 : 0,
-        variacion: variacion(conversion(mesActual), conversion(mesAnterior)),
-      },
-      ganadas: { valor: stats.aprobados, variacion: variacion(ganadas(mesActual), ganadas(mesAnterior)) },
-    };
-  }, [leadsFiltrados, stats]);
 
   const handleAsignarEjecutivo = useCallback(async (
     leadId: string,
@@ -500,6 +271,14 @@ export default function PipelinePage() {
         asignadoA: ejecutivo?.id ?? "",
         nombreEjecutivo: ejecutivo?.nombre ?? "",
       });
+      setLeadDetalle((actual) => actual?.id === leadId
+        ? {
+            ...actual,
+            asignadoA: ejecutivo?.id ?? "",
+            nombreEjecutivo: ejecutivo?.nombre ?? "",
+          }
+        : actual
+      );
       if (lead) {
         toast.success("Ejecutivo asignado", {
           description: ejecutivo
@@ -708,8 +487,8 @@ export default function PipelinePage() {
     }
   };
 
-  const handleEliminarLead = (lead: Lead, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEliminarLead = (lead: Lead) => {
+    setLeadDetalle(null);
     setLeadAEliminar(lead);
     setEliminarDialogOpen(true);
   };
@@ -734,8 +513,8 @@ export default function PipelinePage() {
     setFormularioOpen(true);
   };
 
-  const handleEditarLead = (lead: Lead, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEditarLead = (lead: Lead) => {
+    setLeadDetalle(null);
     setLeadSeleccionado(lead);
     setFormularioOpen(true);
   };
@@ -787,8 +566,8 @@ export default function PipelinePage() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-100 dark:from-slate-900 via-slate-50 dark:via-slate-800 to-blue-50 dark:to-blue-950 overflow-hidden">
       {/* Header fijo */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2">
+      <div className="flex-shrink-0 border-b border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800 sm:px-4 sm:py-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-4">
               <button
                onClick={() => router.push("/dashboard")}
@@ -803,7 +582,7 @@ export default function PipelinePage() {
               </div>
               <div>
                 <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {esSuperAdmin ? "Pipeline" : `Pipeline`}
+                  Pipeline
                 </h1>
                 <p className="text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 font-medium hidden sm:block">
                   {esSuperAdmin ? "Gestión de oportunidades de crédito hipotecario" : "Tus oportunidades de crédito"}
@@ -812,8 +591,7 @@ export default function PipelinePage() {
             </div>
           </div>
 
-          {/* Stats compactos - ocultos en móvil pequeño */}
-          <div className="hidden sm:flex items-center gap-2 lg:gap-3">
+          <div className="hidden items-center gap-2 md:flex">
             <div className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-700 rounded-lg">
                <Users size={12} className="text-slate-400 dark:text-slate-400" />
                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{stats.total}</span>
@@ -823,7 +601,7 @@ export default function PipelinePage() {
                <DollarSign size={12} className="text-blue-500 dark:text-blue-400" />
                <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300">{formatoMonedaAbreviado(stats.montoTotal)}</span>
              </div>
-             <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+             <div className="hidden items-center gap-2 rounded-lg bg-purple-50 px-2.5 py-1.5 dark:bg-purple-900/30 xl:flex">
                <Banknote size={12} className="text-purple-500 dark:text-purple-400" />
                <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300">{formatoMonedaAbreviado(stats.valorPropiedad)}</span>
              </div>
@@ -833,65 +611,72 @@ export default function PipelinePage() {
              </div>
           </div>
 
-          {/* Mobile stats - simplified */}
-          <div className="flex sm:hidden items-center gap-2">
-            <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{stats.total} leads</span>
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded">{stats.aprobados} OK</span>
-          </div>
-
-          {/* Acciones */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="relative hidden sm:block">
-               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-               <input
-                 type="text"
-                 placeholder="Buscar cliente, RUT, teléfono, email..."
-                 value={busqueda}
-                 onChange={(e) => setBusqueda(e.target.value)}
-                 className="w-52 lg:w-72 pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 focus:bg-white dark:focus:bg-slate-600 transition-all"
-               />
-            </div>
-             <select
-               value={filtroEtapa}
-               onChange={(e) => setFiltroEtapa(e.target.value)}
-               className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
-             >
-              <option value="todas">Todas las etapas</option>
-              {/* Sale de la API: si Configuracion agrega una etapa, aparece aca. */}
-              {etapasPipeline.map((etapa) => (
-                <option key={etapa.id} value={etapa.id}>{etapa.nombre}</option>
-              ))}
-            </select>
-             <select
-               value={filtroEjecutivo}
-               onChange={(e) => setFiltroEjecutivo(e.target.value)}
-               className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
-             >
-              <option value="todos">Todos</option>
-              {ejecutivos.map((ej) => (
-                <option key={ej} value={ej}>{ej}</option>
-              ))}
-            </select>
-            <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-0.5">
-              <button
-                onClick={() => setVistaModo("kanban")}
-                className={`p-1.5 rounded-md transition-colors ${vistaModo === "kanban" ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-                title="Vista Kanban"
-              >
-                <LayoutList size={14} />
-              </button>
-              <button
-                onClick={() => setVistaModo("ejecutivos")}
-                className={`p-1.5 rounded-md transition-colors ${vistaModo === "ejecutivos" ? "bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
-                title="Vista por Ejecutivo"
-              >
-                <LayoutGrid size={14} />
-              </button>
-            </div>
             <Button onClick={handleNuevoLead} className="gap-1.5 shadow-lg shadow-blue-600/15 text-[11px] sm:text-sm">
               <Plus size={14} /> <span className="hidden sm:inline">Nuevo Lead</span><span className="sm:hidden">Nuevo</span>
             </Button>
           </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-700">
+          <div className="relative min-w-[220px] flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <input
+              type="search"
+              aria-label="Buscar oportunidades"
+              placeholder="Buscar por nombre, RUT, teléfono, correo, banco o ejecutivo..."
+              value={busqueda}
+              onChange={(event) => setBusqueda(event.target.value)}
+              className="w-full rounded-xl border border-slate-200/70 bg-slate-50 py-2 pl-9 pr-3 text-[11px] text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:focus:bg-slate-600"
+            />
+          </div>
+          <label className="sr-only" htmlFor="pipeline-stage-filter">Filtrar por etapa</label>
+          <select
+            id="pipeline-stage-filter"
+            value={filtroEtapa}
+            onChange={(event) => setFiltroEtapa(event.target.value)}
+            className="max-w-[210px] flex-1 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 sm:flex-none"
+          >
+            <option value="todas">Todas las etapas ({leadsBaseFiltrados.length})</option>
+            {etapasPipeline.map((etapa) => (
+              <option key={etapa.id} value={etapa.id}>
+                {etapa.nombre} ({cantidadPorEtapa[etapa.id] || 0})
+              </option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="pipeline-owner-filter">Filtrar por ejecutivo</label>
+          <select
+            id="pipeline-owner-filter"
+            value={filtroEjecutivo}
+            onChange={(event) => setFiltroEjecutivo(event.target.value)}
+            className="max-w-[190px] flex-1 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 sm:flex-none"
+          >
+            <option value="todos">Todos los ejecutivos</option>
+            {ejecutivos.map((ejecutivo) => (
+              <option key={ejecutivo} value={ejecutivo}>{ejecutivo}</option>
+            ))}
+          </select>
+          <div className="flex items-center rounded-lg bg-slate-100 p-0.5 dark:bg-slate-700">
+            <button
+              onClick={() => setVistaModo("kanban")}
+              className={`rounded-md p-1.5 transition-colors ${vistaModo === "kanban" ? "bg-white text-blue-600 shadow-sm dark:bg-slate-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+              title="Vista Kanban"
+              aria-label="Vista Kanban"
+            >
+              <LayoutList size={14} />
+            </button>
+            <button
+              onClick={() => setVistaModo("ejecutivos")}
+              className={`rounded-md p-1.5 transition-colors ${vistaModo === "ejecutivos" ? "bg-white text-blue-600 shadow-sm dark:bg-slate-600 dark:text-blue-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
+              title="Vista por Ejecutivo"
+              aria-label="Vista por Ejecutivo"
+            >
+              <LayoutGrid size={14} />
+            </button>
+          </div>
+          <span className="ml-auto text-[10px] font-medium text-slate-400">
+            {leadsFiltrados.length} {leadsFiltrados.length === 1 ? "resultado" : "resultados"}
+          </span>
         </div>
       </div>
 
@@ -900,48 +685,12 @@ export default function PipelinePage() {
         <PipelineSkeleton />
       ) : (
       <>
-      {/* Indicadores: cinco tarjetas sobre datos reales del contexto */}
-      <div className="flex gap-2.5 px-3 sm:px-4 pt-3 pb-1 overflow-x-auto">
-        <TarjetaIndicador
-          icono={<Users size={12} />}
-          titulo="Total oportunidades"
-          valor={String(indicadores.total.valor)}
-          variacion={indicadores.total.variacion}
-        />
-        <TarjetaIndicador
-          icono={<DollarSign size={12} />}
-          titulo="Monto total"
-          valor={formatoMonedaAbreviado(indicadores.monto.valor)}
-          variacion={indicadores.monto.variacion}
-        />
-        <TarjetaIndicador
-          icono={<Wallet size={12} />}
-          titulo="Ticket promedio"
-          valor={formatoMonedaAbreviado(indicadores.ticket.valor)}
-          variacion={indicadores.ticket.variacion}
-        />
-        <TarjetaIndicador
-          icono={<Percent size={12} />}
-          titulo="Conversión global"
-          valor={`${indicadores.conversion.valor.toFixed(1)}%`}
-          variacion={indicadores.conversion.variacion}
-        />
-        <TarjetaIndicador
-          icono={<Trophy size={12} />}
-          titulo="Oportunidades ganadas"
-          valor={String(indicadores.ganadas.valor)}
-          variacion={indicadores.ganadas.variacion}
-        />
-      </div>
-
       {/* Board - ocupa todo el espacio restante */}
       <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
         <div className="flex-1 flex overflow-hidden p-2 sm:p-4 pt-3">
           {vistaModo === "kanban" ? (
-            <>
-              {/* Kanban columns */}
-              <div className="flex-1 flex gap-2 sm:gap-3 overflow-x-auto scroll-smooth">
-          {etapasPipeline.map((etapaPipeline) => {
+            <div className="flex flex-1 gap-2 overflow-x-auto scroll-smooth sm:gap-3">
+          {etapasVisibles.map((etapaPipeline) => {
             const etapa = etapaPipeline.id;
             // Nombre y color salen de la API. Una etapa personalizada no tiene
             // entrada en ETAPAS_CONFIG y leer `config.color` reventaba la vista.
@@ -954,7 +703,11 @@ export default function PipelinePage() {
             const valorEtapa = leadsEnEtapa.reduce((acc, l) => acc + (l.valorPropiedad || 0), 0);
 
             return (
-              <div key={etapa} className="min-w-[260px] sm:min-w-[280px] w-[260px] sm:w-[280px] flex-shrink-0 flex flex-col">
+              <div
+                key={etapa}
+                data-testid={`pipeline-column-${etapa}`}
+                className={`${filtroEtapa === "todas" ? "w-[238px] min-w-[238px] sm:w-[252px] sm:min-w-[252px]" : "w-full min-w-[280px] max-w-xl"} flex flex-shrink-0 flex-col`}
+              >
                 {/* Column Header con color completo */}
                 <div
                   className="rounded-xl p-2.5 sm:p-3 mb-2 flex-shrink-0 shadow-sm"
@@ -1005,25 +758,13 @@ export default function PipelinePage() {
                          : "bg-white/60 dark:bg-slate-800/60 border-2 border-transparent"
                      }`}
                     >
-                      {leadsEnEtapa.length === 0 ? (
-                         <div className="h-full flex flex-col items-center justify-center text-center p-4 min-h-[200px]">
-                           <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-xl flex items-center justify-center mb-3">
-                             <AlertCircle size={20} className="text-slate-300 dark:text-slate-500" />
-                           </div>
-                           <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Sin leads</p>
-                           <p className="text-[11px] text-slate-300 dark:text-slate-600 mt-1">Arrastra leads aquí</p>
-                         </div>
-                      ) : (
+                      {leadsEnEtapa.length > 0 && (
                         leadsEnEtapa.map((lead, index) => (
-                          <TarjetaLead
+                          <PipelineLeadCard
                             key={lead.id}
                             lead={lead}
                             index={index}
-                            onVer={() => router.push(`/clientes/${lead.id}`)}
-                            onEditar={(e) => handleEditarLead(lead, e)}
-                            onEliminar={(e) => handleEliminarLead(lead, e)}
-                            onAsignar={handleAsignarEjecutivo}
-                            carga={cargaPorEjecutivo}
+                            onOpen={() => setLeadDetalle(lead)}
                           />
                         ))
                       )}
@@ -1044,57 +785,6 @@ export default function PipelinePage() {
             );
           })}
               </div>
-
-              {/* Sidebar de ejecutivos */}
-              <div className="hidden lg:flex flex-col w-[200px] flex-shrink-0 ml-3 border-l border-slate-200 dark:border-slate-700 pl-3">
-                <div className="mb-3">
-                  <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ejecutivos</h3>
-                  <p className="text-[9px] text-slate-400 dark:text-slate-500">Click en el icono del lead para asignar</p>
-                </div>
-                <div className="flex-1 overflow-y-auto space-y-2">
-                  {usuarios.filter(u => u.estado === "ACTIVO" && u.rol !== "SUPER_ADMIN").map((user) => {
-                    const nombreCompleto = `${user.nombre} ${user.apellido}`;
-                    const userRol = ROLES_CONFIG[user.rol];
-                    const leadsCount = cargaPorEjecutivo[nombreCompleto] || 0;
-
-                    return (
-                      <div
-                        key={user.id}
-                        className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
-                            style={{
-                              background:
-                                user.rol === "ADMIN"
-                                  ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
-                                  : "linear-gradient(135deg, #64748b, #475569)",
-                            }}
-                          >
-                            {user.nombre[0]}{user.apellido[0]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-semibold text-slate-800 dark:text-slate-100 truncate">{nombreCompleto}</div>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className={`text-[8px] font-semibold px-1 py-0.5 rounded ${userRol.color}`}>{userRol.label}</span>
-                            </div>
-                          </div>
-                          <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            leadsCount === 0 ? "bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500" :
-                            leadsCount <= 3 ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                            leadsCount <= 6 ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
-                            "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                          }`}>
-                            {leadsCount}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
           ) : (
             /* Vista por Ejecutivo - Swimlanes */
             <div className="flex-1 flex gap-3 overflow-x-auto scroll-smooth">
@@ -1158,15 +848,11 @@ export default function PipelinePage() {
                             </div>
                           ) : (
                             leadsDelEjecutivo.map((lead, index) => (
-                              <TarjetaLead
+                              <PipelineLeadCard
                                 key={lead.id}
                                 lead={lead}
                                 index={index}
-                                onVer={() => router.push(`/clientes/${lead.id}`)}
-                                onEditar={(e) => handleEditarLead(lead, e)}
-                                onEliminar={(e) => handleEliminarLead(lead, e)}
-                                onAsignar={handleAsignarEjecutivo}
-                                carga={cargaPorEjecutivo}
+                                onOpen={() => setLeadDetalle(lead)}
                               />
                             ))
                           )}
@@ -1194,15 +880,11 @@ export default function PipelinePage() {
                                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sin asignar ({leadsSinAsignar.length})</span>
                               </div>
                               {leadsSinAsignar.map((lead, index) => (
-                                <TarjetaLead
+                                <PipelineLeadCard
                                   key={lead.id}
                                   lead={lead}
                                   index={index}
-                                  onVer={() => router.push(`/clientes/${lead.id}`)}
-                                  onEditar={(e) => handleEditarLead(lead, e)}
-                                  onEliminar={(e) => handleEliminarLead(lead, e)}
-                                  onAsignar={handleAsignarEjecutivo}
-                                  carga={cargaPorEjecutivo}
+                                  onOpen={() => setLeadDetalle(lead)}
                                 />
                               ))}
                               {provided.placeholder}
@@ -1221,6 +903,23 @@ export default function PipelinePage() {
 
       </>
       )}
+
+      <PipelineLeadDetail
+        lead={leadDetalle}
+        etapaNombre={
+          etapasPipeline.find((etapa) => etapa.id === leadDetalle?.etapa)?.nombre ||
+          leadDetalle?.etapa ||
+          ""
+        }
+        carga={cargaPorEjecutivo}
+        onOpenChange={(open) => {
+          if (!open) setLeadDetalle(null);
+        }}
+        onAssign={handleAsignarEjecutivo}
+        onDelete={handleEliminarLead}
+        onEdit={handleEditarLead}
+        onOpenFull={(lead) => router.push(`/clientes/${lead.id}`)}
+      />
 
       {/* Diálogo Eliminar */}
       <ConfirmDialog
