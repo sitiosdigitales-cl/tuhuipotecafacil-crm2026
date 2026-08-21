@@ -65,6 +65,7 @@ estado inicial del destino de restauración, no el contenido posterior.
 | `APP-02` | Smoke de cinco roles cumple navegación y propiedad | matriz completada sin identificadores de personas | QA + revisor |
 | `MAIL-01` | Resend entrega a un buzón sintético controlado | ID de evento saneado y resultado SPF/DKIM/DMARC | responsable de correo |
 | `WEB-01` | Cada webhook acepta firma válida y rechaza firma incorrecta | casos sintéticos y códigos HTTP | responsable de integración |
+| `MON-01` | El monitor detecta `200` y alerta ante `503` en `/api/health` | prueba de alerta y recuperación | responsable de plataforma |
 | `GO-01` | Todos los gates P0 pertenecen al mismo SHA | acta go/no-go con reversión | responsable del cambio |
 
 `AUTH-04` exige tres capas para el mismo commit: proveedor local en CI, proveedor
@@ -211,9 +212,11 @@ No usar RUT, correo, documento ni nombre de una persona real.
    sin copiar sus valores a la evidencia (`AUTH-04`).
 3. Probar cada webhook con payload sintético y ambas firmas (`WEB-01`).
 4. Confirmar buckets privados y una carga/descarga sintética (`STO-01`).
-5. Confirmar dos administradores recuperables (`ADM-01`) y rotación (`SEC-01`).
-6. Revisar que `REL-01` a `APP-02` correspondan al mismo SHA.
-7. Registrar responsable, ventana, observación y reversión (`GO-01`).
+5. Confirmar `/api/health` en `200`, simular `503` en staging y observar la
+   alerta y su recuperación (`MON-01`).
+6. Confirmar dos administradores recuperables (`ADM-01`) y rotación (`SEC-01`).
+7. Revisar que `REL-01` a `APP-02` correspondan al mismo SHA.
+8. Registrar responsable, ventana, observación y reversión (`GO-01`).
 
 Producción permanece fuera de este runbook. Su aplicación es humana y solo se
 evalúa después de cerrar todos los gates P0 en staging.

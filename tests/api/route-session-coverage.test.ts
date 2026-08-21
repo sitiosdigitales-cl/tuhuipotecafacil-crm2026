@@ -37,6 +37,7 @@ const EXCEPCIONES_SIN_SESION = new Map<string, string>([
   ["/api/cmf/rates#GET", "publica tasas de mercado"],
   ["/api/cmf/rates/history#GET", "publica tasas históricas"],
   ["/api/cmf/status#GET", "publica el estado del servicio CMF"],
+  ["/api/health#GET", "publica disponibilidad mínima sin detalles internos"],
   ["/api/pre-evaluacion#POST", "recibe el formulario público"],
   ["/api/referidos/registrar#POST", "recibe el formulario público"],
   ["/api/referidos/validar#GET", "valida códigos del formulario público"],

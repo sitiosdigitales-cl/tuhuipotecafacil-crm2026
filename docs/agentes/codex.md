@@ -1540,3 +1540,11 @@ entran al payload. Suite: 841/841; PHP/lint/typecheck: 0.
 [EMAIL · EMAIL-02B] hecho — payload de seis campos con Zod estricto y
 deduplicación persistente por hash de remitente + Message-ID. Base reconstruida
 dos veces; pgTAP 161/161; suite 843/843; lint/typecheck: 0.
+
+[build] ocupado — Codex, MON-01 · health mínimo y gate de monitoreo.
+
+[build] libre — Codex, MON-01 · build terminó en 0 con 93 páginas generadas.
+
+[BACKEND · MON-01] hecho — `/api/health` comprueba Supabase, deshabilita caché
+y publica solo `ok` o `unavailable`; el monitor externo queda como gate humano.
+Suite: 845/845; lint/typecheck: 0.

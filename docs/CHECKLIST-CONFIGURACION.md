@@ -29,6 +29,7 @@ captura aislada o resultado local.
 - [x] El SQL histórico `prisma/run-all-pending.sql` se detiene sin ejecutar.
 - [x] Los enlaces del servidor usan una URL canónica y WordPress exige su
   destino HTTPS mediante configuración, sin dominios productivos embebidos.
+- [x] `GET /api/health` comprueba Supabase y solo publica `ok` o `unavailable`.
 
 ## P0 · Antes de aplicar migraciones administradas
 
@@ -100,6 +101,8 @@ confirma casillas que dependan de paneles o secretos.
   PHP real de cPanel y el deployment de staging.
 - [ ] [`MAIL-01`] Ejecutar envío real desde staging a una dirección sintética controlada.
 - [ ] [`WEB-01`] Verificar webhooks con firmas y datos sintéticos de cada proveedor.
+- [ ] [`MON-01`] Configurar monitor externo sobre `/api/health`, con alerta por
+  `503`, sin anexar cuerpos de respuesta ni datos del CRM.
 - [ ] [`CMF-01`] Configurar y verificar la API oficial CMF con trazabilidad de fecha y
   fuente, o mantener tasas e histórico en estado `SIN_DATOS`.
 

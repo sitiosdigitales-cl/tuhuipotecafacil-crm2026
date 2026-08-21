@@ -11,8 +11,8 @@ Supabase, DNS, cPanel ni producción.
 | Superficie | Estado comprobado en repositorio |
 | --- | --- |
 | Next.js | `16.3.1`; 93 rutas generadas por el último build validado |
-| API | 71 archivos `route.ts` bajo `src/app/api/` |
-| Pruebas | 161 archivos; 837 pruebas después de ejecutar el build |
+| API | 72 archivos `route.ts` bajo `src/app/api/` |
+| Pruebas | 163 archivos; la cifra exacta se registra en cada gate |
 | Base de datos | 12 migraciones canónicas en `supabase/migrations/` |
 | pgTAP | 7 archivos y 161 comprobaciones declaradas |
 | CI | seis jobs: audit, lint, typecheck, build, test y database |
@@ -77,6 +77,13 @@ SHA exige volver a medirlos antes de usarlos como criterio de despliegue.
   CRM; un indicador CMF de mercado no debe presentarse como oferta bancaria.
 - Stripe, WhatsApp, IA y Google no son dependencias del núcleo productivo y no
   bloquean el despliegue mientras su estado deshabilitado sea explícito.
+
+### Monitoreo
+
+- `GET /api/health` comprueba conectividad con Supabase y responde únicamente
+  `{"status":"ok"}` o `{"status":"unavailable"}` con caché deshabilitada.
+- La configuración del monitor, canal de alerta y prueba de recuperación son
+  acciones humanas abiertas bajo `MON-01`.
 
 ## Discrepancias del inventario recibido
 
