@@ -7,13 +7,16 @@ export function useTareaCount() {
 
   const cargarCount = useCallback(async () => {
     try {
-      const response = await fetch("/api/tareas", { credentials: "include" });
+      // Se pide el numero, no la tabla. El filtro por estado lo hace la base:
+      // traer todas las tareas para contarlas en el navegador movia medio mega
+      // en cada sondeo, desde todas las paginas del panel.
+      const response = await fetch("/api/tareas?soloConteo=pendientes", {
+        credentials: "include",
+      });
+      if (!response.ok) return;
       const data = await response.json();
-      if (data.success && data.data) {
-        const pendientes = data.data.filter(
-          (t: { estado: string }) => t.estado === "PENDIENTE" || t.estado === "EN_PROGRESO" || t.estado === "VENCIDA"
-        );
-        setCount(pendientes.length);
+      if (data.success && typeof data.count === "number") {
+        setCount(data.count);
       }
     } catch {
       setCount(0);

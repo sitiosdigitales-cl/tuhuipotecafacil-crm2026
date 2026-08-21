@@ -8,6 +8,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const leadId = searchParams.get("leadId");
+
+    // El badge de la barra lateral solo necesita un numero, y se monta en cada
+    // pagina del panel sondeando cada 30 s. Pedir la tabla entera para hacerle
+    // `.length` en el navegador movia medio mega por sondeo.
+    if (searchParams.get("soloConteo") === "pendientes") {
+      const { count, error: errorConteo } = await supabase
+        .from("tareas")
+        .select("id", { count: "exact", head: true })
+        .in("estado", ["PENDIENTE", "EN_PROGRESO", "VENCIDA"]);
+
+      if (errorConteo) {
+        console.error("Fallo el conteo de tareas:", errorConteo.message);
+        return NextResponse.json(
+          { success: false, error: "No se pudo contar las tareas" },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({ success: true, count: count ?? 0 });
+    }
+
     let query = supabase.from("tareas").select("*");
     if (leadId) query = query.eq("leadid", leadId);
     const { data, error } = await query;

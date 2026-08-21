@@ -486,3 +486,62 @@ que las pido en vez de escribirlas. Hacen falta dos frentes: contrato de la API
 caracteres validos devuelve 400 y dos POST con el mismo nombre dan 409— y
 render dinamico —una etapa que no existe en ETAPAS_CONFIG se pinta con su
 nombre y color, y una inactiva no aparece como columna.
+
+[build] ocupado — Claude, PERF-BACKEND.
+[build] libre — Claude, PERF-BACKEND. Build, suite, lint, typecheck, doble reset y pgTAP en verde.
+
+[PERF-BACKEND] hecho — el badge de tareas deja de traer la tabla para contar.
+
+  `useTareaCount` pedia `/api/tareas` COMPLETO cada 30 segundos para hacerle
+  `.length` a un filtro en el navegador. El hook se monta en `BarraLateral`, o
+  sea en todas las paginas del panel: es la consulta mas frecuente que hay.
+
+  Medido contra Supabase local con 1.500 tareas sinteticas, con la peticion
+  real a PostgREST, no con un proxy comodo:
+
+    hoy, por sondeo   591.930 bytes   52,0 ms
+    solo el conteo         28 bytes    9,4 ms
+
+  El conteo se comprobo contra SQL: 1.125 y 1.125. `GET /api/tareas` acepta
+  `?soloConteo=pendientes` y responde `{success, count}` con
+  `count:"exact", head:true`; los otros siete consumidores del endpoint siguen
+  recibiendo la lista igual que antes.
+
+[PERF-BACKEND · resultados negativos] Dos hipotesis del encargo NO resistieron
+la medicion, y no se commitearon:
+
+  1. "Reemplazar los select(*) por columnas explicitas" NO aplica a
+     `GET /api/leads`. Cruce los 56 campos de `Lead` contra los 24
+     consumidores de `useLeads()`: 50 estan en uso. Solo 6 no aparecen —edad,
+     referidoPor, referidoPorNombre y los tres patrimonio*—, y quitarlos baja
+     de 1.718.292 a 1.587.292 bytes: −7,6%, con riesgo de romper una vista en
+     silencio si mi grep no vio un acceso dinamico. No vale la pena.
+
+  2. `fromSupabaseColumns` reconstruye su `keyMap` de 71 claves en CADA fila, y
+     `fromSupabaseArray` lo llama una vez por fila. Parecia desperdicio claro.
+     Izar el literal a constante de modulo: 9,90 ms -> 9,81 ms con 2.000 filas.
+     0,9%, ruido. V8 ya optimiza la asignacion del literal constante. Descartado.
+
+     Nota de metodo: mi primer benchmark uso `eval()` para simular la version
+     actual y midio el `eval`, no la asignacion. Daba −16%, que era falso.
+
+[nota · PERF-BACKEND, correcciones al encargo] `public.leads` tiene 57
+columnas, no 65: ese numero salia de contar lineas del CREATE TABLE. Y los
+bytes que medi son SIN comprimir; PostgREST local no comprime pero Vercel si,
+asi que el coste real en el cable es menor. El coste de CPU y el trafico
+Supabase->app si son los medidos.
+
+[nota · fuera de mi tarea] El cuello de `GET /api/leads` no es SQL, es de
+diseño: un endpoint devuelve la tabla entera y 24 componentes dependen de esa
+lista completa, incluido `clientes/[id]`, que es una ficha alimentada por el
+contexto en vez de por su propio fetch —`leads/[id]` si tiene el suyo—. Paginar
+sin separar antes lista de detalle rompe tablero, filtros y contadores. Es
+rediseño, no ajuste, y no cabe en un commit de optimizacion.
+
+[nota · bloqueado, fuera de zona] Con `supabase start` corriendo, `npm run lint`
+devuelve 154 errores en
+`supabase/.temp/start-secrets/.../main/index.ts`, un bundle que genera Supabase.
+Git lo ignora por `supabase/.gitignore`, eslint no. Con la base detenida vuelve
+a 0. Se arregla ignorandolo en `eslint.config.mjs`, que esta en zona CONGELADA
+(seccion 3), asi que no lo toco. Queda anotado: cualquiera que corra lint con la
+base local levantada va a ver ese ruido.
