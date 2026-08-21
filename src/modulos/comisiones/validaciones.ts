@@ -12,6 +12,20 @@ export const ComisionSchema = z.object({
   pagado: z.boolean().default(false),
 });
 
+export const CrearComisionSchema = z
+  .object({
+    anio: z.number().int().min(2020).max(2100).nullable().optional(),
+    comisionTotal: z.number().finite().min(0).optional(),
+    creditosAprobados: z.number().int().min(0).max(100_000).optional(),
+    ejecutivoId: z.string().trim().min(1).max(128).nullable().optional(),
+    ejecutivoNombre: z.string().trim().min(1).max(160).nullable().optional(),
+    mes: z.string().trim().min(1).max(20).nullable().optional(),
+    montoTotal: z.number().finite().min(0).max(Number.MAX_SAFE_INTEGER),
+    pagado: z.boolean().optional(),
+    tasaComision: z.number().finite().min(0).max(100),
+  })
+  .strict();
+
 export const ActualizarComisionSchema = z
   .object({
     ejecutivoId: z.string().trim().min(1).max(128).nullable().optional(),
@@ -29,4 +43,5 @@ export const ActualizarComisionSchema = z
   });
 
 export type ComisionInput = z.infer<typeof ComisionSchema>;
+export type CrearComisionInput = z.infer<typeof CrearComisionSchema>;
 export type ActualizarComisionInput = z.infer<typeof ActualizarComisionSchema>;

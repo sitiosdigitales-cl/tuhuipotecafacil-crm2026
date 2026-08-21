@@ -1564,3 +1564,10 @@ Suite: 850/850; lint/typecheck: 0.
 [BACKEND · API-IN-01] hecho — `POST /api/leads` exige JSON, limita 64 KiB y
 valida un contrato estricto antes de consultar Supabase. Suite: 853/853;
 lint/typecheck: 0.
+
+[build] ocupado — Codex, API-IN-02 · entrada acotada para crear comisiones.
+
+[build] libre — Codex, API-IN-02 · build terminó en 0 con 94 páginas generadas.
+
+[BACKEND · API-IN-02] hecho — `POST /api/comisiones` limita 8 KiB y valida
+tipos, rangos y campos antes del cálculo. Suite: 856/856; lint/typecheck: 0.

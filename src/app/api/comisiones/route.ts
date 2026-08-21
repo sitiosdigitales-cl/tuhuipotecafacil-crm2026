@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray } from "@/lib/supabase";
 import { forbidden, requireAuth, unauthorized } from "@/lib/api-auth";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import { COMISIONES_PERMISOS } from "@/modulos/comisiones/config";
+import { CrearComisionSchema } from "@/modulos/comisiones/validaciones";
+
+const MAX_COMISION_PAYLOAD_BYTES = 8 * 1024;
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
@@ -32,17 +36,16 @@ export async function POST(request: NextRequest) {
     return forbidden();
   }
   try {
-    const body = await request.json();
-
-    const montoTotal = Number(body.montoTotal);
-    const tasaComision = Number(body.tasaComision);
-
-    if (!Number.isFinite(montoTotal) || montoTotal < 0) {
-      return NextResponse.json({ success: false, error: "montoTotal inválido" }, { status: 400 });
+    const rawBody = await parseBoundedJson(request, MAX_COMISION_PAYLOAD_BYTES);
+    const parsedBody = CrearComisionSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { success: false, error: "Datos de comisión inválidos" },
+        { status: 400 }
+      );
     }
-    if (!Number.isFinite(tasaComision) || tasaComision < 0 || tasaComision > 100) {
-      return NextResponse.json({ success: false, error: "tasaComision inválida" }, { status: 400 });
-    }
+    const body = parsedBody.data;
+    const { montoTotal, tasaComision } = body;
 
     // El total lo calcula el servidor. Antes se hacía `...body`, así que la
     // cifra que se paga venía del cliente: bastaba mandar el comisionTotal que
@@ -74,7 +77,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error al crear" }, { status: 500 });
     }
     return NextResponse.json({ success: true, data }, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json({ success: false, error: "Error al crear" }, { status: 500 });
   }
 }
