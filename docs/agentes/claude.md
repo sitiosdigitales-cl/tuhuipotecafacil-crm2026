@@ -545,3 +545,64 @@ Git lo ignora por `supabase/.gitignore`, eslint no. Con la base detenida vuelve
 a 0. Se arregla ignorandolo en `eslint.config.mjs`, que esta en zona CONGELADA
 (seccion 3), asi que no lo toco. Queda anotado: cualquiera que corra lint con la
 base local levantada va a ver ese ruido.
+
+[build] ocupado — Claude, PIPELINE-V2.
+[build] libre — Claude, PIPELINE-V2. Build, suite, lint y typecheck en verde.
+
+[PIPELINE-V2] parcial — mejoras de UI/UX sobre el pipeline existente, sin crear
+una segunda version ni tocar backend.
+
+  Lo implementado, todo aditivo sobre `(dashboard)/pipeline/page.tsx`:
+    - Fila de cinco indicadores: total, monto, ticket promedio, conversion y
+      ganadas. La comparacion "vs mes pasado" se calcula sobre `creadoEn`, que
+      es dato real del contexto. Cuando el mes anterior no tiene leads la
+      variacion queda en `null` y la tarjeta dice "Sin comparacion" en vez de
+      inventar un porcentaje.
+    - Filtro por etapa en el encabezado, alimentado por `/api/pipeline/stages`,
+      asi que una etapa creada en Configuracion aparece sola. El filtro por
+      ejecutivo que ya existia se conserva.
+    - Busqueda: se suma telefono a nombre, apellido, RUT y correo, y el
+      marcador de posicion pasa al del diseño.
+    - Estado de carga: se conecta `PipelineSkeleton`, que estaba definido en
+      `src/componentes/pipeline` y no lo usaba nadie.
+    - Estado vacio por columna, con texto distinto si hay filtros activos.
+
+[PIPELINE-V2 · el encargo no coincide con este codigo] Buena parte de lo pedido
+describe una interfaz que aqui no existe. Verificado con busqueda global:
+
+    "Valor por etapa"        0 apariciones en src/
+    "+ Agregar lead"         0 apariciones en src/
+    grafico circular         no hay en pipeline; PieChart vive en simulador,
+                             reportes y resumen, que son otras paginas
+    panel "Resumen del
+    Pipeline"                no existe; `PanelDerecho` es un panel global del
+                             layout, colapsable, no del pipeline
+    favoritos                la funcionalidad no existe en el modelo ni en la API
+    menu contextual en
+    la tarjeta               no existe
+    multi-tenant             0 apariciones; el aislamiento es por rol
+                             (AGENTE ve lo suyo, CLIENTE su ficha)
+
+  Las secciones 3 y 4 piden eliminar cosas que no estan. No hice nada ahi.
+  Favoritos y el menu contextual NO los invente, porque la propia seccion 13
+  dice no inventar acciones que el sistema no soporte.
+
+  Tension que conviene resolver antes de seguir: la seccion 10 pide una tarjeta
+  "compacta" con nombre, monto, fuente y antiguedad. La tarjeta actual muestra
+  ademas valor de propiedad, pie disponible con barra de avance, banco y tipo
+  de credito. Adelgazarla es QUITAR informacion que hoy se ve, y eso choca con
+  "no eliminar funcionalidades existentes". No la toque.
+
+  La seccion 18 pide debounce en la busqueda: no aplica. La busqueda es
+  client-side sobre la lista ya cargada, no hay una peticion por tecla que
+  debounce pueda evitar.
+
+[nota · PIPELINE-V2, sin verificar] NO pude comprobar el render en el navegador.
+El cliente de desarrollo no hidrata en este entorno —el WebSocket de HMR no
+conecta y se queda en el esqueleto sin emitir una sola peticion— y el build de
+produccion apunta a otra base, donde la cuenta sintetica no existe. Verificado
+si: build 94/94 rutas, 858/858 pruebas, lint 0, typecheck 0, la estructura del
+condicional JSX revisada a mano, y las tres APIs devolviendo datos reales con
+sesion (24 leads, 15 etapas). NO verificado: que la fila de indicadores pinte
+con datos, el drag and drop, los estados vacios y el responsive. Queda para
+mirarlo en staging.

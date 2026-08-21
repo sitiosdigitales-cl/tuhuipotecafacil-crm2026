@@ -25,6 +25,11 @@ import {
   LayoutList,
   LayoutGrid,
   UserPlus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent,
+  Trophy,
+  Wallet
 } from "lucide-react";
 import {
   COLOR_ETAPA_POR_DEFECTO,
@@ -38,6 +43,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FormularioLead } from "@/componentes/leads/FormularioLead";
+import { PipelineSkeleton } from "@/componentes/pipeline/PipelineSkeleton";
 import { useUser } from "@/modulos/usuarios";
 import { useLeads } from "@/modulos/leads";
 import { useActivities } from "@/lib/contexts/ActivityContext";
@@ -128,12 +134,46 @@ const prioridadConfig: Record<Prioridad, { label: string; color: string; bg: str
   URGENTE: { label: "Urgente", color: "text-red-600", bg: "bg-red-50 border border-red-100" },
 };
 
+/** Etapas que cuentan como oportunidad ganada. Ya se usaban para `aprobados`. */
+const ETAPAS_GANADAS: string[] = ["APROBADO", "FIRMA_DIGITAL", "NOTARIA", "CREDITO_PAGADO"];
+
 const getTiempoEstilo = (dias: number) => {
   if (dias <= 3) return { text: "text-emerald-700", bg: "bg-emerald-50 border border-emerald-100", label: "Nuevo" };
   if (dias <= 7) return { text: "text-amber-700", bg: "bg-amber-50 border border-amber-100", label: "Normal" };
   if (dias <= 14) return { text: "text-orange-700", bg: "bg-orange-50 border border-orange-100", label: "Tardío" };
   return { text: "text-red-700", bg: "bg-red-50 border border-red-100", label: "Crítico" };
 };
+
+function TarjetaIndicador({ icono, titulo, valor, variacion }: {
+  icono: React.ReactNode;
+  titulo: string;
+  valor: string;
+  variacion: number | null;
+}) {
+  const sube = variacion !== null && variacion >= 0;
+  return (
+    <div className="flex-1 min-w-[150px] bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl px-3.5 py-3">
+      <div className="flex items-center gap-1.5 mb-2 text-slate-400 dark:text-slate-500">
+        {icono}
+        <span className="text-[10px] font-semibold uppercase tracking-wider truncate">{titulo}</span>
+      </div>
+      {/* El numero domina: es lo que se lee de un vistazo. */}
+      <div className="text-[19px] font-bold text-slate-900 dark:text-slate-100 leading-none tabular-nums">
+        {valor}
+      </div>
+      {variacion === null ? (
+        // Sin mes anterior con datos no hay porcentaje que mostrar, y no se
+        // inventa uno.
+        <div className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-500">Sin comparación</div>
+      ) : (
+        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-semibold ${sube ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+          {sube ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+          {sube ? "+" : ""}{variacion.toFixed(1)}% vs mes pasado
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carga }: {
   lead: Lead;
@@ -315,7 +355,7 @@ function TarjetaLead({ lead, index, onVer, onEditar, onEliminar, onAsignar, carg
 export default function PipelinePage() {
   const router = useRouter();
   const { usuarioActual, esSuperAdmin, usuarios } = useUser();
-  const { leads, agregarLead, actualizarLead, eliminarLead, moverEtapa, cargaPorEjecutivo } = useLeads();
+  const { leads, agregarLead, actualizarLead, eliminarLead, moverEtapa, cargaPorEjecutivo, cargando } = useLeads();
   const { agregarActividad } = useActivities();
   const [busqueda, setBusqueda] = useState("");
   const [filtroEjecutivo, setFiltroEjecutivo] = useState("todos");
@@ -332,6 +372,7 @@ export default function PipelinePage() {
   const leadsAnteriores = useRef(leads.length);
   const [etapasPipeline, setEtapasPipeline] = useState<EtapaPipeline[]>(etapasPorDefecto);
   const [vistaModo, setVistaModo] = useState<"kanban" | "ejecutivos">("kanban");
+  const [filtroEtapa, setFiltroEtapa] = useState<string>("todas");
 
   // Cargar etapas desde la API
   useEffect(() => {
@@ -389,18 +430,65 @@ export default function PipelinePage() {
         lead.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
         lead.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
         lead.rut.includes(busqueda) ||
-        lead.email?.toLowerCase().includes(busqueda.toLowerCase());
+        lead.email?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        lead.telefono?.replace(/\s/g, "").includes(busqueda.replace(/\s/g, ""));
       const coincideEjecutivo = filtroEjecutivo === "todos" || lead.nombreEjecutivo === filtroEjecutivo;
-      return coincideBusqueda && coincideEjecutivo;
+      const coincideEtapa = filtroEtapa === "todas" || lead.etapa === filtroEtapa;
+      return coincideBusqueda && coincideEjecutivo && coincideEtapa;
     });
-  }, [leadsUsuario, busqueda, filtroEjecutivo]);
+  }, [leadsUsuario, busqueda, filtroEjecutivo, filtroEtapa]);
 
   const stats = useMemo(() => ({
     total: leadsFiltrados.length,
     montoTotal: leadsFiltrados.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0),
     valorPropiedad: leadsFiltrados.reduce((acc, l) => acc + (l.valorPropiedad || 0), 0),
-    aprobados: leadsFiltrados.filter(l => ['APROBADO', 'FIRMA_DIGITAL', 'NOTARIA'].includes(l.etapa)).length,
+    aprobados: leadsFiltrados.filter(l => ETAPAS_GANADAS.includes(l.etapa)).length,
   }), [leadsFiltrados]);
+
+  /**
+   * Indicadores del encabezado. Todo sale de los leads que ya trae el contexto:
+   * no hay endpoint de metricas ni tabla historica, asi que la comparacion
+   * mensual se calcula sobre `creadoEn`, que es dato real. Si algun mes no
+   * tiene leads, la variacion queda en `null` y la tarjeta no inventa un
+   * porcentaje.
+   */
+  const indicadores = useMemo(() => {
+    const ahora = new Date();
+    const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+
+    const enRango = (lead: Lead, desde: Date, hasta: Date) => {
+      const creado = new Date(lead.creadoEn);
+      return creado >= desde && creado < hasta;
+    };
+    const mesActual = leadsFiltrados.filter((l) => enRango(l, inicioMesActual, ahora));
+    const mesAnterior = leadsFiltrados.filter((l) => enRango(l, inicioMesAnterior, inicioMesActual));
+
+    const monto = (lista: Lead[]) => lista.reduce((acc, l) => acc + (l.montoSolicitado || 0), 0);
+    const ganadas = (lista: Lead[]) => lista.filter((l) => ETAPAS_GANADAS.includes(l.etapa)).length;
+    const promedio = (lista: Lead[]) => (lista.length ? monto(lista) / lista.length : 0);
+    const conversion = (lista: Lead[]) => (lista.length ? (ganadas(lista) / lista.length) * 100 : 0);
+
+    // `null` significa "no hay con que comparar", no "cero".
+    const variacion = (actual: number, anterior: number): number | null => {
+      if (!mesAnterior.length || anterior === 0) return null;
+      return ((actual - anterior) / anterior) * 100;
+    };
+
+    return {
+      total: { valor: stats.total, variacion: variacion(mesActual.length, mesAnterior.length) },
+      monto: { valor: stats.montoTotal, variacion: variacion(monto(mesActual), monto(mesAnterior)) },
+      ticket: {
+        valor: stats.total ? stats.montoTotal / stats.total : 0,
+        variacion: variacion(promedio(mesActual), promedio(mesAnterior)),
+      },
+      conversion: {
+        valor: stats.total ? (stats.aprobados / stats.total) * 100 : 0,
+        variacion: variacion(conversion(mesActual), conversion(mesAnterior)),
+      },
+      ganadas: { valor: stats.aprobados, variacion: variacion(ganadas(mesActual), ganadas(mesAnterior)) },
+    };
+  }, [leadsFiltrados, stats]);
 
   const handleAsignarEjecutivo = useCallback(async (
     leadId: string,
@@ -757,12 +845,23 @@ export default function PipelinePage() {
                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                <input
                  type="text"
-                 placeholder="Buscar lead..."
+                 placeholder="Buscar cliente, RUT, teléfono, email..."
                  value={busqueda}
                  onChange={(e) => setBusqueda(e.target.value)}
-                 className="w-52 pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 focus:bg-white dark:focus:bg-slate-600 transition-all"
+                 className="w-52 lg:w-72 pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 focus:bg-white dark:focus:bg-slate-600 transition-all"
                />
             </div>
+             <select
+               value={filtroEtapa}
+               onChange={(e) => setFiltroEtapa(e.target.value)}
+               className="px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200/60 dark:border-slate-600 rounded-xl text-[11px] text-slate-600 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
+             >
+              <option value="todas">Todas las etapas</option>
+              {/* Sale de la API: si Configuracion agrega una etapa, aparece aca. */}
+              {etapasPipeline.map((etapa) => (
+                <option key={etapa.id} value={etapa.id}>{etapa.nombre}</option>
+              ))}
+            </select>
              <select
                value={filtroEjecutivo}
                onChange={(e) => setFiltroEjecutivo(e.target.value)}
@@ -794,6 +893,45 @@ export default function PipelinePage() {
             </Button>
           </div>
         </div>
+      </div>
+
+      {cargando ? (
+        // El componente ya existia en src/componentes/pipeline y nadie lo usaba.
+        <PipelineSkeleton />
+      ) : (
+      <>
+      {/* Indicadores: cinco tarjetas sobre datos reales del contexto */}
+      <div className="flex gap-2.5 px-3 sm:px-4 pt-3 pb-1 overflow-x-auto">
+        <TarjetaIndicador
+          icono={<Users size={12} />}
+          titulo="Total oportunidades"
+          valor={String(indicadores.total.valor)}
+          variacion={indicadores.total.variacion}
+        />
+        <TarjetaIndicador
+          icono={<DollarSign size={12} />}
+          titulo="Monto total"
+          valor={formatoMonedaAbreviado(indicadores.monto.valor)}
+          variacion={indicadores.monto.variacion}
+        />
+        <TarjetaIndicador
+          icono={<Wallet size={12} />}
+          titulo="Ticket promedio"
+          valor={formatoMonedaAbreviado(indicadores.ticket.valor)}
+          variacion={indicadores.ticket.variacion}
+        />
+        <TarjetaIndicador
+          icono={<Percent size={12} />}
+          titulo="Conversión global"
+          valor={`${indicadores.conversion.valor.toFixed(1)}%`}
+          variacion={indicadores.conversion.variacion}
+        />
+        <TarjetaIndicador
+          icono={<Trophy size={12} />}
+          titulo="Oportunidades ganadas"
+          valor={String(indicadores.ganadas.valor)}
+          variacion={indicadores.ganadas.variacion}
+        />
       </div>
 
       {/* Board - ocupa todo el espacio restante */}
@@ -890,6 +1028,15 @@ export default function PipelinePage() {
                         ))
                       )}
                       {provided.placeholder}
+                      {leadsEnEtapa.length === 0 && !snapshot.isDraggingOver && (
+                        <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                            {busqueda || filtroEjecutivo !== "todos" || filtroEtapa !== "todas"
+                              ? "No encontramos oportunidades con estos criterios."
+                              : "No hay oportunidades en esta etapa"}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </Droppable>
@@ -1071,6 +1218,9 @@ export default function PipelinePage() {
           )}
         </div>
       </DragDropContext>
+
+      </>
+      )}
 
       {/* Diálogo Eliminar */}
       <ConfirmDialog
