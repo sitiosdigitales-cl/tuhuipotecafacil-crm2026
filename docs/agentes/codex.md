@@ -1524,3 +1524,11 @@ comprobaciones pgTAP y URL pública con Auth/MFA. Suite: 837/837; lint/typecheck
 [BACKEND · DEPLOY-URL] hecho — enlaces internos centralizados en `APP_URL`,
 plugin WordPress exige `CRM_WEBHOOK_URL` HTTPS exacta y se retiraron dominios
 productivos embebidos del código ejecutable. Suite: 838/838; lint/typecheck: 0.
+
+[build] ocupado — Codex, EMAIL-02A · MIME, transferencias y límite del piping.
+
+[build] libre — Codex, EMAIL-02A · build terminó en 0 con 93 rutas.
+
+[EMAIL · EMAIL-02A] hecho — piping limitado a 1 MiB, MIME recursivo acotado,
+base64/quoted-printable y cabeceras codificadas normalizadas; adjuntos no
+entran al payload. Suite: 841/841; PHP/lint/typecheck: 0.

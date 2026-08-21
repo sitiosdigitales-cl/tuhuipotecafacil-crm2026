@@ -15,7 +15,7 @@
  * - CRM_EMAIL_WEBHOOK_SECRET  mismo valor que EMAIL_WEBHOOK_SECRET en Vercel
  * - CRM_EMAIL_LOG             opcional; por omisión el temporal del sistema
  *
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 // El destino no se escribe acá: un dominio viejo hardcodeado pierde correo en
@@ -26,6 +26,10 @@ $CRM_WEBHOOK_URL = getenv('CRM_EMAIL_WEBHOOK_URL') ?: '';
 // respuesta del CRM. Se crea privado incluso si el temporal es compartido.
 umask(0077);
 $LOG_FILE = getenv('CRM_EMAIL_LOG') ?: (sys_get_temp_dir() . '/crm-email-handler.log');
+
+const MAX_EMAIL_STDIN_BYTES = 1048576;
+const MAX_MIME_DEPTH = 10;
+const MAX_MIME_PARTS = 100;
 
 // Función para registrar logs
 function logMessage($message) {
@@ -47,14 +51,6 @@ function logMessage($message) {
 /** Validez UTF-8 sin depender de mbstring: `//u` la comprueba en el núcleo. */
 function esUtf8Valido($texto) {
     return $texto === '' || preg_match('//u', $texto) === 1;
-}
-
-/** Charset declarado en `Content-Type`. Cadena vacía si no viene. */
-function charsetDeclarado($contentType) {
-    if (preg_match('/charset\s*=\s*"?([A-Za-z0-9_.:-]+)"?/i', $contentType, $coincidencias)) {
-        return $coincidencias[1];
-    }
-    return '';
 }
 
 /**
@@ -145,6 +141,197 @@ function serializarPayload($payload) {
     return is_string($json) ? $json : null;
 }
 
+function decodificarCabeceraMime($valor) {
+    if ($valor === '') {
+        return '';
+    }
+    if (function_exists('mb_decode_mimeheader')) {
+        $decodificado = @mb_decode_mimeheader($valor);
+        if (is_string($decodificado) && esUtf8Valido($decodificado)) {
+            return $decodificado;
+        }
+    }
+    if (function_exists('iconv_mime_decode')) {
+        $decodificado = @iconv_mime_decode($valor, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, 'UTF-8');
+        if (is_string($decodificado) && esUtf8Valido($decodificado)) {
+            return $decodificado;
+        }
+    }
+
+    return preg_replace_callback(
+        '/=\?([^?]+)\?([bq])\?([^?]*)\?=/i',
+        function ($coincidencia) {
+            $bytes = strcasecmp($coincidencia[2], 'B') === 0
+                ? base64_decode($coincidencia[3], true)
+                : quoted_printable_decode(str_replace('_', ' ', $coincidencia[3]));
+            if (!is_string($bytes)) {
+                return '';
+            }
+            return aUtf8($bytes, $coincidencia[1]);
+        },
+        $valor
+    );
+}
+
+function separarCabecerasYCuerpo($mensaje) {
+    if (preg_match("/\r?\n\r?\n/", $mensaje, $coincidencia, PREG_OFFSET_CAPTURE)) {
+        $separador = $coincidencia[0][0];
+        $posicion = $coincidencia[0][1];
+        return [
+            substr($mensaje, 0, $posicion),
+            substr($mensaje, $posicion + strlen($separador)),
+        ];
+    }
+    return [$mensaje, ''];
+}
+
+function parsearCabeceras($bloque) {
+    $cabeceras = [];
+    $actual = null;
+    foreach (preg_split('/\r?\n/', $bloque) as $linea) {
+        if ($actual !== null && preg_match('/^[ \t]/', $linea)) {
+            $cabeceras[$actual] .= ' ' . trim($linea);
+            continue;
+        }
+        if (!preg_match('/^([^:]+):\s*(.*)$/', $linea, $coincidencia)) {
+            $actual = null;
+            continue;
+        }
+        $actual = strtolower(trim($coincidencia[1]));
+        $valor = trim($coincidencia[2]);
+        $cabeceras[$actual] = isset($cabeceras[$actual])
+            ? $cabeceras[$actual] . ', ' . $valor
+            : $valor;
+    }
+    return $cabeceras;
+}
+
+function parametroMime($valor, $nombre) {
+    $patron = '/(?:^|;)\s*' . preg_quote($nombre, '/') . '\s*=\s*(?:"([^"]*)"|([^;\s]*))/i';
+    if (!preg_match($patron, $valor, $coincidencia)) {
+        return '';
+    }
+    return isset($coincidencia[1]) && $coincidencia[1] !== ''
+        ? $coincidencia[1]
+        : ($coincidencia[2] ?? '');
+}
+
+function decodificarTransferencia($cuerpo, $codificacion) {
+    $normalizada = strtolower(trim($codificacion));
+    if ($normalizada === 'base64') {
+        $decodificado = base64_decode(preg_replace('/\s+/', '', $cuerpo), true);
+        return is_string($decodificado) ? $decodificado : '';
+    }
+    if ($normalizada === 'quoted-printable') {
+        return quoted_printable_decode($cuerpo);
+    }
+    return $cuerpo;
+}
+
+function dividirMultipart($cuerpo, $boundary) {
+    if ($boundary === '') {
+        return [];
+    }
+    $lineas = preg_split('/\r?\n/', $cuerpo);
+    $partes = [];
+    $actual = [];
+    $dentro = false;
+    $inicio = '--' . $boundary;
+    $fin = $inicio . '--';
+
+    foreach ($lineas as $linea) {
+        if ($linea === $inicio || $linea === $fin) {
+            if ($dentro && $actual !== []) {
+                $partes[] = implode("\r\n", $actual);
+                $actual = [];
+            }
+            if ($linea === $fin) {
+                break;
+            }
+            $dentro = true;
+            continue;
+        }
+        if ($dentro) {
+            $actual[] = $linea;
+        }
+    }
+    return $partes;
+}
+
+function textoDesdeHtml($html) {
+    $conSaltos = preg_replace('/<(?:br|\/p|\/div|\/li|\/tr)\b[^>]*>/i', "\n", $html);
+    $texto = html_entity_decode(strip_tags($conSaltos), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    return trim(preg_replace("/[ \t]+\n|\n{3,}/", "\n", $texto));
+}
+
+function extraerTextoMime($mensaje, $profundidad, &$partesVistas) {
+    if ($profundidad > MAX_MIME_DEPTH || $partesVistas >= MAX_MIME_PARTS) {
+        return ['plain' => '', 'html' => ''];
+    }
+    $partesVistas++;
+
+    list($bloqueCabeceras, $cuerpo) = separarCabecerasYCuerpo($mensaje);
+    $cabeceras = parsearCabeceras($bloqueCabeceras);
+    $contentType = $cabeceras['content-type'] ?? 'text/plain; charset=UTF-8';
+    $tipo = strtolower(trim(explode(';', $contentType, 2)[0]));
+    $disposicion = strtolower($cabeceras['content-disposition'] ?? '');
+    $tieneArchivo = parametroMime($disposicion, 'filename') !== '' ||
+        parametroMime($contentType, 'name') !== '';
+
+    if (strpos($disposicion, 'attachment') === 0 || $tieneArchivo) {
+        return ['plain' => '', 'html' => ''];
+    }
+
+    if (strpos($tipo, 'multipart/') === 0) {
+        $resultado = ['plain' => '', 'html' => ''];
+        foreach (dividirMultipart($cuerpo, parametroMime($contentType, 'boundary')) as $parte) {
+            $extraido = extraerTextoMime($parte, $profundidad + 1, $partesVistas);
+            if ($resultado['plain'] === '' && $extraido['plain'] !== '') {
+                $resultado['plain'] = $extraido['plain'];
+            }
+            if ($resultado['html'] === '' && $extraido['html'] !== '') {
+                $resultado['html'] = $extraido['html'];
+            }
+        }
+        return $resultado;
+    }
+
+    $bytes = decodificarTransferencia(
+        $cuerpo,
+        $cabeceras['content-transfer-encoding'] ?? ''
+    );
+    $texto = aUtf8($bytes, parametroMime($contentType, 'charset'));
+    if ($tipo === 'text/plain') {
+        return ['plain' => trim($texto), 'html' => ''];
+    }
+    if ($tipo === 'text/html') {
+        return ['plain' => '', 'html' => textoDesdeHtml($texto)];
+    }
+    return ['plain' => '', 'html' => ''];
+}
+
+function leerStdinLimitado() {
+    $stream = fopen('php://stdin', 'rb');
+    if ($stream === false) {
+        return null;
+    }
+    $entrada = '';
+    while (!feof($stream)) {
+        $trozo = fread($stream, 8192);
+        if ($trozo === false) {
+            fclose($stream);
+            return null;
+        }
+        $entrada .= $trozo;
+        if (strlen($entrada) > MAX_EMAIL_STDIN_BYTES) {
+            fclose($stream);
+            return false;
+        }
+    }
+    fclose($stream);
+    return $entrada;
+}
+
 // Función para enviar al CRM
 function sendToCRM($cuerpoJson) {
     global $CRM_WEBHOOK_URL;
@@ -191,121 +378,31 @@ function sendToCRM($cuerpoJson) {
     return $httpCode >= 200 && $httpCode < 300;
 }
 
-// Función para parsear el email desde STDIN
 function parseEmailFromSTDIN() {
-    // `php://input` es el cuerpo de una petición HTTP y está VACÍO cuando el
-    // script corre como CLI, que es como lo invoca el piping de cPanel. Era el
-    // motivo por el que este camino nunca creó un lead: leía el flujo
-    // equivocado, registraba "STDIN vacío" y salía con error.
-    $stdin = file_get_contents("php://stdin");
-
-    if (empty($stdin)) {
+    $stdin = leerStdinLimitado();
+    if ($stdin === false) {
+        logMessage("ERROR: correo supera el limite de 1 MiB");
+        return null;
+    }
+    if ($stdin === null || $stdin === '') {
         logMessage("STDIN vacío");
         return null;
     }
-    
-    logMessage("Recibido " . strlen($stdin) . " bytes");
-    
-    // Intentar parsear como email simple
-    $lines = explode("\n", $stdin);
-    $emailData = [
-        'from' => '',
-        'to' => '',
-        'subject' => '',
-        'text' => '',
-        'date' => '',
-    ];
-    
-    $inHeaders = true;
-    $bodyLines = [];
-    $currentHeader = '';
-    $currentValue = '';
-    
-    foreach ($lines as $line) {
-        $line = rtrim($line, "\r\n");
-        
-        if ($inHeaders) {
-            // Línea vacía = fin de headers
-            if (empty($line)) {
-                $inHeaders = false;
-                if ($currentHeader) {
-                    $emailData[strtolower($currentHeader)] = trim($currentValue);
-                }
-                continue;
-            }
-            
-            // Header continuación (empieza con espacio/tab)
-            if (preg_match('/^\s+/', $line)) {
-                $currentValue .= ' ' . trim($line);
-                continue;
-            }
-            
-            // Nuevo header
-            if ($currentHeader) {
-                $emailData[strtolower($currentHeader)] = trim($currentValue);
-            }
-            
-            if (preg_match('/^([^:]+):\s*(.*)$/', $line, $matches)) {
-                $currentHeader = $matches[1];
-                $currentValue = $matches[2];
-            }
-        } else {
-            $bodyLines[] = $line;
-        }
-    }
-    
-    // Último header
-    if ($currentHeader && $inHeaders === false) {
-        $emailData[strtolower($currentHeader)] = trim($currentValue);
-    }
-    
-    $emailData['text'] = implode("\n", $bodyLines);
-    
-    return $emailData;
-}
 
-// Función para parsear formato SendGrid
-function parseSendGridFormat($rawBody) {
-    $boundary = null;
-    
-    // Buscar boundary en content-type
-    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-    if (preg_match('/boundary="?([^";\s]+)"?/', $contentType, $matches)) {
-        $boundary = $matches[1];
-    }
-    
-    if (!$boundary) {
-        return null;
-    }
-    
-    $parts = explode("--{$boundary}", $rawBody);
-    $emailData = [
-        'from' => '',
-        'to' => '',
-        'subject' => '',
-        'text' => '',
-        'html' => '',
+    logMessage("Recibido " . strlen($stdin) . " bytes");
+    list($bloqueCabeceras) = separarCabecerasYCuerpo($stdin);
+    $cabeceras = parsearCabeceras($bloqueCabeceras);
+    $partesVistas = 0;
+    $contenido = extraerTextoMime($stdin, 0, $partesVistas);
+
+    return [
+        'from' => decodificarCabeceraMime($cabeceras['from'] ?? ''),
+        'to' => decodificarCabeceraMime($cabeceras['to'] ?? ''),
+        'subject' => decodificarCabeceraMime($cabeceras['subject'] ?? ''),
+        'text' => $contenido['plain'] !== '' ? $contenido['plain'] : $contenido['html'],
+        'date' => $cabeceras['date'] ?? '',
+        'message-id' => $cabeceras['message-id'] ?? '',
     ];
-    
-    foreach ($parts as $part) {
-        $part = trim($part);
-        if (empty($part) || $part === '--') continue;
-        
-        // Separar headers del contenido
-        $parts2 = explode("\n\n", $part, 2);
-        if (count($parts2) < 2) continue;
-        
-        $headers = $parts2[0];
-        $content = $parts2[1];
-        
-        // Extraer nombre del campo
-        if (preg_match('/Content-Disposition:\s*form-data;\s*name="([^"]+)"/i', $headers, $matches)) {
-            $name = $matches[1];
-            $emailData[$name] = trim($content);
-        }
-    }
-    
-    return $emailData;
 }
 
 // ============ MAIN ============
@@ -314,21 +411,8 @@ logMessage("=== Email Handler Iniciado ===");
 logMessage("Method: " . ($_SERVER['REQUEST_METHOD'] ?? 'CLI'));
 logMessage("Content-Type: " . ($_SERVER['CONTENT_TYPE'] ?? 'N/A'));
 
-$emailData = null;
-
-// Intentar diferentes métodos de parsing
-$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-
-if (strpos($contentType, 'multipart/form-data') !== false) {
-    // SendGrid Inbound Parse format
-    logMessage("Parseando formato SendGrid multipart");
-    $rawBody = file_get_contents("php://input");
-    $emailData = parseSendGridFormat($rawBody);
-} else {
-    // Formato genérico (email piping de cPanel)
-    logMessage("Parseando formato email piping genérico");
-    $emailData = parseEmailFromSTDIN();
-}
+logMessage("Parseando formato email piping genérico");
+$emailData = parseEmailFromSTDIN();
 
 if (!$emailData || empty($emailData['from'])) {
     logMessage("ERROR: No se pudo parsear el email o falta campo 'from'");
@@ -337,13 +421,13 @@ if (!$emailData || empty($emailData['from'])) {
 
 // Estructura FIJA, construida campo por campo. El correo trae las cabeceras que
 // quiera su remitente, y antes cualquiera de ellas entraba al JSON.
-$charset = charsetDeclarado(isset($emailData['content-type']) ? $emailData['content-type'] : '');
 $payload = [
-    'from'    => aUtf8(isset($emailData['from']) ? $emailData['from'] : '', $charset),
-    'to'      => aUtf8(isset($emailData['to']) ? $emailData['to'] : '', $charset),
-    'subject' => aUtf8(isset($emailData['subject']) ? $emailData['subject'] : '', $charset),
-    'text'    => aUtf8(isset($emailData['text']) ? $emailData['text'] : '', $charset),
-    'date'    => aUtf8(isset($emailData['date']) ? $emailData['date'] : '', $charset),
+    'from'      => aUtf8(isset($emailData['from']) ? $emailData['from'] : '', ''),
+    'to'        => aUtf8(isset($emailData['to']) ? $emailData['to'] : '', ''),
+    'subject'   => aUtf8(isset($emailData['subject']) ? $emailData['subject'] : '', ''),
+    'text'      => aUtf8(isset($emailData['text']) ? $emailData['text'] : '', ''),
+    'date'      => aUtf8(isset($emailData['date']) ? $emailData['date'] : '', ''),
+    'messageId' => aUtf8(isset($emailData['message-id']) ? $emailData['message-id'] : '', ''),
 ];
 
 $cuerpoJson = serializarPayload($payload);

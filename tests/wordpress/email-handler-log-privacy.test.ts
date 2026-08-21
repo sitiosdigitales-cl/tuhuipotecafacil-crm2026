@@ -23,7 +23,8 @@ describe("registro operacional del piping de correo", () => {
   });
 
   it("mantiene el flujo CLI sin una llamada obsoleta en PHP 8.5", () => {
-    expect(handler).toContain('file_get_contents("php://stdin")');
+    expect(handler).toContain("fopen('php://stdin', 'rb')");
+    expect(handler).toContain("MAX_EMAIL_STDIN_BYTES");
     expect(handler).not.toContain("curl_close(");
   });
 });

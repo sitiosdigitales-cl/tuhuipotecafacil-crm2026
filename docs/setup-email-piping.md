@@ -37,6 +37,11 @@ deliberado: escribe en la base con la service role key y dispara correos.
 El destino tampoco se escribe en el script. Un dominio viejo hardcodeado pierde
 correo en silencio, que es justo lo que hay que evitar en el camino de un lead.
 
+El handler rechaza entradas mayores a 1 MiB, recorre multipartes hasta diez
+niveles y cien partes, decodifica `base64`/`quoted-printable`, normaliza charsets
+y omite adjuntos. Solo `from`, `to`, `subject`, `text`, `date` y `messageId`
+llegan al CRM.
+
 ## Instalación
 
 1. Subir `email-handler.php` a una ruta **fuera de `public_html`**, por ejemplo
@@ -65,6 +70,8 @@ Enviar un correo de prueba a la casilla y revisar, en orden:
 
 1. El log (`CRM_EMAIL_LOG`). Debe decir `Recibido N bytes` y `CRM Response (200)`.
    - `STDIN vacío` significa que el forwarder no está entregando por STDIN.
+   - `supera el limite de 1 MiB` exige reducir el mensaje; el handler no procesa
+     adjuntos como parte de un lead.
    - `falta CRM_EMAIL_WEBHOOK_URL` o `falta CRM_EMAIL_WEBHOOK_SECRET`: paso 5.
 2. `CRM Response (401)`: el secreto de cPanel y el de Vercel no coinciden.
 3. El lead en el CRM, con `origen = email_corporativo`.
@@ -89,3 +96,4 @@ un acuse al remitente.
 - [ ] `CRM_EMAIL_WEBHOOK_URL` y `CRM_EMAIL_WEBHOOK_SECRET` definidos en cPanel
 - [ ] `EMAIL_WEBHOOK_SECRET` definido en Vercel, con el mismo valor
 - [ ] Correo de prueba que termina en un lead con `origen = email_corporativo`
+- [ ] Prueba sintética multipart con cuerpo codificado y adjunto omitido
