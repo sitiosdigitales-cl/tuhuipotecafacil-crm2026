@@ -1585,3 +1585,12 @@ el contrato de revisión antes de escribir. Suite: 858/858; lint/typecheck: 0.
 
 [BACKEND · DOC-CIERRE-01] hecho — auditoría y checklist distinguen código listo
 de configuración humana pendiente. Suite: 858/858; lint/typecheck: 0.
+[build] ocupado — Codex, PIPELINE-V2-VERIFY · regresión y staging del pipeline.
+[build] libre — Codex, PIPELINE-V2-VERIFY · build terminó en 0 con 94 páginas.
+[PIPELINE-V2-VERIFY] verificado — 7 regresiones nuevas cubren indicadores,
+comparación mensual nula, cero divisiones, filtros combinados, teléfono, estados
+vacíos y DnD. Staging `f7e09af` respondió 200 y sus agregados coinciden con la
+consulta directa a `dcoyjvbhrkarrmetrhiv`: 1 lead, monto 0, 0 ganadas y 8 etapas
+activas; difiere de la base local reportada por Claude (24/15). Sin navegador
+controlable para certificar los tres viewports. Build 94/94, suite 865/865,
+lint 0 con Supabase local detenido y typecheck 0.
