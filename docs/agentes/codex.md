@@ -1571,3 +1571,10 @@ lint/typecheck: 0.
 
 [BACKEND · API-IN-02] hecho — `POST /api/comisiones` limita 8 KiB y valida
 tipos, rangos y campos antes del cálculo. Suite: 856/856; lint/typecheck: 0.
+
+[build] ocupado — Codex, API-IN-03 · entrada acotada para revisar documentos.
+
+[build] libre — Codex, API-IN-03 · build terminó en 0 con 94 páginas generadas.
+
+[BACKEND · API-IN-03] hecho — `PUT /api/documentos/:id` limita 8 KiB y valida
+el contrato de revisión antes de escribir. Suite: 858/858; lint/typecheck: 0.

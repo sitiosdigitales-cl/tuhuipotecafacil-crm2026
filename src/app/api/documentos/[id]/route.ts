@@ -3,10 +3,12 @@ import { supabase, toSupabaseColumns, fromSupabaseColumns } from "@/lib/supabase
 import { requireAuth, unauthorized, forbidden } from "@/lib/api-auth";
 import { puedeAccederLead } from "@/lib/permisos-lead";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
 import {
   documentStoragePath,
   documentWithProxyUrl,
 } from "@/lib/document-storage";
+import { z } from "zod";
 
 const ROLES_GESTION_DOCUMENTOS = new Set([
   "SUPER_ADMIN",
@@ -14,16 +16,17 @@ const ROLES_GESTION_DOCUMENTOS = new Set([
   "EJECUTIVO",
   "AGENTE",
 ]);
-const ESTADOS_DOCUMENTO = new Set([
-  "PENDIENTE",
-  "EN_REVISION",
-  "APROBADO",
-  "RECHAZADO",
-]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const MAX_DOCUMENT_UPDATE_BYTES = 8 * 1024;
+const ActualizarDocumentoSchema = z
+  .object({
+    aprobadoEn: z.string().max(100).optional(),
+    aprobadoPor: z.string().max(128).optional(),
+    archivoUrl: z.string().max(2_000).optional(),
+    estado: z.enum(["PENDIENTE", "EN_REVISION", "APROBADO", "RECHAZADO"]),
+    nombre: z.string().max(300).optional(),
+    observaciones: z.string().max(2_000).optional(),
+  })
+  .strict();
 
 async function obtenerDocumentoYLead(id: string) {
   const { data: documento, error } = await supabase
@@ -80,33 +83,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     if (!lead || !puedeAccederLead(auth, lead)) return forbidden();
 
-    const parsedBody: unknown = await request.json();
-    if (!isRecord(parsedBody) || !ESTADOS_DOCUMENTO.has(String(parsedBody.estado))) {
+    let rawBody: unknown;
+    try {
+      rawBody = await parseBoundedJson(request, MAX_DOCUMENT_UPDATE_BYTES);
+    } catch (error) {
+      if (error instanceof RequestPayloadError) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: error.status }
+        );
+      }
+      throw error;
+    }
+    const parsedBody = ActualizarDocumentoSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { success: false, error: "Estado de documento inválido" },
+        { success: false, error: "Datos de documento inválidos" },
         { status: 400 }
       );
     }
-
-    if (
-      parsedBody.observaciones !== undefined &&
-      (typeof parsedBody.observaciones !== "string" ||
-        parsedBody.observaciones.length > 2_000)
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Observaciones inválidas" },
-        { status: 400 }
-      );
-    }
-
-    const estado = String(parsedBody.estado);
+    const body = parsedBody.data;
+    const estado = body.estado;
     const updateData: Record<string, unknown> = {
       aprobadoEn: estado === "APROBADO" ? new Date().toISOString() : null,
       aprobadoPor: estado === "APROBADO" ? auth.userId : null,
       estado,
     };
-    if (typeof parsedBody.observaciones === "string") {
-      updateData.observaciones = parsedBody.observaciones.trim() || null;
+    if (body.observaciones !== undefined) {
+      updateData.observaciones = body.observaciones.trim() || null;
     }
 
     const { data, error } = await supabase
