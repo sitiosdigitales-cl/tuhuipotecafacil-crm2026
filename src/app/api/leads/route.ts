@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, toSupabaseColumns, fromSupabaseArray, fromSupabaseColumns, limpiarParaFiltro } from "@/lib/supabase";
 import { requireAuth, unauthorized } from "@/lib/api-auth";
 import { despacharNotificacion } from "@/lib/dispatcher-notificaciones";
+import { parseBoundedJson, RequestPayloadError } from "@/lib/request-json";
+import { CreateLeadApiSchema } from "@/modulos/leads/validaciones-api";
+
+const MAX_CREATE_LEAD_BYTES = 64 * 1024;
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
@@ -59,10 +63,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!(await requireAuth(request))) return unauthorized();
   try {
-    const body = await request.json();
-    if (!body.nombre || !body.apellido) {
-      return NextResponse.json({ success: false, error: "Nombre y apellido requeridos" }, { status: 400 });
+    const rawBody = await parseBoundedJson(request, MAX_CREATE_LEAD_BYTES);
+    const parsedBody = CreateLeadApiSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { success: false, error: "Datos del lead no válidos" },
+        { status: 400 }
+      );
     }
+    const body = parsedBody.data;
 
     const leadId = crypto.randomUUID();
 
@@ -140,6 +149,12 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof RequestPayloadError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status }
+      );
+    }
     console.error("Error al crear lead:", error);
     return NextResponse.json({ success: false, error: "Error al crear lead" }, { status: 500 });
   }

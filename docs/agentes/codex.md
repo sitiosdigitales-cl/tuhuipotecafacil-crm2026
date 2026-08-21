@@ -1556,3 +1556,11 @@ Suite: 845/845; lint/typecheck: 0.
 [BACKEND · TASAS-01] hecho — CMF permanece `SIN_DATOS`; ejecutivos actualizan
 el catálogo manual auditado y ambos simuladores consumen solo tasas activas.
 Suite: 850/850; lint/typecheck: 0.
+
+[build] ocupado — Codex, API-IN-01 · entrada acotada para crear leads.
+
+[build] libre — Codex, API-IN-01 · build terminó en 0 con 94 páginas generadas.
+
+[BACKEND · API-IN-01] hecho — `POST /api/leads` exige JSON, limita 64 KiB y
+valida un contrato estricto antes de consultar Supabase. Suite: 853/853;
+lint/typecheck: 0.
